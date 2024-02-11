@@ -43,11 +43,11 @@ private:
 
 
 
-#ifdef NDEBUG
-    const bool                         enableValidationLayers_{ false };
-#else
+//#ifdef NDEBUG
+//    const bool                         enableValidationLayers_{ false };
+//#else
     const bool                         enableValidationLayers_{ true };
-#endif
+//#endif
     const std::vector<const char*>     validationLayers_
     {
     "VK_LAYER_KHRONOS_validation",

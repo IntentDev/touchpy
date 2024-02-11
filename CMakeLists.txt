@@ -40,7 +40,6 @@ set_target_properties(tdpy PROPERTIES PREFIX "" SUFFIX ".pyd")
 
 target_include_directories(tdpy PRIVATE ${SOURCE_DIR})
 
-
 # Check if VCPKG_ROOT is set as an environment variable
 if(DEFINED ENV{VCPKG_ROOT})
   set(VCPKG_ROOT $ENV{VCPKG_ROOT})
@@ -94,4 +93,7 @@ target_include_directories(tdpy PRIVATE ${pybind11_INCLUDE_DIRS})
 target_link_libraries(tdpy pybind11::module)
 
 
-
+# install
+#################################################################################################
+#################################################################################################
+install(TARGETS tdpy LIBRARY DESTINATION modules)

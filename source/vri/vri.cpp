@@ -766,7 +766,6 @@ bool deviceSuitable(
 	std::cout << "Device Name: " << physicalDevice << std::endl
 		<< "\tExtensions Supported: " << std::boolalpha << extensionsSupported << std::endl
 		<< "\tQueue Family Indices: " << std::boolalpha << resultQueueFamilyIndices << std::endl
-		<< "\tAnisotropy Supported: " << std::boolalpha << supportedFeatures.samplerAnisotropy << std::endl
 		;
 
 	return	extensionsSupported &&
@@ -874,8 +873,10 @@ bool checkDeviceQueueFamilySupport(
 			}
 		}
 	}
-
-	return true && presentSupport;
+	if (surface != VK_NULL_HANDLE)
+		return true && presentSupport;
+	else
+		return true;
 }
 
 void createDevice(

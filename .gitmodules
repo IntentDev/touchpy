@@ -1,0 +1,3 @@
+[submodule "TouchEngine-Windows"]
+	path = TouchEngine-Windows
+	url = https://github.com/TouchDesigner/TouchEngine-Windows.git
