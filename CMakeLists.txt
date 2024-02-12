@@ -92,6 +92,16 @@ message(STATUS pybind11_INCLUDE_DIRS=${pybind11_INCLUDE_DIRS})
 target_include_directories(tdpy PRIVATE ${pybind11_INCLUDE_DIRS})
 target_link_libraries(tdpy pybind11::module)
 
+# TouchEngine-Windows
+# git submodule add https://github.com/TouchDesigner/TouchEngine-Windows.git
+#################################################################################################
+target_link_directories(tdpy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/lib)
+target_link_libraries(tdpy TouchEngine)
+target_include_directories(tdpy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/include)
+add_custom_command(TARGET tdpy POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/bin $<TARGET_FILE_DIR:tdpy>)
+
 
 # install
 #################################################################################################
