@@ -6,12 +6,20 @@
 
 #include "cpythonfuncs.h"
 #include "vkcontext.h"
+#include "tdtox.h"
 
 #include <iostream>
 #include <memory>
+#include <string>
 
 namespace py = pybind11;
 
+void load_tox(std::string filePath)
+{
+	std::unique_ptr<TdTox> tox = std::make_unique<TdTox>(filePath);
+	tox->load();
+
+}
 
 void create_vk_instance()
 {

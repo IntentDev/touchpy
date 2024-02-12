@@ -9,7 +9,8 @@ VkContext::~VkContext()
 {
 }
 
-void VkContext::cleanup()
+void 
+VkContext::cleanup()
 {
 	for (auto callback = --vDestroyCallbacks_.end();
 		callback != vDestroyCallbacks_.begin(); --callback)
@@ -18,18 +19,21 @@ void VkContext::cleanup()
 	}
 }
 
-void VkContext::init()
+void 
+VkContext::init()
 {
 	createPrimaryDevice();
 	allocateInstanceResources();
 }
 
-void VkContext::setRequiredExtensions(std::vector<const char*> extensions)
+void 
+VkContext::setRequiredExtensions(std::vector<const char*> extensions)
 {
 	requiredExtensions_ = extensions;
 }
 
-void VkContext::createInstance()
+void
+VkContext::createInstance()
 {
 	//vri::printAvailableValidationLayers();
 	//setRequiredExtensions(presenter_->getRequiredExtensions());
@@ -48,7 +52,8 @@ void VkContext::createInstance()
 		});
 }
 
-void VkContext::createPrimaryDevice()
+void 
+VkContext::createPrimaryDevice()
 {
 	vri::setPrimaryPhysicalDevice(vContext_, deviceExtensions_,
 		VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT);
@@ -66,7 +71,8 @@ void VkContext::createPrimaryDevice()
 
 }
 
-void VkContext::allocateInstanceResources()
+void 
+VkContext::allocateInstanceResources()
 {
 	vri::createVmaAllocator(vContext_);
 	vDestroyCallbacks_.push_back([&]() { vmaDestroyAllocator(vContext_.allocator); });
@@ -99,7 +105,8 @@ void VkContext::allocateInstanceResources()
 }
 
 
-void VkContext::onFrameBegin()
+void 
+VkContext::onFrameBegin()
 {
 	// wait and reset fences are now in presenter_->recordCommands()
 	// if wait fences are enabled here they must be reset after recordCommands success
@@ -116,7 +123,8 @@ void VkContext::onFrameBegin()
 	vContext_.currentFrame = (vContext_.currentFrame + 1) % vContext_.maxFramesInFlight;
 }
 
-void VkContext::onFrameEnd()
+void 
+VkContext::onFrameEnd()
 {
 
 }
