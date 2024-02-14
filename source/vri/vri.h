@@ -26,7 +26,7 @@ struct VContext
 {
 	VkInstance                   instance                 { VK_NULL_HANDLE };
 	VkPhysicalDevice             physicalDevice           { VK_NULL_HANDLE };
-	VkPhysicalDeviceProperties   physicalDeviceProperties { };
+	VkPhysicalDeviceProperties  physicalDeviceProperties  { };
 	VkDevice                     device                   { VK_NULL_HANDLE };
 
 
@@ -47,8 +47,8 @@ struct VContext
 	VkCommandPool                presentCommandPool       { VK_NULL_HANDLE };
 
 	std::vector<VkCommandBuffer> graphicsCommandBuffers   { };
-	uint32_t                     maxFramesInFlight        = 2;
-	uint32_t                     currentFrame             = 0;
+	uint32_t                     maxFramesInFlight        { 2 };
+	uint32_t                     currentFrame             { 0 };
 
 	//std::vector <VkSemaphore>  imageAvailableSemaphores {};
 	//std::vector <VkSemaphore>  renderFinishedSemaphores {};
@@ -66,34 +66,34 @@ struct SwapchainSupport
 
 
 VkFormat findDepthFormat(
-	const VkPhysicalDevice&					physicalDevice);
+	const VkPhysicalDevice&	physicalDevice);
 
 bool hasStencilComponent(
-	VkFormat								format);
+	VkFormat format);
 
 VkFormat findSupportedFormat(
-	const VkPhysicalDevice&					physicalDevice, 
-	const std::vector<VkFormat>&			candidates, 
-	const VkImageTiling&					tiling, 
-	const VkFormatFeatureFlags&				features);
+	const VkPhysicalDevice&	physicalDevice, 
+	const std::vector<VkFormat>& candidates, 
+	const VkImageTiling& tiling, 
+	const VkFormatFeatureFlags&	features);
 
 VkSampleCountFlagBits getMaxUsableSampleCount(
-	const VkPhysicalDevice&					physicalDevice);
+	const VkPhysicalDevice&	physicalDevice);
 
 void setMSAASampleCount(
-	VContext&							vContext, 
-	VkSampleCountFlagBits&					sampleCount);
+	VContext& vContext, 
+	VkSampleCountFlagBits& sampleCount);
 
 VkShaderModule createShaderModule(
-	const VkDevice&							device, 
-	const std::vector<char>&				code);
+	const VkDevice&	device, 
+	const std::vector<char>& code);
 
 std::vector<char> readFileSpvFile(
-	const std::string&						filename);
+	const std::string& filename);
 
 VkCommandBuffer beginSingleTimeCommands(
-	VkDevice								device, 
-	VkCommandPool							commandPool);
+	VkDevice device, 
+	VkCommandPool commandPool);
 
 void endSingleTimeCommands(
 	VkDevice device, 
@@ -104,7 +104,7 @@ void endSingleTimeCommands(
 uint32_t findMemoryType(
 	const VkPhysicalDevice& physicalDevice, 
 	const uint32_t& typeFilter, 
-	VkMemoryPropertyFlags& properties);
+	VkMemoryPropertyFlags properties);
 
 void createBuffer(
 	const VContext& vContext, 

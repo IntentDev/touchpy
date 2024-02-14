@@ -7,17 +7,20 @@ path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'out', 'bui
 
 # add the path to the python path
 sys.path.append(path)
+
 import tdpy
 
 if __name__ == '__main__':
 
-	tox_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'ChopIO.tox'))
+	tox_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'TopChopIO.tox'))
 
 	tox = tdpy.TdTox(tox_path)
 	tox.load()
 	
 	while not (keyboard.is_pressed('ctrl') and keyboard.is_pressed('q')):
-		tox.update()	
+		tox.update()
+
+		
 
 
 		

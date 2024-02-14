@@ -2,6 +2,7 @@
 
 #include <TouchEngine/TouchEngine.h>
 #include "vkcontext.h"
+#include "texture.h"
 
 #include <string>
 #include <mutex>
@@ -50,14 +51,16 @@ private:
 		const char* identifier,
 		void* info);
 
-	void linkLayoutDidChange();
+	void linkLayoutDidChange(TELinkEvent event, const char* identifier);
 	void linkValueChange(const char* identifier);
 	void endFrame(int64_t start_time_value, int32_t start_time_scale, TEResult result);
 	void getState(bool& configured, bool& loaded, bool& linksChanged, bool& inFrame);
 	void setInFrame(bool inFrame);
 
 
-	std::unique_ptr<VkContext> vkContext_;
+	std::unique_ptr<VkContext>	vkContext_;
+	std::unique_ptr<Texture>	texFromTE_;
+	std::unique_ptr<Texture>	texToTE_;
 
 	void createVkContext();
 

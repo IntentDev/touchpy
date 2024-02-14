@@ -24,6 +24,33 @@ VkContext::init()
 {
 	createPrimaryDevice();
 	allocateInstanceResources();
+
+	VkPhysicalDeviceProperties2  physicalDeviceProperties{ };
+	physicalDeviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+
+	VkPhysicalDeviceIDProperties  physicalDeviceIDProperties{ };
+	physicalDeviceIDProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+	physicalDeviceProperties.pNext = &physicalDeviceIDProperties;
+
+	vkGetPhysicalDeviceProperties2(vContext_.physicalDevice, &physicalDeviceProperties);
+
+	TEResult result = TEVulkanContextCreate(
+		physicalDeviceIDProperties.deviceUUID,
+		physicalDeviceIDProperties.driverUUID,
+		physicalDeviceIDProperties.deviceLUID,
+		physicalDeviceIDProperties.deviceLUIDValid,
+		TETextureOriginBottomLeft, 
+		teContext_.take()
+	);
+
+	if (result != TEResultSuccess)
+	{
+		throw std::runtime_error("Failed to create TEVulkanContext");
+	}
+	else
+	{
+		std::cout << "TEVulkanContext created" << std::endl;
+	}
 }
 
 void 
