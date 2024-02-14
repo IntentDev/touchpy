@@ -3,6 +3,8 @@
 #include "vri/vri.h"
 #include <functional>
 #include <vector>
+#include <TouchEngine/TouchEngine.h>
+#include <TouchEngine/TEVulkan.h>
 
 class VkContext
 {
@@ -28,6 +30,9 @@ public:
 
     vri::VContext& vContext() { return vContext_; }
 
+
+    TEGraphicsContext* teContext() { return teContext_.get(); }
+
 private:
 
     //Vision& vision_;
@@ -41,6 +46,8 @@ private:
 
     VkDescriptorPool                    descriptorPool_{ nullptr };
 
+
+    TouchObject<TEVulkanContext>        teContext_;
 
 
 //#ifdef NDEBUG

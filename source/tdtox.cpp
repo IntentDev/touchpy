@@ -1,5 +1,10 @@
 #include "tdtox.h"
+#include "teutils.h"
 #include <iostream>
+
+
+
+
 
 TdTox::TdTox(std::string filePath)
 	: filePath_(filePath)
@@ -23,14 +28,11 @@ void TdTox::load()
 	std::cout << "Loading tox file: " << std::string(filePath_.begin(), filePath_.end()) << std::endl;
 
 	TEResult teresult = TEInstanceCreate(eventCallback, linkEventCallback, this, instance_.take());
-	//if (teresult == TEResultSuccess)
-	//{
-	//	teresult = TEInstanceAssociateGraphicsContext(myInstance, myRenderer->getTEContext());
-	//}
+
 	if (teresult == TEResultSuccess)
 	{
 		std::cout << "Instance created!" << std::endl;
-		teresult = TEInstanceConfigure(instance_, filePath_.c_str(), TETimeInternal);
+		teresult = TEInstanceAssociateGraphicsContext(instance_, vkContext_->teContext());
 	}
 	else
 	{
@@ -38,6 +40,19 @@ void TdTox::load()
 		std::cout << TEResultGetDescription(teresult) << std::endl;
 		return;
 	}
+
+	if (teresult == TEResultSuccess)
+	{
+		std::cout << "Instance associated with Graphics Context!" << std::endl;
+		teresult = TEInstanceConfigure(instance_, filePath_.c_str(), TETimeInternal);
+	}
+	else
+	{
+		std::cout << "Failed to associate instance with Graphics Context" << std::endl;
+		std::cout << TEResultGetDescription(teresult) << std::endl;
+		return;
+	}
+
 	if (teresult == TEResultSuccess)
 	{
 		std::cout << "Instance configured!" << std::endl;
@@ -141,7 +156,7 @@ void TdTox::linkEventCallback(TEInstance* instance, TELinkEvent event, const cha
 	switch (event)
 	{
 	case TELinkEventAdded:
-		tdTox->linkLayoutDidChange();
+		tdTox->linkLayoutDidChange(event, identifier);
 		break;
 	case TELinkEventValueChange:
 		tdTox->linkValueChange(identifier);
@@ -183,10 +198,61 @@ void TdTox::setInFrame(bool inFrame)
 }
 
 
-void TdTox::linkLayoutDidChange()
+void TdTox::linkLayoutDidChange(TELinkEvent event, const char* identifier)
 {
 	std::lock_guard<std::mutex> guard(mutex_);
 	pendingLayoutChange_ = true;
+
+	TouchObject<TELinkInfo> link;
+	TEResult result = TEInstanceLinkGetInfo(instance_, identifier, link.take());
+	if (result == TEResultSuccess)
+	{
+		std::cout << "Link layout changed: " << teutils::linkInfoToString(link) << " event: "
+			<< teutils::linkEventToString(event) << std::endl;
+
+		if (link->scope == TEScopeOutput)
+		{
+			//if (strcmp(link->identifier, "op/topOut1") == 0)
+			//{
+			//	TouchObject <TETexture> tex;
+			//	TEResult result = TEInstanceLinkGetTextureValue(
+			//		instance_, identifier, TELinkValueCurrent, tex.take());
+
+			//	if (result == TEResultSuccess)
+			//	{
+			//		TEVulkanTexture* vkTex = static_cast<TEVulkanTexture*>(tex.get());
+			//		texFromTE_ = std::make_unique<Texture>(
+			//			vkContext_->vContext().device,
+			//			vkTex
+			//		);
+
+			//		VkExtent2D extent = {
+			//			static_cast<uint32_t> (TEVulkanTextureGetWidth(vkTex)),
+			//			static_cast<uint32_t> (TEVulkanTextureGetHeight(vkTex))
+			//		};
+
+			//		VkFormat format = TEVulkanTextureGetFormat(vkTex);
+
+			//		std::cout << "Texture extent: " << extent.width << " x " << extent.height << std::endl;
+
+			//		texToTE_ = std::make_unique<Texture>(
+			//			vkContext_->vContext().physicalDevice,
+			//			vkContext_->vContext().device,
+			//			vkContext_->vContext().queueFamilyIndices.usedFamilyIndices(),
+			//			extent,
+			//			format
+			//		);
+			//	}
+			//	else
+			//	{
+			//		std::cout << TEResultGetDescription(result) << std::endl;
+			//	}
+			//}
+		}
+
+	}
+	//std::cout << "Link layout changed: " << identifier << " : " 
+	//			<< getLinkEventString(event) << std::endl;
 }
 
 void TdTox::update()
@@ -208,6 +274,54 @@ void TdTox::linkValueChange(const char* identifier)
 			// Stash the state, we don't do any actual renderer work from this thread
 			//std::lock_guard<std::mutex> guard(mutex_);
 			//myPendingOutputTextures.push_back(identifier);
+
+			if (strcmp(link->identifier, "op/topOut1") == 0)
+			{
+				TouchObject <TETexture> tex;
+				TEResult result = TEInstanceLinkGetTextureValue(
+					instance_, identifier, TELinkValueCurrent, tex.take());
+
+				if (result == TEResultSuccess)
+				{
+					TEVulkanTexture* vkTex = static_cast<TEVulkanTexture*>(tex.get());
+
+					if (texFromTE_.get() == nullptr)
+					{
+						texFromTE_ = std::make_unique<Texture>(
+							vkContext_->vContext().device,
+							vkTex
+						);
+					}
+
+					VkExtent2D extent = {
+						static_cast<uint32_t> (TEVulkanTextureGetWidth(vkTex)),
+						static_cast<uint32_t> (TEVulkanTextureGetHeight(vkTex))
+					};
+
+					VkFormat format = TEVulkanTextureGetFormat(vkTex);
+
+					//std::cout << "Texture extent: " << extent.width << " x " << extent.height 
+					//		<< " format: " << string_VkFormat(format) << std::endl;
+
+
+	/*				if (texToTE_.get() == nullptr)
+					{
+						texToTE_ = std::make_unique<Texture>(
+							vkContext_->vContext().physicalDevice,
+							vkContext_->vContext().device,
+							vkContext_->vContext().queueFamilyIndices.usedFamilyIndices(),
+							extent,
+							format
+						);
+					}*/
+				}
+				else
+				{
+					std::cout << TEResultGetDescription(result) << std::endl;
+				}
+			}
+
+
 			break;
 		}
 		case TELinkTypeFloatBuffer:

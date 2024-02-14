@@ -40,6 +40,9 @@ set_target_properties(tdpy PROPERTIES PREFIX "" SUFFIX ".pyd")
 
 target_include_directories(tdpy PRIVATE ${SOURCE_DIR})
 
+
+
+
 # Check if VCPKG_ROOT is set as an environment variable
 if(DEFINED ENV{VCPKG_ROOT})
   set(VCPKG_ROOT $ENV{VCPKG_ROOT})
@@ -83,6 +86,7 @@ find_package(Python3 COMPONENTS Development Interpreter REQUIRED)
 message(STATUS Python3_INCLUDE_DIRS=${Python3_INCLUDE_DIRS})
 target_include_directories(tdpy PRIVATE ${Python3_INCLUDE_DIRS})
 target_link_libraries(tdpy Python3::Python)
+
 
 # pybind11
 # .\vcpkg install pybind11

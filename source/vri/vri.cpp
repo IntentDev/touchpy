@@ -162,7 +162,7 @@ void endSingleTimeCommands(VkDevice device, VkCommandPool commandPool, VkCommand
 uint32_t findMemoryType(
 	const VkPhysicalDevice& physicalDevice, 
 	const uint32_t& typeFilter, 
-	VkMemoryPropertyFlags& properties)
+	VkMemoryPropertyFlags properties)
 {
 	VkPhysicalDeviceMemoryProperties memProperties;
 	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
@@ -234,11 +234,16 @@ void copyBuffer(const VContext& vContext, const VkBuffer& srcBuffer, VkBuffer ds
 
 void createImage2D(
 	const VContext& vContext, 
-	VkExtent2D extent, VkFormat format, uint32_t mipLevels, 
-	VkSampleCountFlagBits numSamples, VkImageTiling tiling, 
-	VkImageUsageFlags usage, VkImage& image, 
+	VkExtent2D extent, 
+	VkFormat format, 
+	uint32_t mipLevels, 
+	VkSampleCountFlagBits numSamples, 
+	VkImageTiling tiling, 
+	VkImageUsageFlags usage, 
+	VkImage& image, 
 	VmaAllocationCreateFlags allocCreateFlags, 
-	VmaAllocation& allocation, VmaAllocationInfo* allocInfo)
+	VmaAllocation& allocation, 
+	VmaAllocationInfo* allocInfo)
 {
 	VkImageCreateInfo imageCreateInfo{};
 	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -267,7 +272,13 @@ void createImage2D(
 	VK_CHECK(vmaCreateImage(vContext.allocator, &imageCreateInfo, &allocCreateInfo, &image, &allocation, allocInfo));
 }
 
-VkImageView createImageView2D(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {
+VkImageView createImageView2D(
+	VkDevice device, 
+	VkImage image, 
+	VkFormat format, 
+	VkImageAspectFlags aspectFlags, 
+	uint32_t mipLevels) 
+{
 	VkImageViewCreateInfo viewInfo{};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	viewInfo.image = image;
@@ -291,7 +302,12 @@ void destroyImage(const VContext& vContext, VkImage& image, VmaAllocation alloca
 }
 
 
-void copyBufferToImage(const VContext& vContext, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+void copyBufferToImage(
+	const VContext& vContext, 
+	VkBuffer buffer, 
+	VkImage image, 
+	uint32_t width, 
+	uint32_t height)
 {
 	const auto& device = vContext.device;
 	const auto& commandPool = vContext.graphicsCommandPool;
