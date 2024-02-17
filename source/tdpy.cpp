@@ -2,7 +2,7 @@
 //
 
 #include "tdpy.h"
-#include "vkcontext.h"
+#include "renderer.h"
 
 
 
@@ -16,7 +16,7 @@ PYBIND11_MODULE(tdpy, m)
     py::class_<TdTox>(m, "TdTox")
 		.def(py::init<std::string>())
 		.def("load", &TdTox::load)
-		.def("configured", &TdTox::configured)
+		.def("configured", &TdTox::didConfigure)
 		.def("loaded", &TdTox::loaded)
 		.def("update", &TdTox::update);
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <TouchEngine/TouchEngine.h>
-#include "vkcontext.h"
+#include "renderer.h"
 #include "texture.h"
 
 #include <string>
@@ -15,9 +15,10 @@ public:
 	~TdTox();
 
 	void load();
-	void configured(TEResult result);
+	void didConfigure(TEResult result);
 	bool loaded() { std::lock_guard<std::mutex> lock(mutex_); return loaded_ = true; }
 	void update();
+	void render(bool loaded);
 
 
 private:
@@ -25,8 +26,9 @@ private:
 	bool 		 pendingLayoutChange_ { false };
 	bool         loaded_ { false };
 	std::string  filePath_;
-	bool	     configured_ { false };	
-	TEResult     configuredResult_ { TEResultSuccess };
+	bool	     configureRenderer_ { false };	
+	TEResult     configureResult_ { TEResultSuccess };
+	bool		 configureError_{ false };
 	bool 		 inFrame_ { false };
 
 	TouchObject<TEInstance>  instance_ { nullptr };
@@ -34,6 +36,13 @@ private:
 	int32_t      inputChannelCount_ { 0 };
 
 	int64_t      framesPerSecond_ { 60 };
+
+	std::unordered_map<std::string, size_t> outputLinkTextureMap_;
+	std::vector<std::string>				pendingOutputTextures_;
+
+	std::unique_ptr<Renderer>	renderer_;
+	std::unique_ptr<Texture>	texFromTE_;
+	std::unique_ptr<Texture>	texToTE_;
 
 	static void	eventCallback(
 		TEInstance* instance,
@@ -51,6 +60,9 @@ private:
 		const char* identifier,
 		void* info);
 
+	void applyLayoutChange();
+	bool applyOutputTextureChange();
+
 	void linkLayoutDidChange(TELinkEvent event, const char* identifier);
 	void linkValueChange(const char* identifier);
 	void endFrame(int64_t start_time_value, int32_t start_time_scale, TEResult result);
@@ -58,11 +70,9 @@ private:
 	void setInFrame(bool inFrame);
 
 
-	std::unique_ptr<VkContext>	vkContext_;
-	std::unique_ptr<Texture>	texFromTE_;
-	std::unique_ptr<Texture>	texToTE_;
 
-	void createVkContext();
+
+	void createRenderer();
 
 
 

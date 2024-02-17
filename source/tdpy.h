@@ -5,7 +5,7 @@
 #include <pybind11/pybind11.h>
 
 #include "cpythonfuncs.h"
-#include "vkcontext.h"
+#include "renderer.h"
 #include "tdtox.h"
 
 #include <iostream>
@@ -23,14 +23,14 @@ void load_tox(std::string filePath)
 
 void create_vk_instance()
 {
-    std::unique_ptr<VkContext> context = std::make_unique<VkContext>();
+    std::unique_ptr<Renderer> context = std::make_unique<Renderer>();
     context->createInstance();
 
 }
 
 void init_vk()
 {
-    std::unique_ptr<VkContext> context = std::make_unique<VkContext>();
+    std::unique_ptr<Renderer> context = std::make_unique<Renderer>();
     context->createInstance();
     context->init();
 }
