@@ -3,14 +3,15 @@
 #include "vri/vri.h"
 #include <functional>
 #include <vector>
+#include <string>
 #include <TouchEngine/TouchEngine.h>
 #include <TouchEngine/TEVulkan.h>
 
-class VkContext
+class Renderer
 {
 public:
-    VkContext();
-    ~VkContext();
+    Renderer();
+    ~Renderer();
     void cleanup();
     void init();
 
@@ -21,23 +22,55 @@ public:
 
     void setRequiredExtensions(std::vector<const char*> extensions);
     void createInstance();
+    bool configureTEInstance(TEInstance* instance, std::string& error);
     void createPrimaryDevice();
     void allocateInstanceResources();
 
+
+
+    void renderFrame();
     void onFrameBegin();
     void onFrameEnd();
 
 
     vri::VContext& vContext() { return vContext_; }
 
-
     TEGraphicsContext* teContext() { return teContext_.get(); }
 
-private:
+    //bool doesInputTextureTransfer() const { return true; }
 
-    //Vision& vision_;
-    //Presenter* presenter_{ nullptr };
-    //UIGraphics* uiGraphics_{ nullptr };
+    //size_t getInputImageCount() const;
+    //void beginImageLayout();
+
+    //void addInputImage(
+    //    const unsigned char* rgba, 
+    //    size_t bytesPerRow, 
+    //    int width, 
+    //    int height);
+
+    //bool getInputImage(
+    //    size_t index, 
+    //    TouchObject<TETexture> & texture, 
+    //    TouchObject<TESemaphore> & semaphore, 
+    //    uint64_t& waitValue);
+
+    //void clearInputImages();
+    //size_t getRightSideImageCount();
+    //void addOutputImage();
+    //void endImageLayout();
+
+    //void clearOutputImages(); // TODO: ?
+
+    //bool updateOutputImage(
+    //    const TouchObject<TEInstance> & instance, 
+    //    size_t index, 
+    //    const std::string& identifier);
+
+    //const TouchObject<TETexture>& getOutputImage(size_t index) const;
+
+
+
+private:
 
     vri::VContext                       vContext_{ };
     std::vector<const char*>            requiredExtensions_{ };
@@ -46,9 +79,11 @@ private:
 
     VkDescriptorPool                    descriptorPool_{ nullptr };
 
-
     TouchObject<TEVulkanContext>        teContext_;
 
+    static const std::string ConfigureError;
+    std::string getConfigureError() const;
+    
 
 //#ifdef NDEBUG
 //    const bool                         enableValidationLayers_{ false };
@@ -66,5 +101,17 @@ private:
         VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
         VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
         VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME,
+        VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
+        VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME,
+        VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME,
+
     };
+
+
+
+
+
+    
+    
+
 };

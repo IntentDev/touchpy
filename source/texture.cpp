@@ -1,8 +1,8 @@
 
 #include "texture.h"
 #include <TouchEngine/TEVulkan.h>
-#include <vulkan/vulkan_win32.h>
 #include <Windows.h>
+#include <algorithm>
 
 Texture::Texture()
 {
@@ -37,6 +37,23 @@ Texture::Texture(
 		format_(format)
 
 {
+
+	//uint32_t extensionCount = 0;
+	//vkEnumerateDeviceExtensionProperties(physicalDevice_, nullptr, &extensionCount, nullptr);
+	//std::vector<VkExtensionProperties> extensions(extensionCount);
+	//vkEnumerateDeviceExtensionProperties(physicalDevice_, nullptr, &extensionCount, extensions.data());
+
+	//bool extensionFound = std::any_of(extensions.begin(), extensions.end(), [](const VkExtensionProperties& extension) {
+	//	return strcmp(extension.extensionName, VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME) == 0;
+	//	});
+
+	//if (!extensionFound) {
+	//	std::cout << "VK_KHR_external_memory_win32 extension not supported." << std::endl;
+	//}
+	//else {
+	//	std::cout << "VK_KHR_external_memory_win32 extension supported." << std::endl;
+	//}
+
 	std::cout << "Creating Texture to TE" << std::endl;
 
 	VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
@@ -55,7 +72,7 @@ Texture::Texture(
 	imageCreateInfo.format = format;
 	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT; // VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	imageCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilyIndices.size());
@@ -65,9 +82,10 @@ Texture::Texture(
 
 	std::cout << "Image Created" << std::endl;
 
-	VkExportMemoryWin32HandleInfoKHR exportMemoryInfo = {};
-	exportMemoryInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_KHR;
+	VkExportMemoryAllocateInfo exportMemoryInfo = {};
+	exportMemoryInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
 	exportMemoryInfo.pNext = nullptr;
+	exportMemoryInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
 
 	VkMemoryRequirements memRequirements;
 	vkGetImageMemoryRequirements(device, image_, &memRequirements);
@@ -78,7 +96,7 @@ Texture::Texture(
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 	);
 
-	std::cout << "Memory Type Index: " << memoryTypeIndex << std::endl;
+	std::cout << "Allocating Memory Size: " << memRequirements.size << " Memory Type Index: " << memoryTypeIndex << std::endl;
 
 	VkMemoryAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -115,8 +133,13 @@ Texture::Texture(
 	memoryHandleInfo.memory = memory_;
 	memoryHandleInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
 
+	std::cout << "Getting vkGetMemoryWin32HandleKHR" << std::endl;
 	// need to get the function pointer for vkGetMemoryWin32HandleKHR
 	auto vkGetMemoryWin32HandleKHR = PFN_vkGetMemoryWin32HandleKHR(vkGetDeviceProcAddr(device_, "vkGetMemoryWin32HandleKHR"));
+
+	if (vkGetMemoryWin32HandleKHR == nullptr) {
+		std::cout << "vkGetMemoryWin32HandleKHR is null" << std::endl;
+	}
 
 	VK_CHECK(vkGetMemoryWin32HandleKHR(
 		device_,
@@ -143,6 +166,7 @@ Texture::Texture(
 	exportSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
 	exportSemaphoreCreateInfo.flags = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 
+
 	VkSemaphoreCreateInfo semaphoreCreateInfo{};
 	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 	semaphoreCreateInfo.pNext = &exportSemaphoreCreateInfo;
@@ -159,6 +183,10 @@ Texture::Texture(
 	exportSemaphoreHandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 
 	auto vkGetSemaphoreWin32HandleKHR = PFN_vkGetSemaphoreWin32HandleKHR(vkGetDeviceProcAddr(device, "vkGetSemaphoreWin32HandleKHR"));
+
+	if (vkGetSemaphoreWin32HandleKHR == nullptr) {
+		std::cout << "vkGetSemaphoreWin32HandleKHR is null" << std::endl;
+	}
 
 	VK_CHECK(vkGetSemaphoreWin32HandleKHR(
 				device_, 

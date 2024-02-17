@@ -40,8 +40,20 @@ set_target_properties(tdpy PROPERTIES PREFIX "" SUFFIX ".pyd")
 
 target_include_directories(tdpy PRIVATE ${SOURCE_DIR})
 
+# Compile definitions
+if (WIN32)
+    list(APPEND COMPILE_DEFINITIONS 
+        WIN32_LEAN_AND_MEAN # Exclude rarely-used stuff from Windows headers
+        NOMINMAX # Exclude min and max macros from Windows headers
+        # _CRT_SECURE_NO_WARNINGS # Disable warnings for unsafe functions in MSVC
+        _UNICODE # Use Unicode character set
+        UNICODE # Use Unicode character set
+        GLFW_EXPOSE_NATIVE_WIN32 
+        VK_USE_PLATFORM_WIN32_KHR # use Vulkan on Windows
+    )
+endif ()
 
-
+target_compile_definitions(tdpy PRIVATE ${COMPILE_DEFINITIONS})
 
 # Check if VCPKG_ROOT is set as an environment variable
 if(DEFINED ENV{VCPKG_ROOT})

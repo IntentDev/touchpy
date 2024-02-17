@@ -2,7 +2,6 @@
 
 #include <vri/vri.h>
 #include <TouchEngine/TouchEngine.h>
-#include <Windows.h>
 #include <vector>
 
 class Texture

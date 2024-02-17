@@ -1,16 +1,20 @@
-#include "vkcontext.h"
+#include "renderer.h"
 
-VkContext::VkContext()
+
+const std::string Renderer::ConfigureError = "Vulkan is not supported or the selected GPU does not have the needed features.";
+
+
+Renderer::Renderer()
 {
 
 }
 
-VkContext::~VkContext()
+Renderer::~Renderer()
 {
 }
 
 void 
-VkContext::cleanup()
+Renderer::cleanup()
 {
 	for (auto callback = --vDestroyCallbacks_.end();
 		callback != vDestroyCallbacks_.begin(); --callback)
@@ -20,7 +24,7 @@ VkContext::cleanup()
 }
 
 void 
-VkContext::init()
+Renderer::init()
 {
 	createPrimaryDevice();
 	allocateInstanceResources();
@@ -54,13 +58,13 @@ VkContext::init()
 }
 
 void 
-VkContext::setRequiredExtensions(std::vector<const char*> extensions)
+Renderer::setRequiredExtensions(std::vector<const char*> extensions)
 {
 	requiredExtensions_ = extensions;
 }
 
 void
-VkContext::createInstance()
+Renderer::createInstance()
 {
 	//vri::printAvailableValidationLayers();
 	//setRequiredExtensions(presenter_->getRequiredExtensions());
@@ -79,8 +83,11 @@ VkContext::createInstance()
 		});
 }
 
+
+
+
 void 
-VkContext::createPrimaryDevice()
+Renderer::createPrimaryDevice()
 {
 	vri::setPrimaryPhysicalDevice(vContext_, deviceExtensions_,
 		VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT);
@@ -99,7 +106,7 @@ VkContext::createPrimaryDevice()
 }
 
 void 
-VkContext::allocateInstanceResources()
+Renderer::allocateInstanceResources()
 {
 	vri::createVmaAllocator(vContext_);
 	vDestroyCallbacks_.push_back([&]() { vmaDestroyAllocator(vContext_.allocator); });
@@ -132,8 +139,79 @@ VkContext::allocateInstanceResources()
 }
 
 
-void 
-VkContext::onFrameBegin()
+bool Renderer::configureTEInstance(TEInstance* instance, std::string& error)
+{
+	int32_t count = 0;
+	TEResult result = TEInstanceGetSupportedTextureTypes(instance, nullptr, &count);
+	if (result == TEResultInsufficientMemory)
+	{
+		std::vector<TETextureType> textureTypes(count);
+		result = TEInstanceGetSupportedTextureTypes(instance, textureTypes.data(), &count);
+		if (result == TEResultSuccess)
+		{
+			textureTypes.resize(count);
+			if (std::find(textureTypes.begin(), textureTypes.end(), TETextureTypeVulkan) != textureTypes.end())
+			{
+				result = TEInstanceGetSupportedVkFormats(instance, nullptr, &count);
+				if (result == TEResultInsufficientMemory)
+				{
+					std::vector<VkFormat> formats(count);
+					result = TEInstanceGetSupportedVkFormats(instance, formats.data(), &count);
+					if (result == TEResultSuccess)
+					{
+						formats.resize(count);
+
+						// TODO: need to check all formats supported by tdpy
+						if (std::find(formats.begin(), formats.end(), VK_FORMAT_R8G8B8A8_UNORM) == formats.end())
+						{
+							error = getConfigureError();
+							return false;
+						}
+					}
+				}
+			}
+		}
+	}
+	result = TEInstanceGetSupportedSemaphoreTypes(instance, nullptr, &count);
+	if (result == TEResultInsufficientMemory)
+	{
+		std::vector<TESemaphoreType> semaphoreTypes(count);
+		result = TEInstanceGetSupportedSemaphoreTypes(instance, semaphoreTypes.data(), &count);
+		if (result == TEResultSuccess)
+		{
+			semaphoreTypes.resize(count);
+			if (std::find(semaphoreTypes.begin(), semaphoreTypes.end(), TESemaphoreTypeVulkan) == semaphoreTypes.end())
+			{
+				error = getConfigureError();
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+
+std::string Renderer::getConfigureError() const
+{
+	std::string composed = ConfigureError;
+
+	if (vContext_.physicalDeviceProperties.deviceName != nullptr)
+	{
+		composed += "\nThe selected GPU is: ";
+		composed += vContext_.physicalDeviceProperties.deviceName;
+	}
+
+	return composed;
+}
+
+void Renderer::renderFrame()
+{
+	//onFrameBegin();
+	//onFrameEnd();
+}
+
+void
+Renderer::onFrameBegin()
 {
 	// wait and reset fences are now in presenter_->recordCommands()
 	// if wait fences are enabled here they must be reset after recordCommands success
@@ -151,7 +229,7 @@ VkContext::onFrameBegin()
 }
 
 void 
-VkContext::onFrameEnd()
+Renderer::onFrameEnd()
 {
 
 }
