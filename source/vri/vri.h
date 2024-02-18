@@ -20,8 +20,6 @@ NAMESPACE_BEGIN(vri)
 
 
 
-
-
 struct VContext
 {
 	VkInstance                   instance                 { VK_NULL_HANDLE };
@@ -47,6 +45,7 @@ struct VContext
 	VkCommandPool                presentCommandPool       { VK_NULL_HANDLE };
 
 	std::vector<VkCommandBuffer> graphicsCommandBuffers   { };
+	std::vector<VkCommandBuffer> transferCommandBuffers	  { };
 	uint32_t                     maxFramesInFlight        { 2 };
 	uint32_t                     currentFrame             { 0 };
 
@@ -296,6 +295,12 @@ void createCommandPool(
 void allocateGraphicsCommandBuffers(
 	VContext& vContext);
 
+void allocateCommandBuffers(
+	VkDevice device,
+	VkCommandPool commandPool,
+	std::vector<VkCommandBuffer>& commandBuffers,
+	uint32_t bufferCount);
+
 VkCommandBuffer allocateCommandBuffer(
 	VkDevice device, 
 	VkCommandPool commandPool);
@@ -305,10 +310,10 @@ void freeCommandBuffer(
 	VkCommandPool commandPool, 
 	VkCommandBuffer commandBuffer);
 
-std::vector<VkCommandBuffer> allocateCommandBuffers(
-	VkDevice device, 
-	VkCommandPool commandPool, 
-	uint32_t count);
+//std::vector<VkCommandBuffer> allocateCommandBuffers(
+//	VkDevice device, 
+//	VkCommandPool commandPool, 
+//	uint32_t count);
 
 void freeCommandBuffers(
 	VkDevice device, 

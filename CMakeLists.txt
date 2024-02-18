@@ -48,7 +48,6 @@ if (WIN32)
         # _CRT_SECURE_NO_WARNINGS # Disable warnings for unsafe functions in MSVC
         _UNICODE # Use Unicode character set
         UNICODE # Use Unicode character set
-        GLFW_EXPOSE_NATIVE_WIN32 
         VK_USE_PLATFORM_WIN32_KHR # use Vulkan on Windows
     )
 endif ()

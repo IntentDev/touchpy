@@ -126,7 +126,7 @@ Renderer::allocateInstanceResources()
 	vri::createCommandPool(
 		vContext_.device,
 		vContext_.transferFamily.value(),
-		VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
+		VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, // | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
 		vContext_.transferCommandPool);
 
 	vDestroyCallbacks_.push_back([&]() {
@@ -134,6 +134,19 @@ Renderer::allocateInstanceResources()
 			vkDestroyCommandPool(vContext_.device, vContext_.graphicsCommandPool, nullptr);
 		if (vContext_.transferCommandPool)
 			vkDestroyCommandPool(vContext_.device, vContext_.transferCommandPool, nullptr);
+		});
+
+	vri::allocateCommandBuffers(
+		vContext_.device, 
+		vContext_.transferCommandPool, 
+		vContext_.transferCommandBuffers, 
+		vContext_.maxFramesInFlight);
+
+	vDestroyCallbacks_.push_back([&]() {
+		if (vContext_.transferCommandBuffers.size() > 0)
+			vkFreeCommandBuffers(vContext_.device, vContext_.transferCommandPool, 
+				static_cast<uint32_t>(vContext_.transferCommandBuffers.size()), 
+				vContext_.transferCommandBuffers.data());
 		});
 
 }

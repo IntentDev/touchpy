@@ -39,10 +39,24 @@ private:
 
 	std::unordered_map<std::string, size_t> outputLinkTextureMap_;
 	std::vector<std::string>				pendingOutputTextures_;
+	std::unordered_map<HANDLE, Texture>   outputTextures_;
+	std::unordered_map<HANDLE, Texture>   inputTextures_;
 
 	std::unique_ptr<Renderer>	renderer_;
+	VkDevice device_ { VK_NULL_HANDLE };
+	VkPhysicalDevice physicalDevice_ { VK_NULL_HANDLE };
+	std::vector<uint32_t> queueFamilyIndices_;
+	VkQueue queue_ { VK_NULL_HANDLE };
+	VkCommandBuffer commandBuffer_ { VK_NULL_HANDLE };
+
+
+
 	std::unique_ptr<Texture>	texFromTE_;
 	std::unique_ptr<Texture>	texToTE_;
+
+	bool srcInitialized_ { false };
+	bool dstInitialized_ { false };
+
 
 	static void	eventCallback(
 		TEInstance* instance,

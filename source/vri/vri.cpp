@@ -20,7 +20,6 @@ void colorSetTo<VkClearColorValue>(const Color& color, VkClearColorValue& vkColo
 
 NAMESPACE_BEGIN(vri)
 
-
 bool hasStencilComponent(VkFormat format) {
 	return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
@@ -44,6 +43,7 @@ VkFormat findSupportedFormat(
 
 	throw std::runtime_error("failed to find supported format!");
 }
+
 
 VkFormat findDepthFormat(const VkPhysicalDevice& physicalDevice) {
 	return findSupportedFormat(physicalDevice,
@@ -169,12 +169,13 @@ uint32_t findMemoryType(
 
 	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
 	{
-		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+		if ((typeFilter & (1 << i)) && 
+			(memProperties.memoryTypes[i].propertyFlags & properties) == properties)
 		{
 			return i;
 		}
 	}
-
+	std::cout << "failed to find suitable memory type!" << std::endl;
 	throw std::runtime_error("failed to find suitable memory type!");
 }
 
@@ -988,16 +989,28 @@ void createDevice(
 
 	VkDeviceCreateInfo createInfo{ .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
 
+	// get support for timeline semaphore
+	VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
+	timelineSemaphoreFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+	timelineSemaphoreFeatures.timelineSemaphore = VK_TRUE;
+
+	VkPhysicalDeviceFeatures2 deviceFeatures2{};
+	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+	deviceFeatures2.pNext = &timelineSemaphoreFeatures;
+
+	createInfo.pNext = &deviceFeatures2;
+
+
 	auto queueCreateInfos = vContext.queueFamilyIndices.queueCreateInfos();
 	createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 	createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
-	VkPhysicalDeviceFeatures deviceFeatures{};
-	deviceFeatures.samplerAnisotropy = VK_TRUE;
+	//VkPhysicalDeviceFeatures deviceFeatures{};
+	//deviceFeatures.samplerAnisotropy = VK_TRUE;
 
 	// look this up - adds overhead... 
-	deviceFeatures.sampleRateShading = VK_TRUE; // enable sample shading feature for the device
-	createInfo.pEnabledFeatures = &deviceFeatures;
+	//deviceFeatures.sampleRateShading = VK_TRUE; // enable sample shading feature for the device
+	//createInfo.pEnabledFeatures = &deviceFeatures;
 
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = deviceExtensions.data();
@@ -1097,6 +1110,25 @@ void allocateGraphicsCommandBuffers(VContext& vContext)
 		vContext.graphicsCommandBuffers.data()));
 }
 
+void allocateCommandBuffers(
+	VkDevice device,
+	VkCommandPool commandPool,
+	std::vector<VkCommandBuffer>& commandBuffers,
+	uint32_t bufferCount)
+{
+	commandBuffers.resize(bufferCount);
+
+	VkCommandBufferAllocateInfo commandBufferAllocateInfo = vri::commandBufferAllocateInfo(
+		commandPool,
+		VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+		bufferCount);
+
+
+	VK_CHECK(vkAllocateCommandBuffers(	device,
+										&commandBufferAllocateInfo,
+										commandBuffers.data()));
+}
+
 VkCommandBuffer allocateCommandBuffer(VkDevice device, VkCommandPool commandPool) 
 {
 	VkCommandBufferAllocateInfo allocInfo = vri::commandBufferAllocateInfo(
@@ -1112,15 +1144,15 @@ void freeCommandBuffer(VkDevice device, VkCommandPool commandPool, VkCommandBuff
 	vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
 
-std::vector<VkCommandBuffer> allocateCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t count)
-{
-	VkCommandBufferAllocateInfo allocInfo = vri::commandBufferAllocateInfo(
-		commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, count);
-
-	std::vector<VkCommandBuffer> commandBuffers(count);
-	VK_CHECK(vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()));
-	return commandBuffers;
-}
+//std::vector<VkCommandBuffer> allocateCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t count)
+//{
+//	VkCommandBufferAllocateInfo allocInfo = vri::commandBufferAllocateInfo(
+//		commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, count);
+//
+//	std::vector<VkCommandBuffer> commandBuffers(count);
+//	VK_CHECK(vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()));
+//	return commandBuffers;
+//}
 
 void freeCommandBuffers(VkDevice device, VkCommandPool commandPool, std::vector<VkCommandBuffer> commandBuffers) 
 {

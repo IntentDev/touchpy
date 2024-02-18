@@ -8,9 +8,8 @@ class Texture
 {
 public:
 	Texture();
-	Texture(VkPhysicalDevice physicalDevice_, VkDevice device, const std::vector<uint32_t>& queueFamilyIndices, VkExtent2D extent, VkFormat format);
-
-	Texture(VkDevice device, TEVulkanTexture* teTexture);
+	Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEVulkanTexture* teTexture);
+	Texture(VkPhysicalDevice physicalDevice_, VkDevice device, VkExtent2D extent, VkFormat format);
 
 	~Texture();
 
@@ -20,7 +19,12 @@ public:
 	bool flipped() const { return flipped_; }
 	VkImage image() const { return image_; }
 	VkImageView imageView() const { return imageView_; }
-	TEVulkanTexture* teTexture() const { return teTexture_; }
+	TEVulkanTexture* teVkTexture() const { return teVkTexture_; }
+
+	HANDLE textureHandle() const { return textureHandle_; }
+	HANDLE semaphoreHandle() const { return semaphoreHandle_; }
+	VkSemaphore semaphore() const { return semaphore_; }
+	TEVulkanSemaphore* teSemaphore() const { return teSemaphore_; }
 
 	static void VulkanSemaphoreCallback(HANDLE semaphore, TEObjectEvent event, void* info);
 	static void VulkanTextureCallback(HANDLE texture, TEObjectEvent event, void* info);
@@ -45,7 +49,7 @@ private:
 	VkImage image_ { VK_NULL_HANDLE };
 	VkDeviceMemory memory_ { VK_NULL_HANDLE };
 	VkImageView imageView_ { VK_NULL_HANDLE };
-	TouchObject<TEVulkanTexture> teTexture_ { nullptr };
+	TouchObject<TEVulkanTexture> teVkTexture_ { nullptr };
 
 
 

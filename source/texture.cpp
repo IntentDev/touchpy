@@ -12,9 +12,6 @@ Texture::~Texture()
 {
 	if (imageView_ != VK_NULL_HANDLE)
 		vkDestroyImageView(device_, imageView_, nullptr);
-	
-	//if (image_ != VK_NULL_HANDLE)
-	//	vmaDestroyImage(allocator_, image_, allocation_);
 
 	if (memory_ != VK_NULL_HANDLE)
 		vkFreeMemory(device_, memory_, nullptr);
@@ -24,14 +21,154 @@ Texture::~Texture()
 	
 }
 
+Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEVulkanTexture* texture)
+	:	physicalDevice_(physicalDevice_),
+		device_(device),
+		flipped_(TETextureGetOrigin(texture) == TETextureOriginBottomLeft)
+{
+
+	VkSemaphoreCreateInfo externalSemaphoreCreateInfo{};
+	externalSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
+	externalSemaphoreCreateInfo.flags = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+
+	VkSemaphoreCreateInfo semaphoreCreateInfo{};
+	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	semaphoreCreateInfo.pNext = &externalSemaphoreCreateInfo;
+
+	std::cout << "Creating Texture from TE" << std::endl;
+
+	VK_CHECK(vkCreateSemaphore(device_, &semaphoreCreateInfo, nullptr, &semaphore_));
+
+	std::cout << "Semaphore Created" << std::endl;
+
+	HANDLE externalSemaphoreHandle;
+
+	VkSemaphoreGetWin32HandleInfoKHR externalSemaphoreHandleInfo{};
+	externalSemaphoreHandleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
+	externalSemaphoreHandleInfo.semaphore = semaphore_;
+	externalSemaphoreHandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+
+	auto vkGetSemaphoreWin32HandleKHR = PFN_vkGetSemaphoreWin32HandleKHR(
+									vkGetDeviceProcAddr(device, "vkGetSemaphoreWin32HandleKHR"));
+
+	if (vkGetSemaphoreWin32HandleKHR == nullptr) 
+		std::cout << "vkGetSemaphoreWin32HandleKHR is null" << std::endl;
+	
+	VK_CHECK(vkGetSemaphoreWin32HandleKHR(
+		device_,
+		&externalSemaphoreHandleInfo,
+		&externalSemaphoreHandle));
+
+	std::cout << "External Semaphore Handle: " << externalSemaphoreHandle << std::endl;
+
+	teSemaphore_ = TEVulkanSemaphoreCreate(
+		VK_SEMAPHORE_TYPE_BINARY,
+		externalSemaphoreHandle,
+		VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT,
+		VulkanSemaphoreCallback,
+		this);
+
+	semaphoreHandle_ = TEVulkanSemaphoreGetHandle(teSemaphore_);
+
+	std::cout << "TE Semaphore Handle: " << semaphoreHandle_ << std::endl;
+
+	//CloseHandle(externalSemaphoreHandle);
+
+	textureHandle_ = TEVulkanTextureGetHandle(texture);
+
+	std::cout << "TE Texture Handle: " << textureHandle_ << std::endl;
+
+	VkExternalMemoryHandleTypeFlagsKHR handleType = TEVulkanTextureGetHandleType(texture);
+	format_ = TEVulkanTextureGetFormat(texture);
+	extent_ = {
+		static_cast<uint32_t> (TEVulkanTextureGetWidth(texture)),
+		static_cast<uint32_t> (TEVulkanTextureGetHeight(texture))
+	};
+
+
+	VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
+	externalMemoryImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
+	externalMemoryImageCreateInfo.pNext = nullptr;
+	externalMemoryImageCreateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+
+	VkImageCreateInfo imageCreateInfo{};
+	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageCreateInfo.pNext = &externalMemoryImageCreateInfo;
+	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageCreateInfo.extent.width = extent_.width;
+	imageCreateInfo.extent.height = extent_.height;
+	imageCreateInfo.extent.depth = 1;
+	imageCreateInfo.mipLevels = 1;
+	imageCreateInfo.arrayLayers = 1;
+	imageCreateInfo.format = format_;
+	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	VK_CHECK(vkCreateImage(device_, &imageCreateInfo, nullptr, &image_));
+
+	std::cout << "Image Created: " << image_ << std::endl;
+
+	VkImportMemoryWin32HandleInfoKHR importMemoryInfo = {};
+	importMemoryInfo.sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR;
+	importMemoryInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+	importMemoryInfo.handle = textureHandle_; // Handle to the external memory
+
+	VkMemoryRequirements memRequirements;
+	vkGetImageMemoryRequirements(device, image_, &memRequirements);
+
+	uint32_t memoryTypeIndex = vri::findMemoryType(
+		physicalDevice_,
+		memRequirements.memoryTypeBits,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+	);
+
+	std::cout << "Allocating Memory Size: " << memRequirements.size
+		<< " Memory Type Index: " << memoryTypeIndex << std::endl;
+
+	VkMemoryAllocateInfo memoryAllocateInfo = {};
+	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	memoryAllocateInfo.allocationSize = memRequirements.size;
+	memoryAllocateInfo.memoryTypeIndex = memoryTypeIndex;
+	memoryAllocateInfo.pNext = &importMemoryInfo;
+
+	// Import the external memory into Vulkan
+	VkDeviceMemory externalMemory;
+	VK_CHECK(vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &externalMemory));
+
+	std::cout << "Memory Imported" << std::endl;
+
+	VK_CHECK(vkBindImageMemory(device_, image_, externalMemory, 0));
+
+	std::cout << "Memory Bound to Image" << std::endl;
+
+	VkImageViewCreateInfo viewInfo{};
+	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewInfo.image = image_;
+	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.format = format_;
+	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	viewInfo.subresourceRange.baseMipLevel = 0;
+	viewInfo.subresourceRange.levelCount = 1;
+	viewInfo.subresourceRange.baseArrayLayer = 0;
+	viewInfo.subresourceRange.layerCount = 1;
+
+	VK_CHECK(vkCreateImageView(device_, &viewInfo, nullptr, &imageView_));
+
+	std::cout	<< "Texture Created (from TE), width: " 
+				<< extent_.width << " height: " << extent_.height << std::endl;
+
+}
+
 Texture::Texture(
-	VkPhysicalDevice physicalDevice_,
+	VkPhysicalDevice physicalDevice,
 	VkDevice device,
-	const std::vector<uint32_t>& queueFamilyIndices,
 	VkExtent2D extent,
 	VkFormat format
 )
-	:	physicalDevice_(physicalDevice_),
+	:	physicalDevice_(physicalDevice),
 		device_(device),
 		extent_(extent),
 		format_(format)
@@ -71,12 +208,10 @@ Texture::Texture(
 	imageCreateInfo.arrayLayers = 1;
 	imageCreateInfo.format = format;
 	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT; // VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	imageCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilyIndices.size());
-	imageCreateInfo.pQueueFamilyIndices = queueFamilyIndices.data();
 
 	VK_CHECK(vkCreateImage(device_, &imageCreateInfo, nullptr, &image_));
 
@@ -96,7 +231,8 @@ Texture::Texture(
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 	);
 
-	std::cout << "Allocating Memory Size: " << memRequirements.size << " Memory Type Index: " << memoryTypeIndex << std::endl;
+	std::cout	<< "Allocating Memory Size: " << memRequirements.size 
+				<< " Memory Type Index: " << memoryTypeIndex << std::endl;
 
 	VkMemoryAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -135,7 +271,8 @@ Texture::Texture(
 
 	std::cout << "Getting vkGetMemoryWin32HandleKHR" << std::endl;
 	// need to get the function pointer for vkGetMemoryWin32HandleKHR
-	auto vkGetMemoryWin32HandleKHR = PFN_vkGetMemoryWin32HandleKHR(vkGetDeviceProcAddr(device_, "vkGetMemoryWin32HandleKHR"));
+	auto vkGetMemoryWin32HandleKHR = PFN_vkGetMemoryWin32HandleKHR(
+										vkGetDeviceProcAddr(device_, "vkGetMemoryWin32HandleKHR"));
 
 	if (vkGetMemoryWin32HandleKHR == nullptr) {
 		std::cout << "vkGetMemoryWin32HandleKHR is null" << std::endl;
@@ -148,7 +285,7 @@ Texture::Texture(
 
 	std::cout << "Memory Handle: " << exportTextureHandle << std::endl;
 
-	teTexture_.take(TEVulkanTextureCreate(
+	teVkTexture_.take(TEVulkanTextureCreate(
 						exportTextureHandle, 
 						VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR, 
 						format_, 
@@ -182,7 +319,8 @@ Texture::Texture(
 	exportSemaphoreHandleInfo.semaphore = semaphore_;
 	exportSemaphoreHandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 
-	auto vkGetSemaphoreWin32HandleKHR = PFN_vkGetSemaphoreWin32HandleKHR(vkGetDeviceProcAddr(device, "vkGetSemaphoreWin32HandleKHR"));
+	auto vkGetSemaphoreWin32HandleKHR = PFN_vkGetSemaphoreWin32HandleKHR(
+									vkGetDeviceProcAddr(device, "vkGetSemaphoreWin32HandleKHR"));
 
 	if (vkGetSemaphoreWin32HandleKHR == nullptr) {
 		std::cout << "vkGetSemaphoreWin32HandleKHR is null" << std::endl;
@@ -204,124 +342,10 @@ Texture::Texture(
 	// need to check this 
 	// CloseHandle(exportSemaphoreHandle);
 
-	std::cout << "Texture Created (to TE), width: " << extent_.width << " height: " << extent_.height << std::endl;
+	std::cout	<< "Texture Created (to TE), width: " << extent_.width 
+				<< " height: " << extent_.height << std::endl;
 }
 
-Texture::Texture(VkDevice device, TEVulkanTexture* texture)
-	: device_(device),
-	flipped_(TETextureGetOrigin(texture) == TETextureOriginBottomLeft)
-{
-
-	VkSemaphoreCreateInfo externalSemaphoreCreateInfo{};
-	externalSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
-	externalSemaphoreCreateInfo.flags = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-
-	VkSemaphoreCreateInfo semaphoreCreateInfo{};
-	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	semaphoreCreateInfo.pNext = &externalSemaphoreCreateInfo;
-
-	VK_CHECK(vkCreateSemaphore(device_, &semaphoreCreateInfo, nullptr, &semaphore_));
-
-	HANDLE externalSemaphoreHandle;
-
-	VkSemaphoreGetWin32HandleInfoKHR externalSemaphoreHandleInfo{};
-	externalSemaphoreHandleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
-	externalSemaphoreHandleInfo.semaphore = semaphore_;
-	externalSemaphoreHandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-
-	auto vkGetSemaphoreWin32HandleKHR = PFN_vkGetSemaphoreWin32HandleKHR(vkGetDeviceProcAddr(device, "vkGetSemaphoreWin32HandleKHR"));
-
-	VK_CHECK(vkGetSemaphoreWin32HandleKHR(
-		device_,
-		&externalSemaphoreHandleInfo,
-		&externalSemaphoreHandle));
-
-	teSemaphore_ = TEVulkanSemaphoreCreate(
-		VK_SEMAPHORE_TYPE_BINARY,
-		externalSemaphoreHandle,
-		VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT,
-		VulkanSemaphoreCallback,
-		this);
-
-	semaphoreHandle_ = TEVulkanSemaphoreGetHandle(teSemaphore_);
-
-	CloseHandle(externalSemaphoreHandle);
-
-	textureHandle_ = TEVulkanTextureGetHandle(texture);
-	VkExternalMemoryHandleTypeFlagsKHR handleType = TEVulkanTextureGetHandleType(texture);
-	format_ = TEVulkanTextureGetFormat(texture);
-	extent_ = { 
-		static_cast<uint32_t> (TEVulkanTextureGetWidth(texture)), 
-		static_cast<uint32_t> (TEVulkanTextureGetHeight(texture)) 
-	};
-
-
-	VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
-	externalMemoryImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
-	externalMemoryImageCreateInfo.pNext = nullptr;
-	externalMemoryImageCreateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
-
-	VkImageCreateInfo imageCreateInfo{};
-	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	imageCreateInfo.pNext = &externalMemoryImageCreateInfo;
-	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-	imageCreateInfo.extent.width = extent_.width;
-	imageCreateInfo.extent.height = extent_.height;
-	imageCreateInfo.extent.depth = 1;
-	imageCreateInfo.mipLevels = 1;
-	imageCreateInfo.arrayLayers = 1;
-	imageCreateInfo.format = format_;
-	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-	VK_CHECK(vkCreateImage(device_, &imageCreateInfo, nullptr, &image_));
-
-	VkImportMemoryWin32HandleInfoKHR importMemoryInfo = {};
-	importMemoryInfo.sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR;
-	importMemoryInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR; 
-	importMemoryInfo.handle = textureHandle_; // Handle to the external memory
-
-	VkMemoryRequirements memRequirements;
-	vkGetImageMemoryRequirements(device, image_, &memRequirements);
-
-	uint32_t memoryTypeIndex = vri::findMemoryType(
-		physicalDevice_,
-		memRequirements.memoryTypeBits,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-	);
-
-	
-	VkMemoryAllocateInfo memoryAllocateInfo = {};
-	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	memoryAllocateInfo.allocationSize = memRequirements.size;
-	memoryAllocateInfo.memoryTypeIndex = memoryTypeIndex;
-	memoryAllocateInfo.pNext = &importMemoryInfo;
-
-	// Import the external memory into Vulkan
-	VkDeviceMemory externalMemory;
-	VK_CHECK(vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &externalMemory));
-
-	VK_CHECK(vkBindImageMemory(device_, image_, externalMemory, 0));
-
-	VkImageViewCreateInfo viewInfo{};
-	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	viewInfo.image = image_;
-	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	viewInfo.format = format_;
-	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	viewInfo.subresourceRange.baseMipLevel = 0;
-	viewInfo.subresourceRange.levelCount = 1;
-	viewInfo.subresourceRange.baseArrayLayer = 0;
-	viewInfo.subresourceRange.layerCount = 1;
-
-	VK_CHECK(vkCreateImageView(device_, &viewInfo, nullptr, &imageView_));
-
-	std::cout << "Texture Created (from TE), width: " << extent_.width << " height: " << extent_.height << std::endl;
-
-}
 
 
 
