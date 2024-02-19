@@ -32,7 +32,7 @@ public:
     void onFrameBegin();
     void onFrameEnd();
 
-
+    uint8_t* physicalDeviceUUID() { return physicalDeviceUUID_; }
     vri::VContext& vContext() { return vContext_; }
 
     TEGraphicsContext* teContext() { return teContext_.get(); }
@@ -72,6 +72,7 @@ public:
 
 private:
 
+    uint8_t                             physicalDeviceUUID_[VK_UUID_SIZE];
     vri::VContext                       vContext_{ };
     std::vector<const char*>            requiredExtensions_{ };
     VkDebugUtilsMessengerEXT            debugMessenger_{ nullptr };

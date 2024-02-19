@@ -7,10 +7,11 @@
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "installDir": "${sourceDir}/out/install",
-            "cacheVariables": {
-                "CMAKE_C_COMPILER": "cl.exe",
-                "CMAKE_CXX_COMPILER": "cl.exe"
-            },
+          "cacheVariables": {
+            "CMAKE_C_COMPILER": "cl.exe",
+            "CMAKE_CXX_COMPILER": "cl.exe"
+            //"CMAKE_CUDA_COMPILER": "$env{CUDA_PATH}/bin/nvcc"
+          },
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",

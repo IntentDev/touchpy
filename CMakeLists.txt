@@ -9,14 +9,19 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
-project ("tdpy")
+
 
 # set cpp staandard for all targets unless otherwise specified 
 # with target_compile_features() or set_property()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS OFF)
+# set(CMAKE_CUDA_ARCHITECTURES all)
+# set(CMAKE_CUDA_ARCHITECTURES auto)
+# set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 
+project ("TouchPy")
+# project ("TouchPy" LANGUAGES CXX CUDA)
 
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
 
@@ -37,8 +42,13 @@ endif()
 add_library(tdpy MODULE ${ALL_TDPY_SOURCES})
 # add_library(tdpy MODULE source/tdpy.cpp)
 set_target_properties(tdpy PROPERTIES PREFIX "" SUFFIX ".pyd")
-
+#set_target_properties(tdpy PROPERTIES PREFIX "" SUFFIX ".pyd" CUDA_STANDARD 20
+#		CUDA_STANDARD_REQUIRED YES)
 target_include_directories(tdpy PRIVATE ${SOURCE_DIR})
+# set_target_properties(tdpy PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
+# set_source_files_properties(copykernels.cu PROPERTIES LANGUAGE CUDA)
+# set_source_files_properties(texture.cpp PROPERTIES LANGUAGE CUDA)
 
 # Compile definitions
 if (WIN32)
@@ -67,20 +77,20 @@ endif()
 message(STATUS "VCPKG_ROOT=${VCPKG_ROOT}")
 
 # Vulkan
-# .\vcpkg install vulkan ### haven't tested this...
+# .\vcpkg install vulkan ### haven't tested this, probably best to just install the SDK
 #################################################################################################
 find_package(Vulkan REQUIRED)
 message(STATUS Vulkan_INCLUDE_DIR=${Vulkan_INCLUDE_DIR})
 target_link_libraries(tdpy Vulkan::Vulkan)
 
 # VMA
-# .\vcpkg install vulkan-memory-allocator
+# .\vcpkg install vulkan-memory-allocator ### not needed atm
 #################################################################################################
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 target_link_libraries(tdpy GPUOpen::VulkanMemoryAllocator)
 
 # OpenImageIO
-# .\vcpkg install openimageio
+# .\vcpkg install openimageio ### only needed for VRI to compile, keeping it for now
 #################################################################################################
 find_package(OpenImageIO CONFIG REQUIRED )
 target_link_libraries(tdpy OpenImageIO::OpenImageIO)
@@ -90,14 +100,15 @@ target_link_libraries(tdpy OpenImageIO::OpenImageIO)
 find_package(CUDAToolkit REQUIRED)
 message(STATUS CUDAToolkit_INCLUDE_DIRS=${CUDAToolkit_INCLUDE_DIRS})
 target_include_directories(tdpy PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+target_link_libraries(tdpy CUDA::cudart)
 
 # Python
+# make sure path to python is in the system PATH and PYTHON_PATH is set
 #################################################################################################
 find_package(Python3 COMPONENTS Development Interpreter REQUIRED)
 message(STATUS Python3_INCLUDE_DIRS=${Python3_INCLUDE_DIRS})
 target_include_directories(tdpy PRIVATE ${Python3_INCLUDE_DIRS})
 target_link_libraries(tdpy Python3::Python)
-
 
 # pybind11
 # .\vcpkg install pybind11
@@ -108,7 +119,7 @@ target_include_directories(tdpy PRIVATE ${pybind11_INCLUDE_DIRS})
 target_link_libraries(tdpy pybind11::module)
 
 # TouchEngine-Windows
-# git submodule add https://github.com/TouchDesigner/TouchEngine-Windows.git
+# should come with clone of the repo (use git clone --recurse --init repo_url) 
 #################################################################################################
 target_link_directories(tdpy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/lib)
 target_link_libraries(tdpy TouchEngine)

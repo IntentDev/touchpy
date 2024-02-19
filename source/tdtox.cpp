@@ -6,14 +6,17 @@
 
 
 
+
 TdTox::TdTox(std::string filePath)
 	: filePath_(filePath)
 {
 	createRenderer();
+	cudaInit();
 }
 
 TdTox::~TdTox()
 {
+	vkDestroyFence(device_, submitFence_, nullptr);
 }
 
 void TdTox::createRenderer()
@@ -28,6 +31,65 @@ void TdTox::createRenderer()
 	queue_ = renderer_->vContext().transferQueue;
 	commandBuffer_ = renderer_->vContext().transferCommandBuffers[0];
 
+
+	VkFenceCreateInfo fenceCreateInfo = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0 };
+	vkCreateFence(device_, &fenceCreateInfo, nullptr, &submitFence_);
+
+}
+
+
+void TdTox::cudaInit()
+{
+	setCudaDevice();
+	CUDA_CHECK(cudaStreamCreate(&cudaStream_));
+}
+
+void TdTox::setCudaDevice()
+{
+	int deviceCount;
+	CUDA_CHECK(cudaGetDeviceCount(&deviceCount));
+	if (deviceCount == 0)
+	{
+		std::cerr << "No CUDA devices found" << std::endl;
+		exit(1);
+	}
+
+	int device = 0;
+	int devicesProhibited = 0;
+	cudaDeviceProp deviceProp;
+
+	while (device < deviceCount)
+	{
+		CUDA_CHECK(cudaGetDeviceProperties(&deviceProp, device));
+		if (deviceProp.computeMode != cudaComputeModeProhibited)
+		{
+			int result = std::memcmp(&deviceProp.uuid, renderer_->physicalDeviceUUID(), VK_UUID_SIZE);
+			if (result == 0)
+			{
+				CUDA_CHECK(cudaSetDevice(device));
+				CUDA_CHECK(cudaGetDeviceProperties(&deviceProp, device));
+				std::cout << "CUDA device: " << device << " : " << deviceProp.name
+					<< " with compute " << deviceProp.major << deviceProp.minor << std::endl;
+
+				cudaDevice_ = device;
+				return;
+			}
+		}
+		else
+		{
+			++devicesProhibited;
+		}
+		++device;
+	}
+
+	if (devicesProhibited == deviceCount)
+	{
+		std::cerr << "No Vulkan/CUDA interop capable device found" << std::endl;
+		exit(1);
+	}
+
+	std::cerr << "No CUDA device found with matching UUID" << std::endl;
+	exit(1);
 }
 
 void TdTox::load()
@@ -252,38 +314,24 @@ void TdTox::applyLayoutChange()
 							{
 								if (scope == TEScopeInput)
 								{
-									//std::vector<unsigned char> tex(ImageWidth * ImageHeight * 4);
+									// called before output texture is created so 
+									// we can't create the texture here if it is dependent on the 
+									// output texture size or format
 
-									//std::array<Gradient, 4> gradients{
-									//	Gradient{{0, 0, 0}, {255,0,255}},
-									//	Gradient{{100, 100, 100}, {255, 255, 0}},
-									//	Gradient{{40, 40, 40}, {255, 255, 255}},
-									//	Gradient{{255, 0, 0}, {255, 0, 255}}
-									//};
+									/*if (texFromTE_ && texToTE_.get() == nullptr)
+									{
+										VkExtent2D extent = texFromTE_->extent();
+										VkFormat format = texFromTE_->format();
+										std::cout << "Texture extent: " << extent.width << " x " << extent.height
+											<< " format: " << string_VkFormat(format) << std::endl;
 
-									//const auto& gradient = gradients[myRenderer->getInputImageCount() % gradients.size()];
-									//auto& start = gradient.start;
-									//auto& end = gradient.end;
-									//for (size_t y = 0; y < ImageHeight; y++)
-									//{
-									//	for (size_t x = 0; x < ImageWidth; x++)
-									//	{
-									//		double xColor = static_cast<double>(x) / (ImageWidth - 1);
-									//		double yColor = static_cast<double>(y) / (ImageHeight - 1);
-									//		if (getMode() == Mode::OpenGL)
-									//			yColor = 1.0 - yColor;
-									//		Color xColor1 = {
-									//			start.red + static_cast<int>(yColor * (static_cast<double>(end.red) - start.red)),
-									//			start.green + static_cast<int>(xColor * (static_cast<double>(end.green) - start.green)),
-									//			start.blue + static_cast<int>(xColor * (static_cast<double>(end.blue) - start.blue))
-									//		};
-									//		tex[(y * ImageWidth * 4) + (x * 4) + 0] = xColor1.blue;
-									//		tex[(y * ImageWidth * 4) + (x * 4) + 1] = xColor1.green;
-									//		tex[(y * ImageWidth * 4) + (x * 4) + 2] = xColor1.red;
-									//		tex[(y * ImageWidth * 4) + (x * 4) + 3] = 255;
-									//	}
-									//}
-									//myRenderer->addInputImage(tex.data(), ImageWidth * 4, ImageWidth, ImageHeight);
+										texToTE_ = std::make_unique<Texture>(
+											physicalDevice_,
+											device_,
+											extent,
+											format
+										);
+									}*/
 								}
 								else
 								{
@@ -314,284 +362,159 @@ bool TdTox::applyOutputTextureChange()
 	{
 		size_t imageIndex = outputLinkTextureMap_[identifier];
 
-		//renderer_->updateOutputImage(instance_, imageIndex, identifier);
-
 		if (identifier == "op/topOut1")
 		{
 			TouchObject <TETexture> teTex;
 			TEResult result = TEInstanceLinkGetTextureValue(
 				instance_, identifier.c_str(), TELinkValueCurrent, teTex.take());
 
-			if (result == TEResultSuccess)
+			if (result == TEResultSuccess && TEInstanceHasTextureTransfer(instance_, teTex))
 			{
-				TEVulkanTexture* vkTex = static_cast<TEVulkanTexture*>(teTex.get());
-				//texFromTE_.reset();
 				if (texFromTE_.get() == nullptr)
 				{
 					texFromTE_ = std::make_unique<Texture>(
 						renderer_->vContext().physicalDevice,
 						renderer_->vContext().device,
-						vkTex
+						instance_,
+						static_cast<TEVulkanTexture*>(teTex.get())
 					);
-
-
+					return true; // we need to wait for the texture to be ready
 				}
 
-				//texToTE_.reset();
-				if (texToTE_.get() == nullptr)
+				if (texToTE_.get() == nullptr && texFromTE_)
 				{
-					VkExtent2D extent = 
-					{
-						static_cast<uint32_t> (TEVulkanTextureGetWidth(vkTex)),
-						static_cast<uint32_t> (TEVulkanTextureGetHeight(vkTex))
-					};
-
-					VkFormat format = TEVulkanTextureGetFormat(vkTex);
-					std::cout << "Texture extent: " << extent.width << " x " << extent.height
-						<< " format: " << string_VkFormat(format) << std::endl;
-
 					texToTE_ = std::make_unique<Texture>(
 						physicalDevice_,
 						device_,
-						extent,
-						format
+						texFromTE_->extent(),
+						texFromTE_->format()
 					);
 				}
 
-				if (teTex && TEInstanceHasTextureTransfer(instance_, teTex))
+
+				TouchObject<TESemaphore> teSemaphore;
+				teSemaphore.set(texFromTE_->teVkSemaphore());
+
+				uint64_t waitValue = 0;
+				result = TEInstanceGetTextureTransfer(
+					instance_, 
+					teTex, 
+					teSemaphore.take(),
+					&waitValue);
+
+				//std::cout << "TESemaphore: " << teSemaphore.get() << " waitValue: " << waitValue << std::endl;
+
+				if (result == TEResultSuccess)
 				{
-					TouchObject<TESemaphore> teSemaphore;
-					uint64_t waitValue = 0;
-					result = TEInstanceGetTextureTransfer(instance_, teTex, teSemaphore.take(), &waitValue);
-					if (result == TEResultSuccess)
+					//std::cout << "Texture transfer: " << identifier << " : " << waitValue << std::endl;
+					if (TESemaphoreGetType(teSemaphore) == TESemaphoreTypeVulkan)
 					{
-						std::cout << "Texture transfer: " << identifier << " : " << waitValue << std::endl;
-						if (TESemaphoreGetType(teSemaphore) == TESemaphoreTypeVulkan)
+
+						// wait for semaphore
+						VkSemaphoreWaitInfoKHR waitInfo = {};
+						waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO_KHR;
+						waitInfo.pNext = nullptr;
+						waitInfo.flags = 0;
+						waitInfo.semaphoreCount = 1;
+						VkSemaphore importSemaphore = texFromTE_->semaphore();
+						waitInfo.pSemaphores = &importSemaphore;
+						waitInfo.pValues = &waitValue;
+
+						VK_CHECK(vkWaitSemaphores(device_, &waitInfo, UINT64_MAX));
+			
+						// copy to texToTE_
+						VkCommandBufferBeginInfo beginInfo = {};
+						beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+						beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+						beginInfo.pInheritanceInfo = nullptr;
+
+						VK_CHECK(vkBeginCommandBuffer(commandBuffer_, &beginInfo));
+
+						if (texFromTE_ && !srcInitialized_)
 						{
-							TEVulkanSemaphore* teVulkanSemaphore = static_cast<TEVulkanSemaphore*>(teSemaphore.get());
+							// transition to transfer src optimal
 
-							HANDLE handle = TEVulkanSemaphoreGetHandle(teVulkanSemaphore);
-							VkSemaphoreType type = TEVulkanSemaphoreGetType(teVulkanSemaphore);
-							VkExternalSemaphoreHandleTypeFlagBits handleType = TEVulkanSemaphoreGetHandleType(teVulkanSemaphore);
-							
-							std::cout << "Semaphore handle: " << handle << " type: " << type << " handleType: " << handleType << std::endl;
-
-							VkSemaphoreTypeCreateInfoKHR semaphoreTypeCreateInfo;
-							semaphoreTypeCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
-							semaphoreTypeCreateInfo.pNext = nullptr;
-							semaphoreTypeCreateInfo.semaphoreType = type;
-							semaphoreTypeCreateInfo.initialValue = waitValue;
-
-							VkSemaphoreCreateInfo semaphoreCreateInfo = { 
-								VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, &semaphoreTypeCreateInfo, 0 };
-	
-							VkSemaphore importSemaphore;
-							VkResult vkResult = vkCreateSemaphore(
-								device_,
-								&semaphoreCreateInfo,
-								nullptr,
-								&importSemaphore
+							texFromTE_->cmdTransitionImageLayout(
+								commandBuffer_,
+								VK_IMAGE_LAYOUT_UNDEFINED,
+								VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 							);
 
-							//std::cout << "vkCreateSemaphore: " << string_VkResult(vkResult) << std::endl;
-
-							if (vkResult == VK_SUCCESS)
-							{
-								// import semaphore
-								VkImportSemaphoreWin32HandleInfoKHR importSemaphoreInfo = {};
-								importSemaphoreInfo.sType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR;
-								importSemaphoreInfo.pNext = nullptr;
-								importSemaphoreInfo.semaphore = importSemaphore;
-								importSemaphoreInfo.flags = 0;// VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR;
-								importSemaphoreInfo.handleType = handleType;
-								importSemaphoreInfo.handle = handle;
-								importSemaphoreInfo.name = nullptr;
-
-								auto vkImportSemaphoreWin32HandleKHR = PFN_vkImportSemaphoreWin32HandleKHR(
-									vkGetDeviceProcAddr(device_, "vkImportSemaphoreWin32HandleKHR"));
-
-								vkResult = vkImportSemaphoreWin32HandleKHR(device_, &importSemaphoreInfo);
-
-								std::cout << "vkImportSemaphoreWin32HandleKHR: " << string_VkResult(vkResult) << std::endl;
-
-								if (vkResult == VK_SUCCESS)
-								{
-									// wait for semaphore
-									VkSemaphoreWaitInfoKHR waitInfo = {};
-									waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO_KHR;
-									waitInfo.pNext = nullptr;
-									waitInfo.flags = 0;
-									waitInfo.semaphoreCount = 1;
-									waitInfo.pSemaphores = &importSemaphore;
-									waitInfo.pValues = &waitValue;
-
-									vkResult = vkWaitSemaphores(device_, &waitInfo, UINT64_MAX);
-
-									if (vkResult == VK_SUCCESS)
-									{
-										// copy to texToTE_
-										VkCommandBufferBeginInfo beginInfo = {};
-										beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-										beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-										beginInfo.pInheritanceInfo = nullptr;
-
-										vkBeginCommandBuffer(commandBuffer_, &beginInfo);
-
-										if (!srcInitialized_)
-										{
-											// transition to transfer src optimal
-											VkImageMemoryBarrier imageMemoryBarrier = {};
-											imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-											imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-											imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-											imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-											imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-											imageMemoryBarrier.image = texFromTE_->image();
-											imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-											imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
-											imageMemoryBarrier.subresourceRange.levelCount = 1;
-											imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
-											imageMemoryBarrier.subresourceRange.layerCount = 1;
-											imageMemoryBarrier.srcAccessMask = 0;
-											imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-
-											vkCmdPipelineBarrier(
-												commandBuffer_,
-												VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-												VK_PIPELINE_STAGE_TRANSFER_BIT,
-												0,
-												0, nullptr,
-												0, nullptr,
-												1, &imageMemoryBarrier
-											);
-
-											srcInitialized_ = true;
-											std::cout << "srcInitialized_" << std::endl;
-										}
-
-
-										if (!dstInitialized_)
-										{
-											// transition to transfer dst optimal
-											VkImageMemoryBarrier imageMemoryBarrier = {};
-											imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-											imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-											imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-											imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-											imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-											imageMemoryBarrier.image = texToTE_->image();
-											imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-											imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
-											imageMemoryBarrier.subresourceRange.levelCount = 1;
-											imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
-											imageMemoryBarrier.subresourceRange.layerCount = 1;
-											imageMemoryBarrier.srcAccessMask = 0;
-											imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-											vkCmdPipelineBarrier(
-												commandBuffer_,
-												VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-												VK_PIPELINE_STAGE_TRANSFER_BIT,
-												0,
-												0, nullptr,
-												0, nullptr,
-												1, &imageMemoryBarrier
-											);
-
-											dstInitialized_ = true;
-											std::cout << "dstInitialized_" << std::endl;
-										}
-
-
-										VkImageSubresourceLayers subresourceLayers = {};
-										subresourceLayers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-										subresourceLayers.mipLevel = 0;
-										subresourceLayers.baseArrayLayer = 0;
-										subresourceLayers.layerCount = 1;
-
-										VkImageCopy imageCopy = {};
-										imageCopy.srcSubresource = subresourceLayers;
-										imageCopy.dstSubresource = subresourceLayers;
-										imageCopy.extent = { texToTE_->extent().width, texToTE_->extent().height, 1 };
-
-
-										vkCmdCopyImage(
-											commandBuffer_,
-											texFromTE_->image(),
-											VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-											texToTE_->image(),
-											VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-											1,
-											&imageCopy
-										);
-
-										vkEndCommandBuffer(commandBuffer_);
-
-										uint64_t signalValue = waitValue + 1; // or any appropriate value
-
-										VkTimelineSemaphoreSubmitInfo timelineSemaphoreSubmitInfo = {};
-										timelineSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
-										timelineSemaphoreSubmitInfo.pNext = nullptr;
-										timelineSemaphoreSubmitInfo.waitSemaphoreValueCount = 1; 
-										timelineSemaphoreSubmitInfo.pWaitSemaphoreValues = &waitValue; 
-										timelineSemaphoreSubmitInfo.signalSemaphoreValueCount = 1; // Signaling one semaphore
-										timelineSemaphoreSubmitInfo.pSignalSemaphoreValues = &signalValue; // Value to signal upon completion
-
-										VkSubmitInfo submitInfo = {};
-										submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-										submitInfo.pNext = &timelineSemaphoreSubmitInfo; // Point to the timeline semaphore submit info
-										submitInfo.commandBufferCount = 1;
-										submitInfo.pCommandBuffers = &commandBuffer_;
-
-										// Wait on the imported semaphore before starting the GPU work
-										submitInfo.waitSemaphoreCount = 1;
-										submitInfo.pWaitSemaphores = &importSemaphore; // The semaphore you waited on
-										VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_TRANSFER_BIT }; 
-										submitInfo.pWaitDstStageMask = waitStages;
-
-										// Signal this semaphore once the copy operation is done
-										submitInfo.signalSemaphoreCount = 1;
-										VkSemaphore signalSemaphores[] = { texToTE_.get()->semaphore() };
-										submitInfo.pSignalSemaphores = signalSemaphores;
-
-										// Optionally, use a fence to wait on the CPU side for the operation to complete
-										VkFence submitFence;
-										VkFenceCreateInfo fenceCreateInfo = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0 };
-										vkCreateFence(device_, &fenceCreateInfo, nullptr, &submitFence);
-
-										vkQueueSubmit(queue_, 1, &submitInfo, submitFence);
-										vkWaitForFences(device_, 1, &submitFence, VK_TRUE, UINT64_MAX); // Wait for the operation to complete
-
-										vkDestroyFence(device_, submitFence, nullptr);
-
-
-
-									}
-									else
-									{
-										std::cout << string_VkResult(vkResult) << std::endl;
-									}
-								}
-								else
-								{
-									std::cout << string_VkResult(vkResult) << std::endl;
-								}
-							}
-							else
-							{
-								std::cout << string_VkResult(vkResult) << std::endl;
-							}
-
-
+							srcInitialized_ = true;
+							std::cout << "srcInitialized_" << std::endl;
 						}
+
+
+						if (texToTE_ && !dstInitialized_)
+						{
+							// transition to transfer dst optimal
+							texToTE_->cmdTransitionImageLayout(
+								commandBuffer_,
+								VK_IMAGE_LAYOUT_UNDEFINED,
+								VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+							);
+
+
+							dstInitialized_ = true;
+							std::cout << "dstInitialized_" << std::endl;
+						}
+
+						VkImageSubresourceLayers subresourceLayers = {};
+						subresourceLayers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+						subresourceLayers.mipLevel = 0;
+						subresourceLayers.baseArrayLayer = 0;
+						subresourceLayers.layerCount = 1;
+
+						VkImageCopy imageCopy = {};
+						imageCopy.srcSubresource = subresourceLayers;
+						imageCopy.dstSubresource = subresourceLayers;
+						imageCopy.extent = { texToTE_->extent().width, texToTE_->extent().height, 1 };
+
+
+						vkCmdCopyImage(
+							commandBuffer_,
+							texFromTE_->image(),
+							VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+							texToTE_->image(),
+							VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+							1,
+							&imageCopy
+						);
+
+						VK_CHECK(vkEndCommandBuffer(commandBuffer_));
+
+						uint64_t signalValue = waitValue + 1;
+
+						VkTimelineSemaphoreSubmitInfo timelineSemaphoreSubmitInfo = {};
+						timelineSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+						timelineSemaphoreSubmitInfo.pNext = nullptr;
+						timelineSemaphoreSubmitInfo.waitSemaphoreValueCount = 1; 
+						timelineSemaphoreSubmitInfo.pWaitSemaphoreValues = &waitValue; 
+						timelineSemaphoreSubmitInfo.signalSemaphoreValueCount = 1; 
+						timelineSemaphoreSubmitInfo.pSignalSemaphoreValues = &signalValue; 
+
+						VkSubmitInfo submitInfo = {};
+						submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+						submitInfo.pNext = &timelineSemaphoreSubmitInfo; 
+						submitInfo.commandBufferCount = 1;
+						submitInfo.pCommandBuffers = &commandBuffer_;
+
+						submitInfo.waitSemaphoreCount = 1;
+						submitInfo.pWaitSemaphores = &importSemaphore;
+						VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_TRANSFER_BIT }; 
+						submitInfo.pWaitDstStageMask = waitStages;
+
+							
+						submitInfo.signalSemaphoreCount = 1;
+						VkSemaphore signalSemaphores[] = { texToTE_.get()->semaphore() };
+						submitInfo.pSignalSemaphores = signalSemaphores;
+
+						VK_CHECK(vkQueueSubmit(queue_, 1, &submitInfo, submitFence_));
+						VK_CHECK(vkWaitForFences(device_, 1, &submitFence_, VK_TRUE, UINT64_MAX));
+						VK_CHECK(vkResetFences(device_, 1, &submitFence_));
+
 					}
 				}
-
-
-			}
-			else
-			{
-				std::cout << TEResultGetDescription(result) << std::endl;
 			}
 		}
 	}
@@ -690,7 +613,7 @@ void TdTox::update()
 							{
 								if (texToTE_)
 								{
-									std::cout << "TELinkTypeTexture: " << info->identifier << std::endl;
+									//std::cout << "TELinkTypeTexture: " << info->identifier << std::endl;
 
 									TouchObject<TETexture> texture;
 									texture.set(texToTE_->teVkTexture());
@@ -706,12 +629,12 @@ void TdTox::update()
 									result = TEInstanceLinkSetTextureValue(
 										instance_, info->identifier, texture, renderer_->teContext());
 
-									std::cout << "TEInstanceLinkSetTextureValue: " << TEResultGetDescription(result) << std::endl;
+									//std::cout << "TEInstanceLinkSetTextureValue: " << TEResultGetDescription(result) << std::endl;
 
 									if (result == TEResultSuccess)
 									{
 										result = TEInstanceAddTextureTransfer(
-											instance_, texture, texToTE_->teSemaphore(), waitValue);
+											instance_, texture, texToTE_->teVkSemaphore(), waitValue);
 									}
 
 								//}

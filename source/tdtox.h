@@ -3,6 +3,8 @@
 #include <TouchEngine/TouchEngine.h>
 #include "renderer.h"
 #include "texture.h"
+#include <common/cuda_helpers.h>
+
 
 #include <string>
 #include <mutex>
@@ -22,41 +24,43 @@ public:
 
 
 private:
-	std::mutex   mutex_;
-	bool 		 pendingLayoutChange_ { false };
-	bool         loaded_ { false };
-	std::string  filePath_;
-	bool	     configureRenderer_ { false };	
-	TEResult     configureResult_ { TEResultSuccess };
-	bool		 configureError_{ false };
-	bool 		 inFrame_ { false };
+	std::mutex                              mutex_;
+	bool                                    pendingLayoutChange_ { false };
+	bool                                    loaded_              { false };
+	std::string                             filePath_;
+	bool                                    configureRenderer_   { false }; 
+	TEResult                                configureResult_     { TEResultSuccess };
+	bool                                    configureError_      { false };
+	bool                                    inFrame_             { false };
 
-	TouchObject<TEInstance>  instance_ { nullptr };
-	double       inputSampleRate_ { 60.0 };
-	int32_t      inputChannelCount_ { 0 };
+	TouchObject<TEInstance>                 instance_            { nullptr };
+	double                                  inputSampleRate_     { 60.0 };
+	int32_t                                 inputChannelCount_   { 0 };
 
-	int64_t      framesPerSecond_ { 60 };
+	int64_t                                 framesPerSecond_     { 60 };
 
 	std::unordered_map<std::string, size_t> outputLinkTextureMap_;
-	std::vector<std::string>				pendingOutputTextures_;
-	std::unordered_map<HANDLE, Texture>   outputTextures_;
-	std::unordered_map<HANDLE, Texture>   inputTextures_;
+	std::vector<std::string>                pendingOutputTextures_;
+	std::unordered_map<HANDLE, Texture>     outputTextures_;
+	std::unordered_map<HANDLE, Texture>     inputTextures_;
 
-	std::unique_ptr<Renderer>	renderer_;
-	VkDevice device_ { VK_NULL_HANDLE };
-	VkPhysicalDevice physicalDevice_ { VK_NULL_HANDLE };
-	std::vector<uint32_t> queueFamilyIndices_;
-	VkQueue queue_ { VK_NULL_HANDLE };
-	VkCommandBuffer commandBuffer_ { VK_NULL_HANDLE };
+	std::unique_ptr<Renderer>               renderer_;
+	VkDevice                                device_              { VK_NULL_HANDLE };
+	VkPhysicalDevice                        physicalDevice_      { VK_NULL_HANDLE };
+	std::vector<uint32_t>                   queueFamilyIndices_;
+	VkQueue                                 queue_               { VK_NULL_HANDLE };
+	VkCommandBuffer                         commandBuffer_       { VK_NULL_HANDLE };
 
+	std::unique_ptr<Texture>                texFromTE_;
+	std::unique_ptr<Texture>                texToTE_;
 
+	bool                                    srcInitialized_      { false };
+	bool                                    dstInitialized_      { false };
 
-	std::unique_ptr<Texture>	texFromTE_;
-	std::unique_ptr<Texture>	texToTE_;
+	VkFence                                 submitFence_         { VK_NULL_HANDLE };
 
-	bool srcInitialized_ { false };
-	bool dstInitialized_ { false };
-
+	cudaStream_t                            cudaStream_          { nullptr };
+	int										cudaDevice_ 		 { -1 };
 
 	static void	eventCallback(
 		TEInstance* instance,
@@ -83,10 +87,9 @@ private:
 	void getState(bool& configured, bool& loaded, bool& linksChanged, bool& inFrame);
 	void setInFrame(bool inFrame);
 
-
-
-
 	void createRenderer();
+	void cudaInit();
+	void setCudaDevice();
 
 
 
