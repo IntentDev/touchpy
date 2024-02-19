@@ -55,6 +55,9 @@ Renderer::init()
 	{
 		std::cout << "TEVulkanContext created" << std::endl;
 	}
+
+	
+    std::memcpy(physicalDeviceUUID_, physicalDeviceIDProperties.deviceUUID, sizeof(uint8_t) * 16);
 }
 
 void 

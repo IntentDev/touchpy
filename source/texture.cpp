@@ -10,6 +10,27 @@ Texture::Texture()
 
 Texture::~Texture()
 {
+	if (cudaBuffer_)
+		CUDA_CHECK(cudaFree(cudaBuffer_));
+	if (cudaSurface_ != 0)
+		CUDA_CHECK(cudaDestroySurfaceObject(cudaSurface_));
+	if (cudaArray_)
+		CUDA_CHECK(cudaFreeArray(cudaArray_));
+	if (cudaMipmappedArray_)
+		CUDA_CHECK(cudaFreeMipmappedArray(cudaMipmappedArray_));
+	if (cudaExtImageMemory_)
+		CUDA_CHECK(cudaDestroyExternalMemory(cudaExtImageMemory_));
+	if (cudaExtSemaphore_)
+		CUDA_CHECK(cudaDestroyExternalSemaphore(cudaExtSemaphore_));
+	//if (cudaExtCudaUpdateVkSemaphore_)
+	//	CUDA_CHECK(cudaDestroyExternalSemaphore(cudaExtCudaUpdateVkSemaphore_));
+
+	if (cudaSemaphore_ != VK_NULL_HANDLE)
+		vkDestroySemaphore(device_, cudaSemaphore_, nullptr);
+
+	//if (cudaCudaUpdateVkSemaphore_ != VK_NULL_HANDLE)
+	//	vkDestroySemaphore(device_, cudaCudaUpdateVkSemaphore_, nullptr);
+
 	if (imageView_ != VK_NULL_HANDLE)
 		vkDestroyImageView(device_, imageView_, nullptr);
 
@@ -18,62 +39,20 @@ Texture::~Texture()
 	
 	if (semaphore_ != VK_NULL_HANDLE)
 		vkDestroySemaphore(device_, semaphore_, nullptr);
-	
+
+	if (image_ != VK_NULL_HANDLE)
+		vkDestroyImage(device_, image_, nullptr);
+
+
+
 }
 
-Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEVulkanTexture* texture)
+Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* teInstance, TEVulkanTexture* texture)
 	:	physicalDevice_(physicalDevice_),
 		device_(device),
 		flipped_(TETextureGetOrigin(texture) == TETextureOriginBottomLeft)
+
 {
-
-	VkSemaphoreCreateInfo externalSemaphoreCreateInfo{};
-	externalSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
-	externalSemaphoreCreateInfo.flags = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-
-	VkSemaphoreCreateInfo semaphoreCreateInfo{};
-	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	semaphoreCreateInfo.pNext = &externalSemaphoreCreateInfo;
-
-	std::cout << "Creating Texture from TE" << std::endl;
-
-	VK_CHECK(vkCreateSemaphore(device_, &semaphoreCreateInfo, nullptr, &semaphore_));
-
-	std::cout << "Semaphore Created" << std::endl;
-
-	HANDLE externalSemaphoreHandle;
-
-	VkSemaphoreGetWin32HandleInfoKHR externalSemaphoreHandleInfo{};
-	externalSemaphoreHandleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
-	externalSemaphoreHandleInfo.semaphore = semaphore_;
-	externalSemaphoreHandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-
-	auto vkGetSemaphoreWin32HandleKHR = PFN_vkGetSemaphoreWin32HandleKHR(
-									vkGetDeviceProcAddr(device, "vkGetSemaphoreWin32HandleKHR"));
-
-	if (vkGetSemaphoreWin32HandleKHR == nullptr) 
-		std::cout << "vkGetSemaphoreWin32HandleKHR is null" << std::endl;
-	
-	VK_CHECK(vkGetSemaphoreWin32HandleKHR(
-		device_,
-		&externalSemaphoreHandleInfo,
-		&externalSemaphoreHandle));
-
-	std::cout << "External Semaphore Handle: " << externalSemaphoreHandle << std::endl;
-
-	teSemaphore_ = TEVulkanSemaphoreCreate(
-		VK_SEMAPHORE_TYPE_BINARY,
-		externalSemaphoreHandle,
-		VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT,
-		VulkanSemaphoreCallback,
-		this);
-
-	semaphoreHandle_ = TEVulkanSemaphoreGetHandle(teSemaphore_);
-
-	std::cout << "TE Semaphore Handle: " << semaphoreHandle_ << std::endl;
-
-	//CloseHandle(externalSemaphoreHandle);
-
 	textureHandle_ = TEVulkanTextureGetHandle(texture);
 
 	std::cout << "TE Texture Handle: " << textureHandle_ << std::endl;
@@ -85,11 +64,15 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEVulkanText
 		static_cast<uint32_t> (TEVulkanTextureGetHeight(texture))
 	};
 
+	// need to create function that sets up pitch depending on format and sets the 
+	// format for cuda memory allocation
+	imagePitch_ = extent_.width * sizeof(uint8_t) * 4;
+	imageSize_ = imagePitch_ * extent_.height;
 
 	VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
 	externalMemoryImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
 	externalMemoryImageCreateInfo.pNext = nullptr;
-	externalMemoryImageCreateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+	externalMemoryImageCreateInfo.handleTypes = handleType;
 
 	VkImageCreateInfo imageCreateInfo{};
 	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -160,6 +143,23 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEVulkanText
 	std::cout	<< "Texture Created (from TE), width: " 
 				<< extent_.width << " height: " << extent_.height << std::endl;
 
+	importSemaphore(teInstance, texture);
+
+	VkSemaphoreCreateInfo exportSemaphoreCreateInfo{};
+	exportSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
+	exportSemaphoreCreateInfo.flags = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+	
+	VkSemaphoreCreateInfo semaphoreCreateInfo{};
+	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	semaphoreCreateInfo.pNext = &exportSemaphoreCreateInfo;
+
+	VK_CHECK(vkCreateSemaphore(device_, &semaphoreCreateInfo, nullptr, &cudaSemaphore_));
+
+	cudaImportSemaphore();
+	cudaImportImageMemory();
+	cudaAllocateMemory();
+
+
 }
 
 Texture::Texture(
@@ -191,6 +191,11 @@ Texture::Texture(
 	//	std::cout << "VK_KHR_external_memory_win32 extension supported." << std::endl;
 	//}
 
+	// need to create function that sets up pitch depending on format and sets the 
+	// format for cuda memory allocation
+	imagePitch_ = extent_.width * sizeof(uint8_t) * 4;
+	imageSize_ = imagePitch_ * extent_.height;
+
 	std::cout << "Creating Texture to TE" << std::endl;
 
 	VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
@@ -208,7 +213,7 @@ Texture::Texture(
 	imageCreateInfo.arrayLayers = 1;
 	imageCreateInfo.format = format;
 	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -263,27 +268,7 @@ Texture::Texture(
 
 	std::cout << "Image View Created" << std::endl;
 
-	HANDLE exportTextureHandle;
-	VkMemoryGetWin32HandleInfoKHR memoryHandleInfo = {};
-	memoryHandleInfo.sType = VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR;
-	memoryHandleInfo.memory = memory_;
-	memoryHandleInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
-
-	std::cout << "Getting vkGetMemoryWin32HandleKHR" << std::endl;
-	// need to get the function pointer for vkGetMemoryWin32HandleKHR
-	auto vkGetMemoryWin32HandleKHR = PFN_vkGetMemoryWin32HandleKHR(
-										vkGetDeviceProcAddr(device_, "vkGetMemoryWin32HandleKHR"));
-
-	if (vkGetMemoryWin32HandleKHR == nullptr) {
-		std::cout << "vkGetMemoryWin32HandleKHR is null" << std::endl;
-	}
-
-	VK_CHECK(vkGetMemoryWin32HandleKHR(
-		device_,
-		&memoryHandleInfo,
-		&exportTextureHandle));
-
-	std::cout << "Memory Handle: " << exportTextureHandle << std::endl;
+	HANDLE exportTextureHandle = getVkMemoryHandle(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR, memory_);
 
 	teVkTexture_.take(TEVulkanTextureCreate(
 						exportTextureHandle, 
@@ -312,44 +297,181 @@ Texture::Texture(
 
 	std::cout << "Semaphore Created" << std::endl;
 
-	HANDLE exportSemaphoreHandle;
+	HANDLE exportSemaphoreHandle = getVkSemaphoreHandle(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT, semaphore_);
 
-	VkSemaphoreGetWin32HandleInfoKHR exportSemaphoreHandleInfo{};
-	exportSemaphoreHandleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
-	exportSemaphoreHandleInfo.semaphore = semaphore_;
-	exportSemaphoreHandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-
-	auto vkGetSemaphoreWin32HandleKHR = PFN_vkGetSemaphoreWin32HandleKHR(
-									vkGetDeviceProcAddr(device, "vkGetSemaphoreWin32HandleKHR"));
-
-	if (vkGetSemaphoreWin32HandleKHR == nullptr) {
-		std::cout << "vkGetSemaphoreWin32HandleKHR is null" << std::endl;
-	}
-
-	VK_CHECK(vkGetSemaphoreWin32HandleKHR(
-				device_, 
-				&exportSemaphoreHandleInfo, 
-				&exportSemaphoreHandle));
-
-	std::cout << "Semaphore Handle: " << exportSemaphoreHandle << std::endl;
-
-	teSemaphore_ = TEVulkanSemaphoreCreate(
+	teVkSemaphore_.set(TEVulkanSemaphoreCreate(
 		VK_SEMAPHORE_TYPE_BINARY,
 		exportSemaphoreHandle,
 		VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT,
 		VulkanSemaphoreCallback,
-		this);
+		this));
+
 	// need to check this 
 	// CloseHandle(exportSemaphoreHandle);
 
 	std::cout	<< "Texture Created (to TE), width: " << extent_.width 
 				<< " height: " << extent_.height << std::endl;
+
+
+
 }
 
 
 
 
-void Texture::VulkanSemaphoreCallback(HANDLE semaphore, TEObjectEvent event, void* info) 
+void Texture::importSemaphore(TEInstance* teInstance, TETexture* teTexture)
+{
+
+	TouchObject<TESemaphore> teSemaphore;
+	uint64_t waitValue = 0;
+	TEResult result = TEInstanceGetTextureTransfer(teInstance, teTexture, teSemaphore.take(), &waitValue);
+
+	//std::cout << "TESemaphore: " << teSemaphore.get() << " waitValue: " << waitValue << std::endl;
+
+	if (result == TEResultSuccess)
+	{
+		//std::cout << "Texture transfer: " << identifier << " : " << waitValue << std::endl;
+		if (TESemaphoreGetType(teSemaphore) == TESemaphoreTypeVulkan)
+		{
+			TEVulkanSemaphore* teVulkanSemaphore = static_cast<TEVulkanSemaphore*>(teSemaphore.get());
+
+			semaphoreHandle_ = TEVulkanSemaphoreGetHandle(teVulkanSemaphore);
+			semaphoreType_ = TEVulkanSemaphoreGetType(teVulkanSemaphore);
+			semaphoreHandleType_ = TEVulkanSemaphoreGetHandleType(teVulkanSemaphore);
+
+			//std::cout << "Semaphore handle: " << handle 
+			// << " type: " << type << " handleType: " << handleType << std::endl;
+
+			VkSemaphoreTypeCreateInfoKHR semaphoreTypeCreateInfo;
+			semaphoreTypeCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
+			semaphoreTypeCreateInfo.pNext = nullptr;
+			semaphoreTypeCreateInfo.semaphoreType = semaphoreType_;
+			semaphoreTypeCreateInfo.initialValue = waitValue;
+
+			VkSemaphoreCreateInfo semaphoreCreateInfo = {
+				VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, &semaphoreTypeCreateInfo, 0 };
+
+			//VkSemaphore importSemaphore;
+			VK_CHECK(vkCreateSemaphore(
+				device_,
+				&semaphoreCreateInfo,
+				nullptr,
+				&semaphore_
+			));
+
+			//std::cout << "vkCreateSemaphore: " << string_VkResult(vkResult) << std::endl;
+
+
+			// import semaphore
+			VkImportSemaphoreWin32HandleInfoKHR importSemaphoreInfo = {};
+			importSemaphoreInfo.sType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR;
+			importSemaphoreInfo.pNext = nullptr;
+			importSemaphoreInfo.semaphore = semaphore_;
+			importSemaphoreInfo.flags = 0;// VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR;
+			importSemaphoreInfo.handleType = semaphoreHandleType_;
+			importSemaphoreInfo.handle = semaphoreHandle_;
+			importSemaphoreInfo.name = nullptr;
+
+			auto vkImportSemaphoreWin32HandleKHR = PFN_vkImportSemaphoreWin32HandleKHR(
+				vkGetDeviceProcAddr(device_, "vkImportSemaphoreWin32HandleKHR"));
+
+			VK_CHECK(vkImportSemaphoreWin32HandleKHR(device_, &importSemaphoreInfo));
+
+			//std::cout << "vkImportSemaphoreWin32HandleKHR: " << string_VkResult(vkResult) << std::endl;
+		}
+	}
+}
+
+void Texture::cmdTransitionImageLayout(VkCommandBuffer cmdBuffer, VkImageLayout oldLayout, VkImageLayout newLayout)
+{
+	VkImageMemoryBarrier imageMemBarrier = {};
+	imageMemBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	imageMemBarrier.oldLayout = oldLayout;
+	imageMemBarrier.newLayout = newLayout;
+	imageMemBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imageMemBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	imageMemBarrier.image = image_;
+	imageMemBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageMemBarrier.subresourceRange.baseMipLevel = 0;
+	imageMemBarrier.subresourceRange.levelCount = 1;
+	imageMemBarrier.subresourceRange.baseArrayLayer = 0;
+	imageMemBarrier.subresourceRange.layerCount = 1;
+
+
+	VkPipelineStageFlags sourceStage;
+	VkPipelineStageFlags dstStage;
+
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	{
+		imageMemBarrier.srcAccessMask = 0;
+		imageMemBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+	{
+		imageMemBarrier.srcAccessMask = 0;
+		imageMemBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	{
+		imageMemBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		imageMemBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	{
+		imageMemBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		imageMemBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+	{
+		imageMemBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		imageMemBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	{
+		imageMemBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		imageMemBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+		imageMemBarrier.srcAccessMask = 0;
+		imageMemBarrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	}
+	else
+		throw std::invalid_argument("Unsupported layout transition!");
+
+
+	vkCmdPipelineBarrier(
+		cmdBuffer,
+		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &imageMemBarrier
+	);
+}
+
+void Texture::VulkanSemaphoreCallback(HANDLE semaphore, TEObjectEvent event, void* info)
 {
 	switch (event) 
 	{
@@ -381,6 +503,152 @@ void Texture::VulkanTextureCallback(HANDLE texture, TEObjectEvent event, void* i
 		break;
 
 	}
+}
+
+HANDLE Texture::getVkSemaphoreHandle(
+	VkExternalSemaphoreHandleTypeFlagBitsKHR externalSemaphoreHandleType,
+	VkSemaphore& semaphore
+)
+{
+	HANDLE handle;
+
+	VkSemaphoreGetWin32HandleInfoKHR vulkanSemaphoreGetWin32HandleInfoKHR = {};
+	vulkanSemaphoreGetWin32HandleInfoKHR.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
+	vulkanSemaphoreGetWin32HandleInfoKHR.pNext = NULL;
+	vulkanSemaphoreGetWin32HandleInfoKHR.semaphore = semaphore;
+	vulkanSemaphoreGetWin32HandleInfoKHR.handleType = externalSemaphoreHandleType;
+
+	auto vkGetSemaphoreWin32HandleKHR = PFN_vkGetSemaphoreWin32HandleKHR(
+		vkGetDeviceProcAddr(device_, "vkGetSemaphoreWin32HandleKHR"));
+
+	vkGetSemaphoreWin32HandleKHR(device_, &vulkanSemaphoreGetWin32HandleInfoKHR,
+		&handle);
+
+	return handle;
+}
+
+HANDLE Texture::getVkMemoryHandle(VkExternalMemoryHandleTypeFlagBitsKHR externalMemoryHandleType, VkDeviceMemory& memory)
+{
+	HANDLE handle;
+	VkMemoryGetWin32HandleInfoKHR memoryHandleInfo = {};
+	memoryHandleInfo.sType = VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR;
+	memoryHandleInfo.memory = memory;
+	memoryHandleInfo.handleType = externalMemoryHandleType;
+
+	auto vkGetMemoryWin32HandleKHR = PFN_vkGetMemoryWin32HandleKHR(
+		vkGetDeviceProcAddr(device_, "vkGetMemoryWin32HandleKHR"));
+
+	VK_CHECK(vkGetMemoryWin32HandleKHR(device_, &memoryHandleInfo, &handle));
+
+	return handle;
+}
+
+extern cudaError_t
+memCopyFromSurfaceCharBRGA(
+	unsigned char* dst,
+	int width,
+	int height,
+	cudaSurfaceObject_t input,
+	cudaStream_t stream);
+
+uint8_t* Texture::cudaMemory() const
+{
+	//memCopyFromSurfaceCharBRGA(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, cudaStream_);
+
+	return cudaBuffer_;
+}
+
+void* Texture::copyCudaMemToTexture(uint32_t* memory) const
+{
+	return nullptr;
+}
+
+void Texture::cudaImportSemaphore()
+{
+	cudaExternalSemaphoreHandleDesc cudaExtSemaphoreHandleDesc = {};
+	std::memset(&cudaExtSemaphoreHandleDesc, 0, sizeof(cudaExtSemaphoreHandleDesc));
+	cudaExtSemaphoreHandleDesc.type = cudaExternalSemaphoreHandleTypeOpaqueWin32;
+	cudaExtSemaphoreHandleDesc.handle.win32.handle = getVkSemaphoreHandle(
+		VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT, cudaSemaphore_);
+	cudaExtSemaphoreHandleDesc.flags = 0;
+
+	cudaImportExternalSemaphore(&cudaExtSemaphore_, &cudaExtSemaphoreHandleDesc);
+
+	//std::memset(&cudaExtSemaphoreHandleDesc, 0, sizeof(cudaExtSemaphoreHandleDesc));
+	//cudaExtSemaphoreHandleDesc.type = cudaExternalSemaphoreHandleTypeOpaqueWin32;
+	//cudaExtSemaphoreHandleDesc.handle.win32.handle = getVkSemaphoreHandle(
+	//	VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT, cudaCudaUpdateVkSemaphore_);
+	//cudaExtSemaphoreHandleDesc.flags = 0;
+
+
+	//cudaImportExternalSemaphore(&cudaExtCudaUpdateVkSemaphore_, &cudaExtSemaphoreHandleDesc);
+}
+
+void Texture::cudaImportImageMemory()
+{
+	cudaExternalMemoryHandleDesc cudaExtMemHandleDesc;
+	std::memset(&cudaExtMemHandleDesc, 0, sizeof(cudaExtMemHandleDesc));
+	cudaExtMemHandleDesc.type = cudaExternalMemoryHandleTypeOpaqueWin32;
+	//cudaExtMemHandleDesc.handle.win32.handle = getVkMemoryHandle(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT, memory);
+	cudaExtMemHandleDesc.handle.win32.handle = textureHandle_;
+	cudaExtMemHandleDesc.size = imageSize_;
+	cudaExtMemHandleDesc.flags = 0;
+
+	CUDA_CHECK(cudaImportExternalMemory(&cudaExtImageMemory_, &cudaExtMemHandleDesc));
+
+	std::cout << "Cuda Imported External Memory:" << cudaExtImageMemory_ << std::endl;
+
+	cudaExternalMemoryMipmappedArrayDesc cudaExtMemMipArrayDesc;
+	std::memset(&cudaExtMemMipArrayDesc, 0, sizeof(cudaExtMemMipArrayDesc));
+	cudaExtMemMipArrayDesc.formatDesc = { 8, 8, 8, 8, cudaChannelFormatKindUnsigned };
+	cudaExtMemMipArrayDesc.extent = { extent_.width, extent_.height, 1 };
+	cudaExtMemMipArrayDesc.flags = 0;
+	cudaExtMemMipArrayDesc.numLevels = 1;
+
+	CUDA_CHECK(cudaExternalMemoryGetMappedMipmappedArray(
+		&cudaMipmappedArray_, cudaExtImageMemory_, &cudaExtMemMipArrayDesc));
+
+	CUDA_CHECK(cudaGetMipmappedArrayLevel(&cudaArray_, cudaMipmappedArray_, 0));
+
+	//// Create a surface object from the cudaArray
+	cudaResourceDesc resDesc;
+	std::memset(&resDesc, 0, sizeof(resDesc));
+	resDesc.resType = cudaResourceTypeArray;
+	resDesc.res.array.array = cudaArray_;
+
+	CUDA_CHECK(cudaCreateSurfaceObject(&cudaSurface_, &resDesc));
+}
+
+void Texture::cudaAllocateMemory()
+{
+	cudaMalloc((void**)&cudaBuffer_, imageSize_);
+}
+
+void Texture::cudaUpdateImageMemory()
+{
+	// copy from cuda buffer to texture here
+}
+
+void Texture::cudaVkSemaphoreWait(cudaExternalSemaphore_t& extSemaphore) {
+	cudaExternalSemaphoreWaitParams extSemaphoreWaitParams;
+
+	std::memset(&extSemaphoreWaitParams, 0, sizeof(extSemaphoreWaitParams));
+
+	extSemaphoreWaitParams.params.fence.value = 0;
+	extSemaphoreWaitParams.flags = 0;
+
+	CUDA_CHECK(cudaWaitExternalSemaphoresAsync(
+		&extSemaphore, &extSemaphoreWaitParams, 1, cudaStream_));
+}
+
+void Texture::cudaVkSemaphoreSignal(cudaExternalSemaphore_t& extSemaphore) {
+	cudaExternalSemaphoreSignalParams extSemaphoreSignalParams;
+	std::memset(&extSemaphoreSignalParams, 0, sizeof(extSemaphoreSignalParams));
+
+	extSemaphoreSignalParams.params.fence.value = 0;
+	extSemaphoreSignalParams.flags = 0;
+	CUDA_CHECK(cudaSignalExternalSemaphoresAsync(
+		&extSemaphore, &extSemaphoreSignalParams, 1, cudaStream_));
 }
 
 
