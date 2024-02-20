@@ -1,4 +1,4 @@
-#include "tdtox.h"
+#include "comp.h"
 #include "teutils.h"
 #include <iostream>
 
@@ -7,19 +7,19 @@
 
 
 
-TdTox::TdTox(std::string filePath)
+Comp::Comp(std::string filePath)
 	: filePath_(filePath)
 {
 	createRenderer();
 	cudaInit();
 }
 
-TdTox::~TdTox()
+Comp::~Comp()
 {
 	vkDestroyFence(device_, submitFence_, nullptr);
 }
 
-void TdTox::createRenderer()
+void Comp::createRenderer()
 {
 	renderer_ = std::make_unique<Renderer>();
 	renderer_->createInstance();
@@ -38,13 +38,13 @@ void TdTox::createRenderer()
 }
 
 
-void TdTox::cudaInit()
+void Comp::cudaInit()
 {
 	setCudaDevice();
 	CUDA_CHECK(cudaStreamCreate(&cudaStream_));
 }
 
-void TdTox::setCudaDevice()
+void Comp::setCudaDevice()
 {
 	int deviceCount;
 	CUDA_CHECK(cudaGetDeviceCount(&deviceCount));
@@ -92,7 +92,7 @@ void TdTox::setCudaDevice()
 	exit(1);
 }
 
-void TdTox::load()
+void Comp::load()
 {
 	std::cout << "Loading tox file: " << std::string(filePath_.begin(), filePath_.end()) << std::endl;
 
@@ -174,7 +174,7 @@ void TdTox::load()
 }
 
 
-void TdTox::didConfigure(TEResult result)
+void Comp::didConfigure(TEResult result)
 {
 	// Configuration can be cancelled by a subsequent configuration or other action
 	// - we can ignore the event in that case and await a following one
@@ -186,7 +186,7 @@ void TdTox::didConfigure(TEResult result)
 	}
 }
 
-void TdTox::eventCallback(TEInstance* instance,
+void Comp::eventCallback(TEInstance* instance,
 	TEEvent event,
 	TEResult result,
 	int64_t start_time_value,
@@ -196,7 +196,7 @@ void TdTox::eventCallback(TEInstance* instance,
 	void* info)
 {
 
-	TdTox* tdTox = static_cast<TdTox*>(info);
+	Comp* tdTox = static_cast<Comp*>(info);
 
 	switch (event)
 	{
@@ -219,10 +219,10 @@ void TdTox::eventCallback(TEInstance* instance,
 	}
 }
 
-void TdTox::linkEventCallback(TEInstance* instance, TELinkEvent event, const char* identifier, void* info)
+void Comp::linkEventCallback(TEInstance* instance, TELinkEvent event, const char* identifier, void* info)
 {
 	//std::cout << "Link event: " << teutils::linkEventToString(event) << " identifier: " << identifier << std::endl;
-	TdTox* tdTox = static_cast<TdTox*>(info);
+	Comp* tdTox = static_cast<Comp*>(info);
 	switch (event)
 	{
 	case TELinkEventAdded:
@@ -236,12 +236,12 @@ void TdTox::linkEventCallback(TEInstance* instance, TELinkEvent event, const cha
 	}
 }
 
-void TdTox::endFrame(int64_t time_value, int32_t time_scale, TEResult result)
+void Comp::endFrame(int64_t time_value, int32_t time_scale, TEResult result)
 {
 	setInFrame(false);
 }
 
-void TdTox::getState(bool& configured, bool& loaded, bool& linksChanged, bool& inFrame)
+void Comp::getState(bool& configured, bool& loaded, bool& linksChanged, bool& inFrame)
 {
 	std::lock_guard<std::mutex> guard(mutex_);
 	configured = configureRenderer_;
@@ -261,21 +261,21 @@ void TdTox::getState(bool& configured, bool& loaded, bool& linksChanged, bool& i
 	}
 }
 
-void TdTox::setInFrame(bool inFrame)
+void Comp::setInFrame(bool inFrame)
 {
 	std::lock_guard<std::mutex> guard(mutex_);
 	inFrame_ = inFrame;
 }
 
 
-void TdTox::linkLayoutDidChange(TELinkEvent event, const char* identifier)
+void Comp::linkLayoutDidChange(TELinkEvent event, const char* identifier)
 {
 	std::lock_guard<std::mutex> guard(mutex_);
 	pendingLayoutChange_ = true;
 
 }
 
-void TdTox::applyLayoutChange()
+void Comp::applyLayoutChange()
 {
 	//renderer_->beginImageLayout();
 
@@ -349,7 +349,7 @@ void TdTox::applyLayoutChange()
 	//renderer_->endImageLayout();
 }
 
-bool TdTox::applyOutputTextureChange()
+bool Comp::applyOutputTextureChange()
 {
 	// Only hold the lock briefly
 	std::vector<std::string> changes;
@@ -409,120 +409,120 @@ bool TdTox::applyOutputTextureChange()
 					//std::cout << "Texture transfer: " << identifier << " : " << waitValue << std::endl;
 					if (TESemaphoreGetType(teSemaphore) == TESemaphoreTypeVulkan)
 					{
-						//texFromTE_->copyImageToCudaMem(waitValue, cudaStream_);
+						texFromTE_->copyImageToCudaMem(waitValue, cudaStream_);
 
-						//texToTE_->copyCudaMemToImage(
-						//	texFromTE_->cudaMemory(), 
-						//	texFromTE_->cudaExtSemaphore(),
-						//	waitValue,
-						//	cudaStream_);
-						//
-						//// sleep for a while
-						//std::this_thread::sleep_for(std::chrono::milliseconds(10));
+						texToTE_->copyCudaMemToImage(
+							texFromTE_->cudaMemory(), 
+							texFromTE_->cudaExtSemaphore(),
+							waitValue,
+							cudaStream_);
+						
+						// sleep for a while
+						std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
 
-						// wait for semaphore
-						VkSemaphoreWaitInfoKHR waitInfo = {};
-						waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO_KHR;
-						waitInfo.pNext = nullptr;
-						waitInfo.flags = 0;
-						waitInfo.semaphoreCount = 1;
-						VkSemaphore importSemaphore = texFromTE_->semaphore();
-						waitInfo.pSemaphores = &importSemaphore;
-						waitInfo.pValues = &waitValue;
+					//	// wait for semaphore
+					//	VkSemaphoreWaitInfoKHR waitInfo = {};
+					//	waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO_KHR;
+					//	waitInfo.pNext = nullptr;
+					//	waitInfo.flags = 0;
+					//	waitInfo.semaphoreCount = 1;
+					//	VkSemaphore importSemaphore = texFromTE_->semaphore();
+					//	waitInfo.pSemaphores = &importSemaphore;
+					//	waitInfo.pValues = &waitValue;
 
-						VK_CHECK(vkWaitSemaphores(device_, &waitInfo, UINT64_MAX));
+					//	VK_CHECK(vkWaitSemaphores(device_, &waitInfo, UINT64_MAX));
 			
-						// copy to texToTE_
-						VkCommandBufferBeginInfo beginInfo = {};
-						beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-						beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-						beginInfo.pInheritanceInfo = nullptr;
+					//	// copy to texToTE_
+					//	VkCommandBufferBeginInfo beginInfo = {};
+					//	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+					//	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+					//	beginInfo.pInheritanceInfo = nullptr;
 
-						VK_CHECK(vkBeginCommandBuffer(commandBuffer_, &beginInfo));
+					//	VK_CHECK(vkBeginCommandBuffer(commandBuffer_, &beginInfo));
 
-						if (texFromTE_ && !srcInitialized_)
-						{
-							// transition to transfer src optimal
+					//	if (texFromTE_ && !srcInitialized_)
+					//	{
+					//		// transition to transfer src optimal
 
-							texFromTE_->cmdTransitionImageLayout(
-								commandBuffer_,
-								VK_IMAGE_LAYOUT_UNDEFINED,
-								VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-							);
+					//		texFromTE_->cmdTransitionImageLayout(
+					//			commandBuffer_,
+					//			VK_IMAGE_LAYOUT_UNDEFINED,
+					//			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+					//		);
 
-							srcInitialized_ = true;
-							std::cout << "srcInitialized_" << std::endl;
-						}
-
-
-						if (texToTE_ && !dstInitialized_)
-						{
-							// transition to transfer dst optimal
-							texToTE_->cmdTransitionImageLayout(
-								commandBuffer_,
-								VK_IMAGE_LAYOUT_UNDEFINED,
-								VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-							);
+					//		srcInitialized_ = true;
+					//		std::cout << "srcInitialized_" << std::endl;
+					//	}
 
 
-							dstInitialized_ = true;
-							std::cout << "dstInitialized_" << std::endl;
-						}
-
-						VkImageSubresourceLayers subresourceLayers = {};
-						subresourceLayers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-						subresourceLayers.mipLevel = 0;
-						subresourceLayers.baseArrayLayer = 0;
-						subresourceLayers.layerCount = 1;
-
-						VkImageCopy imageCopy = {};
-						imageCopy.srcSubresource = subresourceLayers;
-						imageCopy.dstSubresource = subresourceLayers;
-						imageCopy.extent = { texToTE_->extent().width, texToTE_->extent().height, 1 };
+					//	if (texToTE_ && !dstInitialized_)
+					//	{
+					//		// transition to transfer dst optimal
+					//		texToTE_->cmdTransitionImageLayout(
+					//			commandBuffer_,
+					//			VK_IMAGE_LAYOUT_UNDEFINED,
+					//			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+					//		);
 
 
-						vkCmdCopyImage(
-							commandBuffer_,
-							texFromTE_->image(),
-							VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-							texToTE_->image(),
-							VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-							1,
-							&imageCopy
-						);
+					//		dstInitialized_ = true;
+					//		std::cout << "dstInitialized_" << std::endl;
+					//	}
 
-						VK_CHECK(vkEndCommandBuffer(commandBuffer_));
+					//	VkImageSubresourceLayers subresourceLayers = {};
+					//	subresourceLayers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+					//	subresourceLayers.mipLevel = 0;
+					//	subresourceLayers.baseArrayLayer = 0;
+					//	subresourceLayers.layerCount = 1;
 
-						uint64_t signalValue = waitValue + 1;
+					//	VkImageCopy imageCopy = {};
+					//	imageCopy.srcSubresource = subresourceLayers;
+					//	imageCopy.dstSubresource = subresourceLayers;
+					//	imageCopy.extent = { texToTE_->extent().width, texToTE_->extent().height, 1 };
 
-						VkTimelineSemaphoreSubmitInfo timelineSemaphoreSubmitInfo = {};
-						timelineSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
-						timelineSemaphoreSubmitInfo.pNext = nullptr;
-						timelineSemaphoreSubmitInfo.waitSemaphoreValueCount = 1; 
-						timelineSemaphoreSubmitInfo.pWaitSemaphoreValues = &waitValue; 
-						timelineSemaphoreSubmitInfo.signalSemaphoreValueCount = 1; 
-						timelineSemaphoreSubmitInfo.pSignalSemaphoreValues = &signalValue; 
 
-						VkSubmitInfo submitInfo = {};
-						submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-						submitInfo.pNext = &timelineSemaphoreSubmitInfo; 
-						submitInfo.commandBufferCount = 1;
-						submitInfo.pCommandBuffers = &commandBuffer_;
+					//	vkCmdCopyImage(
+					//		commandBuffer_,
+					//		texFromTE_->image(),
+					//		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+					//		texToTE_->image(),
+					//		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+					//		1,
+					//		&imageCopy
+					//	);
 
-						submitInfo.waitSemaphoreCount = 1;
-						submitInfo.pWaitSemaphores = &importSemaphore;
-						VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_TRANSFER_BIT }; 
-						submitInfo.pWaitDstStageMask = waitStages;
+					//	VK_CHECK(vkEndCommandBuffer(commandBuffer_));
 
-						//	
-						submitInfo.signalSemaphoreCount = 1;
-						VkSemaphore signalSemaphores[] = { texToTE_.get()->semaphore() };
-						submitInfo.pSignalSemaphores = signalSemaphores;
+					//	uint64_t signalValue = waitValue + 1;
 
-						VK_CHECK(vkQueueSubmit(queue_, 1, &submitInfo, submitFence_));
-						VK_CHECK(vkWaitForFences(device_, 1, &submitFence_, VK_TRUE, UINT64_MAX));
-						VK_CHECK(vkResetFences(device_, 1, &submitFence_));
+					//	VkTimelineSemaphoreSubmitInfo timelineSemaphoreSubmitInfo = {};
+					//	timelineSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+					//	timelineSemaphoreSubmitInfo.pNext = nullptr;
+					//	timelineSemaphoreSubmitInfo.waitSemaphoreValueCount = 1; 
+					//	timelineSemaphoreSubmitInfo.pWaitSemaphoreValues = &waitValue; 
+					//	timelineSemaphoreSubmitInfo.signalSemaphoreValueCount = 1; 
+					//	timelineSemaphoreSubmitInfo.pSignalSemaphoreValues = &signalValue; 
+
+					//	VkSubmitInfo submitInfo = {};
+					//	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+					//	submitInfo.pNext = &timelineSemaphoreSubmitInfo; 
+					//	submitInfo.commandBufferCount = 1;
+					//	submitInfo.pCommandBuffers = &commandBuffer_;
+
+					//	submitInfo.waitSemaphoreCount = 1;
+					//	submitInfo.pWaitSemaphores = &importSemaphore;
+					//	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_TRANSFER_BIT }; 
+					//	submitInfo.pWaitDstStageMask = waitStages;
+
+					//	//	
+					//	submitInfo.signalSemaphoreCount = 1;
+					//	VkSemaphore signalSemaphores[] = { texToTE_.get()->semaphore() };
+					//	submitInfo.pSignalSemaphores = signalSemaphores;
+
+					//	VK_CHECK(vkQueueSubmit(queue_, 1, &submitInfo, submitFence_));
+					//	VK_CHECK(vkWaitForFences(device_, 1, &submitFence_, VK_TRUE, UINT64_MAX));
+					//	VK_CHECK(vkResetFences(device_, 1, &submitFence_));
 
 					}
 				}
@@ -533,7 +533,7 @@ bool TdTox::applyOutputTextureChange()
 	return !changes.empty();
 }
 
-void TdTox::update()
+void Comp::update()
 {
 	TEInstanceStartFrameAtTime(instance_, TETimeInternal, 0, 0);
 
@@ -743,7 +743,7 @@ void TdTox::update()
 
 
 
-void TdTox::render(bool loaded)
+void Comp::render(bool loaded)
 {
 	if (loaded)
 	{
@@ -752,7 +752,7 @@ void TdTox::render(bool loaded)
 }
 
 
-void TdTox::linkValueChange(const char* identifier)
+void Comp::linkValueChange(const char* identifier)
 {
 	TouchObject<TELinkInfo> link;
 	TEResult result = TEInstanceLinkGetInfo(instance_, identifier, link.take());

@@ -11,8 +11,8 @@
     cudaError_t cudaStatus = (call); \
     if (cudaStatus != cudaSuccess) { \
         fprintf(stderr, "CUDA Error at %s:%d: %s\n", __FILE__, __LINE__, cudaGetErrorString(cudaStatus)); \
-        return cudaStatus; \
     } \
+    return cudaStatus; \
 } while(0)
 #else
 #define CHECK_CUDA_ERROR_AND_RETURN_STATUS(call) return cudaSuccess;
@@ -65,11 +65,7 @@ copyToSurfaceCharBRGA(cudaSurfaceObject_t dst, int width, int height, const uint
 		return;
 
 	uchar4 color = *(uchar4*)(src + x * 4 + y * width * sizeof(uchar4));
-	//uchar4 color;
-	//color.x = 255;
-	//color.y = 255;
-	//color.z = 255;
-	//color.w = 255;
+	//uchar4 color { 255, 255, 255, 255 };
 
 	surf2Dwrite(color, dst, x * 4, y, cudaBoundaryModeZero);
 }

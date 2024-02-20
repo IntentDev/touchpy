@@ -1014,6 +1014,7 @@ void createDevice(
 	// look this up - adds overhead... 
 	//deviceFeatures.sampleRateShading = VK_TRUE; // enable sample shading feature for the device
 	//createInfo.pEnabledFeatures = &deviceFeatures;
+	createInfo.pEnabledFeatures = nullptr;
 
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = deviceExtensions.data();
