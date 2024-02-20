@@ -2,30 +2,50 @@
 // or project specific include files.
 
 #pragma once
+// #include <Python.h> // not needed with pybind11
 #include <pybind11/pybind11.h>
 
-#include "cpythonfuncs.h"
 #include "renderer.h"
-#include "tdtox.h"
+#include "comp.h"
 
 #include <iostream>
 #include <memory>
 #include <string>
 
+ //Example function using the Python C API to be wrapped by pybind11 
+ //assume it takes two integers and returns their sum as an example
+static PyObject* high_performance_function(PyObject* self, PyObject* args)
+{
+    long a, b;
+    if (!PyArg_ParseTuple(args, "ll", &a, &b)) {
+        return NULL; // Error parsing arguments
+    }
+    long result = a + b; // Imagine this is a performance-critical operation
+    return PyLong_FromLong(result);
+}
+
+
+static PyObject* hello_fast_imp(PyObject* self)
+{
+    printf("Hello, World! no pybind11!\n");
+    Py_RETURN_NONE; // Return Py_None to Python
+}
+
+
+
+
 namespace py = pybind11;
 
 void load_tox(std::string filePath)
 {
-	std::unique_ptr<TdTox> tox = std::make_unique<TdTox>(filePath);
+	std::unique_ptr<Comp> tox = std::make_unique<Comp>(filePath);
 	tox->load();
-
 }
 
 void create_vk_instance()
 {
     std::unique_ptr<Renderer> context = std::make_unique<Renderer>();
     context->createInstance();
-
 }
 
 void init_vk()

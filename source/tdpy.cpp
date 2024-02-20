@@ -13,14 +13,12 @@ PYBIND11_MODULE(tdpy, m)
 {
     m.doc() = "pybind11 example plugin"; // Optional module docstring
 
-    py::class_<TdTox>(m, "TdTox")
+    py::class_<Comp>(m, "Comp")
 		.def(py::init<std::string>())
-		.def("load", &TdTox::load)
-		.def("configured", &TdTox::didConfigure)
-		.def("loaded", &TdTox::loaded)
-		.def("update", &TdTox::update);
-
-
+		.def("load", &Comp::load)
+		.def("configured", &Comp::didConfigure)
+		.def("loaded", &Comp::loaded)
+		.def("update", &Comp::update);
 
     m.def("create_vk_instance", &create_vk_instance, "Create VkInstance");
     m.def("init_vk", &init_vk, "Create Vulkan Device");
@@ -29,7 +27,6 @@ PYBIND11_MODULE(tdpy, m)
     m.def("hello", &hello, "A function that prints 'Hello, World!'");
     m.def("hello_fast", &hello_fast, "A function defined in C");
     m.def("add_fast", &high_performance_function_wrapper, "A function defined in C");
-
 
 }
 

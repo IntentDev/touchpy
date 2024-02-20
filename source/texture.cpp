@@ -70,8 +70,6 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 	// need to create function that sets up pitch depending on format and sets the 
 	// format for cuda memory allocation
 	imagePitch_ = extent_.width * sizeof(uint8_t) * 4;
-	imageSize_ = imagePitch_ * extent_.height;
-
 
 	VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
 	externalMemoryImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
@@ -111,6 +109,7 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 		memRequirements.memoryTypeBits,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 	);
+	imageSize_ = static_cast<size_t>(memRequirements.size);
 
 	std::cout << "Allocating Vk Memory, Size: " << memRequirements.size
 		<< " Memory Type Index: " << memoryTypeIndex << std::endl;
@@ -183,7 +182,6 @@ Texture::Texture(
 	// need to create function that sets up pitch depending on format and sets the 
 	// format for cuda memory allocation
 	imagePitch_ = extent_.width * sizeof(uint8_t) * 4;
-	imageSize_ = imagePitch_ * extent_.height;
 
 	std::cout << "Creating Texture to TE" << std::endl;
 
@@ -224,6 +222,8 @@ Texture::Texture(
 		memRequirements.memoryTypeBits,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 	);
+
+	imageSize_ = static_cast<size_t>(memRequirements.size);
 
 	std::cout	<< "Allocating Memory Size: " << memRequirements.size 
 				<< " Memory Type Index: " << memoryTypeIndex << std::endl;
@@ -601,7 +601,6 @@ void Texture::cudaImportImageMemory(HANDLE imageHandle)
 	cudaExternalMemoryHandleDesc cudaExtMemHandleDesc;
 	std::memset(&cudaExtMemHandleDesc, 0, sizeof(cudaExtMemHandleDesc));
 	cudaExtMemHandleDesc.type = cudaExternalMemoryHandleTypeOpaqueWin32;
-	//cudaExtMemHandleDesc.handle.win32.handle = getVkMemoryHandle(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT, memory);
 	cudaExtMemHandleDesc.handle.win32.handle = imageHandle;
 	cudaExtMemHandleDesc.size = imageSize_;
 	cudaExtMemHandleDesc.flags = 0;
@@ -613,7 +612,7 @@ void Texture::cudaImportImageMemory(HANDLE imageHandle)
 	cudaExternalMemoryMipmappedArrayDesc cudaExtMemMipArrayDesc;
 	std::memset(&cudaExtMemMipArrayDesc, 0, sizeof(cudaExtMemMipArrayDesc));
 	cudaExtMemMipArrayDesc.formatDesc = { 8, 8, 8, 8, cudaChannelFormatKindUnsigned };
-	cudaExtMemMipArrayDesc.extent = { extent_.width, extent_.height, 1 };
+	cudaExtMemMipArrayDesc.extent = { extent_.width, extent_.height, 0 }; // depth is 0 for 2D extent...
 	cudaExtMemMipArrayDesc.flags = 0;
 	cudaExtMemMipArrayDesc.numLevels = 1;
 

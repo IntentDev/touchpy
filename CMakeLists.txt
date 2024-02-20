@@ -9,6 +9,26 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
+# if(MSVC)
+#   set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+# endif()
+
+# # Set runtime library for different build types
+# foreach(flag_var
+#         CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+#         CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+#    if(${flag_var} MATCHES "/MD")
+#       string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
+#    endif()
+# endforeach()
+
+# # Set debug information flags for Debug build
+# if(MSVC)
+#     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi /MDd")
+#     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od")
+# endif()
+
+
 # set(CMAKE_CUDA_ARCHITECTURES 89)
 set(CMAKE_CUDA_ARCHITECTURES 75;80;86;89)
 
@@ -18,33 +38,44 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# set CMAKE_CUDA_COMPILER from CUDA_PATH if not set
-
-set(CMAKE_CUDA_COMPILER $ENV{CUDA_PATH}/bin/nvcc.exe)
-
-
 project ("TouchPy" LANGUAGES CXX CUDA)
 
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
 
 # Collect all source files and exclude gtest files.
-file(GLOB_RECURSE ALL_TDPY_SOURCES 
+file(GLOB_RECURSE ALL_TPY_SOURCES 
     "${SOURCE_DIR}/*.cpp" "${SOURCE_DIR}/*.c" "${SOURCE_DIR}/*.cu" "${SOURCE_DIR}/*.h")
-list(FILTER ALL_TDPY_SOURCES EXCLUDE REGEX ".*gtest\\.cpp$")
+list(FILTER ALL_TPY_SOURCES EXCLUDE REGEX ".*gtest\\.cpp$")
+list(FILTER ALL_TPY_SOURCES EXCLUDE REGEX ".*main\\.cpp$")
+
+# print all sources if on
+set(PRINT_SOURCE_FILES Off)
+if(PRINT_SOURCE_FILES)
+    foreach(source IN LISTS ALL_TPY_SOURCES)
+      message(STATUS "tdpy source: ${source}")
+    endforeach()
+endif()
+
+add_library(tdpy MODULE ${ALL_TPY_SOURCES})
+set_target_properties(tdpy PROPERTIES PREFIX "" SUFFIX ".pyd")
+target_include_directories(tdpy PRIVATE ${SOURCE_DIR})
+
+file(GLOB_RECURSE ALL_TL_SOURCES 
+    "${SOURCE_DIR}/*.cpp" "${SOURCE_DIR}/*.c" "${SOURCE_DIR}/*.cu" "${SOURCE_DIR}/*.h")
+list(FILTER ALL_TL_SOURCES EXCLUDE REGEX ".*gtest\\.cpp$")
+list(FILTER ALL_TL_SOURCES EXCLUDE REGEX ".*py\\.cpp$")
 
 # print all sources if on
 set(PRINT_SOURCE_FILES On)
 if(PRINT_SOURCE_FILES)
-    foreach(source IN LISTS ALL_TDPY_SOURCES)
-      message(STATUS "source: ${source}")
+    foreach(source IN LISTS ALL_TL_SOURCES)
+      message(STATUS "tl source: ${source}")
     endforeach()
 endif()
 
+add_executable(touchloader ${ALL_TL_SOURCES})
+target_include_directories(touchloader PRIVATE ${SOURCE_DIR})
 
-add_library(tdpy MODULE ${ALL_TDPY_SOURCES})
-set_target_properties(tdpy PROPERTIES PREFIX "" SUFFIX ".pyd")
-
-target_include_directories(tdpy PRIVATE ${SOURCE_DIR})
 
 # Compile definitions
 if (WIN32)
@@ -59,6 +90,7 @@ if (WIN32)
 endif ()
 
 target_compile_definitions(tdpy PRIVATE ${COMPILE_DEFINITIONS})
+target_compile_definitions(touchloader PRIVATE ${COMPILE_DEFINITIONS})
 
 # Check if VCPKG_ROOT is set as an environment variable
 if(DEFINED ENV{VCPKG_ROOT})
@@ -78,6 +110,8 @@ message(STATUS "VCPKG_ROOT=${VCPKG_ROOT}")
 find_package(Vulkan REQUIRED)
 message(STATUS Vulkan_INCLUDE_DIR=${Vulkan_INCLUDE_DIR})
 target_link_libraries(tdpy Vulkan::Vulkan)
+target_link_libraries(touchloader Vulkan::Vulkan)
+
 
 ### not used atm but vri includes it... 
 # VMA
@@ -85,6 +119,7 @@ target_link_libraries(tdpy Vulkan::Vulkan)
 #################################################################################################
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 target_link_libraries(tdpy GPUOpen::VulkanMemoryAllocator)
+target_link_libraries(touchloader GPUOpen::VulkanMemoryAllocator)
 
 # causing CUDA to not compile, commented calls to it for now
 # # OpenImageIO
@@ -99,9 +134,12 @@ find_package(CUDAToolkit REQUIRED)
 message(STATUS CUDAToolkit_INCLUDE_DIRS=${CUDAToolkit_INCLUDE_DIRS})
 target_include_directories(tdpy PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 target_link_libraries(tdpy CUDA::cudart)
+target_include_directories(touchloader PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+target_link_libraries(touchloader CUDA::cudart)
+
 
 # Python
-# make sure path to python is in the system PATH and PYTHON_PATH is set
+# make sure path to python is in the system PATH
 #################################################################################################
 find_package(Python3 COMPONENTS Development Interpreter REQUIRED)
 message(STATUS Python3_INCLUDE_DIRS=${Python3_INCLUDE_DIRS})
@@ -126,8 +164,21 @@ add_custom_command(TARGET tdpy POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/bin $<TARGET_FILE_DIR:tdpy>)
 
+target_link_directories(touchloader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/lib)
+target_link_libraries(touchloader TouchEngine)
+target_include_directories(touchloader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/include)
+add_custom_command(TARGET touchloader POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_directory
+	${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/bin $<TARGET_FILE_DIR:touchloader>)
+
+
+# dependencies so tdpy depends on tocuhloader being built first
+add_dependencies(tdpy touchloader)
+
+add_definitions(-DCMAKE_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
 
 # install
 #################################################################################################
 #################################################################################################
 install(TARGETS tdpy LIBRARY DESTINATION modules)
+install(TARGETS touchloader RUNTIME DESTINATION bin)

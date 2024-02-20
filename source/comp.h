@@ -10,11 +10,11 @@
 #include <mutex>
 #include <memory>
 
-class TdTox
+class Comp
 {
 public:
-	TdTox(std::string filePath);
-	~TdTox();
+	Comp(std::string filePath);
+	~Comp();
 
 	void load();
 	void didConfigure(TEResult result);
