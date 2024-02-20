@@ -409,6 +409,17 @@ bool TdTox::applyOutputTextureChange()
 					//std::cout << "Texture transfer: " << identifier << " : " << waitValue << std::endl;
 					if (TESemaphoreGetType(teSemaphore) == TESemaphoreTypeVulkan)
 					{
+						//texFromTE_->copyImageToCudaMem(waitValue, cudaStream_);
+
+						//texToTE_->copyCudaMemToImage(
+						//	texFromTE_->cudaMemory(), 
+						//	texFromTE_->cudaExtSemaphore(),
+						//	waitValue,
+						//	cudaStream_);
+						//
+						//// sleep for a while
+						//std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
 
 						// wait for semaphore
 						VkSemaphoreWaitInfoKHR waitInfo = {};
@@ -504,7 +515,7 @@ bool TdTox::applyOutputTextureChange()
 						VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_TRANSFER_BIT }; 
 						submitInfo.pWaitDstStageMask = waitStages;
 
-							
+						//	
 						submitInfo.signalSemaphoreCount = 1;
 						VkSemaphore signalSemaphores[] = { texToTE_.get()->semaphore() };
 						submitInfo.pSignalSemaphores = signalSemaphores;
@@ -617,14 +628,6 @@ void TdTox::update()
 
 									TouchObject<TETexture> texture;
 									texture.set(texToTE_->teVkTexture());
-									//TouchObject<TESemaphore> semaphore;
-									uint64_t waitValue = 0;
-									//Our OpenGL and D3D11 renderers use their TEGraphicsContexts to handle setting inputs, meaning they needn't do any sync themselves
-									//- but at the cost of a texture copy by the TEGraphicsContext
-									//Our D3D12 renderer creates shareable textures, so it must handle sync itself - when setting a texture we uses a texture transfer
-									//to supply a fence and wait-value to the instance - the instance will insert a wait for the fence prior to consuming the input texture
-								   //if (renderer_->getInputImage(textureCount, texture, semaphore, waitValue))
-								   //{
 
 									result = TEInstanceLinkSetTextureValue(
 										instance_, info->identifier, texture, renderer_->teContext());
@@ -634,7 +637,7 @@ void TdTox::update()
 									if (result == TEResultSuccess)
 									{
 										result = TEInstanceAddTextureTransfer(
-											instance_, texture, texToTE_->teVkSemaphore(), waitValue);
+											instance_, texture, texFromTE_->teVkSemaphore(), texToTE_->waitValue());
 									}
 
 								//}
