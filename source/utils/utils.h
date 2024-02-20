@@ -6,7 +6,7 @@
 #include <vector>
 
 
-#include "OpenImageIO/imageio.h"
+//#include "OpenImageIO/imageio.h" // causing CUDA to not compile
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -20,7 +20,7 @@ namespace utils
 
 	// need to create a custom format and type description to pass to this function
 	// so it can use any library
-	void ImageLoadUINT8(std::string path, int &width, int &height, int &numChannels, std::unique_ptr<unsigned char[]> &pixels);
+	//void ImageLoadUINT8(std::string path, int &width, int &height, int &numChannels, std::unique_ptr<unsigned char[]> &pixels);
 
 
 	template<typename T>

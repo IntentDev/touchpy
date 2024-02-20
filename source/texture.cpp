@@ -25,11 +25,14 @@ Texture::~Texture()
 	//if (cudaExtCudaUpdateVkSemaphore_)
 	//	CUDA_CHECK(cudaDestroyExternalSemaphore(cudaExtCudaUpdateVkSemaphore_));
 
-	if (cudaSemaphore_ != VK_NULL_HANDLE)
-		vkDestroySemaphore(device_, cudaSemaphore_, nullptr);
-
 	//if (cudaCudaUpdateVkSemaphore_ != VK_NULL_HANDLE)
 	//	vkDestroySemaphore(device_, cudaCudaUpdateVkSemaphore_, nullptr);
+
+	if (ownsImage_)
+		CloseHandle(textureHandle_);
+
+	if (ownsSemaphore_)
+		CloseHandle(semaphoreHandle_);
 
 	if (imageView_ != VK_NULL_HANDLE)
 		vkDestroyImageView(device_, imageView_, nullptr);
@@ -68,6 +71,7 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 	// format for cuda memory allocation
 	imagePitch_ = extent_.width * sizeof(uint8_t) * 4;
 	imageSize_ = imagePitch_ * extent_.height;
+
 
 	VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
 	externalMemoryImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
@@ -108,7 +112,7 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 	);
 
-	std::cout << "Allocating Memory Size: " << memRequirements.size
+	std::cout << "Allocating Vk Memory, Size: " << memRequirements.size
 		<< " Memory Type Index: " << memoryTypeIndex << std::endl;
 
 	VkMemoryAllocateInfo memoryAllocateInfo = {};
@@ -145,21 +149,7 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 
 	importSemaphore(teInstance, texture);
 
-	VkSemaphoreCreateInfo exportSemaphoreCreateInfo{};
-	exportSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
-	exportSemaphoreCreateInfo.flags = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-	
-	VkSemaphoreCreateInfo semaphoreCreateInfo{};
-	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	semaphoreCreateInfo.pNext = &exportSemaphoreCreateInfo;
-
-	VK_CHECK(vkCreateSemaphore(device_, &semaphoreCreateInfo, nullptr, &cudaSemaphore_));
-
-	cudaImportSemaphore();
-	cudaImportImageMemory();
-	cudaAllocateMemory();
-
-
+	setupCudaResources(textureHandle_, semaphoreHandle_, true);
 }
 
 Texture::Texture(
@@ -174,7 +164,6 @@ Texture::Texture(
 		format_(format)
 
 {
-
 	//uint32_t extensionCount = 0;
 	//vkEnumerateDeviceExtensionProperties(physicalDevice_, nullptr, &extensionCount, nullptr);
 	//std::vector<VkExtensionProperties> extensions(extensionCount);
@@ -268,10 +257,10 @@ Texture::Texture(
 
 	std::cout << "Image View Created" << std::endl;
 
-	HANDLE exportTextureHandle = getVkMemoryHandle(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR, memory_);
+	textureHandle_ = getVkMemoryHandle(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR, memory_);
 
 	teVkTexture_.take(TEVulkanTextureCreate(
-						exportTextureHandle, 
+						textureHandle_,
 						VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR, 
 						format_, 
 						extent_.width, 
@@ -297,23 +286,22 @@ Texture::Texture(
 
 	std::cout << "Semaphore Created" << std::endl;
 
-	HANDLE exportSemaphoreHandle = getVkSemaphoreHandle(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT, semaphore_);
+	semaphoreHandle_ = getVkSemaphoreHandle(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT, semaphore_);
 
 	teVkSemaphore_.set(TEVulkanSemaphoreCreate(
 		VK_SEMAPHORE_TYPE_BINARY,
-		exportSemaphoreHandle,
+		semaphoreHandle_,
 		VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT,
 		VulkanSemaphoreCallback,
 		this));
 
-	// need to check this 
-	// CloseHandle(exportSemaphoreHandle);
+	ownsSemaphore_ = true;
+	ownsImage_ = true;
+
+	setupCudaResources(textureHandle_, semaphoreHandle_, false);
 
 	std::cout	<< "Texture Created (to TE), width: " << extent_.width 
 				<< " height: " << extent_.height << std::endl;
-
-
-
 }
 
 
@@ -543,54 +531,78 @@ HANDLE Texture::getVkMemoryHandle(VkExternalMemoryHandleTypeFlagBitsKHR external
 	return handle;
 }
 
-extern cudaError_t
-memCopyFromSurfaceCharBRGA(
-	unsigned char* dst,
-	int width,
-	int height,
-	cudaSurfaceObject_t input,
-	cudaStream_t stream);
+//extern cudaError_t
+//memCopyFromSurfaceCharBRGA(
+//	unsigned char* dst,
+//	int width,
+//	int height,
+//	cudaSurfaceObject_t input,
+//	cudaStream_t stream);
 
-uint8_t* Texture::cudaMemory() const
+void Texture::copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream)
 {
-	//memCopyFromSurfaceCharBRGA(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, cudaStream_);
-
-	return cudaBuffer_;
+	cudaVkSemaphoreWait(cudaExtSemaphore_, waitValue, stream);
+	CUDA_CHECK(memCopyFromSurfaceCharBRGA(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
+	cudaVkSemaphoreSignal(cudaExtSemaphore_, ++waitValue, stream);
 }
 
-void* Texture::copyCudaMemToTexture(uint32_t* memory) const
-{
-	return nullptr;
+void Texture::copyCudaMemToImage(uint8_t* memory,
+	cudaExternalSemaphore_t semaphore, 
+	uint64_t& waitValue, 
+	cudaStream_t stream)
+{	
+	
+
+	cudaVkSemaphoreWait(semaphore, waitValue, stream);
+	CUDA_CHECK(memCopyToSurfaceCharBRGA(cudaSurface_, extent_.width, extent_.height, memory, stream));
+	waitValue_ = ++waitValue;
+
+
+	cudaVkSemaphoreSignal(semaphore, waitValue_, stream);
+
 }
 
-void Texture::cudaImportSemaphore()
+
+void Texture::setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory)
+{
+	cudaImportTimelineSemaphore(semaphoreHandle_);
+	cudaImportImageMemory(textureHandle_);
+
+	if (allocateMemory)
+		cudaAllocateMemory();
+}
+
+void Texture::cudaImportTimelineSemaphore(HANDLE semaphoreHandle)
+{
+	cudaExternalSemaphoreHandleDesc cudaExtSemaphoreHandleDesc = {};
+	std::memset(&cudaExtSemaphoreHandleDesc, 0, sizeof(cudaExtSemaphoreHandleDesc));
+	cudaExtSemaphoreHandleDesc.type = cudaExternalSemaphoreHandleTypeTimelineSemaphoreWin32;
+	cudaExtSemaphoreHandleDesc.handle.win32.handle = semaphoreHandle;
+	cudaExtSemaphoreHandleDesc.flags = 0;
+
+	cudaImportExternalSemaphore(&cudaExtSemaphore_, &cudaExtSemaphoreHandleDesc);
+}
+
+
+
+void Texture::cudaImportSemaphore(HANDLE semaphoreHandle)
 {
 	cudaExternalSemaphoreHandleDesc cudaExtSemaphoreHandleDesc = {};
 	std::memset(&cudaExtSemaphoreHandleDesc, 0, sizeof(cudaExtSemaphoreHandleDesc));
 	cudaExtSemaphoreHandleDesc.type = cudaExternalSemaphoreHandleTypeOpaqueWin32;
-	cudaExtSemaphoreHandleDesc.handle.win32.handle = getVkSemaphoreHandle(
-		VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT, cudaSemaphore_);
+	cudaExtSemaphoreHandleDesc.handle.win32.handle = semaphoreHandle;
 	cudaExtSemaphoreHandleDesc.flags = 0;
 
 	cudaImportExternalSemaphore(&cudaExtSemaphore_, &cudaExtSemaphoreHandleDesc);
-
-	//std::memset(&cudaExtSemaphoreHandleDesc, 0, sizeof(cudaExtSemaphoreHandleDesc));
-	//cudaExtSemaphoreHandleDesc.type = cudaExternalSemaphoreHandleTypeOpaqueWin32;
-	//cudaExtSemaphoreHandleDesc.handle.win32.handle = getVkSemaphoreHandle(
-	//	VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT, cudaCudaUpdateVkSemaphore_);
-	//cudaExtSemaphoreHandleDesc.flags = 0;
-
-
-	//cudaImportExternalSemaphore(&cudaExtCudaUpdateVkSemaphore_, &cudaExtSemaphoreHandleDesc);
 }
 
-void Texture::cudaImportImageMemory()
+void Texture::cudaImportImageMemory(HANDLE imageHandle)
 {
 	cudaExternalMemoryHandleDesc cudaExtMemHandleDesc;
 	std::memset(&cudaExtMemHandleDesc, 0, sizeof(cudaExtMemHandleDesc));
 	cudaExtMemHandleDesc.type = cudaExternalMemoryHandleTypeOpaqueWin32;
 	//cudaExtMemHandleDesc.handle.win32.handle = getVkMemoryHandle(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT, memory);
-	cudaExtMemHandleDesc.handle.win32.handle = textureHandle_;
+	cudaExtMemHandleDesc.handle.win32.handle = imageHandle;
 	cudaExtMemHandleDesc.size = imageSize_;
 	cudaExtMemHandleDesc.flags = 0;
 
@@ -616,39 +628,33 @@ void Texture::cudaImportImageMemory()
 	resDesc.resType = cudaResourceTypeArray;
 	resDesc.res.array.array = cudaArray_;
 
+
 	CUDA_CHECK(cudaCreateSurfaceObject(&cudaSurface_, &resDesc));
 }
 
 void Texture::cudaAllocateMemory()
 {
-	cudaMalloc((void**)&cudaBuffer_, imageSize_);
+	CUDA_CHECK(cudaMalloc((void**)&cudaBuffer_, imageSize_));
 }
 
-void Texture::cudaUpdateImageMemory()
-{
-	// copy from cuda buffer to texture here
-}
-
-void Texture::cudaVkSemaphoreWait(cudaExternalSemaphore_t& extSemaphore) {
+void Texture::cudaVkSemaphoreWait(cudaExternalSemaphore_t semaphore, uint64_t waitValue, cudaStream_t stream) {
 	cudaExternalSemaphoreWaitParams extSemaphoreWaitParams;
-
 	std::memset(&extSemaphoreWaitParams, 0, sizeof(extSemaphoreWaitParams));
-
-	extSemaphoreWaitParams.params.fence.value = 0;
+	extSemaphoreWaitParams.params.fence.value = waitValue;
 	extSemaphoreWaitParams.flags = 0;
 
 	CUDA_CHECK(cudaWaitExternalSemaphoresAsync(
-		&extSemaphore, &extSemaphoreWaitParams, 1, cudaStream_));
+		&semaphore, &extSemaphoreWaitParams, 1, stream));
 }
 
-void Texture::cudaVkSemaphoreSignal(cudaExternalSemaphore_t& extSemaphore) {
+void Texture::cudaVkSemaphoreSignal(cudaExternalSemaphore_t semaphore, uint64_t signalValue, cudaStream_t stream) {
 	cudaExternalSemaphoreSignalParams extSemaphoreSignalParams;
 	std::memset(&extSemaphoreSignalParams, 0, sizeof(extSemaphoreSignalParams));
-
-	extSemaphoreSignalParams.params.fence.value = 0;
+	extSemaphoreSignalParams.params.fence.value = signalValue;
 	extSemaphoreSignalParams.flags = 0;
+
 	CUDA_CHECK(cudaSignalExternalSemaphoresAsync(
-		&extSemaphore, &extSemaphoreSignalParams, 1, cudaStream_));
+		&semaphore, &extSemaphoreSignalParams, 1, stream));
 }
 
 

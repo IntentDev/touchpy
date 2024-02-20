@@ -925,7 +925,8 @@ void createDevice(
 		vContext.queueFamilyIndices.setPresentQueueInfo(&vContext.presentQueue, std::nullopt, .9f));
 	vContext.presentFamily = std::get<0>(deviceQueueInfos.back());
 
-	VkDeviceCreateInfo createInfo{ .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
+	VkDeviceCreateInfo createInfo;
+	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
 	auto queueCreateInfos = vContext.queueFamilyIndices.queueCreateInfos();
 	createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
@@ -940,6 +941,7 @@ void createDevice(
 
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+	createInfo.flags = 0;
 
 	if (enableValidationLayers) 
 	{
@@ -987,7 +989,8 @@ void createDevice(
 		vContext.queueFamilyIndices.setDeviceQueueInfo(VK_QUEUE_TRANSFER_BIT, &vContext.transferQueue));
 	vContext.transferFamily = std::get<0>(deviceQueueInfos.back());
 
-	VkDeviceCreateInfo createInfo{ .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
+	VkDeviceCreateInfo createInfo;
+	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
 	// get support for timeline semaphore
 	VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures{};
@@ -1014,6 +1017,7 @@ void createDevice(
 
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+	createInfo.flags = 0;
 
 	if (enableValidationLayers)
 	{

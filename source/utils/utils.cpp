@@ -10,25 +10,25 @@
 
 //using namespace utils;
 
-void utils::ImageLoadUINT8(std::string path, int& width, int& height, int& numChannels, std::unique_ptr<unsigned char[]>& pixels)
-{
-	auto inp = OIIO::ImageInput::open(path);
-	if (!inp)
-		return;
-	const OIIO::ImageSpec& spec = inp->spec();
-	width = spec.width;
-	height = spec.height;
-	numChannels = spec.nchannels;
-	OIIO::TypeDesc format = spec.format;
-
-	std::cout << "Loading texture: " << path << "\n";
-	std::cout << "\txres = " << width << ", yres = " << height << ", nchannels = " << numChannels << " format: " << format.c_str() << std::endl;
-
-	pixels = std::unique_ptr<unsigned char[]>(new unsigned char[width * height * numChannels]);
-
-	inp->read_image(0, 0, 0, numChannels, OIIO::TypeDesc::UINT8, &pixels[0]);
-	inp->close();
-}
+//void utils::ImageLoadUINT8(std::string path, int& width, int& height, int& numChannels, std::unique_ptr<unsigned char[]>& pixels)
+//{
+//	auto inp = OIIO::ImageInput::open(path);
+//	if (!inp)
+//		return;
+//	const OIIO::ImageSpec& spec = inp->spec();
+//	width = spec.width;
+//	height = spec.height;
+//	numChannels = spec.nchannels;
+//	OIIO::TypeDesc format = spec.format;
+//
+//	std::cout << "Loading texture: " << path << "\n";
+//	std::cout << "\txres = " << width << ", yres = " << height << ", nchannels = " << numChannels << " format: " << format.c_str() << std::endl;
+//
+//	pixels = std::unique_ptr<unsigned char[]>(new unsigned char[width * height * numChannels]);
+//
+//	inp->read_image(0, 0, 0, numChannels, OIIO::TypeDesc::UINT8, &pixels[0]);
+//	inp->close();
+//}
 
 
 std::string utils::generateUUID(uint32_t length) {

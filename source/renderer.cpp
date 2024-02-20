@@ -98,6 +98,8 @@ Renderer::createPrimaryDevice()
 	vkGetPhysicalDeviceProperties(vContext_.physicalDevice,
 		&vContext_.physicalDeviceProperties);
 
+	std::cout << "Selected GPU: " << vContext_.physicalDeviceProperties.deviceName << std::endl;
+
 	vri::createDevice(vContext_, deviceExtensions_,
 		validationLayers_, enableValidationLayers_);
 
