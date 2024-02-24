@@ -163,22 +163,6 @@ Texture::Texture(
 		format_(format)
 
 {
-	//uint32_t extensionCount = 0;
-	//vkEnumerateDeviceExtensionProperties(physicalDevice_, nullptr, &extensionCount, nullptr);
-	//std::vector<VkExtensionProperties> extensions(extensionCount);
-	//vkEnumerateDeviceExtensionProperties(physicalDevice_, nullptr, &extensionCount, extensions.data());
-
-	//bool extensionFound = std::any_of(extensions.begin(), extensions.end(), [](const VkExtensionProperties& extension) {
-	//	return strcmp(extension.extensionName, VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME) == 0;
-	//	});
-
-	//if (!extensionFound) {
-	//	std::cout << "VK_KHR_external_memory_win32 extension not supported." << std::endl;
-	//}
-	//else {
-	//	std::cout << "VK_KHR_external_memory_win32 extension supported." << std::endl;
-	//}
-
 	// need to create function that sets up pitch depending on format and sets the 
 	// format for cuda memory allocation
 	imagePitch_ = extent_.width * sizeof(uint8_t) * 4;
@@ -270,13 +254,15 @@ Texture::Texture(
 						VulkanTextureCallback,
 						this));		
 
-	// need to check this 
-	// CloseHandle(exportTextureHandle);
+	VkSemaphoreTypeCreateInfoKHR semaphoreTypeCreateInfo{};
+	semaphoreTypeCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
+	semaphoreTypeCreateInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+	semaphoreTypeCreateInfo.initialValue = 0;
 
-	VkSemaphoreCreateInfo exportSemaphoreCreateInfo{};
+	VkExportSemaphoreCreateInfo exportSemaphoreCreateInfo{};
 	exportSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
-	exportSemaphoreCreateInfo.flags = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-
+	exportSemaphoreCreateInfo.pNext = &semaphoreTypeCreateInfo;
+	exportSemaphoreCreateInfo.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 
 	VkSemaphoreCreateInfo semaphoreCreateInfo{};
 	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -289,7 +275,7 @@ Texture::Texture(
 	semaphoreHandle_ = getVkSemaphoreHandle(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT, semaphore_);
 
 	teVkSemaphore_.set(TEVulkanSemaphoreCreate(
-		VK_SEMAPHORE_TYPE_BINARY,
+		VK_SEMAPHORE_TYPE_TIMELINE,
 		semaphoreHandle_,
 		VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT,
 		VulkanSemaphoreCallback,
@@ -386,23 +372,31 @@ void Texture::cmdTransitionImageLayout(VkCommandBuffer cmdBuffer, VkImageLayout 
 	imageMemBarrier.subresourceRange.layerCount = 1;
 
 
-	VkPipelineStageFlags sourceStage;
+	VkPipelineStageFlags srcStage;
 	VkPipelineStageFlags dstStage;
 
-	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-	{
-		imageMemBarrier.srcAccessMask = 0;
-		imageMemBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	}
-	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
 	{
 		imageMemBarrier.srcAccessMask = 0;
 		imageMemBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
-		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	{
+		imageMemBarrier.srcAccessMask = 0;
+		imageMemBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+	{
+		imageMemBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		imageMemBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 	}
 	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
@@ -410,53 +404,41 @@ void Texture::cmdTransitionImageLayout(VkCommandBuffer cmdBuffer, VkImageLayout 
 		imageMemBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 		imageMemBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
-	else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 	{
-		imageMemBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-		imageMemBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		imageMemBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		imageMemBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-		sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-		dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
 	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
 	{
 		imageMemBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 		imageMemBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
-		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 	}
-	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-	{
-		imageMemBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		imageMemBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-		dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	}
-	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-		imageMemBarrier.srcAccessMask = 0;
-		imageMemBarrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-	}
 	else
 		throw std::invalid_argument("Unsupported layout transition!");
 
-
 	vkCmdPipelineBarrier(
 		cmdBuffer,
-		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		srcStage,
+		dstStage,
 		0,
 		0, nullptr,
 		0, nullptr,
 		1, &imageMemBarrier
 	);
+
+	// should be set after it's been transitioned, look into callback for this
+	imageLayout_ = newLayout;
 }
 
 void Texture::VulkanSemaphoreCallback(HANDLE semaphore, TEObjectEvent event, void* info)
@@ -547,18 +529,19 @@ void Texture::copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream)
 }
 
 void Texture::copyCudaMemToImage(uint8_t* memory,
-	cudaExternalSemaphore_t semaphore, 
-	uint64_t& waitValue, 
+	cudaExternalSemaphore_t waitSemaphore,
+	cudaExternalSemaphore_t signalSemaphore,
+	uint64_t waitValue, 
+	uint64_t signalValue,
 	cudaStream_t stream)
 {	
 	
-
-	cudaVkSemaphoreWait(semaphore, waitValue, stream);
+	cudaVkSemaphoreWait(waitSemaphore, waitValue, stream);
 	CUDA_CHECK(memCopyToSurfaceCharBRGA(cudaSurface_, extent_.width, extent_.height, memory, stream));
-	waitValue_ = ++waitValue;
+	//waitValue_ = ++waitValue;
 
 
-	cudaVkSemaphoreSignal(semaphore, waitValue_, stream);
+	cudaVkSemaphoreSignal(signalSemaphore, signalValue, stream);
 
 }
 

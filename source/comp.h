@@ -9,37 +9,45 @@
 #include <string>
 #include <mutex>
 #include <memory>
+#include <chrono>
 
 class Comp
 {
 public:
-	Comp(std::string filePath);
+	Comp();
+	Comp(const std::string& filePath);
 	~Comp();
 
-	void load();
-	void didConfigure(TEResult result);
-	bool loaded() { std::lock_guard<std::mutex> lock(mutex_); return loaded_ = true; }
+	void loadTox(const std::string& filePath);
+	void unload();
+	bool loaded();
 	void update();
-	void render(bool loaded);
-
 
 private:
-	std::mutex                              mutex_;
-	bool                                    pendingLayoutChange_ { false };
-	bool                                    loaded_              { false };
-	std::string                             filePath_;
-	bool                                    configureRenderer_   { false }; 
-	TEResult                                configureResult_     { TEResultSuccess };
-	bool                                    configureError_      { false };
-	bool                                    inFrame_             { false };
 
+	// shared state between the main thread and the TouchEngine thread
+	std::mutex                              mutex_;
+	bool                                    ssPendingLayoutChange_ { false };
+	bool                                    ssLoaded_              { false };
+	bool                                    ssReady_          { false };
+	bool                                    ssInFrame_             { false };
+
+	void onLinkLayoutChange(TELinkEvent event, const char* identifier);
+	void getState(bool& configured, bool& loaded, bool& linksChanged, bool& inFrame);
+	void setInFrame(bool inFrame);
+
+	std::chrono::high_resolution_clock::time_point lastFrameTime_{};
+
+	// main thread only
+
+	std::string                             filePath_;
+	size_t								    buffersPerInputLink  { 2 };
 	TouchObject<TEInstance>                 instance_            { nullptr };
 	double                                  inputSampleRate_     { 60.0 };
 	int32_t                                 inputChannelCount_   { 0 };
 
-	int64_t                                 framesPerSecond_     { 60 };
+	int64_t                                 framesPerSecond_     { 1 };
 
-	std::unordered_map<std::string, size_t> outputLinkTextureMap_;
 	std::vector<std::string>                pendingOutputTextures_;
 	std::unordered_map<HANDLE, Texture>     outputTextures_;
 	std::unordered_map<HANDLE, Texture>     inputTextures_;
@@ -51,26 +59,39 @@ private:
 	VkQueue                                 queue_               { VK_NULL_HANDLE };
 	VkCommandBuffer                         commandBuffer_       { VK_NULL_HANDLE };
 
-	std::unique_ptr<Texture>                texFromTE_;
-	std::unique_ptr<Texture>                texToTE_;
 
-	bool                                    srcInitialized_      { false };
-	bool                                    dstInitialized_      { false };
+	std::unordered_map<HANDLE, std::unique_ptr<Texture>>   texturesExternal_;
+
+	std::unordered_map<std::string, std::vector<std::unique_ptr<Texture>>>   texturesInternal_;
+
+	std::unique_ptr<Texture>                texToTE_;
 
 	VkFence                                 submitFence_         { VK_NULL_HANDLE };
 
 	cudaStream_t                            cudaStream_          { nullptr };
 	int										cudaDevice_ 		 { -1 };
 
+
+	void initComp();
+	void load();
+
+
+
 	static void	eventCallback(
 		TEInstance* instance,
-		TEEvent event,
-		TEResult result,
-		int64_t start_time_value,
-		int32_t start_time_scale,
-		int64_t end_time_value,
-		int32_t end_time_scale,
-		void* info);
+		TEEvent		event,
+		TEResult    result,
+		int64_t     start_time_value,
+		int32_t     start_time_scale,
+		int64_t     end_time_value,
+		int32_t     end_time_scale,
+		void*       info);
+
+	void onEventInstanceReady(TEResult result);
+	void onEventInstanceDidLoad(TEResult result);
+	void onEventInstanceDidUnload(TEResult result);
+	void onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale);
+	void onEventGeneral(TEResult result, uint64_t start_time, uint64_t end_time);
 
 	static void	linkEventCallback(
 		TEInstance* instance, 
@@ -78,14 +99,19 @@ private:
 		const char* identifier,
 		void* info);
 
+	void onLinkEventValueChange(const char* identifier);
+	void onLinkEventAdded(const char* identifier)       { onLinkLayoutChange(TELinkEventAdded, identifier); }
+	void onLinkEventRemoved(const char* identifier)     { onLinkLayoutChange(TELinkEventRemoved, identifier); }
+	void onLinkEventModified(const char* identifier)    { onLinkLayoutChange(TELinkEventModified, identifier); }
+	void onLinkEventMoved(const char* identifier)       { onLinkLayoutChange(TELinkEventMoved, identifier); }
+	void onLinkEventStateChange(const char* identifier) { onLinkLayoutChange(TELinkEventStateChange, identifier); }
+	void onLinkEventChildChange(const char* identifier) { onLinkLayoutChange(TELinkEventChildChange, identifier); }    
+
+
+
 	void applyLayoutChange();
 	bool applyOutputTextureChange();
 
-	void linkLayoutDidChange(TELinkEvent event, const char* identifier);
-	void linkValueChange(const char* identifier);
-	void endFrame(int64_t start_time_value, int32_t start_time_scale, TEResult result);
-	void getState(bool& configured, bool& loaded, bool& linksChanged, bool& inFrame);
-	void setInFrame(bool inFrame);
 
 	void createRenderer();
 	void cudaInit();

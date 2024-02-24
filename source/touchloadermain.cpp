@@ -29,50 +29,51 @@ void disableRawMode()
 
 void pollTerminal()
 {
+    bool running = true;
     enableRawMode();
-    while (true)
+    while (running)
     {
-        char ch;
+        char buffer[4]; // Increased buffer size to avoid buffer overflow 
         DWORD read;
-        ReadConsole(GetStdHandle(STD_INPUT_HANDLE), &ch, 1, &read, NULL);
+        ReadConsole(GetStdHandle(STD_INPUT_HANDLE), buffer, 1, &read, NULL);
+        char ch = buffer[0]; // First character from the buffer
+
         if (ch == 'q')
         {
             std::lock_guard<std::mutex> lock(mutex);
             exitCommand = true;
+            running = false;
             break;
         }
     }
     disableRawMode();
 }
 
-
-
 int main(int argc, char* argv[])
 {
     // get path to which is ../../../test/test1.tox
     std::filesystem::path projectDir(CMAKE_PROJECT_DIR);
-    std::filesystem::path compPath = projectDir / "test" / "TopChopIO.tox";
+    std::filesystem::path compPath = projectDir / "test" / "TopChopDatIO.tox";
    
     std::cout << "Absolute file path: " << compPath.string() << std::endl;
 
-    std::unique_ptr<Comp> tox = std::make_unique<Comp>(compPath.string());
-    tox->load();
+    //std::unique_ptr<Comp> tox = std::make_unique<Comp>(compPath.string());
+
+    std::unique_ptr<Comp> tox = std::make_unique<Comp>();
+    tox->loadTox(compPath.string());
 
     // poll terminal in separate thread for exit command q
     std::thread terminal(pollTerminal);
-
 
     bool running = true;
     while (running)
     {
         tox->update();
 
-
         {
             std::lock_guard<std::mutex> lock(mutex);
             running = !exitCommand;
         }
-
     }
 
     if (terminal.joinable()) terminal.join();
