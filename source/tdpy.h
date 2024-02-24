@@ -36,12 +36,6 @@ static PyObject* hello_fast_imp(PyObject* self)
 
 namespace py = pybind11;
 
-void load_tox(std::string filePath)
-{
-	std::unique_ptr<Comp> tox = std::make_unique<Comp>(filePath);
-	tox->load();
-}
-
 void create_vk_instance()
 {
     std::unique_ptr<Renderer> context = std::make_unique<Renderer>();

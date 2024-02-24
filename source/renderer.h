@@ -37,39 +37,6 @@ public:
 
     TEGraphicsContext* teContext() { return teContext_.get(); }
 
-    //bool doesInputTextureTransfer() const { return true; }
-
-    //size_t getInputImageCount() const;
-    //void beginImageLayout();
-
-    //void addInputImage(
-    //    const unsigned char* rgba, 
-    //    size_t bytesPerRow, 
-    //    int width, 
-    //    int height);
-
-    //bool getInputImage(
-    //    size_t index, 
-    //    TouchObject<TETexture> & texture, 
-    //    TouchObject<TESemaphore> & semaphore, 
-    //    uint64_t& waitValue);
-
-    //void clearInputImages();
-    //size_t getRightSideImageCount();
-    //void addOutputImage();
-    //void endImageLayout();
-
-    //void clearOutputImages(); // TODO: ?
-
-    //bool updateOutputImage(
-    //    const TouchObject<TEInstance> & instance, 
-    //    size_t index, 
-    //    const std::string& identifier);
-
-    //const TouchObject<TETexture>& getOutputImage(size_t index) const;
-
-
-
 private:
 
     uint8_t                             physicalDeviceUUID_[VK_UUID_SIZE];

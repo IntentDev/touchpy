@@ -5,6 +5,24 @@
 #include <string>
 #include <iostream>
 
+#ifdef NDEBUG
+#define TE_CHECK(x) x
+#else
+#define TE_CHECK(x) \
+do \
+{ \
+	TEResult result = x; \
+	if (result != TEResultSuccess) \
+	{ \
+		std::cerr << "TE Error: "  <<  __FILE__ << ": " << __LINE__ << ": " \
+			<< TEResultGetDescription(result) << std::endl; \
+		abort(); \
+	} \
+} while (0)
+#endif
+
+
+
 namespace teutils
 {
 	std::string eventToString(TEEvent event)

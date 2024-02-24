@@ -34,11 +34,13 @@ public:
 	VkImage                        image() const            { return image_; }
 	VkImageView                    imageView() const        { return imageView_; }
 	TEVulkanTexture*               teVkTexture() const      { return teVkTexture_; }
+	VkImageLayout				   imageLayout() const      { return imageLayout_; }
 
 	HANDLE                         textureHandle() const    { return textureHandle_; }
 	HANDLE                         semaphoreHandle() const  { return semaphoreHandle_; }
 	VkSemaphore                    semaphore() const        { return semaphore_; }
 	uint64_t                       waitValue() const        { return waitValue_; }
+	uint64_t                       signalValue() const      { return signalValue_; }
 	TouchObject<TEVulkanSemaphore> teVkSemaphore() const    { return teVkSemaphore_; }
 	cudaExternalSemaphore_t        cudaExtSemaphore() const { return cudaExtSemaphore_; }
 
@@ -58,8 +60,10 @@ public:
 
 	void copyCudaMemToImage(
 		uint8_t* memory,
-		cudaExternalSemaphore_t semaphore, 
-		uint64_t& waitValue, 
+		cudaExternalSemaphore_t waitSemaphore, 
+		cudaExternalSemaphore_t signalSemaphore,
+		uint64_t waitValue,
+		uint64_t signalValue,
 		cudaStream_t stream
 	);
 
@@ -71,11 +75,7 @@ private:
 	VkExtent2D                            extent_              { 0, 0 };
 	VkFormat                              format_              { VK_FORMAT_UNDEFINED };
 
-	VmaAllocationCreateFlags              allocCreateFlags_    { VMA_MEMORY_USAGE_GPU_ONLY };
 	bool                                  flipped_             { false };
-
-	VmaAllocation                         allocation_          { VK_NULL_HANDLE };
-	VmaAllocationInfo*                    allocInfo_           { VK_NULL_HANDLE };
 
 
 	VkSemaphore                           semaphore_           { VK_NULL_HANDLE };
@@ -98,6 +98,7 @@ private:
 	VkDeviceMemory                        memory_              { VK_NULL_HANDLE };
 	VkImageView                           imageView_           { VK_NULL_HANDLE };
 	TouchObject<TEVulkanTexture>          teVkTexture_         { nullptr };
+	VkImageLayout						  imageLayout_         { VK_IMAGE_LAYOUT_UNDEFINED };
 
 	HANDLE getVkSemaphoreHandle(
 		VkExternalSemaphoreHandleTypeFlagBitsKHR externalSemaphoreHandleType,

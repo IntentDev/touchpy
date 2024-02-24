@@ -12,11 +12,10 @@ import tdpy
 
 if __name__ == '__main__':
 
-	tox_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'TopChopIO.tox'))
+	tox_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'TopChopDatIO.tox'))
 
 	tox = tdpy.Comp(tox_path)
-	tox.load()
-	
+
 	while not (keyboard.is_pressed('q')):
 		tox.update()
 

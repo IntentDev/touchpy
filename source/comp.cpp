@@ -5,19 +5,33 @@
 
 
 
+Comp::Comp()
+{
+	initComp();
+}
 
 
-Comp::Comp(std::string filePath)
+Comp::Comp(const std::string& filePath)
 	: filePath_(filePath)
+{	
+	initComp();
+	load();
+}
+
+void Comp::initComp()
 {
 	createRenderer();
 	cudaInit();
+	lastFrameTime_ = std::chrono::high_resolution_clock::now();
+
 }
 
 Comp::~Comp()
 {
+	TE_CHECK(TEInstanceUnload(instance_));
 	vkDestroyFence(device_, submitFence_, nullptr);
 }
+
 
 void Comp::createRenderer()
 {
@@ -31,10 +45,8 @@ void Comp::createRenderer()
 	queue_ = renderer_->vContext().transferQueue;
 	commandBuffer_ = renderer_->vContext().transferCommandBuffers[0];
 
-
 	VkFenceCreateInfo fenceCreateInfo = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0 };
 	vkCreateFence(device_, &fenceCreateInfo, nullptr, &submitFence_);
-
 }
 
 
@@ -94,97 +106,44 @@ void Comp::setCudaDevice()
 
 void Comp::load()
 {
-	std::cout << "Loading tox file: " << std::string(filePath_.begin(), filePath_.end()) << std::endl;
+	std::cout << "Loading tox: \t" << std::string(filePath_.begin(), filePath_.end()) << std::endl;
 
-	TEResult teresult = TEInstanceCreate(eventCallback, linkEventCallback, this, instance_.take());
+	TE_CHECK(TEInstanceCreate(eventCallback, linkEventCallback, this, instance_.take()));
+	std::cout << "\t\tInstance created!" << std::endl;
 
-	if (teresult == TEResultSuccess)
-	{
-		std::cout << "Instance created!" << std::endl;
-		teresult = TEInstanceAssociateGraphicsContext(instance_, renderer_->teContext());
-	}
-	else
-	{
-		std::cout << "Failed to create instance" << std::endl;
-		std::cout << TEResultGetDescription(teresult) << std::endl;
-		return;
-	}
+	TE_CHECK(TEInstanceAssociateGraphicsContext(instance_, renderer_->teContext()));
+	std::cout << "\t\tInstance associated with Graphics Context!" << std::endl;
 
-	if (teresult == TEResultSuccess)
-	{
-		std::cout << "Instance associated with Graphics Context!" << std::endl;
-		teresult = TEInstanceConfigure(instance_, filePath_.c_str(), TETimeInternal);
-	}
-	else
-	{
-		std::cout << "Failed to associate instance with Graphics Context" << std::endl;
-		std::cout << TEResultGetDescription(teresult) << std::endl;
-		return;
-	}
+	TE_CHECK(TEInstanceConfigure(instance_, filePath_.c_str(), TETimeInternal));
+	std::cout << "\t\tInstance configured!" << std::endl;
 
-	if (teresult == TEResultSuccess)
-	{
-		std::cout << "Instance configured!" << std::endl;
-		teresult = TEInstanceSetFrameRate(instance_, framesPerSecond_, 1);
-	}
-	else
-	{
-		std::cout << "Failed to configure instance" << std::endl;
-		std::cout << TEResultGetDescription(teresult) << std::endl;
-		return;
-	}
+	TE_CHECK(TEInstanceSetFrameRate(instance_, framesPerSecond_, 1));
+	TE_CHECK(TEInstanceLoad(instance_));
+	std::cout << "\t\tInstance loaded!" << std::endl;
 
-	if (teresult == TEResultSuccess)
-	{
-		teresult = TEInstanceLoad(instance_);
-	}
-	else
-	{
-		std::cout << "Failed to set frame rate" << std::endl;
-		std::cout << TEResultGetDescription(teresult) << std::endl;
-		return;
-	}
-
-	if (teresult == TEResultSuccess)
-	{
-		std::cout << "Instance loaded!" << std::endl;
-		teresult = TEInstanceResume(instance_);
-	}
-	else
-	{
-		std::cout << "Failed to load instance" << std::endl;
-		std::cout << TEResultGetDescription(teresult) << std::endl;
-		return;
-	}
-
-	if (teresult != TEResultSuccess)
-	{
-		std::cout << "Failed to resume instance" << std::endl;
-		std::cout << TEResultGetDescription(teresult) << std::endl;
-		return;
-	}
-
-
-
-	//assert(teresult == TEResultSuccess);
-
-	//const auto interval = static_cast<unsigned int>(std::ceil(1000. / framesPerSecond_ / 2.));
-
-
+	TE_CHECK(TEInstanceResume(instance_));
 }
 
-
-void Comp::didConfigure(TEResult result)
+void Comp::loadTox(const std::string& filePath)
 {
-	// Configuration can be cancelled by a subsequent configuration or other action
-	// - we can ignore the event in that case and await a following one
-	if (result != TEResultCancelled)
-	{
-		std::lock_guard<std::mutex> guard(mutex_);
-		configureRenderer_ = true;
-		configureResult_ = result;
-	}
+	filePath_ = filePath;
+	unload();
+	load();
 }
+
+
+void Comp::unload()
+{
+	
+}
+
+
+bool Comp::loaded()
+{
+	std::lock_guard<std::mutex> guard(mutex_);
+	return ssLoaded_;
+}
+
 
 void Comp::eventCallback(TEInstance* instance,
 	TEEvent event,
@@ -195,64 +154,120 @@ void Comp::eventCallback(TEInstance* instance,
 	int32_t end_time_scale,
 	void* info)
 {
-
-	Comp* tdTox = static_cast<Comp*>(info);
+	Comp* comp = static_cast<Comp*>(info);
 
 	switch (event)
 	{
 	case TEEventInstanceReady:
-		std::cout << "Instance ready" << std::endl;
+		comp->onEventInstanceReady(result);
 		break;
 	case TEEventInstanceDidLoad:
-		tdTox->loaded();
+		comp->onEventInstanceDidLoad(result);
 		break;
 	case TEEventInstanceDidUnload:
+		comp->onEventInstanceDidUnload(result);
 		break;
 	case TEEventFrameDidFinish:
-		tdTox->endFrame(start_time_value, start_time_scale, result);
+		comp->onEventFrameDidFinish(result, start_time_value, start_time_scale);
 		break;
 	case TEEventGeneral:
-		// TODO: check result here
+		comp->onEventGeneral(result, start_time_value, start_time_scale);
 		break;
 	default:
 		break;
 	}
 }
+
+void Comp::onEventInstanceReady(TEResult result)
+{
+	bool temp = false;
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		ssReady_ = result == TEResultSuccess;
+	}
+
+	std::cout << "\t\tInstance Ready: " << TEResultGetDescription(result) << std::endl;
+}
+
+void Comp::onEventInstanceDidLoad(TEResult result)
+{
+	std::lock_guard<std::mutex> lock(mutex_);
+	ssLoaded_ = true;
+}
+
+void Comp::onEventInstanceDidUnload(TEResult result)
+{
+	std::cout << "Instance unloaded" << std::endl;
+}
+
+void Comp::onEventFrameDidFinish(TEResult result, int64_t time_value, int32_t time_scale)
+{
+	setInFrame(false);
+	//std::cout << "Frame end: " << TEResultGetDescription(result)
+	//	<< " time_value: " << time_value
+	//	<< " time_scale: " << time_scale
+	//	<< std::endl;
+}
+
+void Comp::onEventGeneral(TEResult result, uint64_t start_time, uint64_t end_time)
+{
+	//std::cout << "General event: " << TEResultGetDescription(result)
+	//	<< " start_time: " << start_time
+	//	<< " end_time: " << end_time
+	//	<< std::endl;
+}
+
 
 void Comp::linkEventCallback(TEInstance* instance, TELinkEvent event, const char* identifier, void* info)
 {
 	//std::cout << "Link event: " << teutils::linkEventToString(event) << " identifier: " << identifier << std::endl;
-	Comp* tdTox = static_cast<Comp*>(info);
+	Comp* comp = static_cast<Comp*>(info);
 	switch (event)
 	{
-	case TELinkEventAdded:
-		tdTox->linkLayoutDidChange(event, identifier);
-		break;
 	case TELinkEventValueChange:
-		tdTox->linkValueChange(identifier);
+		comp->onLinkEventValueChange(identifier);
+		break;
+	case TELinkEventAdded:
+		comp->onLinkEventAdded(identifier);
+		break;
+	case TELinkEventRemoved:
+		comp->onLinkEventRemoved(identifier);
+		break;
+	case TELinkEventModified:
+		comp->onLinkEventModified(identifier);
+		break;
+	case TELinkEventMoved:
+		comp->onLinkEventMoved(identifier);
+		break;
+	case TELinkEventStateChange:
+		comp->onLinkEventStateChange(identifier);
+		break;
+	case TELinkEventChildChange:
+		comp->onLinkEventChildChange(identifier);
 		break;
 	default:
 		break;
 	}
 }
 
-void Comp::endFrame(int64_t time_value, int32_t time_scale, TEResult result)
-{
-	setInFrame(false);
-}
-
-void Comp::getState(bool& configured, bool& loaded, bool& linksChanged, bool& inFrame)
+void Comp::onLinkLayoutChange(TELinkEvent event, const char* identifier)
 {
 	std::lock_guard<std::mutex> guard(mutex_);
-	configured = configureRenderer_;
-	configureRenderer_ = false;
-	loaded = loaded_;
-	if (loaded_)
+	ssPendingLayoutChange_ = true;
+
+}
+
+void Comp::getState(bool& ready, bool& loaded, bool& linksChanged, bool& inFrame)
+{
+	std::lock_guard<std::mutex> guard(mutex_);
+	loaded = ssLoaded_;
+	ready = ssReady_;
+	if (ssLoaded_ && ssReady_)
 	{
 		// For this example, we are only interested in links after load has completed
-		linksChanged = pendingLayoutChange_;
-		inFrame = inFrame_;
-		pendingLayoutChange_ = false;
+		linksChanged = ssPendingLayoutChange_;
+		inFrame = ssInFrame_;
+		ssPendingLayoutChange_ = false;
 	}
 	else
 	{
@@ -264,25 +279,11 @@ void Comp::getState(bool& configured, bool& loaded, bool& linksChanged, bool& in
 void Comp::setInFrame(bool inFrame)
 {
 	std::lock_guard<std::mutex> guard(mutex_);
-	inFrame_ = inFrame;
-}
-
-
-void Comp::linkLayoutDidChange(TELinkEvent event, const char* identifier)
-{
-	std::lock_guard<std::mutex> guard(mutex_);
-	pendingLayoutChange_ = true;
-
+	ssInFrame_ = inFrame;
 }
 
 void Comp::applyLayoutChange()
 {
-	//renderer_->beginImageLayout();
-
-	//renderer_->clearInputImages();
-	//renderer_->clearOutputImages();
-	outputLinkTextureMap_.clear();
-
 	for (auto scope : { TEScopeInput, TEScopeOutput })
 	{
 		TouchObject<TEStringArray> groups;
@@ -318,25 +319,10 @@ void Comp::applyLayoutChange()
 									// we can't create the texture here if it is dependent on the 
 									// output texture size or format
 
-									/*if (texFromTE_ && texToTE_.get() == nullptr)
-									{
-										VkExtent2D extent = texFromTE_->extent();
-										VkFormat format = texFromTE_->format();
-										std::cout << "Texture extent: " << extent.width << " x " << extent.height
-											<< " format: " << string_VkFormat(format) << std::endl;
-
-										texToTE_ = std::make_unique<Texture>(
-											physicalDevice_,
-											device_,
-											extent,
-											format
-										);
-									}*/
 								}
 								else
 								{
-									//renderer_->addOutputImage();
-									//outputLinkTextureMap_[info->identifier] = renderer_->getRightSideImageCount() - 1;
+
 								}
 							}
 						}
@@ -349,239 +335,21 @@ void Comp::applyLayoutChange()
 	//renderer_->endImageLayout();
 }
 
-bool Comp::applyOutputTextureChange()
-{
-	// Only hold the lock briefly
-	std::vector<std::string> changes;
-	{
-		std::lock_guard<std::mutex> guard(mutex_);
-		std::swap(pendingOutputTextures_, changes);
-	}
-
-	for (const auto& identifier : changes)
-	{
-		size_t imageIndex = outputLinkTextureMap_[identifier];
-
-		if (identifier == "op/topOut1")
-		{
-			TouchObject <TETexture> teTex;
-			TEResult result = TEInstanceLinkGetTextureValue(
-				instance_, identifier.c_str(), TELinkValueCurrent, teTex.take());
-
-			if (result == TEResultSuccess && TEInstanceHasTextureTransfer(instance_, teTex))
-			{
-				if (texFromTE_.get() == nullptr)
-				{
-					texFromTE_ = std::make_unique<Texture>(
-						renderer_->vContext().physicalDevice,
-						renderer_->vContext().device,
-						instance_,
-						static_cast<TEVulkanTexture*>(teTex.get())
-					);
-					return true; // we need to wait for the texture to be ready
-				}
-
-				if (texToTE_.get() == nullptr && texFromTE_)
-				{
-					texToTE_ = std::make_unique<Texture>(
-						physicalDevice_,
-						device_,
-						texFromTE_->extent(),
-						texFromTE_->format()
-					);
-				}
-
-
-				TouchObject<TESemaphore> teSemaphore;
-				teSemaphore.set(texFromTE_->teVkSemaphore());
-
-				uint64_t waitValue = 0;
-				result = TEInstanceGetTextureTransfer(
-					instance_, 
-					teTex, 
-					teSemaphore.take(),
-					&waitValue);
-
-				//std::cout << "TESemaphore: " << teSemaphore.get() << " waitValue: " << waitValue << std::endl;
-
-				if (result == TEResultSuccess)
-				{
-					//std::cout << "Texture transfer: " << identifier << " : " << waitValue << std::endl;
-					if (TESemaphoreGetType(teSemaphore) == TESemaphoreTypeVulkan)
-					{
-						texFromTE_->copyImageToCudaMem(waitValue, cudaStream_);
-
-						texToTE_->copyCudaMemToImage(
-							texFromTE_->cudaMemory(), 
-							texFromTE_->cudaExtSemaphore(),
-							waitValue,
-							cudaStream_);
-						
-						// sleep for a while
-						std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-
-					//	// wait for semaphore
-					//	VkSemaphoreWaitInfoKHR waitInfo = {};
-					//	waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO_KHR;
-					//	waitInfo.pNext = nullptr;
-					//	waitInfo.flags = 0;
-					//	waitInfo.semaphoreCount = 1;
-					//	VkSemaphore importSemaphore = texFromTE_->semaphore();
-					//	waitInfo.pSemaphores = &importSemaphore;
-					//	waitInfo.pValues = &waitValue;
-
-					//	VK_CHECK(vkWaitSemaphores(device_, &waitInfo, UINT64_MAX));
-			
-					//	// copy to texToTE_
-					//	VkCommandBufferBeginInfo beginInfo = {};
-					//	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-					//	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-					//	beginInfo.pInheritanceInfo = nullptr;
-
-					//	VK_CHECK(vkBeginCommandBuffer(commandBuffer_, &beginInfo));
-
-					//	if (texFromTE_ && !srcInitialized_)
-					//	{
-					//		// transition to transfer src optimal
-
-					//		texFromTE_->cmdTransitionImageLayout(
-					//			commandBuffer_,
-					//			VK_IMAGE_LAYOUT_UNDEFINED,
-					//			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-					//		);
-
-					//		srcInitialized_ = true;
-					//		std::cout << "srcInitialized_" << std::endl;
-					//	}
-
-
-					//	if (texToTE_ && !dstInitialized_)
-					//	{
-					//		// transition to transfer dst optimal
-					//		texToTE_->cmdTransitionImageLayout(
-					//			commandBuffer_,
-					//			VK_IMAGE_LAYOUT_UNDEFINED,
-					//			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-					//		);
-
-
-					//		dstInitialized_ = true;
-					//		std::cout << "dstInitialized_" << std::endl;
-					//	}
-
-					//	VkImageSubresourceLayers subresourceLayers = {};
-					//	subresourceLayers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-					//	subresourceLayers.mipLevel = 0;
-					//	subresourceLayers.baseArrayLayer = 0;
-					//	subresourceLayers.layerCount = 1;
-
-					//	VkImageCopy imageCopy = {};
-					//	imageCopy.srcSubresource = subresourceLayers;
-					//	imageCopy.dstSubresource = subresourceLayers;
-					//	imageCopy.extent = { texToTE_->extent().width, texToTE_->extent().height, 1 };
-
-
-					//	vkCmdCopyImage(
-					//		commandBuffer_,
-					//		texFromTE_->image(),
-					//		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-					//		texToTE_->image(),
-					//		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-					//		1,
-					//		&imageCopy
-					//	);
-
-					//	VK_CHECK(vkEndCommandBuffer(commandBuffer_));
-
-					//	uint64_t signalValue = waitValue + 1;
-
-					//	VkTimelineSemaphoreSubmitInfo timelineSemaphoreSubmitInfo = {};
-					//	timelineSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
-					//	timelineSemaphoreSubmitInfo.pNext = nullptr;
-					//	timelineSemaphoreSubmitInfo.waitSemaphoreValueCount = 1; 
-					//	timelineSemaphoreSubmitInfo.pWaitSemaphoreValues = &waitValue; 
-					//	timelineSemaphoreSubmitInfo.signalSemaphoreValueCount = 1; 
-					//	timelineSemaphoreSubmitInfo.pSignalSemaphoreValues = &signalValue; 
-
-					//	VkSubmitInfo submitInfo = {};
-					//	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-					//	submitInfo.pNext = &timelineSemaphoreSubmitInfo; 
-					//	submitInfo.commandBufferCount = 1;
-					//	submitInfo.pCommandBuffers = &commandBuffer_;
-
-					//	submitInfo.waitSemaphoreCount = 1;
-					//	submitInfo.pWaitSemaphores = &importSemaphore;
-					//	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_TRANSFER_BIT }; 
-					//	submitInfo.pWaitDstStageMask = waitStages;
-
-					//	//	
-					//	submitInfo.signalSemaphoreCount = 1;
-					//	VkSemaphore signalSemaphores[] = { texToTE_.get()->semaphore() };
-					//	submitInfo.pSignalSemaphores = signalSemaphores;
-
-					//	VK_CHECK(vkQueueSubmit(queue_, 1, &submitInfo, submitFence_));
-					//	VK_CHECK(vkWaitForFences(device_, 1, &submitFence_, VK_TRUE, UINT64_MAX));
-					//	VK_CHECK(vkResetFences(device_, 1, &submitFence_));
-
-					}
-				}
-			}
-		}
-	}
-
-	return !changes.empty();
-}
 
 void Comp::update()
 {
-	TEInstanceStartFrameAtTime(instance_, TETimeInternal, 0, 0);
 
-	bool configured, loaded, linksChanged, inFrame;
-	getState(configured, loaded, linksChanged, inFrame);
+	bool ready, loaded, linksChanged, inFrame;
+	getState(ready, loaded, linksChanged, inFrame);
 
-	if (configured)
-	{
-		std::string message;
-		if (TEResultGetSeverity(configureResult_) == TESeverityError)
-		{
-			const char* description = TEResultGetDescription(configureResult_);
-
-			message = "There was an error configuring TouchEngine: ";
-			if (description)
-			{
-				message += description;
-			}
-			else
-			{
-				message += std::to_string(configureResult_);
-			}
-			configureError_ = true;
-		}
-		else
-		{
-			configureError_ = !renderer_->configureTEInstance(instance_, message);
-		}
-		if (configureError_)
-		{
-			std::cout << message << std::endl;
-		}
-	}
-
-	if (configureError_)
-	{
-		return;
-	}
+	if (!loaded || !ready) return;
 
 	bool changed = linksChanged;
 
-	// Make any pending renderer state updates
-	if (linksChanged)
-	{
-		applyLayoutChange();
-	}
+	if (linksChanged) applyLayoutChange();
 
-	if (loaded && !inFrame)
+
+	if (!inFrame)
 	{
 		changed = changed || applyOutputTextureChange();
 
@@ -622,26 +390,52 @@ void Comp::update()
 								break;
 							case TELinkTypeTexture:
 							{
-								if (texToTE_)
-								{
-									//std::cout << "TELinkTypeTexture: " << info->identifier << std::endl;
+								//if (pendingInputTexHandles_.size() > 0)
+								//{
+								//	auto internalTex = texturesInternal_.find(pendingInputTexHandles_[0]);
+								//	if (internalTex != texturesInternal_.end())
+								//	{
+								//		TouchObject<TETexture> teTex;
+								//		teTex.set(internalTex->second->teVkTexture());
 
+								//		result = TEInstanceLinkSetTextureValue(
+								//			instance_, info->identifier, teTex, renderer_->teContext());
+
+								//		if (result == TEResultSuccess)
+								//		{
+								//			result = TEInstanceAddTextureTransfer(
+								//				instance_,
+								//				teTex,
+								//				internalTex->second->teVkSemaphore(),
+								//				internalTex->second->signalValue()
+								//			);
+								//		}
+
+								//		pendingInputTexHandles_.erase(pendingInputTexHandles_.begin());
+								//	}
+
+								//	std::cout << "TELinkTypeTexture: " << info->identifier << std::endl;
+								//}
+
+								if (texToTE_.get())
+								{
 									TouchObject<TETexture> texture;
 									texture.set(texToTE_->teVkTexture());
-
 									result = TEInstanceLinkSetTextureValue(
 										instance_, info->identifier, texture, renderer_->teContext());
 
-									//std::cout << "TEInstanceLinkSetTextureValue: " << TEResultGetDescription(result) << std::endl;
-
+									////std::cout << "TEInstanceLinkSetTextureValue: " << TEResultGetDescription(result) << std::endl;
 									if (result == TEResultSuccess)
 									{
 										result = TEInstanceAddTextureTransfer(
-											instance_, texture, texFromTE_->teVkSemaphore(), texToTE_->waitValue());
+											instance_, 
+											texture, 
+											texToTE_->teVkSemaphore(),
+											texToTE_->signalValue()
+										);
+										std::cout << "TEInstanceAddTextureTransfer: " << info->identifier 
+											<< ", " << TEResultGetDescription(result) << std::endl;
 									}
-
-								//}
-								//textureCount++;
 								}
 								break;
 							}
@@ -680,35 +474,35 @@ void Comp::update()
 							}
 							case TELinkTypeStringData:
 							{
-								 //String data can be either tabular, in which case set a TETable, or a single string - here we set a table
-								 //(use TEInstanceLinkSetStringValue() to set a string value)
+								//String data can be either tabular, in which case set a TETable, or a single string - here we set a table
+								//(use TEInstanceLinkSetStringValue() to set a string value)
 
-								 //It is more efficient to create a copy of an existing table than to create a new one, so check
-								 //for an existing table to re-use first.
-								//TouchObject<TEObject> value;
-								//result = TEInstanceLinkGetObjectValue(instance_, info->identifier, TELinkValueCurrent, value.take());
+								//It is more efficient to create a copy of an existing table than to create a new one, so check
+								//for an existing table to re-use first.
+							   //TouchObject<TEObject> value;
+							   //result = TEInstanceLinkGetObjectValue(instance_, info->identifier, TELinkValueCurrent, value.take());
 
-								//if (result == TEResultSuccess)
-								//{
-								//	TouchObject<TETable> table;
-								//	if (value && TEGetType(value) == TEObjectTypeTable)
-								//	{
-								//		table.take(TETableCreateCopy(static_cast<TETable*>(value.get())));
-								//	}
-								//	else
-								//	{
-								//		table.take(TETableCreate());
-								//	}
-								//	TETableResize(table, 3, 2);
-								//	for (int column = 0; column < 2; column++)
-								//	{
-								//		for (int row = 0; row < 3; row++)
-								//		{
-								//			TETableSetStringValue(table, row, column, "test");
-								//		}
-								//	}
-								//	result = TEInstanceLinkSetTableValue(instance_, info->identifier, table);
-								//}
+							   //if (result == TEResultSuccess)
+							   //{
+							   //	TouchObject<TETable> table;
+							   //	if (value && TEGetType(value) == TEObjectTypeTable)
+							   //	{
+							   //		table.take(TETableCreateCopy(static_cast<TETable*>(value.get())));
+							   //	}
+							   //	else
+							   //	{
+							   //		table.take(TETableCreate());
+							   //	}
+							   //	TETableResize(table, 3, 2);
+							   //	for (int column = 0; column < 2; column++)
+							   //	{
+							   //		for (int row = 0; row < 3; row++)
+							   //		{
+							   //			TETableSetStringValue(table, row, column, "test");
+							   //		}
+							   //	}
+							   //	result = TEInstanceLinkSetTableValue(instance_, info->identifier, table);
+							   //}
 								break;
 							}
 							default:
@@ -720,39 +514,295 @@ void Comp::update()
 			}
 		}
 
-		//setInFrame(true);
+		setInFrame(true);
+		result = TEInstanceStartFrameAtTime(instance_, 0.0, 0.0, false);
+		if (result != TEResultSuccess)
+		{
+			setInFrame(false);
+		}
 
-		//int64_t time = getRenderTime();
-		//myLastResult = TEInstanceStartFrameAtTime(instance_, time, TimeRate, false);
-		//if (myLastResult == TEResultSuccess)
-		//{
-		//	myLastFloatValue += 1.0 / (60.0 * 8.0);
-		//}
-		//else
-		//{
-		//	setInFrame(false);
-		//}
+		std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+		std::cout << "Frame time: " << std::chrono::duration_cast<std::chrono::milliseconds>(
+			now - lastFrameTime_).count() << "ms" << std::endl;
+
+		lastFrameTime_ = now;
+
 	}
-	if (changed)
-	{
-		
-		render(loaded);
-	}
+
 
 }
 
-
-
-void Comp::render(bool loaded)
+bool Comp::applyOutputTextureChange()
 {
-	if (loaded)
+	// Only hold the lock briefly
+	std::vector<std::string> changes;
 	{
-		renderer_->renderFrame();
+		std::lock_guard<std::mutex> guard(mutex_);
+		std::swap(pendingOutputTextures_, changes);
 	}
+
+	for (const auto& identifier : changes)
+	{
+		TouchObject <TETexture> teTex;
+		TEResult result = TEInstanceLinkGetTextureValue(
+			instance_, identifier.c_str(), TELinkValueCurrent, teTex.take());
+
+		if (result == TEResultSuccess && TEInstanceHasTextureTransfer(instance_, teTex))
+		{
+
+			HANDLE handle = TEVulkanTextureGetHandle(static_cast<TEVulkanTexture*>(teTex.get()));
+			std::cout << "Has Texture Transfer: " << identifier
+				<< ", Texture Handle: " << handle << std::endl;
+
+			auto it = texturesExternal_.find(handle);
+			if (it == texturesExternal_.end())
+			{
+				texturesExternal_[handle] = std::make_unique<Texture>(
+					renderer_->vContext().physicalDevice,
+					renderer_->vContext().device,
+					instance_,
+					static_cast<TEVulkanTexture*>(teTex.get())
+				);
+
+				//// temporary for copy of output to input
+				//texturesInternal_[handle] = std::make_unique<Texture>(
+				//	physicalDevice_,
+				//	device_,
+				//	texturesExternal_[handle]->extent(),
+				//	texturesExternal_[handle]->format()
+				//);
+
+				if (texToTE_.get() == nullptr && texturesExternal_[handle])
+				{
+					texToTE_ = std::make_unique<Texture>(
+						physicalDevice_,
+						device_,
+						texturesExternal_[handle]->extent(),
+						texturesExternal_[handle]->format()
+					);
+				}
+
+				std::cout << "Texture created for handle: " << handle << std::endl;
+				
+				return true; // we need to wait for the texture to be ready
+			}
+			
+
+
+			//if (texFromTE_.get() == nullptr)
+			//{
+			//	texFromTE_ = std::make_unique<Texture>(
+			//		renderer_->vContext().physicalDevice,
+			//		renderer_->vContext().device,
+			//		instance_,
+			//		static_cast<TEVulkanTexture*>(teTex.get())
+			//	);
+
+			//	// temporary - 
+			//	if (texToTE_.get() == nullptr && texFromTE_)
+			//	{
+			//		texToTE_ = std::make_unique<Texture>(
+			//			physicalDevice_,
+			//			device_,
+			//			texFromTE_->extent(),
+			//			texFromTE_->format()
+			//		);
+			//	}
+
+			//	return true; // we need to wait for the texture to be ready
+			//}
+
+			auto texExternal = texturesExternal_[handle].get();
+
+			TouchObject<TESemaphore> teSemaphore;
+			//teSemaphore.set(texFromTE_->teVkSemaphore());
+			teSemaphore.set(texExternal->teVkSemaphore());
+
+			uint64_t waitValue = 0;
+			result = TEInstanceGetTextureTransfer(
+				instance_, 
+				teTex, 
+				teSemaphore.take(),
+				&waitValue);
+
+
+			// use if using the texture after transfer is complete, such as for display but need
+			// use queue index that supports graphics... 
+			//VkImageLayout srcLayout;
+			//VkImageLayout dstLayout;
+
+			//result = TEInstanceGetVulkanTextureTransfer(
+			//	instance_,
+			//	teTex,
+			//	&srcLayout,
+			//	&dstLayout,
+			//	teSemaphore.take(),
+			//	&waitValue
+			//);
+
+			//std::cout << "srcLayout: " << string_VkImageLayout(srcLayout)
+			//	<< " dstLayout: " << string_VkImageLayout(dstLayout) << std::endl;
+
+			//std::cout << "TESemaphore: " << teSemaphore.get() << " waitValue: " << waitValue << std::endl;
+
+			if (result == TEResultSuccess)
+			{
+				std::cout << "Texture transfer: " << identifier << " : " << waitValue << std::endl;
+				if (TESemaphoreGetType(teSemaphore) == TESemaphoreTypeVulkan)
+				{
+					texExternal->copyImageToCudaMem(waitValue, cudaStream_);
+
+					uint64_t signalValue;
+					VK_CHECK(vkGetSemaphoreCounterValue(device_, texToTE_->semaphore(), &signalValue));
+					texToTE_->setSignalValue(++signalValue);
+
+					texToTE_->copyCudaMemToImage(
+						texExternal->cudaMemory(),
+						texExternal->cudaExtSemaphore(),
+						texToTE_->cudaExtSemaphore(),
+						waitValue,
+						signalValue,
+						cudaStream_);
+						
+
+					//// wait for semaphore
+					//VkSemaphoreWaitInfoKHR waitInfo = {};
+					//waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO_KHR;
+					//waitInfo.pNext = nullptr;
+					//waitInfo.flags = 0;
+					//waitInfo.semaphoreCount = 1;
+					////VkSemaphore importSemaphore = texFromTE_->semaphore();
+					//VkSemaphore importSemaphore = texExternal->semaphore();
+					//waitInfo.pSemaphores = &importSemaphore;
+					//waitInfo.pValues = &waitValue;
+
+					//VK_CHECK(vkWaitSemaphores(device_, &waitInfo, UINT64_MAX));
+
+					//// reset command buffer
+					//VK_CHECK(vkResetCommandBuffer(commandBuffer_, 0));
+			
+					//// copy to texToTE_
+					//VkCommandBufferBeginInfo beginInfo = {};
+					//beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+					//beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+					//beginInfo.pInheritanceInfo = nullptr;
+
+
+					//VK_CHECK(vkBeginCommandBuffer(commandBuffer_, &beginInfo));
+
+					////if (texFromTE_ && !srcInitialized_)
+					//if (texExternal && texExternal->imageLayout() != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+					//{
+					//	// transition to transfer src optimal
+
+					//	//texFromTE_->cmdTransitionImageLayout(
+					//	texExternal->cmdTransitionImageLayout(
+					//		commandBuffer_,
+					//		VK_IMAGE_LAYOUT_UNDEFINED,
+					//		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+					//	);
+
+					//	//srcInitialized_ = true;
+					//	//std::cout << "srcInitialized_" << std::endl;
+					//}
+					////else
+					////{
+					////	texFromTE_->cmdTransitionImageLayout(
+					////		commandBuffer_,
+					////		srcLayout,
+					////		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+					////	);
+					////}
+
+
+					//if (texToTE_->imageLayout() != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+					////if (texInternal && texInternal->imageLayout() != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+					//{
+					//	// transition to transfer dst optimal
+					//	texToTE_->cmdTransitionImageLayout(
+					//		commandBuffer_,
+					//		VK_IMAGE_LAYOUT_UNDEFINED,
+					//		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+					//	);
+					//	//dstInitialized_ = true;
+					//	//std::cout << "dstInitialized_" << std::endl;
+					//}
+
+					//VkImageSubresourceLayers subresourceLayers = {};
+					//subresourceLayers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+					//subresourceLayers.mipLevel = 0;
+					//subresourceLayers.baseArrayLayer = 0;
+					//subresourceLayers.layerCount = 1;
+
+					//VkImageCopy imageCopy = {};
+					//imageCopy.srcSubresource = subresourceLayers;
+					//imageCopy.dstSubresource = subresourceLayers;
+					//imageCopy.extent = { texToTE_->extent().width, texToTE_->extent().height, 1 };
+
+
+					//vkCmdCopyImage(
+					//	commandBuffer_,
+					//	//texFromTE_->image(),
+					//	texExternal->image(),
+					//	VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+					//	texToTE_->image(),
+					//	//texInternal->image(),
+					//	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+					//	1,
+					//	&imageCopy
+					//);
+
+					//VK_CHECK(vkEndCommandBuffer(commandBuffer_));
+
+					//uint64_t signalValue;
+					//VK_CHECK(vkGetSemaphoreCounterValue(device_, texToTE_->semaphore(), &signalValue));
+					//texToTE_->setSignalValue(++signalValue);
+					////texInternal->setSignalValue(++signalValue);
+
+
+					//VkTimelineSemaphoreSubmitInfo timelineSemaphoreSubmitInfo = {};
+					//timelineSemaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+					//timelineSemaphoreSubmitInfo.pNext = nullptr;
+					//timelineSemaphoreSubmitInfo.waitSemaphoreValueCount = 1; 
+					//timelineSemaphoreSubmitInfo.pWaitSemaphoreValues = &waitValue; 
+					//timelineSemaphoreSubmitInfo.signalSemaphoreValueCount = 1; 
+					//timelineSemaphoreSubmitInfo.pSignalSemaphoreValues = &signalValue; 
+
+					//VkSubmitInfo submitInfo = {};
+					//submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+					//submitInfo.pNext = &timelineSemaphoreSubmitInfo; 
+					//submitInfo.commandBufferCount = 1;
+					//submitInfo.pCommandBuffers = &commandBuffer_;
+
+					//submitInfo.waitSemaphoreCount = 1;
+					//submitInfo.pWaitSemaphores = &importSemaphore;
+					//VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_TRANSFER_BIT }; 
+					//submitInfo.pWaitDstStageMask = waitStages;
+
+					////	
+					//submitInfo.signalSemaphoreCount = 1;
+					//VkSemaphore signalSemaphores[] = { texToTE_->semaphore() };
+					////VkSemaphore signalSemaphores[] = { texInternal->semaphore() };
+					//submitInfo.pSignalSemaphores = signalSemaphores;
+
+					//VK_CHECK(vkQueueSubmit(queue_, 1, &submitInfo, submitFence_));
+					//VK_CHECK(vkWaitForFences(device_, 1, &submitFence_, VK_TRUE, UINT64_MAX));
+					//VK_CHECK(vkResetFences(device_, 1, &submitFence_));
+					
+
+
+
+					//std::cout << " copied texture ";
+
+				}
+			}
+		}
+	}
+
+	return !changes.empty();
 }
 
-
-void Comp::linkValueChange(const char* identifier)
+void Comp::onLinkEventValueChange(const char* identifier)
 {
 	TouchObject<TELinkInfo> link;
 	TEResult result = TEInstanceLinkGetInfo(instance_, identifier, link.take());
@@ -766,81 +816,39 @@ void Comp::linkValueChange(const char* identifier)
 			std::lock_guard<std::mutex> guard(mutex_);
 			pendingOutputTextures_.push_back(identifier);
 
-			//if (strcmp(link->identifier, "op/topOut1") == 0)
-			//{
-			//	TouchObject <TETexture> tex;
-			//	TEResult result = TEInstanceLinkGetTextureValue(
-			//		instance_, identifier, TELinkValueCurrent, tex.take());
-
-			//	if (result == TEResultSuccess)
-			//	{
-			//		TEVulkanTexture* vkTex = static_cast<TEVulkanTexture*>(tex.get());
-
-			//		if (texFromTE_.get() == nullptr)
-			//		{
-			//			texFromTE_ = std::make_unique<Texture>(
-			//				renderer_->vContext().device,
-			//				vkTex
-			//			);
-			//		}
-
-			//		VkExtent2D extent = {
-			//			static_cast<uint32_t> (TEVulkanTextureGetWidth(vkTex)),
-			//			static_cast<uint32_t> (TEVulkanTextureGetHeight(vkTex))
-			//		};
-
-			//		VkFormat format = TEVulkanTextureGetFormat(vkTex);
-
-			//		std::cout << "Texture extent: " << extent.width << " x " << extent.height 
-			//				<< " format: " << string_VkFormat(format) << std::endl;
-
-
-			//		if (texToTE_.get() == nullptr)
-			//		{
-			//			texToTE_ = std::make_unique<Texture>(
-			//				renderer_->vContext().physicalDevice,
-			//				renderer_->vContext().device,
-			//				renderer_->vContext().queueFamilyIndices.usedFamilyIndices(),
-			//				extent,
-			//				format
-			//			);
-			//		}
-			//	}
-			//	else
-			//	{
-			//		std::cout << TEResultGetDescription(result) << std::endl;
-			//	}
-			//}
-
 			break;
 		}
 		case TELinkTypeFloatBuffer:
 		{
-			TouchObject<TEFloatBuffer> buffer;
-			result = TEInstanceLinkGetFloatBufferValue(instance_, identifier, TELinkValueCurrent, buffer.take());
-
-			if (result == TEResultSuccess)
+			if (strcmp(identifier, "op/chopOut3") == 0)
 			{
-				uint32_t valueCount = TEFloatBufferGetValueCount(buffer);
-				int32_t channelCount = TEFloatBufferGetChannelCount(buffer);
-				if (buffer && channelCount > 0 && valueCount > 0)
+				TouchObject<TEFloatBuffer> buffer;
+				result = TEInstanceLinkGetFloatBufferValue(instance_, identifier, TELinkValueCurrent, buffer.take());
+
+				if (result == TEResultSuccess)
 				{
-					const float* const* data = TEFloatBufferGetValues(buffer);
-
-					static int printCount = 0;
-
-					if (printCount++ < 5)
+					uint32_t valueCount = TEFloatBufferGetValueCount(buffer);
+					int32_t channelCount = TEFloatBufferGetChannelCount(buffer);
+					if (buffer && channelCount > 0 && valueCount > 0)
 					{
-						std::cout << "Float buffer values: ";
+						const float* const* data = TEFloatBufferGetValues(buffer);
 
-						for (int channel = 0; channel < channelCount; channel++)
-						{
-							// Here we just grab the first sample in the channel
-							float value = data[channel][0];
-							std::cout << value << ", ";
-						}
+						std::cout << "Frame: " << data[0][0] << ", second: " << data[1][0] << std::endl;
 
-						std::cout << std::endl;
+						//static int printCount = 0;
+						//if (printCount++ < 5)
+						//{
+						//	std::cout << "Float buffer values: ";
+
+						//	for (int channel = 0; channel < channelCount; channel++)
+						//	{
+						//		// Here we just grab the first sample in the channel
+						//		float value = data[channel][0];
+						//		std::cout << value << ", ";
+						//	}
+
+						//	std::cout << std::endl;
+						//}
 					}
 				}
 			}
