@@ -316,7 +316,7 @@ void Texture::importSemaphore(TEInstance* teInstance, TETexture* teTexture)
 			//std::cout << "Semaphore handle: " << handle 
 			// << " type: " << type << " handleType: " << handleType << std::endl;
 
-			VkSemaphoreTypeCreateInfoKHR semaphoreTypeCreateInfo;
+			VkSemaphoreTypeCreateInfoKHR semaphoreTypeCreateInfo {};
 			semaphoreTypeCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
 			semaphoreTypeCreateInfo.pNext = nullptr;
 			semaphoreTypeCreateInfo.semaphoreType = semaphoreType_;
@@ -337,7 +337,7 @@ void Texture::importSemaphore(TEInstance* teInstance, TETexture* teTexture)
 
 
 			// import semaphore
-			VkImportSemaphoreWin32HandleInfoKHR importSemaphoreInfo = {};
+			VkImportSemaphoreWin32HandleInfoKHR importSemaphoreInfo {};
 			importSemaphoreInfo.sType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR;
 			importSemaphoreInfo.pNext = nullptr;
 			importSemaphoreInfo.semaphore = semaphore_;

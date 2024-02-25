@@ -925,7 +925,7 @@ void createDevice(
 		vContext.queueFamilyIndices.setPresentQueueInfo(&vContext.presentQueue, std::nullopt, .9f));
 	vContext.presentFamily = std::get<0>(deviceQueueInfos.back());
 
-	VkDeviceCreateInfo createInfo;
+	VkDeviceCreateInfo createInfo { };
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
 	auto queueCreateInfos = vContext.queueFamilyIndices.queueCreateInfos();
@@ -955,12 +955,12 @@ void createDevice(
 
 	VK_CHECK(vkCreateDevice(vContext.physicalDevice, &createInfo, nullptr, &vContext.device));
 
-	for (auto  deviceQueueInfo : deviceQueueInfos)
+	for (deviceQueueInfo info : deviceQueueInfos)
 	{
 		vkGetDeviceQueue(vContext.device, 
-			std::get<0>(deviceQueueInfo).value(), 
-			std::get<1>(deviceQueueInfo), 
-			std::get<2>(deviceQueueInfo)
+			std::get<0>(info).value(),
+			std::get<1>(info),
+			std::get<2>(info)
 		);
 	}
 }
@@ -989,7 +989,7 @@ void createDevice(
 		vContext.queueFamilyIndices.setDeviceQueueInfo(VK_QUEUE_TRANSFER_BIT, &vContext.transferQueue));
 	vContext.transferFamily = std::get<0>(deviceQueueInfos.back());
 
-	VkDeviceCreateInfo createInfo;
+	VkDeviceCreateInfo createInfo { };
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
 	// get support for timeline semaphore
@@ -1032,12 +1032,12 @@ void createDevice(
 
 	VK_CHECK(vkCreateDevice(vContext.physicalDevice, &createInfo, nullptr, &vContext.device));
 
-	for (auto deviceQueueInfo : deviceQueueInfos)
+	for (deviceQueueInfo info : deviceQueueInfos)
 	{
 		vkGetDeviceQueue(vContext.device,
-			std::get<0>(deviceQueueInfo).value(),
-			std::get<1>(deviceQueueInfo),
-			std::get<2>(deviceQueueInfo)
+			std::get<0>(info).value(),
+			std::get<1>(info),
+			std::get<2>(info)
 		);
 	}
 }

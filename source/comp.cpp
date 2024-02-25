@@ -1,6 +1,8 @@
 #include "comp.h"
 #include "teutils.h"
 #include <iostream>
+#include <iomanip>
+#include <thread>
 
 
 
@@ -23,6 +25,9 @@ void Comp::initComp()
 	createRenderer();
 	cudaInit();
 	lastFrameTime_ = std::chrono::high_resolution_clock::now();
+
+	// print thread id
+	// std::cout << "Comp thread id: " << std::this_thread::get_id() << std::endl;
 
 }
 
@@ -122,6 +127,8 @@ void Comp::load()
 	std::cout << "\t\tInstance loaded!" << std::endl;
 
 	TE_CHECK(TEInstanceResume(instance_));
+
+
 }
 
 void Comp::loadTox(const std::string& filePath)
@@ -138,7 +145,7 @@ void Comp::unload()
 }
 
 
-bool Comp::loaded()
+bool Comp::loaded() const
 {
 	std::lock_guard<std::mutex> guard(mutex_);
 	return ssLoaded_;
@@ -154,6 +161,7 @@ void Comp::eventCallback(TEInstance* instance,
 	int32_t end_time_scale,
 	void* info)
 {
+	//std::cout << "eventCallback thread id: " << std::this_thread::get_id() << std::endl;
 	Comp* comp = static_cast<Comp*>(info);
 
 	switch (event)
@@ -220,6 +228,7 @@ void Comp::onEventGeneral(TEResult result, uint64_t start_time, uint64_t end_tim
 
 void Comp::linkEventCallback(TEInstance* instance, TELinkEvent event, const char* identifier, void* info)
 {
+	//std::cout << "linkEventCallback thread id: " << std::this_thread::get_id() << std::endl;
 	//std::cout << "Link event: " << teutils::linkEventToString(event) << " identifier: " << identifier << std::endl;
 	Comp* comp = static_cast<Comp*>(info);
 	switch (event)
@@ -257,7 +266,104 @@ void Comp::onLinkLayoutChange(TELinkEvent event, const char* identifier)
 
 }
 
-void Comp::getState(bool& ready, bool& loaded, bool& linksChanged, bool& inFrame)
+void Comp::onLinkEventValueChange(const char* identifier)
+{
+	TouchObject<TELinkInfo> link;
+	TEResult result = TEInstanceLinkGetInfo(instance_, identifier, link.take());
+	if (result != TEResultSuccess)
+		return;
+	
+	if (link->scope == TEScopeOutput)
+	{
+		switch (link->type)
+		{
+		case TELinkTypeTexture:
+		{
+			// Stash the state, we don't do any actual renderer work from this thread
+			std::lock_guard<std::mutex> guard(mutex_);
+			pendingOutputTextures_.push_back(identifier);
+
+			break;
+		}
+		case TELinkTypeFloatBuffer:
+		{
+
+			TouchObject<TEFloatBuffer> buffer;
+			result = TEInstanceLinkGetFloatBufferValue(instance_, identifier, TELinkValueCurrent, buffer.take());
+
+			if (result == TEResultSuccess)
+			{
+				auto valueCount = TEFloatBufferGetValueCount(buffer);
+				auto channelCount = TEFloatBufferGetChannelCount(buffer);
+				auto capacity = TEFloatBufferGetCapacity(buffer);
+				auto names = TEFloatBufferGetChannelNames(buffer);
+
+				std::cout << "Link: " << link->name 
+					<< " num channels: " << channelCount 
+					<< " num values: " << valueCount
+					<< " capacity: " << capacity << std::endl;
+
+
+				//if (buffer && channelCount > 0 && valueCount > 0)
+				//{
+				//	const float* const* data = TEFloatBufferGetValues(buffer);
+
+				//	std::cout << "Frame: " << data[0][0] << ", second: " << data[1][0] << std::endl;
+
+				//}
+			}
+			
+			break;
+		}
+		case TELinkTypeStringData:
+		{
+			TouchObject<TEObject> value;
+			result = TEInstanceLinkGetObjectValue(instance_, identifier, TELinkValueCurrent, value.take());
+			// String data can be a TETable or TEString, so check the type
+			if (value && TEGetType(value) == TEObjectTypeTable)
+			{
+				TouchObject<TETable> table;
+				table.set(static_cast<TETable*>(value.get()));
+				// do something with the table 
+			}
+			else if (value && TEGetType(value) == TEObjectTypeString)
+			{
+				TouchObject<TEString> string;
+				string.set(static_cast<TEString*>(value.get()));
+				// do something with the string
+			}
+			break;
+		}
+		default:
+			break;
+		}
+	}
+	//else if (link->domain == TELinkDomainParameter)
+	//{
+	//	switch (link->type)
+	//	{
+	//	case TELinkTypeDouble:
+	//	{	
+	//		std::vector<double> value(link->count, 0.0);
+	//		result = TEInstanceLinkGetDoubleValue(instance_, identifier, TELinkValueCurrent, value.data(), link->count);
+	//		if (result == TEResultSuccess)
+	//		{
+	//			std::cout << "Parameter Double: " << link->name << " value(s): ";
+	//			for (int i = 0; i < link->count; i++)
+	//			{
+	//				std::cout << value[i] << " ";
+	//			}
+	//			std::cout << std::endl;
+	//		}
+	//		break;
+	//	}
+	//	default:
+	//		break;
+	//	}
+	//}
+}
+
+void Comp::getState(bool& ready, bool& loaded, bool& linksLayoutChanged, bool& inFrame)
 {
 	std::lock_guard<std::mutex> guard(mutex_);
 	loaded = ssLoaded_;
@@ -265,13 +371,13 @@ void Comp::getState(bool& ready, bool& loaded, bool& linksChanged, bool& inFrame
 	if (ssLoaded_ && ssReady_)
 	{
 		// For this example, we are only interested in links after load has completed
-		linksChanged = ssPendingLayoutChange_;
+		linksLayoutChanged = ssPendingLayoutChange_;
 		inFrame = ssInFrame_;
 		ssPendingLayoutChange_ = false;
 	}
 	else
 	{
-		linksChanged = false;
+		linksLayoutChanged = false;
 		inFrame = false;
 	}
 }
@@ -284,6 +390,12 @@ void Comp::setInFrame(bool inFrame)
 
 void Comp::applyLayoutChange()
 {
+
+	std:: cout << "Applying layout change" << std::endl;
+
+	parCollection_.reset();
+	parCollection_ = ParCollection(instance_);
+
 	for (auto scope : { TEScopeInput, TEScopeOutput })
 	{
 		TouchObject<TEStringArray> groups;
@@ -311,19 +423,20 @@ void Comp::applyLayoutChange()
 						result = TEInstanceLinkGetInfo(instance_, children->strings[j], info.take());
 						if (result == TEResultSuccess)
 						{
-							if (result == TEResultSuccess && info->type == TELinkTypeTexture)
+							std::cout << std::left 
+								<< std::setw(6) << "Link:" << std::setw(16) << info->identifier
+								<< std::setw(6) << "name:" << std::setw(16) << info->name
+								<< std::setw(7) << "label:" << std::setw(16) << info->label
+								<< std::setw(7) << "scope:" << std::setw(16) << teutils::scopeToString(info->scope)
+								<< std::setw(8) << "intent:" << std::setw(28) << teutils::linkIntentToString(info->intent)
+								<< std::setw(8) << "domain:" << std::setw(24) << teutils::linkDomainToString(info->domain)
+								<< std::setw(7) << "count:" << std::setw(5) << info->count
+								<< std::setw(6) << "type:" << std::setw(16) << teutils::linkTypeToString(info->type)
+								<< std::endl;
+							
+							if (info->domain == TELinkDomainParameter)
 							{
-								if (scope == TEScopeInput)
-								{
-									// called before output texture is created so 
-									// we can't create the texture here if it is dependent on the 
-									// output texture size or format
-
-								}
-								else
-								{
-
-								}
+								parCollection_.addPar(info);
 							}
 						}
 					}
@@ -332,26 +445,49 @@ void Comp::applyLayoutChange()
 		}
 	}
 
+	//for (auto& par : parCollection_.getPars())
+	//{
+	//	std::cout << "Par: " << par.first << std::endl;
+	//}
+
+
+	auto scale = std::visit(visitor<double>, parCollection_["Scale"].get());
+	if (scale)
+		std::cout << "Scale: " << scale.value() << std::endl;
+	else
+		std::cout << "Scale: " << "not found" << std::endl;
+
+
+	double s = 2.0;
+
+	parCollection_["Scale"].set(s);
+
+	// not safe
+	double scale2 = std::get<double>(parCollection_["Scale"].get());
+	std::cout << "Scale: " << scale2 << std::endl;
+
 	//renderer_->endImageLayout();
 }
 
 
 void Comp::update()
 {
-
-	bool ready, loaded, linksChanged, inFrame;
-	getState(ready, loaded, linksChanged, inFrame);
+	bool ready, loaded, linksLayoutChanged, inFrame;
+	getState(ready, loaded, linksLayoutChanged, inFrame);
 
 	if (!loaded || !ready) return;
 
-	bool changed = linksChanged;
+	bool changed = linksLayoutChanged;
 
-	if (linksChanged) applyLayoutChange();
+	if (linksLayoutChanged) applyLayoutChange();
 
+	ready_ = ready;
 
 	if (!inFrame)
 	{
 		changed = changed || applyOutputTextureChange();
+
+		parCollection_.setPending();
 
 		// Examples of setting input links
 		TouchObject<TEStringArray> groups;
@@ -512,6 +648,22 @@ void Comp::update()
 					}
 				}
 			}
+
+			//const char* identifier = "pn/Scale";
+			//TouchObject<TELinkInfo> link;
+			//result = TEInstanceLinkGetInfo(instance_, identifier, link.take());
+
+			//std::vector<double> value(link->count, 0.0);
+			//result = TEInstanceLinkGetDoubleValue(instance_, identifier, TELinkValueCurrent, value.data(), link->count);
+			//if (result == TEResultSuccess)
+			//{
+			//	std::cout << "Parameter Double: " << link->name << " value(s): ";
+			//	for (int i = 0; i < link->count; i++)
+			//	{
+			//		std::cout << value[i] << " ";
+			//	}
+			//	std::cout << std::endl;
+			//}
 		}
 
 		setInFrame(true);
@@ -802,81 +954,6 @@ bool Comp::applyOutputTextureChange()
 	return !changes.empty();
 }
 
-void Comp::onLinkEventValueChange(const char* identifier)
-{
-	TouchObject<TELinkInfo> link;
-	TEResult result = TEInstanceLinkGetInfo(instance_, identifier, link.take());
-	if (result == TEResultSuccess && link->scope == TEScopeOutput)
-	{
-		switch (link->type)
-		{
-		case TELinkTypeTexture:
-		{
-			// Stash the state, we don't do any actual renderer work from this thread
-			std::lock_guard<std::mutex> guard(mutex_);
-			pendingOutputTextures_.push_back(identifier);
 
-			break;
-		}
-		case TELinkTypeFloatBuffer:
-		{
-			if (strcmp(identifier, "op/chopOut3") == 0)
-			{
-				TouchObject<TEFloatBuffer> buffer;
-				result = TEInstanceLinkGetFloatBufferValue(instance_, identifier, TELinkValueCurrent, buffer.take());
-
-				if (result == TEResultSuccess)
-				{
-					uint32_t valueCount = TEFloatBufferGetValueCount(buffer);
-					int32_t channelCount = TEFloatBufferGetChannelCount(buffer);
-					if (buffer && channelCount > 0 && valueCount > 0)
-					{
-						const float* const* data = TEFloatBufferGetValues(buffer);
-
-						std::cout << "Frame: " << data[0][0] << ", second: " << data[1][0] << std::endl;
-
-						//static int printCount = 0;
-						//if (printCount++ < 5)
-						//{
-						//	std::cout << "Float buffer values: ";
-
-						//	for (int channel = 0; channel < channelCount; channel++)
-						//	{
-						//		// Here we just grab the first sample in the channel
-						//		float value = data[channel][0];
-						//		std::cout << value << ", ";
-						//	}
-
-						//	std::cout << std::endl;
-						//}
-					}
-				}
-			}
-			break;
-		}
-		case TELinkTypeStringData:
-		{
-			TouchObject<TEObject> value;
-			result = TEInstanceLinkGetObjectValue(instance_, identifier, TELinkValueCurrent, value.take());
-			// String data can be a TETable or TEString, so check the type
-			if (value && TEGetType(value) == TEObjectTypeTable)
-			{
-				TouchObject<TETable> table;
-				table.set(static_cast<TETable*>(value.get()));
-				// do something with the table 
-			}
-			else if (value && TEGetType(value) == TEObjectTypeString)
-			{
-				TouchObject<TEString> string;
-				string.set(static_cast<TEString*>(value.get()));
-				// do something with the string
-			}
-			break;
-		}
-		default:
-			break;
-		}
-	}
-}
 
 
