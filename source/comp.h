@@ -3,13 +3,15 @@
 #include <TouchEngine/TouchEngine.h>
 #include "renderer.h"
 #include "texture.h"
-#include <common/cuda_helpers.h>
+#include "common/cuda_helpers.h"
+#include "par.h"
 
 
 #include <string>
 #include <mutex>
 #include <memory>
 #include <chrono>
+
 
 class Comp
 {
@@ -20,29 +22,35 @@ public:
 
 	void loadTox(const std::string& filePath);
 	void unload();
-	bool loaded();
+	bool loaded() const; 
+	bool ready() const { return ready_; }
 	void update();
+
+	ParCollection& pars() { return parCollection_; }
 
 private:
 
 	// shared state between the main thread and the TouchEngine thread
-	std::mutex                              mutex_;
+	//-----------------------------------------------------------------------------------------------------------------
+
+	mutable std::mutex                      mutex_;
 	bool                                    ssPendingLayoutChange_ { false };
 	bool                                    ssLoaded_              { false };
-	bool                                    ssReady_          { false };
+	bool                                    ssReady_			   { false };
 	bool                                    ssInFrame_             { false };
 
-	void onLinkLayoutChange(TELinkEvent event, const char* identifier);
 	void getState(bool& configured, bool& loaded, bool& linksChanged, bool& inFrame);
 	void setInFrame(bool inFrame);
 
-	std::chrono::high_resolution_clock::time_point lastFrameTime_{};
+	
 
 	// main thread only
+	//-----------------------------------------------------------------------------------------------------------------
 
 	std::string                             filePath_;
 	size_t								    buffersPerInputLink  { 2 };
 	TouchObject<TEInstance>                 instance_            { nullptr };
+	bool 									ready_				 { false };
 	double                                  inputSampleRate_     { 60.0 };
 	int32_t                                 inputChannelCount_   { 0 };
 
@@ -59,10 +67,8 @@ private:
 	VkQueue                                 queue_               { VK_NULL_HANDLE };
 	VkCommandBuffer                         commandBuffer_       { VK_NULL_HANDLE };
 
-
-	std::unordered_map<HANDLE, std::unique_ptr<Texture>>   texturesExternal_;
-
-	std::unordered_map<std::string, std::vector<std::unique_ptr<Texture>>>   texturesInternal_;
+	std::unordered_map<HANDLE, std::unique_ptr<Texture>>                   texturesExternal_;
+	std::unordered_map<std::string, std::vector<std::unique_ptr<Texture>>> texturesInternal_;
 
 	std::unique_ptr<Texture>                texToTE_;
 
@@ -71,11 +77,24 @@ private:
 	cudaStream_t                            cudaStream_          { nullptr };
 	int										cudaDevice_ 		 { -1 };
 
+	std::chrono::high_resolution_clock::time_point lastFrameTime_{};
+
+	ParCollection 							parCollection_;
 
 	void initComp();
 	void load();
 
+	void applyLayoutChange();
+	bool applyOutputTextureChange();
 
+
+	void createRenderer();
+	void cudaInit();
+	void setCudaDevice();
+
+
+	// TouchEngine thread only
+	//-----------------------------------------------------------------------------------------------------------------
 
 	static void	eventCallback(
 		TEInstance* instance,
@@ -99,7 +118,9 @@ private:
 		const char* identifier,
 		void* info);
 
+	void onLinkLayoutChange(TELinkEvent event, const char* identifier);
 	void onLinkEventValueChange(const char* identifier);
+
 	void onLinkEventAdded(const char* identifier)       { onLinkLayoutChange(TELinkEventAdded, identifier); }
 	void onLinkEventRemoved(const char* identifier)     { onLinkLayoutChange(TELinkEventRemoved, identifier); }
 	void onLinkEventModified(const char* identifier)    { onLinkLayoutChange(TELinkEventModified, identifier); }
@@ -108,14 +129,6 @@ private:
 	void onLinkEventChildChange(const char* identifier) { onLinkLayoutChange(TELinkEventChildChange, identifier); }    
 
 
-
-	void applyLayoutChange();
-	bool applyOutputTextureChange();
-
-
-	void createRenderer();
-	void cudaInit();
-	void setCudaDevice();
 
 
 

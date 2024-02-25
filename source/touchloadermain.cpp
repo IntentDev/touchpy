@@ -59,8 +59,8 @@ int main(int argc, char* argv[])
 
     //std::unique_ptr<Comp> tox = std::make_unique<Comp>(compPath.string());
 
-    std::unique_ptr<Comp> tox = std::make_unique<Comp>();
-    tox->loadTox(compPath.string());
+    std::unique_ptr<Comp> comp = std::make_unique<Comp>();
+    comp->loadTox(compPath.string());
 
     // poll terminal in separate thread for exit command q
     std::thread terminal(pollTerminal);
@@ -68,7 +68,10 @@ int main(int argc, char* argv[])
     bool running = true;
     while (running)
     {
-        tox->update();
+        comp->update();
+
+        if (comp->ready())
+            comp->pars()["Scale"].set(0.5);
 
         {
             std::lock_guard<std::mutex> lock(mutex);
