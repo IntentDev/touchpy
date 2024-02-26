@@ -126,7 +126,11 @@ protected:
 class BoolPar : public Par
 {
 public:
-	BoolPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
+	BoolPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
+	{ 
+		if (TEInstanceLinkGetBooleanValue(instance, linkInfo->identifier, TELinkValueCurrent, &value_) != TEResultSuccess)
+			noGetLinkError();
+	}
 
 	void set(ParValue value) override
 	{
@@ -207,7 +211,7 @@ public:
 	}
 
 private:
-	bool value_;
+	bool value_ { false };
 
 };
 
@@ -215,7 +219,14 @@ private:
 class StringPar : public Par
 {
 public:
-	StringPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
+	StringPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
+	{ 
+		TEString* val = nullptr;
+		if (TEInstanceLinkGetStringValue(instance, linkInfo->identifier, TELinkValueCurrent, &val) != TEResultSuccess)
+			noGetLinkError();
+
+		value_ = val->string;
+	}
 
 	void set(ParValue value) override
 	{
@@ -252,7 +263,11 @@ private:
 class IntPar : public Par
 {
 public:
-	IntPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
+	IntPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
+	{ 
+		if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, &value_, linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
+	}
 
 	void set(ParValue value) override
 	{
@@ -284,7 +299,11 @@ private:
 class Int2Par : public Par
 {
 public:
-	Int2Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
+	Int2Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
+	{ 
+		if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<int32_t*>(&value_), linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
+	}
 
 	void set(ParValue value) override
 	{
@@ -315,7 +334,11 @@ private:
 class Int3Par : public Par
 {
 public:
-	Int3Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
+	Int3Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
+	{ 
+		if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<int32_t*>(&value_), linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
+	}
 
 	void set(ParValue value) override
 	{
@@ -346,7 +369,11 @@ private:
 class Int4Par : public Par
 {
 public:
-	Int4Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
+	Int4Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
+	{ 
+		if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<int32_t*>(&value_), linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
+	}
 
 	void set(ParValue value) override
 	{
@@ -377,7 +404,11 @@ private:
 class DoublePar : public Par
 {
 public:
-	DoublePar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
+	DoublePar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
+	{ 
+		if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, &value_, linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
+	}
 
 	void set(ParValue value) override
 	{
@@ -408,7 +439,11 @@ private:
 class Double2Par : public Par
 {
 public:
-	Double2Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
+	Double2Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
+	{ 
+		if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<double*>(&value_), linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
+	}
 
 	void set(ParValue value) override
 	{
@@ -440,7 +475,11 @@ private:
 class Double3Par : public Par
 {
 public:
-	Double3Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
+	Double3Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
+	{ 
+		if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<double*>(&value_), linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
+	}
 
 	void set(ParValue value) override
 	{
@@ -472,7 +511,11 @@ private:
 class Double4Par : public Par
 {
 public:
-	Double4Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
+	Double4Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
+	{
+		if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<double*>(&value_), linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
+	}
 
 	void set(ParValue value) override
 	{
@@ -506,7 +549,11 @@ private:
 class MenuPar : public Par
 {
 public:
-	MenuPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
+	MenuPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
+	{ 
+		if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, &value_, linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
+	}
 
 	void set(ParValue value) override
 	{
@@ -555,7 +602,11 @@ private:
 class ColorPar : public Par 
 {
 public:
-	ColorPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
+	ColorPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
+	{ 
+		if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<double*>(&value_), linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
+	}
 
 	void set(ParValue value) override
 	{
