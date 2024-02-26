@@ -33,7 +33,7 @@ void pollTerminal()
     enableRawMode();
     while (running)
     {
-        char buffer[4]; // Increased buffer size to avoid buffer overflow 
+        char buffer[4]{}; // Increased buffer size to avoid buffer overflow 
         DWORD read;
         ReadConsole(GetStdHandle(STD_INPUT_HANDLE), buffer, 1, &read, NULL);
         char ch = buffer[0]; // First character from the buffer
@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
         comp->update();
 
         if (comp->ready())
-            comp->pars()["Scale"].set(0.5);
+            //comp->pars()["Scale"].set(0.5);
 
         {
             std::lock_guard<std::mutex> lock(mutex);

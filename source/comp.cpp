@@ -3,7 +3,7 @@
 #include <iostream>
 #include <iomanip>
 #include <thread>
-
+#include <array>
 
 
 
@@ -396,6 +396,11 @@ void Comp::applyLayoutChange()
 	parCollection_.reset();
 	parCollection_ = ParCollection(instance_);
 
+	outputChops_ = ChopCollection(instance_);
+	inputChops_ = ChopCollection(instance_);
+
+	// create 
+
 	for (auto scope : { TEScopeInput, TEScopeOutput })
 	{
 		TouchObject<TEStringArray> groups;
@@ -438,6 +443,37 @@ void Comp::applyLayoutChange()
 							{
 								parCollection_.addPar(info);
 							}
+
+							if (info->type == TELinkTypeFloatBuffer)
+							{
+								if (info->scope == TEScopeOutput)
+								{
+									outputChops_.addChop(info, Chop::Mode::Output);
+								}
+								else if (info->scope == TEScopeInput)
+								{
+									inputChops_.addChop(info, Chop::Mode::Input);
+								}
+							}
+
+							//if (info->scope == TEScopeOutput && info->type == TELinkTypeFloatBuffer)
+							//{
+							//			
+							//	TouchObject<TEFloatBuffer> buffer;
+							//	result = TEInstanceLinkGetFloatBufferValue(instance_, info->identifier, TELinkValueCurrent, buffer.take());
+
+							//	if (result == TEResultSuccess)
+							//	{
+							//		uint32_t valueCount = TEFloatBufferGetValueCount(buffer);
+							//		int32_t channelCount = TEFloatBufferGetChannelCount(buffer);
+
+							//		std::cout << "Link: " << info->name
+							//			<< " num channels: " << channelCount
+							//			<< " num values: " << valueCount
+							//			<< std::endl;
+							//	}
+							//}
+
 						}
 					}
 				}
@@ -467,6 +503,23 @@ void Comp::applyLayoutChange()
 	std::cout << "Scale: " << scale2 << std::endl;
 
 	//renderer_->endImageLayout();
+
+	//TouchObject<TEFloatBuffer> buffer1;
+	//buffer1.take(TEFloatBufferCreate(-1, 2, 10, nullptr));
+	//int32_t channelCount = TEFloatBufferGetChannelCount(buffer1);
+	//uint32_t capacity = TEFloatBufferGetCapacity(buffer1);
+	//uint32_t valueCount = TEFloatBufferGetValueCount(buffer1);
+
+	//std::cout << "Channel count: " << channelCount << " Capacity: " << capacity << " Value count: " << valueCount << std::endl;
+
+	//TouchObject<TEFloatBuffer> buffer2;
+	//buffer2.take(TEFloatBufferCreate(60, 2, 10, nullptr));
+	//channelCount = TEFloatBufferGetChannelCount(buffer2);
+	//capacity = TEFloatBufferGetCapacity(buffer2);
+	//valueCount = TEFloatBufferGetValueCount(buffer2);
+
+	//std::cout << "Channel count: " << channelCount << " Capacity: " << capacity << " Value count: " << valueCount << std::endl;
+
 }
 
 
@@ -477,17 +530,35 @@ void Comp::update()
 
 	if (!loaded || !ready) return;
 
-	bool changed = linksLayoutChanged;
-
 	if (linksLayoutChanged) applyLayoutChange();
 
 	ready_ = ready;
 
 	if (!inFrame)
 	{
-		changed = changed || applyOutputTextureChange();
+		applyOutputTextureChange();
 
 		parCollection_.setPending();
+
+
+		static bool setupChopInputs = false;
+		static float count = 0.0f;
+		if (!setupChopInputs)
+		{
+			std::vector<float> chopChans{ 1.1f, 2.2f, 3.3f, 4.4f };
+
+			inputChops_[0].set(chopChans, chopChans.size(), 1, -1.0);
+			std::cout << "InputChop: " << inputChops_[0].name() << " set" << std::endl;
+			setupChopInputs = true;
+		}
+		else
+		{
+			count += 0.1f;
+			std::vector<float> chopChans{ 1.1f + count, 2.2f + count, 3.3f + count, 4.4f + count };
+			inputChops_[0].set(chopChans, chopChans.size(), 1, -1.0);
+		}
+
+		inputChops_[0].updateInput();
 
 		// Examples of setting input links
 		TouchObject<TEStringArray> groups;
@@ -577,9 +648,11 @@ void Comp::update()
 							}
 							case TELinkTypeFloatBuffer:
 							{
+
+
 								//TouchObject<TEFloatBuffer> buffer;
 								//// Creating a copy of an existing buffer is more efficient than creating a new one every time
-								//result = TEInstanceLinkGetFloatBufferValue(instance_, info->identifier, TELinkValueCurrent, buffer.take());
+								//TEResult result = TEInstanceLinkGetFloatBufferValue(instance_, info->identifier, TELinkValueCurrent, buffer.take());
 								//if (result == TEResultSuccess)
 								//{
 								//	// You might want to check more properties of the buffer than this
@@ -600,12 +673,15 @@ void Comp::update()
 								//		// as audio.
 								//		buffer.take(TEFloatBufferCreate(-1, 2, 1, nullptr));
 								//	}
-								//	float value = static_cast<float>(fmod(myLastFloatValue, 1.0));
-								//	std::array<const float*, 2> channels{ &value, &value };
+								//	float value1 = 11.0;
+								//	float value2 = 22.0;
+								//	std::array<const float*, 2> channels{ &value1, &value2 };
 								//	TEFloatBufferSetValues(buffer, channels.data(), 1);
 
 								//	result = TEInstanceLinkSetFloatBufferValue(instance_, info->identifier, buffer);
 								//}
+
+
 								break;
 							}
 							case TELinkTypeStringData:

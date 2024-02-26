@@ -5,6 +5,7 @@
 #include "texture.h"
 #include "common/cuda_helpers.h"
 #include "par.h"
+#include "chop.h"
 
 
 #include <string>
@@ -80,6 +81,9 @@ private:
 	std::chrono::high_resolution_clock::time_point lastFrameTime_{};
 
 	ParCollection 							parCollection_;
+	ChopCollection							inputChops_;
+	ChopCollection							outputChops_;
+
 
 	void initComp();
 	void load();
