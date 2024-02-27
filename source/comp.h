@@ -27,7 +27,7 @@ public:
 	bool ready() const { return ready_; }
 	void update();
 
-	ParCollection& pars() { return parCollection_; }
+	ParCollection& pars() { return *parCollection_; }
 
 private:
 
@@ -80,9 +80,9 @@ private:
 
 	std::chrono::high_resolution_clock::time_point lastFrameTime_{};
 
-	ParCollection 							parCollection_;
-	ChopCollection							inputChops_;
-	ChopCollection							outputChops_;
+	std::unique_ptr<ParCollection>  parCollection_;
+	std::unique_ptr<ChopCollection> inputChops_;
+	std::unique_ptr<ChopCollection> outputChops_;
 
 
 	void initComp();
