@@ -86,11 +86,10 @@ class Par
 public:
 	Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : instance(instance), linkInfo(linkInfo) { }
 	virtual ~Par() = default;
+
 	virtual void set(ParValue value) = 0;
-	virtual void setPending() = 0;
 	virtual ParValue get() = 0;
 
-	bool pending() const { return isPending; }
 
 protected:
 	TouchObject<TEInstance> instance;
@@ -126,37 +125,21 @@ protected:
 class BoolPar : public Par
 {
 public:
-	BoolPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
-	{ 
-		if (TEInstanceLinkGetBooleanValue(instance, linkInfo->identifier, TELinkValueCurrent, &value_) != TEResultSuccess)
-			noGetLinkError();
-	}
+	BoolPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
 
 	void set(ParValue value) override
 	{
-		value_ = std::get<bool>(value);
-		isPending = true;
+		if (TEInstanceLinkSetBooleanValue(instance, linkInfo->identifier, std::get<bool>(value)) != TEResultSuccess)
+			noSetLinkError();
 	}
 
 	ParValue get() override
 	{
-		if (!isPending)
-			if (TEInstanceLinkGetBooleanValue(instance, linkInfo->identifier, TELinkValueCurrent, &value_) != TEResultSuccess)
+		bool value;
+		if (TEInstanceLinkGetBooleanValue(instance, linkInfo->identifier, TELinkValueCurrent, &value) != TEResultSuccess)
 				noGetLinkError();
-
-		return value_;
+		return value;
 	}
-
-	void setPending() override
-	{
-		if (TEInstanceLinkSetBooleanValue(instance, linkInfo->identifier, value_) != TEResultSuccess)
-			noSetLinkError();
-		isPending = false;
-	}
-
-
-private:
-	bool value_;
 };
 
 class PulsePar : public Par
@@ -164,25 +147,19 @@ class PulsePar : public Par
 	public:
 	PulsePar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
 
-	void set(ParValue value) override { isPending = true; }
-
-	ParValue get() override 
-	{ 
-		if (!isPending)
-			return false; 
-
-		return true;
-	}
-
-	void pulse() { isPending = true; }
-
-	void setPending() override
+	void set(ParValue value) override
 	{
 		if (TEInstanceLinkSetBooleanValue(instance, linkInfo->identifier, true) != TEResultSuccess)
 			noSetLinkError();
-		isPending = false;
 	}
 
+	ParValue get() override { return false; }
+
+	void pulse() 
+	{
+		if (TEInstanceLinkSetBooleanValue(instance, linkInfo->identifier, true) != TEResultSuccess)
+			noSetLinkError();
+	}
 };
 
 class MomentaryPar : public Par
@@ -190,358 +167,212 @@ class MomentaryPar : public Par
 public:
 	MomentaryPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
 
-	void set(ParValue value) override { isPending = true; }
+	void set(ParValue value) override 
+	{ 
+		if (TEInstanceLinkSetBooleanValue(instance, linkInfo->identifier, std::get<bool>(value)) != TEResultSuccess)
+			noSetLinkError();
+	}
 
 	ParValue get() override
 	{
-		if (!isPending)
-			if (TEInstanceLinkGetBooleanValue(instance, linkInfo->identifier, TELinkValueCurrent, &value_) != TEResultSuccess)
-				noGetLinkError();
+		bool value;
+		if (TEInstanceLinkGetBooleanValue(instance, linkInfo->identifier, TELinkValueCurrent, &value) != TEResultSuccess)
+			noGetLinkError();
 
-		return value_;
+		return value;
 	}
-
-	void pulse() { isPending = true; }
-
-	void setPending() override
-	{
-		if (TEInstanceLinkSetBooleanValue(instance, linkInfo->identifier, true) != TEResultSuccess)
-			noSetLinkError();
-		isPending = false;
-	}
-
-private:
-	bool value_ { false };
-
 };
 
 
 class StringPar : public Par
 {
 public:
-	StringPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
-	{ 
-		TEString* val = nullptr;
-		if (TEInstanceLinkGetStringValue(instance, linkInfo->identifier, TELinkValueCurrent, &val) != TEResultSuccess)
-			noGetLinkError();
-
-		value_ = val->string;
-	}
-
+	StringPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) {}
+	
 	void set(ParValue value) override
 	{
-		value_ = std::get<std::string>(value);
-		isPending = true;
+		if (TEInstanceLinkSetStringValue(instance, linkInfo->identifier, std::get<std::string>(value).c_str()) != TEResultSuccess)
+			noSetLinkError();
 	}
 
 	ParValue get() override
 	{
-		if (!isPending)
-		{
-			TEString* val = nullptr;
-			if (TEInstanceLinkGetStringValue(instance, linkInfo->identifier, TELinkValueCurrent, &val) != TEResultSuccess)
-				noGetLinkError();
+		TEString* val = nullptr;
+		if (TEInstanceLinkGetStringValue(instance, linkInfo->identifier, TELinkValueCurrent, &val) != TEResultSuccess)
+			noGetLinkError();
 
-			value_ = val->string;
-		}
-
-		return value_;
+		return std::string(val->string);
 	}
-
-	void setPending() override
-	{
-		if (TEInstanceLinkSetStringValue(instance, linkInfo->identifier, value_.c_str()) != TEResultSuccess)
-			noSetLinkError();
-		isPending = false;
-	}
-
-private:
-	std::string value_;
-
 };
 
 class IntPar : public Par
 {
 public:
-	IntPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
-	{ 
-		if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, &value_, linkInfo->count) != TEResultSuccess)
-			noGetLinkError();
-	}
+	IntPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
 
 	void set(ParValue value) override
 	{
-		value_ = std::get<int32_t>(value);
-		isPending = true;
+		if (TEInstanceLinkSetIntValue(instance, linkInfo->identifier, &std::get<int32_t>(value), linkInfo->count) != TEResultSuccess)
+			noSetLinkError();
 	}
 
 	ParValue get() override
 	{
-		if(!isPending)
-			if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, &value_, linkInfo->count) != TEResultSuccess)
-				noGetLinkError();
+		int32_t value;
+		if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, &value, linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
 
-		return value_;
+		return value;
 	}
-
-	void setPending() override
-	{
-		if (TEInstanceLinkSetIntValue(instance, linkInfo->identifier, &value_, linkInfo->count) != TEResultSuccess)
-			noSetLinkError();
-		isPending = false;
-	}
-
-private:
-	int32_t value_;
 };
 
 
 class Int2Par : public Par
 {
 public:
-	Int2Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
-	{ 
-		if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<int32_t*>(&value_), linkInfo->count) != TEResultSuccess)
-			noGetLinkError();
-	}
-
+	Int2Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
 	void set(ParValue value) override
 	{
-		value_ = std::get<Int2>(value);
-		isPending = true;
+		if (TEInstanceLinkSetIntValue(instance, linkInfo->identifier, reinterpret_cast<int32_t*>(&std::get<Int2>(value)), linkInfo->count) != TEResultSuccess)
+			noSetLinkError();
 	}
 
 	ParValue get() override
 	{
-		if (!isPending)
-			if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<int32_t*>(&value_), linkInfo->count) != TEResultSuccess)
+		Int2 value;
+		if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<int32_t*>(&value), linkInfo->count) != TEResultSuccess)
 				noGetLinkError();
 
-		return value_;
+		return value;
 	}
-
-	void setPending() override
-	{
-		if (TEInstanceLinkSetIntValue(instance, linkInfo->identifier, reinterpret_cast<int32_t*>(&value_), linkInfo->count) != TEResultSuccess)
-			noSetLinkError();
-		isPending = false;
-	}
-
-private:
-	Int2 value_;
 };
 
 class Int3Par : public Par
 {
 public:
-	Int3Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
-	{ 
-		if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<int32_t*>(&value_), linkInfo->count) != TEResultSuccess)
-			noGetLinkError();
-	}
+	Int3Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
 
 	void set(ParValue value) override
 	{
-		value_ = std::get<Int3>(value);
-		isPending = true;
+		if (TEInstanceLinkSetIntValue(instance, linkInfo->identifier, reinterpret_cast<int32_t*>(&std::get<Int3>(value)), linkInfo->count) != TEResultSuccess)
+			noSetLinkError();
 	}
 
 	ParValue get() override
 	{
-		if (!isPending)
-			if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<int32_t*>(&value_), linkInfo->count) != TEResultSuccess)
-				noGetLinkError();
+		Int3 value;
+		if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<int32_t*>(&value), linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
 
-		return value_;
+		return value;
 	}
-
-	void setPending() override
-	{
-		if (TEInstanceLinkSetIntValue(instance, linkInfo->identifier, reinterpret_cast<int32_t*>(&value_), linkInfo->count) != TEResultSuccess)
-			noSetLinkError();
-		isPending = false;
-	}
-
-private:
-	Int3 value_;
 };
 
 class Int4Par : public Par
 {
 public:
-	Int4Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
-	{ 
-		if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<int32_t*>(&value_), linkInfo->count) != TEResultSuccess)
-			noGetLinkError();
-	}
+	Int4Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
 
 	void set(ParValue value) override
 	{
-		value_ = std::get<Int4>(value);
-		isPending = true;
+		if (TEInstanceLinkSetIntValue(instance, linkInfo->identifier, reinterpret_cast<int32_t*>(&std::get<Int4>(value)), linkInfo->count) != TEResultSuccess)
+			noSetLinkError();
 	}
 
 	ParValue get() override
 	{
-		if (!isPending)
-			if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<int32_t*>(&value_), linkInfo->count) != TEResultSuccess)
-				noGetLinkError();
+		Int4 value;
+		if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<int32_t*>(&value), linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
 
-		return value_;
+		return value;
 	}
-
-	void setPending() override
-	{
-		if (TEInstanceLinkSetIntValue(instance, linkInfo->identifier, reinterpret_cast<int32_t*>(&value_), linkInfo->count) != TEResultSuccess)
-			noSetLinkError();
-		isPending = false;
-	}
-
-private:
-	Int4 value_;
 };
 
 class DoublePar : public Par
 {
 public:
-	DoublePar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
-	{ 
-		if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, &value_, linkInfo->count) != TEResultSuccess)
-			noGetLinkError();
-	}
+	DoublePar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
+
 
 	void set(ParValue value) override
 	{
-		value_ = std::get<double>(value);
-		isPending = true;
+		if (TEInstanceLinkSetDoubleValue(instance, linkInfo->identifier, &std::get<double>(value), linkInfo->count) != TEResultSuccess)
+			noSetLinkError();
 	}
 
 	ParValue get() override
 	{
-		if (!isPending)
-			if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, &value_, linkInfo->count) != TEResultSuccess)
-				noGetLinkError();
+		double value;
+		if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, &value, linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
 
-		return value_;
+		return value;
 	}
-
-	void setPending() override
-	{
-		if (TEInstanceLinkSetDoubleValue(instance, linkInfo->identifier, &value_, linkInfo->count) != TEResultSuccess)
-			noSetLinkError();
-		isPending = false;
-	}
-
-private:
-	double value_;
 };
 
 class Double2Par : public Par
 {
 public:
-	Double2Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
-	{ 
-		if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<double*>(&value_), linkInfo->count) != TEResultSuccess)
-			noGetLinkError();
-	}
+	Double2Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
 
 	void set(ParValue value) override
 	{
-		value_ = std::get<Double2>(value);
-		isPending = true;
+		if (TEInstanceLinkSetDoubleValue(instance, linkInfo->identifier, reinterpret_cast<double*>(&std::get<Double2>(value)), linkInfo->count) != TEResultSuccess)
+			noSetLinkError();
 	}
 
 	ParValue get() override
 	{
-		if (!isPending)
-			if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<double*>(&value_), linkInfo->count) != TEResultSuccess)
-				noGetLinkError();
+		Double2 value;
+		if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<double*>(&value), linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
 
-		return value_;
+		return value;
 	}
-
-	void setPending() override
-	{
-		if (TEInstanceLinkSetDoubleValue(instance, linkInfo->identifier, reinterpret_cast<double*>(&value_), linkInfo->count) != TEResultSuccess)
-			noSetLinkError();
-		isPending = false;
-	}
-
-private:
-	Double2 value_;
 };
 
 
 class Double3Par : public Par
 {
 public:
-	Double3Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
-	{ 
-		if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<double*>(&value_), linkInfo->count) != TEResultSuccess)
-			noGetLinkError();
-	}
+	Double3Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
 
 	void set(ParValue value) override
 	{
-		value_ = std::get<Double3>(value);
-		isPending = true;
+		if (TEInstanceLinkSetDoubleValue(instance, linkInfo->identifier, reinterpret_cast<double*>(&std::get<Double3>(value)), linkInfo->count) != TEResultSuccess)
+			noSetLinkError();
 	}
 
 	ParValue get() override
 	{
-		if (!isPending)
-			if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<double*>(&value_), linkInfo->count) != TEResultSuccess)
-				noGetLinkError();
+		Double3 value;
+		if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<double*>(&value), linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
 
-		return value_;
+		return value;
 	}
-
-	void setPending() override
-	{
-		if (TEInstanceLinkSetDoubleValue(instance, linkInfo->identifier, reinterpret_cast<double*>(&value_), linkInfo->count) != TEResultSuccess)
-			noSetLinkError();
-		isPending = false;
-	}
-
-private:
-	Double3 value_;
-
 };
 
 class Double4Par : public Par
 {
 public:
-	Double4Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
-	{
-		if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<double*>(&value_), linkInfo->count) != TEResultSuccess)
-			noGetLinkError();
-	}
+	Double4Par(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
 
 	void set(ParValue value) override
 	{
-		value_ = std::get<Double4>(value);
-		isPending = true;
+		if (TEInstanceLinkSetDoubleValue(instance, linkInfo->identifier, reinterpret_cast<double*>(&std::get<Double4>(value)), linkInfo->count) != TEResultSuccess)
+			noSetLinkError();
 	}
 
 	ParValue get() override
 	{
-		if (!isPending)
-			if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<double*>(&value_), linkInfo->count) != TEResultSuccess)
-				noGetLinkError();
+		Double4 value;
+		if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<double*>(&value), linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
 
-		return value_;
+		return value;
 	}
-
-	void setPending() override
-	{
-		if (TEInstanceLinkSetDoubleValue(instance, linkInfo->identifier, reinterpret_cast<double*>(&value_), linkInfo->count) != TEResultSuccess)
-			noSetLinkError();
-		isPending = false;
-	}
-
-private:
-	Double4 value_;
-
 };
 
 
@@ -549,34 +380,21 @@ private:
 class MenuPar : public Par
 {
 public:
-	MenuPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
-	{ 
-		if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, &value_, linkInfo->count) != TEResultSuccess)
-			noGetLinkError();
-	}
-
+	MenuPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
 	void set(ParValue value) override
 	{
-		value_ = std::get<int32_t>(value);
-		isPending = true;
+		if (TEInstanceLinkSetIntValue(instance, linkInfo->identifier, &std::get<int32_t>(value), linkInfo->count) != TEResultSuccess)
+			noSetLinkError();
 	}
 
 	ParValue get() override
 	{
-		if (!isPending)
-			if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, &value_, linkInfo->count) != TEResultSuccess)
+		int32_t value;
+		if (TEInstanceLinkGetIntValue(instance, linkInfo->identifier, TELinkValueCurrent, &value, linkInfo->count) != TEResultSuccess)
 				noGetLinkError();
 
-		return value_;
+		return value;
 	}
-
-	void setPending() override
-	{
-		if (TEInstanceLinkSetIntValue(instance, linkInfo->identifier, &value_, linkInfo->count) != TEResultSuccess)
-			noSetLinkError();
-		isPending = false;
-	}
-
 
 	std::vector<std::string> getNames()
 	{
@@ -594,44 +412,28 @@ public:
 		return names;
 	}
 
-private:
-	int32_t value_;
 };
 
 
 class ColorPar : public Par 
 {
 public:
-	ColorPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) 
-	{ 
-		if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<double*>(&value_), linkInfo->count) != TEResultSuccess)
-			noGetLinkError();
-	}
+	ColorPar(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Par(instance, linkInfo) { }
 
 	void set(ParValue value) override
 	{
-		value_ = std::get<ColorRGBA>(value);
-		isPending = true;
+		if (TEInstanceLinkSetDoubleValue(instance, linkInfo->identifier, reinterpret_cast<double*>(&std::get<ColorRGBA>(value)), linkInfo->count) != TEResultSuccess)
+			noSetLinkError();
 	}
 
 	ParValue get() override
 	{
-		if (!isPending)
-			if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<double*>(&value_), linkInfo->count) != TEResultSuccess)
-				noGetLinkError();
+		ColorRGBA value;
+		if (TEInstanceLinkGetDoubleValue(instance, linkInfo->identifier, TELinkValueCurrent, reinterpret_cast<double*>(&value), linkInfo->count) != TEResultSuccess)
+			noGetLinkError();
 
-		return value_;
+		return value;
 	}
-
-	void setPending() override
-	{
-		if (TEInstanceLinkSetDoubleValue(instance, linkInfo->identifier, reinterpret_cast<double*>(&value_), linkInfo->count) != TEResultSuccess)
-			noSetLinkError();
-		isPending = false;
-	}
-
-private:
-		ColorRGBA value_;
 	
 };
 
@@ -640,15 +442,6 @@ class ParCollection
 public:
 	ParCollection () = default;
 	ParCollection(TouchObject<TEInstance> instance) : instance_(instance) { }
-
-	void setPending()
-	{
-		for (auto& pair : pars)
-		{
-			if(pair.second->pending())
-				pair.second->setPending();
-		}
-	}
 
 	void addPar(TouchObject<TELinkInfo> linkInfo)
 	{

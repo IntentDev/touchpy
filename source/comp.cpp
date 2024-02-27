@@ -210,6 +210,12 @@ void Comp::onEventInstanceDidUnload(TEResult result)
 
 void Comp::onEventFrameDidFinish(TEResult result, int64_t time_value, int32_t time_scale)
 {
+	for (auto& chop : outputChops_->chops())
+	{
+		chop->updateTeBuffer();
+		chop->swapTeBuffers();
+	}
+
 	setInFrame(false);
 	//std::cout << "Frame end: " << TEResultGetDescription(result)
 	//	<< " time_value: " << time_value
@@ -394,10 +400,10 @@ void Comp::applyLayoutChange()
 	std:: cout << "Applying layout change" << std::endl;
 
 	parCollection_.reset();
-	parCollection_ = ParCollection(instance_);
+	parCollection_ = std::make_unique <ParCollection>(instance_);
 
-	outputChops_ = ChopCollection(instance_);
-	inputChops_ = ChopCollection(instance_);
+	outputChops_ = std::make_unique<ChopCollection>(instance_);
+	inputChops_ = std::make_unique<ChopCollection>(instance_);
 
 	// create 
 
@@ -441,18 +447,18 @@ void Comp::applyLayoutChange()
 							
 							if (info->domain == TELinkDomainParameter)
 							{
-								parCollection_.addPar(info);
+								parCollection_->addPar(info);
 							}
 
 							if (info->type == TELinkTypeFloatBuffer)
 							{
 								if (info->scope == TEScopeOutput)
 								{
-									outputChops_.addChop(info, Chop::Mode::Output);
+									outputChops_->addChop(info, Chop::Mode::Output);
 								}
 								else if (info->scope == TEScopeInput)
 								{
-									inputChops_.addChop(info, Chop::Mode::Input);
+									inputChops_->addChop(info, Chop::Mode::Input);
 								}
 							}
 
@@ -487,20 +493,20 @@ void Comp::applyLayoutChange()
 	//}
 
 
-	auto scale = std::visit(visitor<double>, parCollection_["Scale"].get());
-	if (scale)
-		std::cout << "Scale: " << scale.value() << std::endl;
-	else
-		std::cout << "Scale: " << "not found" << std::endl;
+	//auto scale = std::visit(visitor<double>, (*parCollection_)["Scale"].get());
+	//if (scale)
+	//	std::cout << "Scale: " << scale.value() << std::endl;
+	//else
+	//	std::cout << "Scale: " << "not found" << std::endl;
 
 
-	double s = 2.0;
+	//double s = 2.0;
 
-	parCollection_["Scale"].set(s);
+	//(*parCollection_)["Scale"].set(s);
 
-	// not safe
-	double scale2 = std::get<double>(parCollection_["Scale"].get());
-	std::cout << "Scale: " << scale2 << std::endl;
+	//// not safe
+	//double scale2 = std::get<double>((*parCollection_)["Scale"].get());
+	//std::cout << "Scale: " << scale2 << std::endl;
 
 	//renderer_->endImageLayout();
 
@@ -520,8 +526,15 @@ void Comp::applyLayoutChange()
 
 	//std::cout << "Channel count: " << channelCount << " Capacity: " << capacity << " Value count: " << valueCount << std::endl;
 
-}
 
+	setInFrame(true);
+	TEResult result = TEInstanceStartFrameAtTime(instance_, 0.0, 0.0, false);
+	if (result != TEResultSuccess)
+	{
+		std::cout << "TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
+		setInFrame(false);
+	}
+}
 
 void Comp::update()
 {
@@ -538,27 +551,40 @@ void Comp::update()
 	{
 		applyOutputTextureChange();
 
-		parCollection_.setPending();
 
+		static float testFloat = 0.0f;
 
+		(*parCollection_)["Float"].set(testFloat);
+		testFloat += 1.1f;
+
+		
 		static bool setupChopInputs = false;
-		static float count = 0.0f;
+		//static float count = 0.0f;
+		static std::vector<float> chans{ 1.f, 2.f, 3.f, 4.f };
+		static std::vector<const float*> chansPtrs;
 		if (!setupChopInputs)
 		{
-			std::vector<float> chopChans{ 1.1f, 2.2f, 3.3f, 4.4f };
-
-			inputChops_[0].set(chopChans, chopChans.size(), 1, -1.0);
-			std::cout << "InputChop: " << inputChops_[0].name() << " set" << std::endl;
+			for (auto& chan : chans)
+				chansPtrs.push_back(&chan);
 			setupChopInputs = true;
+			return;
 		}
-		else
+		
+		for (auto& chan : chans)
 		{
-			count += 0.1f;
-			std::vector<float> chopChans{ 1.1f + count, 2.2f + count, 3.3f + count, 4.4f + count };
-			inputChops_[0].set(chopChans, chopChans.size(), 1, -1.0);
+			chan += .1;
 		}
+			
+		(*inputChops_)[0].set(chansPtrs.data(), chans.size(), 1, -1.f);
 
-		inputChops_[0].updateInput();
+
+		for (auto& chop : outputChops_->chops())
+		{
+			chop->readTeBuffer();
+		}
+		
+
+
 
 		// Examples of setting input links
 		TouchObject<TEStringArray> groups;
@@ -746,6 +772,7 @@ void Comp::update()
 		result = TEInstanceStartFrameAtTime(instance_, 0.0, 0.0, false);
 		if (result != TEResultSuccess)
 		{
+			std::cout << "TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
 			setInFrame(false);
 		}
 
