@@ -39,6 +39,9 @@ private:
 	bool                                    ssLoaded_              { false };
 	bool                                    ssReady_			   { false };
 	bool                                    ssInFrame_             { false };
+	std::vector<std::string>                ssPendingOutputTextures_;
+	std::vector<std::string>				ssPendingOutputFloatBuffers;
+	std::vector<std::string>                ssPendingOutputStringData;
 
 	void getState(bool& configured, bool& loaded, bool& linksChanged, bool& inFrame);
 	void setInFrame(bool inFrame);
@@ -57,7 +60,10 @@ private:
 
 	int64_t                                 framesPerSecond_     { 1 };
 
-	std::vector<std::string>                pendingOutputTextures_;
+	std::vector<std::string> changedOutputTextures_;
+	std::vector<std::string> changedOutputFloatBuffers_;
+	std::vector<std::string> changedOutputStringData_;
+
 	std::unordered_map<HANDLE, Texture>     outputTextures_;
 	std::unordered_map<HANDLE, Texture>     inputTextures_;
 
@@ -84,12 +90,15 @@ private:
 	std::unique_ptr<ChopCollection> inputChops_;
 	std::unique_ptr<ChopCollection> outputChops_;
 
+	bool							doubleBufferOutputs_ { false };
 
 	void initComp();
 	void load();
 
 	void applyLayoutChange();
 	bool applyOutputTextureChange();
+	void applyOutputFloatBufferChange();
+	void applyOutputStringDataChange();
 
 
 	void createRenderer();

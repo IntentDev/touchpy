@@ -26,35 +26,40 @@ public:
 
 	~Chop() { };
 
-	std::string name() const { return name_; }
+	void set(const std::vector<float>& channels, uint32_t valueCount, double rate = -1.0);
+	void set(const std::vector<float>& channels, uint32_t valueCount, double rate, const std::vector<std::string>& names);
+	void set(const std::vector<std::vector<float>>& channels, double rate = -1.0);
+	void set(const std::vector<std::vector<float>>& channels, double rate, const std::vector<std::string>& names);
+	void set(const float** values, int32_t channelCount, uint32_t valueCount, double rate, const char** names = nullptr);
 
-	//const std::vector<float>& getChannels() const { return channels_; }
-	//const std::vector<std::string>& getNames() const { return names_; }
+	std::string name() const { return name_; }
+	std::string identifier() const { return identifier_; }
+	Mode mode() const { return mode_; }
+
+
+	const std::vector<float>& channelData() const { return channelData_; }
+	const std::vector<const float*>& channelPtrs() const { return chanDataPtrs_; }
+	const std::vector<std::string>& names() const { return names_; }
+	int32_t channelCount() const { return channelCount_; }
+	uint32_t valueCount() const { return valueCount_; }
+	double rate() const { return rate_; }
 
 	const float* channel(const std::string& name);
 
 	const float* operator[](const std::string& name) { return channel(name); }
-	const float* operator[](uint32_t index) 
+	const float* operator[](uint32_t index)
 	{
-		if (index < channelCount_) 
-			return chanDataPtrs_[index]; 
+		if (index < channelCount_)
+			return chanDataPtrs_[index];
 		return nullptr;
 	}
 
 
-	void set(const std::vector<float>& channels, uint32_t valueCount, double rate);
-	void set(const std::vector<float>& channels, uint32_t valueCount, double rate, const std::vector<std::string>& names);
-	void set(const std::vector<std::vector<float>>& channels, double rate);
-	void set(const std::vector<std::vector<float>>& channels, double rate, const std::vector<std::string>& names);
-	void set(const float** values, int32_t channelCount, uint32_t valueCount, double rate, const char** names = nullptr);
-
-
-
-	//void updateOutput();
-
 	void swapTeBuffers();
 	void updateTeBuffer();
 	void readTeBuffer();
+
+	void updateChannelData();
 
 		
 private:
@@ -105,27 +110,37 @@ public:
 	{
 		std::unique_ptr<Chop> chop = std::make_unique<Chop>(instance_, linkInfo, mode);
 		chops_.push_back(std::move(chop));
-		chopPtrs_[linkInfo->name] = chops_.back().get();
+		identifierMap_[linkInfo->identifier] = chops_.back().get();
+		nameMap_[linkInfo->name] = chops_.back().get();
 	}
 
-	std::vector<std::unique_ptr<Chop>>& chops() { return chops_; }
-	Chop& get(const std::string& name) { return *chopPtrs_[name]; } // not safe
-	Chop& operator[](const std::string& name) { return get(name); }
-	Chop& operator[](uint32_t index) { return *chops_[index].get(); }
+	const std::vector<std::unique_ptr<Chop>>& chops() { return chops_; }
+	Chop& get(const std::string& name) { return *nameMap_[name]; } // not safe
+	Chop& getById(const std::string& identifier) { return *identifierMap_[identifier]; } // not safe
+	Chop& operator[](const std::string& name) { return get(name); } // not safe
+	Chop& operator[](uint32_t index) { return *chops_[index].get(); } // not safe
 
-
-	void reset() { chops_.clear(); chopPtrs_.clear(); }
+	void reset() 
+	{ 
+		chops_.clear(); 
+		identifierMap_.clear();
+		nameMap_.clear();
+	}
 
 private:
 	TouchObject<TEInstance> instance_;
 	std::vector<std::unique_ptr<Chop>> chops_;
-	std::map<std::string, Chop*> chopPtrs_;
+	std::map<std::string, Chop*> identifierMap_;
+	std::map<std::string, Chop*> nameMap_;
 
-	// Helper function to update pointers in chopPtrs_ after moves
-	void updatePointers() {
-		chopPtrs_.clear();
-		for (auto& chop : chops_) {
-			chopPtrs_[chop->name()] = chop.get(); // Assuming Chop has a getName() method
+	void updatePointers() 
+	{
+		identifierMap_.clear();
+		nameMap_.clear();
+		for (auto& chop : chops_) 
+		{
+			identifierMap_[chop->identifier()] = chop.get(); 
+			nameMap_[chop->name()] = chop.get();
 		}
 	}
 };
