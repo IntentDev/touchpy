@@ -210,11 +210,14 @@ void Comp::onEventInstanceDidUnload(TEResult result)
 
 void Comp::onEventFrameDidFinish(TEResult result, int64_t time_value, int32_t time_scale)
 {
-	for (auto& chop : outputChops_->chops())
-	{
-		chop->updateTeBuffer();
-		chop->swapTeBuffers();
-	}
+	//if (doubleBufferOutputs_)
+	//{
+	//	for (auto& chop : outputChops_->chops())
+	//	{
+	//		chop->updateTeBuffer();
+	//		chop->swapTeBuffers();
+	//	}
+	//}
 
 	setInFrame(false);
 	//std::cout << "Frame end: " << TEResultGetDescription(result)
@@ -285,88 +288,35 @@ void Comp::onLinkEventValueChange(const char* identifier)
 		{
 		case TELinkTypeTexture:
 		{
-			// Stash the state, we don't do any actual renderer work from this thread
 			std::lock_guard<std::mutex> guard(mutex_);
-			pendingOutputTextures_.push_back(identifier);
-
+			ssPendingOutputTextures_.push_back(identifier);
 			break;
 		}
 		case TELinkTypeFloatBuffer:
 		{
-
-			TouchObject<TEFloatBuffer> buffer;
-			result = TEInstanceLinkGetFloatBufferValue(instance_, identifier, TELinkValueCurrent, buffer.take());
-
-			if (result == TEResultSuccess)
+			if (doubleBufferOutputs_)
 			{
-				auto valueCount = TEFloatBufferGetValueCount(buffer);
-				auto channelCount = TEFloatBufferGetChannelCount(buffer);
-				auto capacity = TEFloatBufferGetCapacity(buffer);
-				auto names = TEFloatBufferGetChannelNames(buffer);
-
-				std::cout << "Link: " << link->name 
-					<< " num channels: " << channelCount 
-					<< " num values: " << valueCount
-					<< " capacity: " << capacity << std::endl;
-
-
-				//if (buffer && channelCount > 0 && valueCount > 0)
-				//{
-				//	const float* const* data = TEFloatBufferGetValues(buffer);
-
-				//	std::cout << "Frame: " << data[0][0] << ", second: " << data[1][0] << std::endl;
-
-				//}
+				Chop& chop = outputChops_->getById(link->identifier);
+				chop.updateTeBuffer();
+				chop.swapTeBuffers();
 			}
-			
+			else
+			{
+				std::lock_guard<std::mutex> guard(mutex_);
+				ssPendingOutputFloatBuffers.push_back(identifier);
+			}
 			break;
 		}
 		case TELinkTypeStringData:
 		{
-			TouchObject<TEObject> value;
-			result = TEInstanceLinkGetObjectValue(instance_, identifier, TELinkValueCurrent, value.take());
-			// String data can be a TETable or TEString, so check the type
-			if (value && TEGetType(value) == TEObjectTypeTable)
-			{
-				TouchObject<TETable> table;
-				table.set(static_cast<TETable*>(value.get()));
-				// do something with the table 
-			}
-			else if (value && TEGetType(value) == TEObjectTypeString)
-			{
-				TouchObject<TEString> string;
-				string.set(static_cast<TEString*>(value.get()));
-				// do something with the string
-			}
+			std::lock_guard<std::mutex> guard(mutex_);
+			ssPendingOutputStringData.push_back(identifier);
 			break;
 		}
 		default:
 			break;
 		}
 	}
-	//else if (link->domain == TELinkDomainParameter)
-	//{
-	//	switch (link->type)
-	//	{
-	//	case TELinkTypeDouble:
-	//	{	
-	//		std::vector<double> value(link->count, 0.0);
-	//		result = TEInstanceLinkGetDoubleValue(instance_, identifier, TELinkValueCurrent, value.data(), link->count);
-	//		if (result == TEResultSuccess)
-	//		{
-	//			std::cout << "Parameter Double: " << link->name << " value(s): ";
-	//			for (int i = 0; i < link->count; i++)
-	//			{
-	//				std::cout << value[i] << " ";
-	//			}
-	//			std::cout << std::endl;
-	//		}
-	//		break;
-	//	}
-	//	default:
-	//		break;
-	//	}
-	//}
 }
 
 void Comp::getState(bool& ready, bool& loaded, bool& linksLayoutChanged, bool& inFrame)
@@ -461,25 +411,6 @@ void Comp::applyLayoutChange()
 									inputChops_->addChop(info, Chop::Mode::Input);
 								}
 							}
-
-							//if (info->scope == TEScopeOutput && info->type == TELinkTypeFloatBuffer)
-							//{
-							//			
-							//	TouchObject<TEFloatBuffer> buffer;
-							//	result = TEInstanceLinkGetFloatBufferValue(instance_, info->identifier, TELinkValueCurrent, buffer.take());
-
-							//	if (result == TEResultSuccess)
-							//	{
-							//		uint32_t valueCount = TEFloatBufferGetValueCount(buffer);
-							//		int32_t channelCount = TEFloatBufferGetChannelCount(buffer);
-
-							//		std::cout << "Link: " << info->name
-							//			<< " num channels: " << channelCount
-							//			<< " num values: " << valueCount
-							//			<< std::endl;
-							//	}
-							//}
-
 						}
 					}
 				}
@@ -487,51 +418,33 @@ void Comp::applyLayoutChange()
 		}
 	}
 
-	//for (auto& par : parCollection_.getPars())
-	//{
-	//	std::cout << "Par: " << par.first << std::endl;
-	//}
+	for (auto& par : parCollection_->getPars())
+	{
+		std::cout << "Par: " << par.first << std::endl;
+	}
 
 
-	//auto scale = std::visit(visitor<double>, (*parCollection_)["Scale"].get());
-	//if (scale)
-	//	std::cout << "Scale: " << scale.value() << std::endl;
-	//else
-	//	std::cout << "Scale: " << "not found" << std::endl;
+	auto scale = std::visit(visitor<double>, (*parCollection_)["Scale"].get());
+	if (scale)
+		std::cout << "Scale: " << scale.value() << std::endl;
+	else
+		std::cout << "Scale: " << "not found" << std::endl;
 
 
-	//double s = 2.0;
+	double s = 2.0;
 
-	//(*parCollection_)["Scale"].set(s);
+	(*parCollection_)["Scale"].set(s);
 
-	//// not safe
-	//double scale2 = std::get<double>((*parCollection_)["Scale"].get());
-	//std::cout << "Scale: " << scale2 << std::endl;
-
-	//renderer_->endImageLayout();
-
-	//TouchObject<TEFloatBuffer> buffer1;
-	//buffer1.take(TEFloatBufferCreate(-1, 2, 10, nullptr));
-	//int32_t channelCount = TEFloatBufferGetChannelCount(buffer1);
-	//uint32_t capacity = TEFloatBufferGetCapacity(buffer1);
-	//uint32_t valueCount = TEFloatBufferGetValueCount(buffer1);
-
-	//std::cout << "Channel count: " << channelCount << " Capacity: " << capacity << " Value count: " << valueCount << std::endl;
-
-	//TouchObject<TEFloatBuffer> buffer2;
-	//buffer2.take(TEFloatBufferCreate(60, 2, 10, nullptr));
-	//channelCount = TEFloatBufferGetChannelCount(buffer2);
-	//capacity = TEFloatBufferGetCapacity(buffer2);
-	//valueCount = TEFloatBufferGetValueCount(buffer2);
-
-	//std::cout << "Channel count: " << channelCount << " Capacity: " << capacity << " Value count: " << valueCount << std::endl;
+	// not safe
+	double scale2 = std::get<double>((*parCollection_)["Scale"].get());
+	std::cout << "Scale: " << scale2 << std::endl;
 
 
 	setInFrame(true);
 	TEResult result = TEInstanceStartFrameAtTime(instance_, 0.0, 0.0, false);
 	if (result != TEResultSuccess)
 	{
-		std::cout << "TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
+		std::cout << "Layout Change TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
 		setInFrame(false);
 	}
 }
@@ -543,47 +456,35 @@ void Comp::update()
 
 	if (!loaded || !ready) return;
 
-	if (linksLayoutChanged) applyLayoutChange();
+	if (linksLayoutChanged) 
+	{
+		applyLayoutChange();
+		ready_ = ready;
+		return;
+	}
 
-	ready_ = ready;
+	
 
 	if (!inFrame)
 	{
+		{
+			std::lock_guard<std::mutex> guard(mutex_);
+			std::swap(ssPendingOutputTextures_, changedOutputTextures_);
+			std::swap(ssPendingOutputFloatBuffers, changedOutputFloatBuffers_);
+			std::swap(ssPendingOutputStringData, changedOutputStringData_);
+		}
+
 		applyOutputTextureChange();
+		applyOutputFloatBufferChange();
+
+
+		auto& outputChop = (*outputChops_)[0];
+		(*inputChops_)[0].set(outputChop.channelData(), outputChop.valueCount(), outputChop.rate());
 
 
 		static float testFloat = 0.0f;
-
 		(*parCollection_)["Float"].set(testFloat);
 		testFloat += 1.1f;
-
-		
-		static bool setupChopInputs = false;
-		//static float count = 0.0f;
-		static std::vector<float> chans{ 1.f, 2.f, 3.f, 4.f };
-		static std::vector<const float*> chansPtrs;
-		if (!setupChopInputs)
-		{
-			for (auto& chan : chans)
-				chansPtrs.push_back(&chan);
-			setupChopInputs = true;
-			return;
-		}
-		
-		for (auto& chan : chans)
-		{
-			chan += .1;
-		}
-			
-		(*inputChops_)[0].set(chansPtrs.data(), chans.size(), 1, -1.f);
-
-
-		for (auto& chop : outputChops_->chops())
-		{
-			chop->readTeBuffer();
-		}
-		
-
 
 
 		// Examples of setting input links
@@ -789,14 +690,8 @@ void Comp::update()
 
 bool Comp::applyOutputTextureChange()
 {
-	// Only hold the lock briefly
-	std::vector<std::string> changes;
-	{
-		std::lock_guard<std::mutex> guard(mutex_);
-		std::swap(pendingOutputTextures_, changes);
-	}
 
-	for (const auto& identifier : changes)
+	for (const auto& identifier : changedOutputTextures_)
 	{
 		TouchObject <TETexture> teTex;
 		TEResult result = TEInstanceLinkGetTextureValue(
@@ -1054,7 +949,36 @@ bool Comp::applyOutputTextureChange()
 		}
 	}
 
-	return !changes.empty();
+	return !changedOutputTextures_.empty();
+}
+
+void Comp::applyOutputFloatBufferChange()
+{
+	if (!doubleBufferOutputs_)
+	{
+		for (const auto& identifier : changedOutputFloatBuffers_)
+		{
+			auto& chop = outputChops_->getById(identifier);
+			chop.updateChannelData();
+		}
+	}
+	else
+	{
+		for (const auto& identifier : changedOutputFloatBuffers_)
+		{
+			auto& chop = outputChops_->getById(identifier);
+			chop.readTeBuffer();
+		}
+	}
+}
+
+void Comp::applyOutputStringDataChange()
+{
+	for (const auto& identifier : changedOutputStringData_)
+	{
+		//auto& dat = outputDats_->getById(identifier);
+		//dat.updateData();
+	}
 }
 
 

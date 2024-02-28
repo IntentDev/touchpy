@@ -15,12 +15,13 @@ Chop::channel(const std::string& name)
 void 
 Chop::set(const std::vector<float>& channels, uint32_t valueCount, double rate)
 {
-	int32_t channelCount = static_cast<int32_t>(channels.size());
+	if (channels.size() == 0 || valueCount == 0) return;
+	int32_t channelCount = static_cast<int32_t>(channels.size() / valueCount);
 	if (channelCount == 0) return;
 
 	chanDataPtrs_.resize(channelCount);
 
-	for (size_t chan = 0; chan < channelCount_; ++chan)
+	for (size_t chan = 0; chan < channelCount; ++chan)
 	{
 		chanDataPtrs_[chan] = &channels[chan * valueCount_];
 	}
@@ -31,7 +32,8 @@ Chop::set(const std::vector<float>& channels, uint32_t valueCount, double rate)
 void 
 Chop::set(const std::vector<float>& channels, uint32_t valueCount, double rate, const std::vector<std::string>& names)
 {
-	int32_t channelCount = static_cast<int32_t>(channels.size());
+	if (channels.size() == 0 || valueCount == 0) return;
+	int32_t channelCount = static_cast<int32_t>(channels.size() / valueCount);
 	if (channelCount == 0) return;
 
 	if (names.size() != channelCount) set(channels, valueCount, rate); // or return or throw() ?
@@ -39,7 +41,7 @@ Chop::set(const std::vector<float>& channels, uint32_t valueCount, double rate, 
 	chanDataPtrs_.resize(channelCount);
 	namePtrs_.resize(channelCount);
 
-	for (size_t chan = 0; chan < channelCount_; ++chan)
+	for (size_t chan = 0; chan < channelCount; ++chan)
 	{
 		chanDataPtrs_[chan] = &channels[chan * valueCount_];
 		namePtrs_[chan] = names[chan].c_str();
@@ -51,15 +53,15 @@ Chop::set(const std::vector<float>& channels, uint32_t valueCount, double rate, 
 void 
 Chop::set(const std::vector<std::vector<float>>& channels, double rate)
 {
-	int32_t channelCount = static_cast<int32_t>(channels.size());
+	if (channels.size() == 0) return;
+	uint32_t valueCount = static_cast<uint32_t>(channels[0].size());
+	int32_t channelCount = static_cast<int32_t>(channels.size() / valueCount);
 	if (channelCount == 0) return;
 	if (channels[0].size() == 0) return;
 
-
-	uint32_t valueCount = static_cast<uint32_t>(channels[0].size());
 	chanDataPtrs_.resize(channelCount);
 
-	for (size_t chan = 0; chan < channelCount_; ++chan)
+	for (size_t chan = 0; chan < channelCount; ++chan)
 	{
 		chanDataPtrs_[chan] = channels[chan].data();
 	}
@@ -70,17 +72,18 @@ Chop::set(const std::vector<std::vector<float>>& channels, double rate)
 void 
 Chop::set(const std::vector<std::vector<float>>& channels, double rate, const std::vector<std::string>& names)
 {
-	int32_t channelCount = static_cast<int32_t>(channels.size());
+	if (channels.size() == 0) return;
+	uint32_t valueCount = static_cast<uint32_t>(channels[0].size());
+	int32_t channelCount = static_cast<int32_t>(channels.size() / valueCount);
 	if (channelCount == 0) return;
 	if (channels[0].size() == 0) return;
 
 	if (names.size() != channels.size()) set(channels, rate); // or return or throw() ?
 
-	uint32_t valueCount = static_cast<uint32_t>(channels[0].size());
 	chanDataPtrs_.resize(channelCount);
 	namePtrs_.resize(channelCount);
 
-	for (size_t chan = 0; chan < channelCount_; ++chan)
+	for (size_t chan = 0; chan < channelCount; ++chan)
 	{
 		chanDataPtrs_[chan] = channels[chan].data();
 		namePtrs_[chan] = names[chan].c_str();
@@ -99,34 +102,24 @@ Chop::set(const float** values, int32_t channelCount, uint32_t valueCount, doubl
 	valueCount_ = valueCount;
 	rate_ = rate;
 
-	if (channelCount > 0)
+	TouchObject<TEFloatBuffer> buffer;
+	if(TEInstanceLinkGetFloatBufferValue(instance_, identifier_.c_str(), TELinkValueCurrent, buffer.take()) == TEResultSuccess);
 	{
-		TouchObject<TEFloatBuffer> buffer;
-		TEResult result = TEInstanceLinkGetFloatBufferValue(instance_, identifier_.c_str(), TELinkValueCurrent, buffer.take());
-		if (result == TEResultSuccess)
+		if (buffer && !bufferCopyable(buffer))
+			buffer.reset();
+
+		if (buffer)
 		{
-			if (buffer && !bufferCopyable(buffer))
-			{
-				buffer.reset();
-			}
-			if (buffer)
-			{
-				TouchObject <TEFloatBuffer> newBuffer;
-				newBuffer.take(TEFloatBufferCreateCopy(buffer));
-				buffer = newBuffer;
-			}
-			else
-			{
-				buffer.take(TEFloatBufferCreate(rate_, channelCount_, capacity_, names));
-				//buffer.take(TEFloatBufferCreate(rate_, channelCount_, capacity_, nullptr));
-			}
-			TEResult result = TEFloatBufferSetValues(buffer, values, valueCount_);
-			result = TEInstanceLinkSetFloatBufferValue(instance_, identifier_.c_str(), buffer);
+			TouchObject <TEFloatBuffer> newBuffer;
+			newBuffer.take(TEFloatBufferCreateCopy(buffer));
+			buffer = newBuffer;
 		}
 		else
-		{
-			std::cout << "TEInstanceLinkGetFloatBufferValue Result: " << TEResultGetDescription(result) << std::endl;
-		}
+			buffer.take(TEFloatBufferCreate(rate_, channelCount_, capacity_, names));
+		
+
+		if (TEFloatBufferSetValues(buffer, values, valueCount_) == TEResultSuccess);
+			TEInstanceLinkSetFloatBufferValue(instance_, identifier_.c_str(), buffer);
 	}
 }
 
@@ -220,4 +213,39 @@ void Chop::readTeBuffer()
 	}
 
 	
+}
+
+void Chop::updateChannelData()
+{
+
+	TouchObject<TEFloatBuffer> buffer;
+	if (TEInstanceLinkGetFloatBufferValue(instance_, identifier_.c_str(), TELinkValueCurrent, buffer.take()) == TEResultSuccess)
+	{
+		if (buffer)
+		{
+			channelCount_ = TEFloatBufferGetChannelCount(buffer);
+			capacity_ = TEFloatBufferGetCapacity(buffer);
+			valueCount_ = TEFloatBufferGetValueCount(buffer);
+			rate_ = TEFloatBufferGetRate(buffer);
+
+			const float* const* data = TEFloatBufferGetValues(buffer);
+			const char* const* names = TEFloatBufferGetChannelNames(buffer);
+
+			size_t arraySize = static_cast<size_t>(channelCount_ * valueCount_);
+			channelData_.resize(arraySize);
+			names_.resize(channelCount_);
+			chanDataPtrs_.resize(channelCount_);
+			namePtrs_.resize(channelCount_);
+
+			for (size_t chan = 0; chan < channelCount_; ++chan)
+			{
+				std::copy(data[chan], data[chan] + capacity_, channelData_.begin() + chan * capacity_);
+
+				chanDataPtrs_[chan] = &channelData_[chan * valueCount_];
+				names_[chan] = names[chan];
+				namePtrs_[chan] = names_[chan].c_str();
+			}
+		}
+	}
+
 }
