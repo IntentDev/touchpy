@@ -5,7 +5,8 @@
 #include "texture.h"
 #include "common/cuda_helpers.h"
 #include "par.h"
-#include "chop.h"
+#include "choplink.h"
+#include "datlink.h"
 
 
 #include <string>
@@ -27,7 +28,7 @@ public:
 	bool ready() const { return ready_; }
 	void update();
 
-	ParCollection& pars() { return *parCollection_; }
+	ParCollection& pars() { return *pars_; }
 
 private:
 
@@ -86,9 +87,11 @@ private:
 
 	std::chrono::high_resolution_clock::time_point lastFrameTime_{};
 
-	std::unique_ptr<ParCollection>  parCollection_;
-	std::unique_ptr<ChopCollection> inputChops_;
-	std::unique_ptr<ChopCollection> outputChops_;
+	std::unique_ptr<ParCollection> pars_;
+	std::unique_ptr<ChopLinks>     inputChopLinks_;
+	std::unique_ptr<ChopLinks>     outputChopLinks_;
+	std::unique_ptr<DatLinks>      inputDatLinks_;
+	std::unique_ptr<DatLinks>      outputDatLinks_;
 
 	bool							doubleBufferOutputs_ { false };
 
@@ -99,6 +102,10 @@ private:
 	bool applyOutputTextureChange();
 	void applyOutputFloatBufferChange();
 	void applyOutputStringDataChange();
+
+	void setInputTextures();
+	void setInputFloatBuffers();
+	void setInputStringData();
 
 
 	void createRenderer();

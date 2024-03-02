@@ -20,7 +20,8 @@ Comp::Comp(const std::string& filePath)
 	load();
 }
 
-void Comp::initComp()
+void 
+Comp::initComp()
 {
 	createRenderer();
 	cudaInit();
@@ -38,7 +39,8 @@ Comp::~Comp()
 }
 
 
-void Comp::createRenderer()
+void 
+Comp::createRenderer()
 {
 	renderer_ = std::make_unique<Renderer>();
 	renderer_->createInstance();
@@ -55,13 +57,15 @@ void Comp::createRenderer()
 }
 
 
-void Comp::cudaInit()
+void 
+Comp::cudaInit()
 {
 	setCudaDevice();
 	CUDA_CHECK(cudaStreamCreate(&cudaStream_));
 }
 
-void Comp::setCudaDevice()
+void 
+Comp::setCudaDevice()
 {
 	int deviceCount;
 	CUDA_CHECK(cudaGetDeviceCount(&deviceCount));
@@ -109,7 +113,8 @@ void Comp::setCudaDevice()
 	exit(1);
 }
 
-void Comp::load()
+void 
+Comp::load()
 {
 	std::cout << "Loading tox: \t" << std::string(filePath_.begin(), filePath_.end()) << std::endl;
 
@@ -131,7 +136,8 @@ void Comp::load()
 
 }
 
-void Comp::loadTox(const std::string& filePath)
+void 
+Comp::loadTox(const std::string& filePath)
 {
 	filePath_ = filePath;
 	unload();
@@ -139,20 +145,23 @@ void Comp::loadTox(const std::string& filePath)
 }
 
 
-void Comp::unload()
+void 
+Comp::unload()
 {
 	
 }
 
 
-bool Comp::loaded() const
+bool 
+Comp::loaded() const
 {
 	std::lock_guard<std::mutex> guard(mutex_);
 	return ssLoaded_;
 }
 
 
-void Comp::eventCallback(TEInstance* instance,
+void 
+Comp::eventCallback(TEInstance* instance,
 	TEEvent event,
 	TEResult result,
 	int64_t start_time_value,
@@ -186,7 +195,8 @@ void Comp::eventCallback(TEInstance* instance,
 	}
 }
 
-void Comp::onEventInstanceReady(TEResult result)
+void 
+Comp::onEventInstanceReady(TEResult result)
 {
 	bool temp = false;
 	{
@@ -197,22 +207,25 @@ void Comp::onEventInstanceReady(TEResult result)
 	std::cout << "\t\tInstance Ready: " << TEResultGetDescription(result) << std::endl;
 }
 
-void Comp::onEventInstanceDidLoad(TEResult result)
+void 
+Comp::onEventInstanceDidLoad(TEResult result)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 	ssLoaded_ = true;
 }
 
-void Comp::onEventInstanceDidUnload(TEResult result)
+void 
+Comp::onEventInstanceDidUnload(TEResult result)
 {
 	std::cout << "Instance unloaded" << std::endl;
 }
 
-void Comp::onEventFrameDidFinish(TEResult result, int64_t time_value, int32_t time_scale)
+void 
+Comp::onEventFrameDidFinish(TEResult result, int64_t time_value, int32_t time_scale)
 {
 	//if (doubleBufferOutputs_)
 	//{
-	//	for (auto& chop : outputChops_->chops())
+	//	for (auto& chop : outputChopLinks_->chops())
 	//	{
 	//		chop->updateTeBuffer();
 	//		chop->swapTeBuffers();
@@ -226,7 +239,8 @@ void Comp::onEventFrameDidFinish(TEResult result, int64_t time_value, int32_t ti
 	//	<< std::endl;
 }
 
-void Comp::onEventGeneral(TEResult result, uint64_t start_time, uint64_t end_time)
+void 
+Comp::onEventGeneral(TEResult result, uint64_t start_time, uint64_t end_time)
 {
 	//std::cout << "General event: " << TEResultGetDescription(result)
 	//	<< " start_time: " << start_time
@@ -235,7 +249,8 @@ void Comp::onEventGeneral(TEResult result, uint64_t start_time, uint64_t end_tim
 }
 
 
-void Comp::linkEventCallback(TEInstance* instance, TELinkEvent event, const char* identifier, void* info)
+void 
+Comp::linkEventCallback(TEInstance* instance, TELinkEvent event, const char* identifier, void* info)
 {
 	//std::cout << "linkEventCallback thread id: " << std::this_thread::get_id() << std::endl;
 	//std::cout << "Link event: " << teutils::linkEventToString(event) << " identifier: " << identifier << std::endl;
@@ -268,14 +283,16 @@ void Comp::linkEventCallback(TEInstance* instance, TELinkEvent event, const char
 	}
 }
 
-void Comp::onLinkLayoutChange(TELinkEvent event, const char* identifier)
+void 
+Comp::onLinkLayoutChange(TELinkEvent event, const char* identifier)
 {
 	std::lock_guard<std::mutex> guard(mutex_);
 	ssPendingLayoutChange_ = true;
 
 }
 
-void Comp::onLinkEventValueChange(const char* identifier)
+void 
+Comp::onLinkEventValueChange(const char* identifier)
 {
 	TouchObject<TELinkInfo> link;
 	TEResult result = TEInstanceLinkGetInfo(instance_, identifier, link.take());
@@ -296,9 +313,9 @@ void Comp::onLinkEventValueChange(const char* identifier)
 		{
 			if (doubleBufferOutputs_)
 			{
-				Chop& chop = outputChops_->getById(link->identifier);
-				chop.updateTeBuffer();
-				chop.swapTeBuffers();
+				ChopLink& chopLink = *outputChopLinks_->getLinkByIdentifier(link->identifier);
+				chopLink.updateTeBuffer();
+				chopLink.swapTeBuffers();
 			}
 			else
 			{
@@ -319,7 +336,8 @@ void Comp::onLinkEventValueChange(const char* identifier)
 	}
 }
 
-void Comp::getState(bool& ready, bool& loaded, bool& linksLayoutChanged, bool& inFrame)
+void
+Comp::getState(bool& ready, bool& loaded, bool& linksLayoutChanged, bool& inFrame)
 {
 	std::lock_guard<std::mutex> guard(mutex_);
 	loaded = ssLoaded_;
@@ -338,22 +356,27 @@ void Comp::getState(bool& ready, bool& loaded, bool& linksLayoutChanged, bool& i
 	}
 }
 
-void Comp::setInFrame(bool inFrame)
+void 
+Comp::setInFrame(bool inFrame)
 {
 	std::lock_guard<std::mutex> guard(mutex_);
 	ssInFrame_ = inFrame;
 }
 
-void Comp::applyLayoutChange()
+void 
+Comp::applyLayoutChange()
 {
 
 	std:: cout << "Applying layout change" << std::endl;
 
-	parCollection_.reset();
-	parCollection_ = std::make_unique <ParCollection>(instance_);
+	pars_.reset();
+	pars_ = std::make_unique <ParCollection>(instance_);
 
-	outputChops_ = std::make_unique<ChopCollection>(instance_);
-	inputChops_ = std::make_unique<ChopCollection>(instance_);
+	outputChopLinks_ = std::make_unique<ChopLinks>(instance_, LinkScope::Input);
+	inputChopLinks_ = std::make_unique<ChopLinks>(instance_, LinkScope::Output);
+
+	inputDatLinks_ = std::make_unique<DatLinks>(instance_, LinkScope::Input);
+	outputDatLinks_ = std::make_unique<DatLinks>(instance_, LinkScope::Output);
 
 	// create 
 
@@ -397,19 +420,25 @@ void Comp::applyLayoutChange()
 							
 							if (info->domain == TELinkDomainParameter)
 							{
-								parCollection_->addPar(info);
+								pars_->addPar(info);
 							}
 
 							if (info->type == TELinkTypeFloatBuffer)
 							{
 								if (info->scope == TEScopeOutput)
-								{
-									outputChops_->addChop(info, Chop::Mode::Output);
-								}
+									outputChopLinks_->addLink(info);
+								
 								else if (info->scope == TEScopeInput)
-								{
-									inputChops_->addChop(info, Chop::Mode::Input);
-								}
+									inputChopLinks_->addLink(info);
+							}
+
+							if (info->type == TELinkTypeStringData)
+							{
+								if (info->scope == TEScopeOutput)
+									outputDatLinks_->addLink(info);
+								
+								else if (info->scope == TEScopeInput)
+									inputDatLinks_->addLink(info);
 							}
 						}
 					}
@@ -418,13 +447,13 @@ void Comp::applyLayoutChange()
 		}
 	}
 
-	for (auto& par : parCollection_->getPars())
+	for (auto& par : pars_->getPars())
 	{
 		std::cout << "Par: " << par.first << std::endl;
 	}
 
 
-	auto scale = std::visit(visitor<double>, (*parCollection_)["Scale"].get());
+	auto scale = std::visit(visitor<double>, (*pars_)["Scale"].get());
 	if (scale)
 		std::cout << "Scale: " << scale.value() << std::endl;
 	else
@@ -433,10 +462,10 @@ void Comp::applyLayoutChange()
 
 	double s = 2.0;
 
-	(*parCollection_)["Scale"].set(s);
+	(*pars_)["Scale"].set(s);
 
 	// not safe
-	double scale2 = std::get<double>((*parCollection_)["Scale"].get());
+	double scale2 = std::get<double>((*pars_)["Scale"].get());
 	std::cout << "Scale: " << scale2 << std::endl;
 
 
@@ -449,7 +478,8 @@ void Comp::applyLayoutChange()
 	}
 }
 
-void Comp::update()
+void 
+Comp::update()
 {
 	bool ready, loaded, linksLayoutChanged, inFrame;
 	getState(ready, loaded, linksLayoutChanged, inFrame);
@@ -467,23 +497,36 @@ void Comp::update()
 
 	if (!inFrame)
 	{
+		changedOutputTextures_.clear();
+		changedOutputFloatBuffers_.clear();
+		changedOutputStringData_.clear();
+
 		{
 			std::lock_guard<std::mutex> guard(mutex_);
 			std::swap(ssPendingOutputTextures_, changedOutputTextures_);
 			std::swap(ssPendingOutputFloatBuffers, changedOutputFloatBuffers_);
 			std::swap(ssPendingOutputStringData, changedOutputStringData_);
+
 		}
 
 		applyOutputTextureChange();
 		applyOutputFloatBufferChange();
+		applyOutputStringDataChange();
 
 
-		auto& outputChop = (*outputChops_)[0];
-		(*inputChops_)[0].set(outputChop.channelData(), outputChop.valueCount(), outputChop.rate());
+		auto& outputChop = (*outputChopLinks_)[0];
+		(*inputChopLinks_)[0].set(outputChop.channelData(), outputChop.valueCount(), outputChop.rate());
+
+		auto& outputDatLink0 = (*outputDatLinks_)[0];
+		auto& outputDatLink1 = (*outputDatLinks_)[1];
+		//std::cout << "OutputDatLink0: " << outputDatLink0.getTable().numRows << ", " << outputDatLink0.getTable().numCols << std::endl;
+
+		(*inputDatLinks_)[0].set(outputDatLink0.getTable());
+		(*inputDatLinks_)[1].set(outputDatLink1.getString());
 
 
 		static float testFloat = 0.0f;
-		(*parCollection_)["Float"].set(testFloat);
+		(*pars_)["Float"].set(testFloat);
 		testFloat += 1.1f;
 
 
@@ -688,7 +731,8 @@ void Comp::update()
 
 }
 
-bool Comp::applyOutputTextureChange()
+bool 
+Comp::applyOutputTextureChange()
 {
 
 	for (const auto& identifier : changedOutputTextures_)
@@ -952,33 +996,51 @@ bool Comp::applyOutputTextureChange()
 	return !changedOutputTextures_.empty();
 }
 
-void Comp::applyOutputFloatBufferChange()
+void 
+Comp::applyOutputFloatBufferChange()
 {
 	if (!doubleBufferOutputs_)
 	{
 		for (const auto& identifier : changedOutputFloatBuffers_)
 		{
-			auto& chop = outputChops_->getById(identifier);
-			chop.updateChannelData();
+			auto& chop = *outputChopLinks_->getLinkByIdentifier(identifier);
+			chop.updateOutput();
 		}
 	}
 	else
 	{
 		for (const auto& identifier : changedOutputFloatBuffers_)
 		{
-			auto& chop = outputChops_->getById(identifier);
+			auto& chop = *outputChopLinks_->getLinkByIdentifier(identifier);
 			chop.readTeBuffer();
 		}
 	}
 }
 
-void Comp::applyOutputStringDataChange()
+void 
+Comp::applyOutputStringDataChange()
 {
 	for (const auto& identifier : changedOutputStringData_)
 	{
-		//auto& dat = outputDats_->getById(identifier);
-		//dat.updateData();
+		std::cout << "OutputStringDataChange: " << identifier << std::endl;
+		auto& datLink = *outputDatLinks_->getLinkByIdentifier(identifier);
+		datLink.updateOutput();
 	}
+}
+
+void 
+Comp::setInputTextures()
+{
+}
+
+void 
+Comp::setInputFloatBuffers()
+{
+}
+
+void 
+Comp::setInputStringData()
+{
 }
 
 
