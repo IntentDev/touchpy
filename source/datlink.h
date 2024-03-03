@@ -8,7 +8,7 @@
 class DatLink : public Link<DatLink>
 {
 public:
-	DatLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo, LinkScope linkScope);
+	DatLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo);
 	~DatLink();
 
 	enum class DatLinkType
@@ -47,7 +47,7 @@ class DatLinks : public Links<DatLinks, DatLink>
 {
 public:
 	DatLinks() = default;
-	DatLinks(TouchObject<TEInstance> instance, LinkScope linkScope) : Links<DatLinks, DatLink>(instance, linkScope) { }
+	DatLinks(TouchObject<TEInstance> instance) : Links<DatLinks, DatLink>(instance) { }
 	~DatLinks() {};
 };
 

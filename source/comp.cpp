@@ -232,11 +232,21 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t time_value, int32_t time_sc
 	//	}
 	//}
 
-	setInFrame(false);
-	//std::cout << "Frame end: " << TEResultGetDescription(result)
-	//	<< " time_value: " << time_value
-	//	<< " time_scale: " << time_scale
-	//	<< std::endl;
+	if (result == TEResultSuccess && time_value >= 0)
+	{
+		setInFrame(false);
+	}
+	else
+	{
+		std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result) << ", start_time_value: " << time_value << " start_time_scale : " << time_scale << std::endl;
+		setInFrame(true);
+		TEResult result = TEInstanceStartFrameAtTime(instance_, 0.0, 0.0, false);
+		if (result != TEResultSuccess)
+		{
+			std::cout << "onFrameDidFinish TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
+			setInFrame(false);
+		}
+	}
 }
 
 void 
@@ -361,6 +371,7 @@ Comp::setInFrame(bool inFrame)
 {
 	std::lock_guard<std::mutex> guard(mutex_);
 	ssInFrame_ = inFrame;
+	//std::cout << "setInFrame: " << std::boolalpha << inFrame << std::endl;
 }
 
 void 
@@ -369,14 +380,14 @@ Comp::applyLayoutChange()
 
 	std:: cout << "Applying layout change" << std::endl;
 
-	pars_.reset();
-	pars_ = std::make_unique <ParCollection>(instance_);
+	parLinks_.reset();
+	parLinks_ = std::make_unique <ParLinkCollection>(instance_);
 
-	outputChopLinks_ = std::make_unique<ChopLinks>(instance_, LinkScope::Input);
-	inputChopLinks_ = std::make_unique<ChopLinks>(instance_, LinkScope::Output);
+	outputChopLinks_ = std::make_unique<ChopLinks>(instance_);
+	inputChopLinks_ = std::make_unique<ChopLinks>(instance_);
 
-	inputDatLinks_ = std::make_unique<DatLinks>(instance_, LinkScope::Input);
-	outputDatLinks_ = std::make_unique<DatLinks>(instance_, LinkScope::Output);
+	inputDatLinks_ = std::make_unique<DatLinks>(instance_);
+	outputDatLinks_ = std::make_unique<DatLinks>(instance_);
 
 	// create 
 
@@ -420,7 +431,7 @@ Comp::applyLayoutChange()
 							
 							if (info->domain == TELinkDomainParameter)
 							{
-								pars_->addPar(info);
+								parLinks_->addLink(info);
 							}
 
 							if (info->type == TELinkTypeFloatBuffer)
@@ -447,28 +458,25 @@ Comp::applyLayoutChange()
 		}
 	}
 
-	for (auto& par : pars_->getPars())
-	{
-		std::cout << "Par: " << par.first << std::endl;
-	}
+	//for (auto& par : parLinks_->getLinks())
+	//{
+	//	std::cout << "Par: " << par.first << std::endl;
+	//}
 
+	//auto scale = std::visit(visitor<double>, (*parLinks_)["Scale"].get());
+	//if (scale)
+	//	std::cout << "Scale: " << scale.value() << std::endl;
+	//else
+	//	std::cout << "Scale: " << "not found" << std::endl;
 
-	auto scale = std::visit(visitor<double>, (*pars_)["Scale"].get());
-	if (scale)
-		std::cout << "Scale: " << scale.value() << std::endl;
-	else
-		std::cout << "Scale: " << "not found" << std::endl;
+	//double s = 2.0;
+	//(*parLinks_)["Scale"].set(s);
 
+	//// not safe
+	//double scale2 = std::get<double>((*parLinks_)["Scale"].get());
+	//std::cout << "Scale: " << scale2 << std::endl;
 
-	double s = 2.0;
-
-	(*pars_)["Scale"].set(s);
-
-	// not safe
-	double scale2 = std::get<double>((*pars_)["Scale"].get());
-	std::cout << "Scale: " << scale2 << std::endl;
-
-
+	//std::cout << "setInFrame true after layout change" << std::endl;
 	setInFrame(true);
 	TEResult result = TEInstanceStartFrameAtTime(instance_, 0.0, 0.0, false);
 	if (result != TEResultSuccess)
@@ -485,6 +493,8 @@ Comp::update()
 	getState(ready, loaded, linksLayoutChanged, inFrame);
 
 	if (!loaded || !ready) return;
+	//std::cout << "Loaded: " << std::boolalpha << loaded << " Ready: " << ready 
+	// << " LinksLayoutChanged: " << linksLayoutChanged << " InFrame: " << inFrame << std::endl;
 
 	if (linksLayoutChanged) 
 	{
@@ -514,217 +524,50 @@ Comp::update()
 		applyOutputStringDataChange();
 
 
-		auto& outputChop = (*outputChopLinks_)[0];
-		(*inputChopLinks_)[0].set(outputChop.channelData(), outputChop.valueCount(), outputChop.rate());
-
-		auto& outputDatLink0 = (*outputDatLinks_)[0];
-		auto& outputDatLink1 = (*outputDatLinks_)[1];
-		//std::cout << "OutputDatLink0: " << outputDatLink0.getTable().numRows << ", " << outputDatLink0.getTable().numCols << std::endl;
-
-		(*inputDatLinks_)[0].set(outputDatLink0.getTable());
-		(*inputDatLinks_)[1].set(outputDatLink1.getString());
-
-
-		static float testFloat = 0.0f;
-		(*pars_)["Float"].set(testFloat);
-		testFloat += 1.1f;
-
-
-		// Examples of setting input links
-		TouchObject<TEStringArray> groups;
-		TEResult result = TEInstanceGetLinkGroups(instance_, TEScopeInput, groups.take());
-		if (result == TEResultSuccess)
+		for (size_t i = 0; i < inputChopLinks_->size() && i < outputChopLinks_->size(); ++i)
 		{
-			int textureCount = 0;
-			for (int32_t i = 0; i < groups->count; i++)
+			auto& outputChop = (*outputChopLinks_)[i];
+			auto& inputChop = (*inputChopLinks_)[i];
+			if (outputChop.isUpdated())
 			{
-				TouchObject<TEStringArray> children;
-				result = TEInstanceLinkGetChildren(instance_, groups->strings[i], children.take());
-				if (result == TEResultSuccess)
-				{
-					for (int32_t j = 0; j < children->count; j++)
-					{
-						TouchObject<TELinkInfo> info;
-						result = TEInstanceLinkGetInfo(instance_, children->strings[j], info.take());
-						if (result == TEResultSuccess)
-						{
-							switch (info->type)
-							{
-							case TELinkTypeDouble:
-							{
-								//double d = fmod(myLastFloatValue, 1.0);
-								//result = TEInstanceLinkSetDoubleValue(myInstance, info->identifier, &d, 1);
-								break;
-							}
-							case TELinkTypeInt:
-							{
-								//int v = static_cast<int>(myLastFloatValue * 100) % 100;
-								//result = TEInstanceLinkSetIntValue(myInstance, info->identifier, &v, 1);
-								break;
-							}
-							case TELinkTypeString:
-								//result = TEInstanceLinkSetStringValue(instance_, info->identifier, "test input");
-								break;
-							case TELinkTypeTexture:
-							{
-								//if (pendingInputTexHandles_.size() > 0)
-								//{
-								//	auto internalTex = texturesInternal_.find(pendingInputTexHandles_[0]);
-								//	if (internalTex != texturesInternal_.end())
-								//	{
-								//		TouchObject<TETexture> teTex;
-								//		teTex.set(internalTex->second->teVkTexture());
-
-								//		result = TEInstanceLinkSetTextureValue(
-								//			instance_, info->identifier, teTex, renderer_->teContext());
-
-								//		if (result == TEResultSuccess)
-								//		{
-								//			result = TEInstanceAddTextureTransfer(
-								//				instance_,
-								//				teTex,
-								//				internalTex->second->teVkSemaphore(),
-								//				internalTex->second->signalValue()
-								//			);
-								//		}
-
-								//		pendingInputTexHandles_.erase(pendingInputTexHandles_.begin());
-								//	}
-
-								//	std::cout << "TELinkTypeTexture: " << info->identifier << std::endl;
-								//}
-
-								if (texToTE_.get())
-								{
-									TouchObject<TETexture> texture;
-									texture.set(texToTE_->teVkTexture());
-									result = TEInstanceLinkSetTextureValue(
-										instance_, info->identifier, texture, renderer_->teContext());
-
-									////std::cout << "TEInstanceLinkSetTextureValue: " << TEResultGetDescription(result) << std::endl;
-									if (result == TEResultSuccess)
-									{
-										result = TEInstanceAddTextureTransfer(
-											instance_, 
-											texture, 
-											texToTE_->teVkSemaphore(),
-											texToTE_->signalValue()
-										);
-										std::cout << "TEInstanceAddTextureTransfer: " << info->identifier 
-											<< ", " << TEResultGetDescription(result) << std::endl;
-									}
-								}
-								break;
-							}
-							case TELinkTypeFloatBuffer:
-							{
-
-
-								//TouchObject<TEFloatBuffer> buffer;
-								//// Creating a copy of an existing buffer is more efficient than creating a new one every time
-								//TEResult result = TEInstanceLinkGetFloatBufferValue(instance_, info->identifier, TELinkValueCurrent, buffer.take());
-								//if (result == TEResultSuccess)
-								//{
-								//	// You might want to check more properties of the buffer than this
-								//	if (buffer && TEFloatBufferGetCapacity(buffer) < 1 || TEFloatBufferGetChannelCount(buffer) != 2)
-								//	{
-								//		buffer.reset();
-								//	}
-								//	if (buffer)
-								//	{
-								//		TouchObject<TEFloatBuffer> copied;
-								//		copied.take(TEFloatBufferCreateCopy(buffer));
-								//		buffer = copied;
-								//	}
-								//	else
-								//	{
-								//		// Two channels, capacity of one sample per channel, no channel names
-								//		// This buffer is not time-dependent, see TEFloatBuffer.h for handling time-dependent samples such
-								//		// as audio.
-								//		buffer.take(TEFloatBufferCreate(-1, 2, 1, nullptr));
-								//	}
-								//	float value1 = 11.0;
-								//	float value2 = 22.0;
-								//	std::array<const float*, 2> channels{ &value1, &value2 };
-								//	TEFloatBufferSetValues(buffer, channels.data(), 1);
-
-								//	result = TEInstanceLinkSetFloatBufferValue(instance_, info->identifier, buffer);
-								//}
-
-
-								break;
-							}
-							case TELinkTypeStringData:
-							{
-								//String data can be either tabular, in which case set a TETable, or a single string - here we set a table
-								//(use TEInstanceLinkSetStringValue() to set a string value)
-
-								//It is more efficient to create a copy of an existing table than to create a new one, so check
-								//for an existing table to re-use first.
-							   //TouchObject<TEObject> value;
-							   //result = TEInstanceLinkGetObjectValue(instance_, info->identifier, TELinkValueCurrent, value.take());
-
-							   //if (result == TEResultSuccess)
-							   //{
-							   //	TouchObject<TETable> table;
-							   //	if (value && TEGetType(value) == TEObjectTypeTable)
-							   //	{
-							   //		table.take(TETableCreateCopy(static_cast<TETable*>(value.get())));
-							   //	}
-							   //	else
-							   //	{
-							   //		table.take(TETableCreate());
-							   //	}
-							   //	TETableResize(table, 3, 2);
-							   //	for (int column = 0; column < 2; column++)
-							   //	{
-							   //		for (int row = 0; row < 3; row++)
-							   //		{
-							   //			TETableSetStringValue(table, row, column, "test");
-							   //		}
-							   //	}
-							   //	result = TEInstanceLinkSetTableValue(instance_, info->identifier, table);
-							   //}
-								break;
-							}
-							default:
-								break;
-							}
-						}
-					}
-				}
+				inputChop.set(outputChop.channelData(), outputChop.valueCount(), outputChop.rate(), outputChop.names());
 			}
-
-			//const char* identifier = "pn/Scale";
-			//TouchObject<TELinkInfo> link;
-			//result = TEInstanceLinkGetInfo(instance_, identifier, link.take());
-
-			//std::vector<double> value(link->count, 0.0);
-			//result = TEInstanceLinkGetDoubleValue(instance_, identifier, TELinkValueCurrent, value.data(), link->count);
-			//if (result == TEResultSuccess)
-			//{
-			//	std::cout << "Parameter Double: " << link->name << " value(s): ";
-			//	for (int i = 0; i < link->count; i++)
-			//	{
-			//		std::cout << value[i] << " ";
-			//	}
-			//	std::cout << std::endl;
-			//}
 		}
 
+		for (size_t i = 0; i < inputDatLinks_->size() && i < outputDatLinks_->size(); ++i)
+		{
+			auto& outputDatLink = (*outputDatLinks_)[i];
+			auto& inputDatLink = (*inputDatLinks_)[i];
+
+			if (outputDatLink.type() == DatLink::DatLinkType::Table)
+				inputDatLink.set(outputDatLink.getTable());
+			else
+				inputDatLink.set(outputDatLink.getString());
+		}
+
+		static float testFloat = 0.0f;
+		(*parLinks_)["Float"].set(testFloat);
+		testFloat += 1.1f;
+
+		if (texToTE_.get())
+		{
+			std::string identifier = "op/topIn1";
+			texToTE_->transferToInputLink(instance_, renderer_->teContext(), identifier.c_str());
+		}
+
+		//std::cout << "setInFrame true after update" << std::endl;
 		setInFrame(true);
-		result = TEInstanceStartFrameAtTime(instance_, 0.0, 0.0, false);
+		TEResult result = TEInstanceStartFrameAtTime(instance_, 0.0, 0.0, false);
 		if (result != TEResultSuccess)
 		{
-			std::cout << "TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
+			std::cout << "update() TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
 			setInFrame(false);
 		}
 
-		std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
-		std::cout << "Frame time: " << std::chrono::duration_cast<std::chrono::milliseconds>(
-			now - lastFrameTime_).count() << "ms" << std::endl;
-
-		lastFrameTime_ = now;
+		//std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
+		//std::cout << "Frame time: " << std::chrono::duration_cast<std::chrono::milliseconds>(
+		//	now - lastFrameTime_).count() << "ms" << std::endl;
+		//lastFrameTime_ = now;
 
 	}
 
@@ -745,8 +588,7 @@ Comp::applyOutputTextureChange()
 		{
 
 			HANDLE handle = TEVulkanTextureGetHandle(static_cast<TEVulkanTexture*>(teTex.get()));
-			std::cout << "Has Texture Transfer: " << identifier
-				<< ", Texture Handle: " << handle << std::endl;
+			//std::cout << "Has Texture Transfer: " << identifier << ", Texture Handle: " << handle << std::endl;
 
 			auto it = texturesExternal_.find(handle);
 			if (it == texturesExternal_.end())
@@ -781,31 +623,6 @@ Comp::applyOutputTextureChange()
 				return true; // we need to wait for the texture to be ready
 			}
 			
-
-
-			//if (texFromTE_.get() == nullptr)
-			//{
-			//	texFromTE_ = std::make_unique<Texture>(
-			//		renderer_->vContext().physicalDevice,
-			//		renderer_->vContext().device,
-			//		instance_,
-			//		static_cast<TEVulkanTexture*>(teTex.get())
-			//	);
-
-			//	// temporary - 
-			//	if (texToTE_.get() == nullptr && texFromTE_)
-			//	{
-			//		texToTE_ = std::make_unique<Texture>(
-			//			physicalDevice_,
-			//			device_,
-			//			texFromTE_->extent(),
-			//			texFromTE_->format()
-			//		);
-			//	}
-
-			//	return true; // we need to wait for the texture to be ready
-			//}
-
 			auto texExternal = texturesExternal_[handle].get();
 
 			TouchObject<TESemaphore> teSemaphore;
@@ -841,7 +658,7 @@ Comp::applyOutputTextureChange()
 
 			if (result == TEResultSuccess)
 			{
-				std::cout << "Texture transfer: " << identifier << " : " << waitValue << std::endl;
+				//std::cout << "Texture transfer: " << identifier << " : " << waitValue << std::endl;
 				if (TESemaphoreGetType(teSemaphore) == TESemaphoreTypeVulkan)
 				{
 					texExternal->copyImageToCudaMem(waitValue, cudaStream_);
@@ -1022,7 +839,7 @@ Comp::applyOutputStringDataChange()
 {
 	for (const auto& identifier : changedOutputStringData_)
 	{
-		std::cout << "OutputStringDataChange: " << identifier << std::endl;
+		//std::cout << "OutputStringDataChange: " << identifier << std::endl;
 		auto& datLink = *outputDatLinks_->getLinkByIdentifier(identifier);
 		datLink.updateOutput();
 	}

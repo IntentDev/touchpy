@@ -63,23 +63,23 @@ int main(int argc, char* argv[])
     comp->loadTox(compPath.string());
 
     // poll terminal in separate thread for exit command q
-    std::thread terminal(pollTerminal);
+    //std::thread terminal(pollTerminal);
 
     bool running = true;
     while (running)
     {
         comp->update();
 
-        if (comp->ready())
+        //if (comp->ready())
             //comp->pars()["Scale"].set(0.5);
 
-        {
-            std::lock_guard<std::mutex> lock(mutex);
-            running = !exitCommand;
-        }
+        //{
+        //    std::lock_guard<std::mutex> lock(mutex);
+        //    running = !exitCommand;
+        //}
     }
 
-    if (terminal.joinable()) terminal.join();
+    //if (terminal.joinable()) terminal.join();
 
     return 0;
 }

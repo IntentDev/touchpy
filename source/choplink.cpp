@@ -4,9 +4,16 @@
 #include <algorithm>
 
 
+
+ChopLink::ChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo)
+	:	Link<ChopLink>(instance, linkInfo) 
+{
+}
+
+ChopLink::~ChopLink() { }
+
 void ChopLink::updateOutput()
 {
-
 	TouchObject<TEFloatBuffer> buffer;
 	if (TEInstanceLinkGetFloatBufferValue(instance, identifier.c_str(), TELinkValueCurrent, buffer.take()) == TEResultSuccess)
 	{
@@ -16,11 +23,17 @@ void ChopLink::updateOutput()
 			capacity_ = TEFloatBufferGetCapacity(buffer);
 			valueCount_ = TEFloatBufferGetValueCount(buffer);
 			rate_ = TEFloatBufferGetRate(buffer);
+			isTimeDependent_ = TEFloatBufferIsTimeDependent(buffer);
+
+			//std::cout << "Update: " << identifier << " Channel count: " << channelCount_ 
+			// << ", Capacity: " << capacity_ << ", Value count: " << valueCount_ << ", Rate: " << rate_ 
+			// << ", Time dependent: " << isTimeDependent_ << std::endl;
 
 			const float* const* data = TEFloatBufferGetValues(buffer);
 			const char* const* names = TEFloatBufferGetChannelNames(buffer);
 
-			size_t arraySize = static_cast<size_t>(channelCount_ * valueCount_);
+			//size_t arraySize = static_cast<size_t>(channelCount_ * capacity_);
+			size_t arraySize = static_cast<size_t>(channelCount_ * valueCount_); 
 			channelData_.resize(arraySize);
 			names_.resize(channelCount_);
 			chanDataPtrs_.resize(channelCount_);
@@ -28,14 +41,23 @@ void ChopLink::updateOutput()
 
 			for (size_t chan = 0; chan < channelCount_; ++chan)
 			{
-				std::copy(data[chan], data[chan] + capacity_, channelData_.begin() + chan * capacity_);
+				//std::copy(data[chan], data[chan] + valueCount_, channelData_.begin() + chan * capacity_);
+				std::copy(data[chan], data[chan] + valueCount_, channelData_.begin() + chan * valueCount_);
 
+				//chanDataPtrs_[chan] = &channelData_[chan * capacity_];
 				chanDataPtrs_[chan] = &channelData_[chan * valueCount_];
 				names_[chan] = names[chan];
 				namePtrs_[chan] = names_[chan].c_str();
 			}
+			isUpdated_ = true;
+	
 		}
+		else
+			isUpdated_ = false;
 	}
+	else
+		isUpdated_ = false;
+	
 }
 
 void
@@ -59,6 +81,7 @@ ChopLink::updateTeBuffer()
 			capacity_ = TEFloatBufferGetCapacity(buffer);
 			valueCount_ = TEFloatBufferGetValueCount(buffer);
 			rate_ = TEFloatBufferGetRate(buffer);
+			isTimeDependent_ = TEFloatBufferIsTimeDependent(buffer);
 
 			// Lock the mutex as short as possible
 			{
@@ -92,7 +115,7 @@ void ChopLink::readTeBuffer()
 
 		for (size_t chan = 0; chan < channelCount_; ++chan)
 		{
-			std::copy(data[chan], data[chan] + capacity_, channelData_.begin() + chan * capacity_);
+			std::copy(data[chan], data[chan] + valueCount_, channelData_.begin() + chan * valueCount_);
 
 			chanDataPtrs_[chan] = &channelData_[chan * valueCount_];
 			names_[chan] = names[chan];
@@ -123,7 +146,6 @@ ChopLink::set(const std::vector<float>& channels, uint32_t valueCount, double ra
 {
 	if (channels.size() == 0 || valueCount == 0) return;
 	int32_t channelCount = static_cast<int32_t>(channels.size() / valueCount);
-	if (channelCount == 0) return;
 
 	if (names.size() != channelCount) set(channels, valueCount, rate); // or return or throw() ?
 
@@ -225,7 +247,8 @@ ChopLink::bufferCopyable(TouchObject<TEFloatBuffer> buffer, const char** names) 
 	if (newChannelCount != channelCount_
 		|| TEFloatBufferGetCapacity(buffer) != capacity_
 		|| TEFloatBufferGetValueCount(buffer) != valueCount_
-		|| TEFloatBufferGetRate(buffer) != rate_) return false;
+		|| TEFloatBufferGetRate(buffer) != rate_
+		|| TEFloatBufferIsTimeDependent(buffer) != isTimeDependent_) return false;
 
 	if (names)
 	{

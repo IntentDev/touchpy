@@ -35,7 +35,7 @@ public:
     uint8_t* physicalDeviceUUID() { return physicalDeviceUUID_; }
     vri::VContext& vContext() { return vContext_; }
 
-    TEGraphicsContext* teContext() { return teContext_.get(); }
+    TouchObject<TEGraphicsContext> teContext() { return teContext_; }
 
 private:
 

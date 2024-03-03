@@ -69,6 +69,11 @@ public:
 
 	uint8_t* cudaMemory() const { return cudaBuffer_; }
 
+	void transferToInputLink(
+		TouchObject<TEInstance> teInstance, 
+		TouchObject<TEGraphicsContext> context,
+		const char* identifier);
+
 private:
 	VkDevice                              device_              { VK_NULL_HANDLE };
 	VkPhysicalDevice                      physicalDevice_      { VK_NULL_HANDLE };
