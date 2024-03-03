@@ -545,6 +545,18 @@ void Texture::copyCudaMemToImage(uint8_t* memory,
 
 }
 
+void Texture::transferToInputLink(TouchObject<TEInstance> teInstance, TouchObject<TEGraphicsContext> context, const char* identifier)
+{
+	TouchObject<TETexture> texture;
+	texture.set(teVkTexture_);
+	TEResult result = TEInstanceLinkSetTextureValue( teInstance, identifier, texture, context);
+	if (result == TEResultSuccess)
+		result = TEInstanceAddTextureTransfer(teInstance, texture, teVkSemaphore_, signalValue_);
+		
+	if (result != TEResultSuccess)
+		std::cout << "transferToInputLink: " << identifier << ", " << TEResultGetDescription(result) << std::endl;
+}
+
 
 void Texture::setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory)
 {

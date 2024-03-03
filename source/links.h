@@ -31,20 +31,20 @@ template<typename T>
 struct has_getIdentifier_method<T, std::void_t<decltype(std::declval<T>().getIdentifier())>>
 	:	std::is_same<decltype(std::declval<T>().getIdentifier()), std::string> {};
 
-// check for the existence of an updateOuput() method for the link type
-template<typename T, typename = void>
-struct has_updateOutput_method : std::false_type {};
-
-template<typename T>
-struct has_updateOutput_method<T, std::void_t<decltype(std::declval<T>().updateOutput())>> 
-	:	std::is_same<decltype(std::declval<T>().updateOutput()), void> {};
+//// check for the existence of an updateOuput() method for the link type
+//template<typename T, typename = void>
+//struct has_updateOutput_method : std::false_type {};
+//
+//template<typename T>
+//struct has_updateOutput_method<T, std::void_t<decltype(std::declval<T>().updateOutput())>> 
+//	:	std::is_same<decltype(std::declval<T>().updateOutput()), void> {};
 
 template <typename Derived, typename T>
 class Links 
 {
 	static_assert(has_getName_method<T>::value, "Type T must have a member function std::string getName()");
 	static_assert(has_getIdentifier_method<T>::value, "Type T must have a member function getIdentifier()");
-	static_assert(has_updateOutput_method<T>::value, "Type T must have a member function updateOutput()");
+	//static_assert(has_updateOutput_method<T>::value, "Type T must have a member function updateOutput()");
 
 public:
 
@@ -56,11 +56,11 @@ public:
 	~Links() = default;
 
 
-	Links(TouchObject<TEInstance> instance, LinkScope linkScope) : instance(instance), linkScope(linkScope) { }
+	Links(TouchObject<TEInstance> instance) : instance(instance) { }
 
-	void addLink(TouchObject<TELinkInfo> linkInfo)
+	virtual void addLink(TouchObject<TELinkInfo> linkInfo)
 	{
-		links.push_back(std::make_unique<T>(instance, linkInfo, linkScope));
+		links.push_back(std::make_unique<T>(instance, linkInfo));
 		nameMap[linkInfo->name] = links.back().get();
 		identifierMap[linkInfo->identifier] = links.back().get();
 	}
@@ -87,11 +87,6 @@ public:
 			nameMap.erase(link->name());
 			links.erase(std::remove_if(links.begin(), links.end(), [link](const std::unique_ptr<T>& p) { return p.get() == link; }), links.end());
 		}
-	}
-
-	void reset()
-	{
-		links.clear();
 	}
 
 	T* getLinkByName(const std::string& name)
@@ -133,6 +128,11 @@ public:
 		return *link; 
 	}
 
+	void reset()
+	{
+		links.clear();
+	}
+
 	T& operator[](size_t index)
 	{
 		auto link = getLinkByIndex(index);
@@ -141,19 +141,16 @@ public:
 	}
 
 	// iterator support
-	auto begin()  { return links.begin(); }
-	auto end()    { return links.end(); }
-	auto cbegin() { return links.cbegin(); }
-	auto cend()   { return links.cend(); }
+	auto& begin()  { return links.begin(); }
+	auto& end()    { return links.end(); }
+	auto& cbegin() { return links.cbegin(); }
+	auto& cend()   { return links.cend(); }
 
 	// get direct access to the links member
 	const std::vector<std::unique_ptr<T>>& getLinks() const { return links; }
 
-	const LinkScope getLinkScope() const { return linkScope; }
-
 protected:
 	const TouchObject<TEInstance>		instance		{ nullptr };
-	const LinkScope						linkScope		{ LinkScope::Input };
 	std::vector<std::unique_ptr<T>>		links;
 	std::unordered_map<std::string, T*> nameMap;
 	std::unordered_map<std::string, T*> identifierMap;

@@ -3,17 +3,20 @@
 #include <TouchEngine/TouchEngine.h>
 #include <string>
 
-enum class LinkScope { Input, Output };
+
 
 template <typename Derived>
 class Link
 {
 public:
-	Link(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo, LinkScope linkScope) 
+	enum class Scope { Input, Output };
+
+	Link(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) 
 		:	instance(instance), 
 			name(linkInfo->name),
 			identifier(linkInfo->identifier),
-			linkScope(linkScope) { }
+			count(linkInfo->count),
+			scope(linkInfo->scope == TEScope::TEScopeInput ? Scope::Input : Scope::Output) { }
 
 	Link(const Link&) = delete;
 	Link& operator=(const Link&) = delete;
@@ -21,13 +24,13 @@ public:
 	Link& operator=(Link&&) = delete;
 	~Link() = default;
 
-	std::string getName() const { return std::string(name); }
-	std::string getIdentifier() const { return std::string(identifier); }
+	std::string getName() const { return name; }
+	std::string getIdentifier() const { return identifier; }
 
 protected:
 	const TouchObject<TEInstance> instance;
 	const std::string name;
 	const std::string identifier;
-
-	const LinkScope linkScope;
+	int32_t count { 0 };
+	const Scope scope { Scope::Input };
 };

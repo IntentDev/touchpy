@@ -18,23 +18,25 @@
 class ChopLink : public Link<ChopLink>
 {
 public:
+	ChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo);
+	~ChopLink();;
 
-	ChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo, LinkScope linkScope)
-		:	Link<ChopLink>(instance, linkInfo, linkScope) { }
-
-	~ChopLink() { };
-
-	void updateOutput();
+	void updateOutput(); // rename to onOuputValueChange
 	void swapTeBuffers();
 	void updateTeBuffer();
 	void readTeBuffer();
+
+	const bool isUpdated() const { return isUpdated_; }
 
 	const std::vector<float>& channelData() const { return channelData_; }
 	const std::vector<const float*>& channelPtrs() const { return chanDataPtrs_; }
 	const std::vector<std::string>& names() const { return names_; }
 	int32_t channelCount() const { return channelCount_; }
+	uint32_t capacity() const { return capacity_; }
 	uint32_t valueCount() const { return valueCount_; }
 	double rate() const { return rate_; }
+	bool isTimeDependent() const { return isTimeDependent_; }
+
 
 	//const float* channel(const std::string& name);
 	//const float* operator[](const std::string& name) { return channel(name); }
@@ -56,11 +58,11 @@ public:
 private:
 	double rate_ { -1.0 };
 	int32_t channelCount_ { 0 };
-	uint32_t capacity_ { 0 };
+	uint32_t capacity_ { 0 }; // capacity of the TEFloatBuffer not the number of values per channel in channelData_
 	uint32_t valueCount_ { 0 };
+	bool isTimeDependent_ { false };
 
-	std::vector<const float*> chanDataPtrs_;
-	std::vector<const char*> namePtrs_;
+
 
 	// output only
 	//-----------------------------------------------------------------------------------------------------------------
@@ -74,7 +76,11 @@ private:
 	bool ready_{ false };
 
 	std::vector<float> channelData_;
+	std::vector<const float*> chanDataPtrs_;
 	std::vector<std::string> names_;
+	std::vector<const char*> namePtrs_;
+
+	bool isUpdated_ { false };
 
 	// input only
 	//-----------------------------------------------------------------------------------------------------------------
@@ -86,52 +92,6 @@ class ChopLinks : public Links<ChopLinks, ChopLink>
 {
 public:
 	ChopLinks() = default;
-	ChopLinks(TouchObject<TEInstance> instance, LinkScope linkScope) : Links<ChopLinks, ChopLink>(instance, linkScope) { }
+	ChopLinks(TouchObject<TEInstance> instance) : Links<ChopLinks, ChopLink>(instance) { }
 	~ChopLinks() { };
 };
-
-//class ChopCollection
-//{
-//public:
-//	ChopCollection() = default;
-//	ChopCollection(TouchObject<TEInstance> instance) : instance_(instance) { }
-//	~ChopCollection() { };
-//
-//	void addChop(TouchObject<TELinkInfo> linkInfo)
-//	{
-//		std::unique_ptr<ChopLink> chop = std::make_unique<ChopLink>(instance_, linkInfo);
-//		chops_.push_back(std::move(chop));
-//		identifierMap_[linkInfo->identifier] = chops_.back().get();
-//		nameMap_[linkInfo->name] = chops_.back().get();
-//	}
-//
-//	const std::vector<std::unique_ptr<ChopLink>>& chops() { return chops_; }
-//	ChopLink& get(const std::string& name) { return *nameMap_[name]; } // not safe
-//	ChopLink& getById(const std::string& identifier) { return *identifierMap_[identifier]; } // not safe
-//	ChopLink& operator[](const std::string& name) { return get(name); } // not safe
-//	ChopLink& operator[](uint32_t index) { return *chops_[index].get(); } // not safe
-//
-//	void reset() 
-//	{ 
-//		chops_.clear(); 
-//		identifierMap_.clear();
-//		nameMap_.clear();
-//	}
-//
-//private:
-//	TouchObject<TEInstance> instance_;
-//	std::vector<std::unique_ptr<ChopLink>> chops_;
-//	std::map<std::string, ChopLink*> identifierMap_;
-//	std::map<std::string, ChopLink*> nameMap_;
-//
-//	void updatePointers() 
-//	{
-//		identifierMap_.clear();
-//		nameMap_.clear();
-//		for (auto& chop : chops_) 
-//		{
-//			identifierMap_[chop->identifier()] = chop.get(); 
-//			nameMap_[chop->name()] = chop.get();
-//		}
-//	}
-//};

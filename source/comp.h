@@ -4,7 +4,7 @@
 #include "renderer.h"
 #include "texture.h"
 #include "common/cuda_helpers.h"
-#include "par.h"
+#include "parlink.h"
 #include "choplink.h"
 #include "datlink.h"
 
@@ -28,7 +28,7 @@ public:
 	bool ready() const { return ready_; }
 	void update();
 
-	ParCollection& pars() { return *pars_; }
+	ParLinkCollection& parLinks() { return *parLinks_; }
 
 private:
 
@@ -59,7 +59,7 @@ private:
 	double                                  inputSampleRate_     { 60.0 };
 	int32_t                                 inputChannelCount_   { 0 };
 
-	int64_t                                 framesPerSecond_     { 1 };
+	int64_t                                 framesPerSecond_     { 60 };
 
 	std::vector<std::string> changedOutputTextures_;
 	std::vector<std::string> changedOutputFloatBuffers_;
@@ -87,13 +87,14 @@ private:
 
 	std::chrono::high_resolution_clock::time_point lastFrameTime_{};
 
-	std::unique_ptr<ParCollection> pars_;
-	std::unique_ptr<ChopLinks>     inputChopLinks_;
-	std::unique_ptr<ChopLinks>     outputChopLinks_;
-	std::unique_ptr<DatLinks>      inputDatLinks_;
-	std::unique_ptr<DatLinks>      outputDatLinks_;
+	
+	std::unique_ptr<ChopLinks>         inputChopLinks_;
+	std::unique_ptr<ChopLinks>         outputChopLinks_;
+	std::unique_ptr<DatLinks>          inputDatLinks_;
+	std::unique_ptr<DatLinks>          outputDatLinks_;
+	std::unique_ptr<ParLinkCollection> parLinks_;
 
-	bool							doubleBufferOutputs_ { false };
+	bool                               doubleBufferOutputs_ { false };
 
 	void initComp();
 	void load();

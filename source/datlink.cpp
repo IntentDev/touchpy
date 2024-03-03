@@ -3,8 +3,8 @@
 #include <iostream>
 
 
-DatLink::DatLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo, LinkScope linkScope)
-	:	Link<DatLink>(instance, linkInfo, linkScope)
+DatLink::DatLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo)
+	:	Link<DatLink>(instance, linkInfo)
 {
 	table_ = std::make_unique<Table>();
 }
@@ -34,7 +34,8 @@ DatLink::updateOutput()
 			for (int32_t col = 0; col < table_->numCols; ++col)
 				table_->data[static_cast<size_t>(row * table_->numCols + col)] = TETableGetStringValue(teTable.get(), row, col);
 
-		std::cout << "DatLink::updateOutput() " << getName() << " - rows / cols: " << TETableGetRowCount(teTable.get()) << " / " << TETableGetColumnCount(teTable.get()) << std::endl;
+		//std::cout << "DatLink::updateOutput() " << getName() << " - rows / cols: " << TETableGetRowCount(teTable.get()) 
+		// << " / " << TETableGetColumnCount(teTable.get()) << std::endl;
 	}
 	else if (value && TEGetType(value) == TEObjectTypeString)
 	{
