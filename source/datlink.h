@@ -27,7 +27,7 @@ public:
 	const DatLinkType type() const { return type_; }
 	const std::string getTypeDescription() const { return type_ == DatLinkType::Table ? "Table" : "String"; }
 
-	void updateOutput();
+	void onOuputValueChange();
 
 	const Table& getTable() const { return *table_.get(); }
 	const std::string& getString() const { return string_; }

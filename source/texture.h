@@ -9,7 +9,7 @@
 class Texture
 {
 public:
-	Texture();
+	Texture() {};
 
 	Texture(
 		VkPhysicalDevice physicalDevice_, 

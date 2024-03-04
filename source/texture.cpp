@@ -4,52 +4,6 @@
 #include <Windows.h>
 #include <algorithm>
 
-Texture::Texture()
-{
-}
-
-Texture::~Texture()
-{
-	if (cudaBuffer_)
-		CUDA_CHECK(cudaFree(cudaBuffer_));
-	if (cudaSurface_ != 0)
-		CUDA_CHECK(cudaDestroySurfaceObject(cudaSurface_));
-	if (cudaArray_)
-		CUDA_CHECK(cudaFreeArray(cudaArray_));
-	if (cudaMipmappedArray_)
-		CUDA_CHECK(cudaFreeMipmappedArray(cudaMipmappedArray_));
-	if (cudaExtImageMemory_)
-		CUDA_CHECK(cudaDestroyExternalMemory(cudaExtImageMemory_));
-	if (cudaExtSemaphore_)
-		CUDA_CHECK(cudaDestroyExternalSemaphore(cudaExtSemaphore_));
-	//if (cudaExtCudaUpdateVkSemaphore_)
-	//	CUDA_CHECK(cudaDestroyExternalSemaphore(cudaExtCudaUpdateVkSemaphore_));
-
-	//if (cudaCudaUpdateVkSemaphore_ != VK_NULL_HANDLE)
-	//	vkDestroySemaphore(device_, cudaCudaUpdateVkSemaphore_, nullptr);
-
-	if (ownsImage_)
-		CloseHandle(textureHandle_);
-
-	if (ownsSemaphore_)
-		CloseHandle(semaphoreHandle_);
-
-	if (imageView_ != VK_NULL_HANDLE)
-		vkDestroyImageView(device_, imageView_, nullptr);
-
-	if (memory_ != VK_NULL_HANDLE)
-		vkFreeMemory(device_, memory_, nullptr);
-	
-	if (semaphore_ != VK_NULL_HANDLE)
-		vkDestroySemaphore(device_, semaphore_, nullptr);
-
-	if (image_ != VK_NULL_HANDLE)
-		vkDestroyImage(device_, image_, nullptr);
-
-
-
-}
-
 Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* teInstance, TEVulkanTexture* texture)
 	:	physicalDevice_(physicalDevice_),
 		device_(device),
@@ -290,8 +244,44 @@ Texture::Texture(
 				<< " height: " << extent_.height << std::endl;
 }
 
+Texture::~Texture()
+{
+	if (cudaBuffer_)
+		CUDA_CHECK(cudaFree(cudaBuffer_));
+	if (cudaSurface_ != 0)
+		CUDA_CHECK(cudaDestroySurfaceObject(cudaSurface_));
+	if (cudaArray_)
+		CUDA_CHECK(cudaFreeArray(cudaArray_));
+	if (cudaMipmappedArray_)
+		CUDA_CHECK(cudaFreeMipmappedArray(cudaMipmappedArray_));
+	if (cudaExtImageMemory_)
+		CUDA_CHECK(cudaDestroyExternalMemory(cudaExtImageMemory_));
+	if (cudaExtSemaphore_)
+		CUDA_CHECK(cudaDestroyExternalSemaphore(cudaExtSemaphore_));
+	//if (cudaExtCudaUpdateVkSemaphore_)
+	//	CUDA_CHECK(cudaDestroyExternalSemaphore(cudaExtCudaUpdateVkSemaphore_));
 
+	//if (cudaCudaUpdateVkSemaphore_ != VK_NULL_HANDLE)
+	//	vkDestroySemaphore(device_, cudaCudaUpdateVkSemaphore_, nullptr);
 
+	if (ownsImage_)
+		CloseHandle(textureHandle_);
+
+	if (ownsSemaphore_)
+		CloseHandle(semaphoreHandle_);
+
+	if (imageView_ != VK_NULL_HANDLE)
+		vkDestroyImageView(device_, imageView_, nullptr);
+
+	if (memory_ != VK_NULL_HANDLE)
+		vkFreeMemory(device_, memory_, nullptr);
+
+	if (semaphore_ != VK_NULL_HANDLE)
+		vkDestroySemaphore(device_, semaphore_, nullptr);
+
+	if (image_ != VK_NULL_HANDLE)
+		vkDestroyImage(device_, image_, nullptr);
+}
 
 void Texture::importSemaphore(TEInstance* teInstance, TETexture* teTexture)
 {
@@ -526,6 +516,7 @@ void Texture::copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream)
 	cudaVkSemaphoreWait(cudaExtSemaphore_, waitValue, stream);
 	CUDA_CHECK(memCopyFromSurfaceCharBRGA(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
 	cudaVkSemaphoreSignal(cudaExtSemaphore_, ++waitValue, stream);
+	waitValue_ = waitValue;
 }
 
 void Texture::copyCudaMemToImage(uint8_t* memory,

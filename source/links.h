@@ -15,36 +15,36 @@
 // https://en.cppreference.com/w/cpp/types/void_t
 // need upgrade CUDA to 12.x to use C++20, but to need make sure TD will work with it
 
-// check for the existence of a getName() method for the link type
+// check for the existence of a name() method for the link type
 template<typename T, typename = void>
-struct has_getName_method : std::false_type {};
+struct has_name_method : std::false_type {};
 
 template<typename T>
-struct has_getName_method<T, std::void_t<decltype(std::declval<T>().getName())>>
-	:	std::is_same<decltype(std::declval<T>().getName()), std::string> {};
+struct has_name_method<T, std::void_t<decltype(std::declval<T>().name())>>
+	:	std::is_same<decltype(std::declval<T>().name()), std::string> {};
 
 // check for the existence of an identifier() method for the link type
 template<typename T, typename = void>
-struct has_getIdentifier_method : std::false_type {};
+struct has_identifier_method : std::false_type {};
 
 template<typename T>
-struct has_getIdentifier_method<T, std::void_t<decltype(std::declval<T>().getIdentifier())>>
-	:	std::is_same<decltype(std::declval<T>().getIdentifier()), std::string> {};
+struct has_identifier_method<T, std::void_t<decltype(std::declval<T>().identifier())>>
+	:	std::is_same<decltype(std::declval<T>().identifier()), std::string> {};
 
 //// check for the existence of an updateOuput() method for the link type
 //template<typename T, typename = void>
-//struct has_updateOutput_method : std::false_type {};
+//struct has_onOuputValueChange_method : std::false_type {};
 //
 //template<typename T>
-//struct has_updateOutput_method<T, std::void_t<decltype(std::declval<T>().updateOutput())>> 
-//	:	std::is_same<decltype(std::declval<T>().updateOutput()), void> {};
+//struct has_onOuputValueChange_method<T, std::void_t<decltype(std::declval<T>().onOuputValueChange())>> 
+//	:	std::is_same<decltype(std::declval<T>().onOuputValueChange()), void> {};
 
 template <typename Derived, typename T>
 class Links 
 {
-	static_assert(has_getName_method<T>::value, "Type T must have a member function std::string getName()");
-	static_assert(has_getIdentifier_method<T>::value, "Type T must have a member function getIdentifier()");
-	//static_assert(has_updateOutput_method<T>::value, "Type T must have a member function updateOutput()");
+	static_assert(has_name_method<T>::value, "Type T must have a member function std::string getName()");
+	static_assert(has_identifier_method<T>::value, "Type T must have a member function getIdentifier()");
+	//static_assert(has_onOuputValueChange_method<T>::value, "Type T must have a member function onOuputValueChange()");
 
 public:
 
@@ -56,56 +56,56 @@ public:
 	~Links() = default;
 
 
-	Links(TouchObject<TEInstance> instance) : instance(instance) { }
+	Links(TouchObject<TEInstance> instance) : instance_(instance) { }
 
 	virtual void addLink(TouchObject<TELinkInfo> linkInfo)
 	{
-		links.push_back(std::make_unique<T>(instance, linkInfo));
-		nameMap[linkInfo->name] = links.back().get();
-		identifierMap[linkInfo->identifier] = links.back().get();
+		links_.push_back(std::make_unique<T>(instance_, linkInfo));
+		nameMap_[linkInfo->name] = links_.back().get();
+		identifierMap_[linkInfo->identifier] = links_.back().get();
 	}
 
 	void removeLinkByName(const std::string& name)
 	{
-		auto it = nameMap.find(name);
-		if (it != nameMap.end())
+		auto it = nameMap_.find(name);
+		if (it != nameMap_.end())
 		{
 			auto link = it->second;
-			nameMap.erase(it);
-			identifierMap.erase(link->identifier());
-			links.erase(std::remove_if(links.begin(), links.end(), [link](const std::unique_ptr<T>& p) { return p.get() == link; }), links.end());
+			nameMap_.erase(it);
+			identifierMap_.erase(link->identifier());
+			links_.erase(std::remove_if(links_.begin(), links_.end(), [link](const std::unique_ptr<T>& p) { return p.get() == link; }), links_.end());
 		}
 	}
 
 	void removeLinkByIdentifier(const std::string& identifier)
 	{
-		auto it = identifierMap.find(identifier);
-		if (it != identifierMap.end())
+		auto it = identifierMap_.find(identifier);
+		if (it != identifierMap_.end())
 		{
 			auto link = it->second;
-			identifierMap.erase(it);
-			nameMap.erase(link->name());
-			links.erase(std::remove_if(links.begin(), links.end(), [link](const std::unique_ptr<T>& p) { return p.get() == link; }), links.end());
+			identifierMap_.erase(it);
+			nameMap_.erase(link->name());
+			links_.erase(std::remove_if(links_.begin(), links_.end(), [link](const std::unique_ptr<T>& p) { return p.get() == link; }), links_.end());
 		}
 	}
 
 	T* getLinkByName(const std::string& name)
 	{
-		auto it = nameMap.find(name);
-		if (it != nameMap.end()) return it->second;
+		auto it = nameMap_.find(name);
+		if (it != nameMap_.end()) return it->second;
 		return nullptr;
 	}
 
 	T* getLinkByIdentifier(const std::string& identifier)
 	{
-		auto it = identifierMap.find(identifier);
-		if (it != identifierMap.end()) return it->second;
+		auto it = identifierMap_.find(identifier);
+		if (it != identifierMap_.end()) return it->second;
 		return nullptr;
 	}
 
 	T* getLinkByIndex(size_t index)
 	{
-		if (index < links.size()) return links[index].get();
+		if (index < links_.size()) return links_[index].get();
 		return nullptr;
 	}
 
@@ -119,7 +119,7 @@ public:
 		return getLinkByIdentifier(identifier) != nullptr;
 	}
 
-	size_t size() const { return links.size(); }
+	size_t size() const { return links_.size(); }
 
 	T& operator[](const std::string& name) 
 	{ 
@@ -130,7 +130,7 @@ public:
 
 	void reset()
 	{
-		links.clear();
+		links_.clear();
 	}
 
 	T& operator[](size_t index)
@@ -141,17 +141,17 @@ public:
 	}
 
 	// iterator support
-	auto& begin()  { return links.begin(); }
-	auto& end()    { return links.end(); }
-	auto& cbegin() { return links.cbegin(); }
-	auto& cend()   { return links.cend(); }
+	auto& begin()  { return links_.begin(); }
+	auto& end()    { return links_.end(); }
+	auto& cbegin() { return links_.cbegin(); }
+	auto& cend()   { return links_.cend(); }
 
 	// get direct access to the links member
-	const std::vector<std::unique_ptr<T>>& getLinks() const { return links; }
+	const std::vector<std::unique_ptr<T>>& getLinks() const { return links_; }
 
 protected:
-	const TouchObject<TEInstance>		instance		{ nullptr };
-	std::vector<std::unique_ptr<T>>		links;
-	std::unordered_map<std::string, T*> nameMap;
-	std::unordered_map<std::string, T*> identifierMap;
+	const TouchObject<TEInstance>		instance_		{ nullptr };
+	std::vector<std::unique_ptr<T>>		links_;
+	std::unordered_map<std::string, T*> nameMap_;
+	std::unordered_map<std::string, T*> identifierMap_;
 };

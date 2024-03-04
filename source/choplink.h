@@ -21,7 +21,7 @@ public:
 	ChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo);
 	~ChopLink();;
 
-	void updateOutput(); // rename to onOuputValueChange
+	void onOuputValueChange();
 	void swapTeBuffers();
 	void updateTeBuffer();
 	void readTeBuffer();
@@ -94,4 +94,7 @@ public:
 	ChopLinks() = default;
 	ChopLinks(TouchObject<TEInstance> instance) : Links<ChopLinks, ChopLink>(instance) { }
 	~ChopLinks() { };
+
+	//using Links<ChopLinks, ChopLink>::begin;
+	//using Links<ChopLinks, ChopLink>::end;
 };

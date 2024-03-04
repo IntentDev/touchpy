@@ -185,7 +185,7 @@ Comp::eventCallback(TEInstance* instance,
 		comp->onEventInstanceDidUnload(result);
 		break;
 	case TEEventFrameDidFinish:
-		comp->onEventFrameDidFinish(result, start_time_value, start_time_scale);
+		comp->onEventFrameDidFinish(result, start_time_value, start_time_scale, end_time_value, end_time_scale);
 		break;
 	case TEEventGeneral:
 		comp->onEventGeneral(result, start_time_value, start_time_scale);
@@ -221,26 +221,26 @@ Comp::onEventInstanceDidUnload(TEResult result)
 }
 
 void 
-Comp::onEventFrameDidFinish(TEResult result, int64_t time_value, int32_t time_scale)
+Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale)
 {
 	//if (doubleBufferOutputs_)
 	//{
-	//	for (auto& chop : outputChopLinks_->chops())
+	//	for (auto& chop : outputChopLinks_)
 	//	{
 	//		chop->updateTeBuffer();
 	//		chop->swapTeBuffers();
 	//	}
 	//}
 
-	if (result == TEResultSuccess && time_value >= 0)
+	if (result == TEResultSuccess && start_time_value >= 0)
 	{
 		setInFrame(false);
 	}
 	else
 	{
-		std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result) << ", start_time_value: " << time_value << " start_time_scale : " << time_scale << std::endl;
+		std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result) << ", start_time_value: " << start_time_value << ", start_time_scale : " << start_time_scale << ", end_time_value: " << end_time_value << ", end_time_scale: " << end_time_scale << std::endl;
 		setInFrame(true);
-		TEResult result = TEInstanceStartFrameAtTime(instance_, 0.0, 0.0, false);
+		TEResult result = TEInstanceStartFrameAtTime(instance_, 0, 0, false);
 		if (result != TEResultSuccess)
 		{
 			std::cout << "onFrameDidFinish TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
@@ -346,6 +346,20 @@ Comp::onLinkEventValueChange(const char* identifier)
 	}
 }
 
+void Comp::printLinkInfo(TouchObject<TELinkInfo> info)
+{
+	std::cout << std::left
+		<< std::setw(6) << "Link:" << std::setw(16) << info->identifier
+		<< std::setw(6) << "name:" << std::setw(16) << info->name
+		<< std::setw(7) << "label:" << std::setw(16) << info->label
+		<< std::setw(7) << "scope:" << std::setw(16) << teutils::scopeToString(info->scope)
+		<< std::setw(8) << "intent:" << std::setw(28) << teutils::linkIntentToString(info->intent)
+		<< std::setw(8) << "domain:" << std::setw(24) << teutils::linkDomainToString(info->domain)
+		<< std::setw(7) << "count:" << std::setw(5) << info->count
+		<< std::setw(6) << "type:" << std::setw(16) << teutils::linkTypeToString(info->type)
+		<< std::endl;
+}
+
 void
 Comp::getState(bool& ready, bool& loaded, bool& linksLayoutChanged, bool& inFrame)
 {
@@ -377,19 +391,19 @@ Comp::setInFrame(bool inFrame)
 void 
 Comp::applyLayoutChange()
 {
-
 	std:: cout << "Applying layout change" << std::endl;
 
-	parLinks_.reset();
-	parLinks_ = std::make_unique <ParLinkCollection>(instance_);
+	outputTextureLinks_ = std::make_unique<TextureLinks>(instance_, renderer_->teContext(), physicalDevice_, device_);
+	inputTextureLinks_ = std::make_unique<TextureLinks>(instance_, renderer_->teContext(), physicalDevice_, device_);
 
 	outputChopLinks_ = std::make_unique<ChopLinks>(instance_);
 	inputChopLinks_ = std::make_unique<ChopLinks>(instance_);
-
-	inputDatLinks_ = std::make_unique<DatLinks>(instance_);
+	
 	outputDatLinks_ = std::make_unique<DatLinks>(instance_);
+	inputDatLinks_ = std::make_unique<DatLinks>(instance_);
 
-	// create 
+	parLinks_ = std::make_unique <ParLinkCollection>(instance_);
+
 
 	for (auto scope : { TEScopeInput, TEScopeOutput })
 	{
@@ -418,20 +432,17 @@ Comp::applyLayoutChange()
 						result = TEInstanceLinkGetInfo(instance_, children->strings[j], info.take());
 						if (result == TEResultSuccess)
 						{
-							std::cout << std::left 
-								<< std::setw(6) << "Link:" << std::setw(16) << info->identifier
-								<< std::setw(6) << "name:" << std::setw(16) << info->name
-								<< std::setw(7) << "label:" << std::setw(16) << info->label
-								<< std::setw(7) << "scope:" << std::setw(16) << teutils::scopeToString(info->scope)
-								<< std::setw(8) << "intent:" << std::setw(28) << teutils::linkIntentToString(info->intent)
-								<< std::setw(8) << "domain:" << std::setw(24) << teutils::linkDomainToString(info->domain)
-								<< std::setw(7) << "count:" << std::setw(5) << info->count
-								<< std::setw(6) << "type:" << std::setw(16) << teutils::linkTypeToString(info->type)
-								<< std::endl;
+							printLinkInfo(info);
 							
-							if (info->domain == TELinkDomainParameter)
+							if (info->type == TELinkTypeTexture)
 							{
-								parLinks_->addLink(info);
+								if (info->scope == TEScopeOutput)
+									outputTextureLinks_->addLink(info);
+									//outputTextureLinks_->addLink(info);
+								
+								else if (info->scope == TEScopeInput)
+									inputTextureLinks_->addLink(info);
+									//inputTextureLinks_->addLink(info);
 							}
 
 							if (info->type == TELinkTypeFloatBuffer)
@@ -450,6 +461,11 @@ Comp::applyLayoutChange()
 								
 								else if (info->scope == TEScopeInput)
 									inputDatLinks_->addLink(info);
+							}
+
+							if (info->domain == TELinkDomainParameter)
+							{
+								parLinks_->addLink(info);
 							}
 						}
 					}
@@ -478,7 +494,7 @@ Comp::applyLayoutChange()
 
 	//std::cout << "setInFrame true after layout change" << std::endl;
 	setInFrame(true);
-	TEResult result = TEInstanceStartFrameAtTime(instance_, 0.0, 0.0, false);
+	TEResult result = TEInstanceStartFrameAtTime(instance_, 0, 0, false);
 	if (result != TEResultSuccess)
 	{
 		std::cout << "Layout Change TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
@@ -523,6 +539,11 @@ Comp::update()
 		applyOutputFloatBufferChange();
 		applyOutputStringDataChange();
 
+		if (texToTE_.get())
+		{
+			std::string identifier = "op/topIn1";
+			texToTE_->transferToInputLink(instance_, renderer_->teContext(), identifier.c_str());
+		}
 
 		for (size_t i = 0; i < inputChopLinks_->size() && i < outputChopLinks_->size(); ++i)
 		{
@@ -548,12 +569,6 @@ Comp::update()
 		static float testFloat = 0.0f;
 		(*parLinks_)["Float"].set(testFloat);
 		testFloat += 1.1f;
-
-		if (texToTE_.get())
-		{
-			std::string identifier = "op/topIn1";
-			texToTE_->transferToInputLink(instance_, renderer_->teContext(), identifier.c_str());
-		}
 
 		//std::cout << "setInFrame true after update" << std::endl;
 		setInFrame(true);
@@ -821,7 +836,7 @@ Comp::applyOutputFloatBufferChange()
 		for (const auto& identifier : changedOutputFloatBuffers_)
 		{
 			auto& chop = *outputChopLinks_->getLinkByIdentifier(identifier);
-			chop.updateOutput();
+			chop.onOuputValueChange();
 		}
 	}
 	else
@@ -841,7 +856,7 @@ Comp::applyOutputStringDataChange()
 	{
 		//std::cout << "OutputStringDataChange: " << identifier << std::endl;
 		auto& datLink = *outputDatLinks_->getLinkByIdentifier(identifier);
-		datLink.updateOutput();
+		datLink.onOuputValueChange();
 	}
 }
 
