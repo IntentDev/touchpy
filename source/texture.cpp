@@ -503,14 +503,6 @@ HANDLE Texture::getVkMemoryHandle(VkExternalMemoryHandleTypeFlagBitsKHR external
 	return handle;
 }
 
-//extern cudaError_t
-//memCopyFromSurfaceCharBRGA(
-//	unsigned char* dst,
-//	int width,
-//	int height,
-//	cudaSurfaceObject_t input,
-//	cudaStream_t stream);
-
 void Texture::copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream)
 {
 	cudaVkSemaphoreWait(cudaExtSemaphore_, waitValue, stream);

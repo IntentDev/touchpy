@@ -27,16 +27,19 @@ public:
 	void onOutputTextureChange(cudaStream_t cudaStream_);
 
 	void setInputTexture(VkExtent2D extent, VkFormat format);
-	void transferTextureToInputLink(TouchObject<TEGraphicsContext> context);
 
 	//template <typename T> make template...
 	void copyCudaMemoryToInputTexture(
 		uint8_t* memory,
+		VkFormat format,
+		VkExtent2D extent,
 		cudaExternalSemaphore_t waitSemaphore,
 		uint64_t waitValue,
 		cudaStream_t stream);
 
+	void transferTextureToInputLink(TouchObject<TEGraphicsContext> context);
 
+	Texture* currentTexture() { return handleMap_[currentTextureHandle_]; }
 	const std::vector<std::unique_ptr<Texture>>& textures() const { return textures_; }
 
 private:
@@ -45,6 +48,8 @@ private:
 	VkDevice device_ { nullptr };
 	std::vector<std::unique_ptr<Texture>> textures_;
 	std::unordered_map<HANDLE, Texture*> handleMap_;
+
+	HANDLE currentTextureHandle_ { nullptr };
 
 };
 

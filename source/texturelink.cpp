@@ -26,54 +26,6 @@ void TextureLink::addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanT
 	handleMap_[textures_.back()->textureHandle()] = textures_.back().get();
 }
 
-void TextureLink::setInputTexture(VkExtent2D extent, VkFormat format)
-{
-	if (scope_ != Link::Scope::Input)
-		return;
-
-	// using just the first texture in the vector for now
-	textures_.resize(1);
-	textures_[0] = std::make_unique<Texture>(physicalDevice_, device_, extent, format);
-	handleMap_[textures_[0]->textureHandle()] = textures_[0].get();
-}
-
-
-void
-TextureLink::transferTextureToInputLink(TouchObject<TEGraphicsContext> context)
-{
-	if (textures_.size() == 0 || scope_ != Link::Scope::Input)
-		return;
-
-	TouchObject<TETexture> teTexture;
-	teTexture.set(textures_[0]->teVkTexture());
-	TEResult result = TEInstanceLinkSetTextureValue(instance_, identifier_.c_str(), teTexture, context);
-	if (result == TEResultSuccess)
-		result = TEInstanceAddTextureTransfer(instance_, teTexture, textures_[0]->teVkSemaphore(), textures_[0]->signalValue());
-
-	if (result != TEResultSuccess)
-		std::cout << "transferToInputLink: " << identifier_ << ", " << TEResultGetDescription(result) << std::endl;
-}
-
-void
-TextureLink::copyCudaMemoryToInputTexture(uint8_t* memory, cudaExternalSemaphore_t waitSemaphore, uint64_t waitValue, cudaStream_t stream)
-{
-	if (textures_.size() == 0 || scope_ != Link::Scope::Input)
-		return;
-
-	uint64_t signalValue;
-	VK_CHECK(vkGetSemaphoreCounterValue(device_, textures_[0]->semaphore(), &signalValue));
-	textures_[0]->setSignalValue(++signalValue);
-
-	textures_[0]->copyCudaMemToImage(
-		memory,
-		waitSemaphore,
-		textures_[0]->cudaExtSemaphore(),
-		waitValue,
-		signalValue,
-		stream);
-}
-
-
 void TextureLink::onOutputTextureChange(cudaStream_t cudaStream_)
 {
 	if (scope_ != Link::Scope::Output)
@@ -114,10 +66,71 @@ void TextureLink::onOutputTextureChange(cudaStream_t cudaStream_)
 		if (result == TEResultSuccess)
 			if (TESemaphoreGetType(teSemaphore) == TESemaphoreTypeVulkan)
 				texture->copyImageToCudaMem(waitValue, cudaStream_);
+
+		currentTextureHandle_ = handle;
 	}
 	else
 		std::cout << "onOutputTextureChange: " << identifier_ << ", " << TEResultGetDescription(result) << std::endl;
-	
+
 }
 
+void TextureLink::setInputTexture(VkExtent2D extent, VkFormat format)
+{
+	if (scope_ != Link::Scope::Input)
+		return;
+
+	// using just the first texture in the vector for now
+	textures_.resize(1);
+	textures_[0] = std::make_unique<Texture>(physicalDevice_, device_, extent, format);
+	handleMap_[textures_[0]->textureHandle()] = textures_[0].get();
+}
+
+void
+TextureLink::copyCudaMemoryToInputTexture(
+	uint8_t* memory,
+	VkFormat format,
+	VkExtent2D extent,
+	cudaExternalSemaphore_t waitSemaphore, 
+	uint64_t waitValue, 
+	cudaStream_t stream)
+{
+	if (scope_ != Link::Scope::Input)
+		return;
+
+	if (textures_.size() == 0)
+		setInputTexture(extent, format);
+	else if (textures_[0]->format() != format || textures_[0]->width() != extent.width || textures_[0]->height() != extent.height)
+	{
+		textures_[0].reset();
+		setInputTexture(extent, format);
+	}
+
+	uint64_t signalValue;
+	VK_CHECK(vkGetSemaphoreCounterValue(device_, textures_[0]->semaphore(), &signalValue));
+	textures_[0]->setSignalValue(++signalValue);
+
+	textures_[0]->copyCudaMemToImage(
+		memory,
+		waitSemaphore,
+		textures_[0]->cudaExtSemaphore(),
+		waitValue,
+		signalValue,
+		stream);
+}
+
+void
+TextureLink::transferTextureToInputLink(TouchObject<TEGraphicsContext> context)
+{
+	if (textures_.size() == 0 || scope_ != Link::Scope::Input)
+		return;
+
+	TouchObject<TETexture> teTexture;
+	teTexture.set(textures_[0]->teVkTexture());
+	TEResult result = TEInstanceLinkSetTextureValue(instance_, identifier_.c_str(), teTexture, context);
+	if (result == TEResultSuccess)
+		result = TEInstanceAddTextureTransfer(instance_, teTexture, textures_[0]->teVkSemaphore(), textures_[0]->signalValue());
+
+	if (result != TEResultSuccess)
+		std::cout << "transferToInputLink: " << identifier_ << ", " << TEResultGetDescription(result) << std::endl;
+}
 
