@@ -72,13 +72,7 @@ private:
 	std::vector<uint32_t>                   queueFamilyIndices_;
 	VkQueue                                 queue_               { VK_NULL_HANDLE };
 	VkCommandBuffer                         commandBuffer_       { VK_NULL_HANDLE };
-
-	std::unordered_map<HANDLE, std::unique_ptr<Texture>>                   texturesExternal_;
-	std::unordered_map<std::string, std::vector<std::unique_ptr<Texture>>> texturesInternal_;
-
-	std::unique_ptr<Texture>                texToTE_;
-
-	VkFence                                 submitFence_         { VK_NULL_HANDLE };
+	VkFence                                 submitFence_		 { VK_NULL_HANDLE };
 
 	cudaStream_t                            cudaStream_          { nullptr };
 	int										cudaDevice_ 		 { -1 };
@@ -100,7 +94,7 @@ private:
 
 
 	void applyLayoutChange();
-	bool applyOutputTextureChange();
+	void applyOutputTextureChange();
 	void applyOutputFloatBufferChange();
 	void applyOutputStringDataChange();
 

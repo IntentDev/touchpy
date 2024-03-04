@@ -29,6 +29,8 @@ public:
 
 	bool                           isValid() const          { return image_ != VK_NULL_HANDLE; }
 	VkExtent2D                     extent() const           { return extent_; }
+	uint32_t                       width() const            { return extent_.width; }
+	uint32_t                       height() const           { return extent_.height; }
 	VkFormat                       format() const           { return format_; }
 	bool                           flipped() const          { return flipped_; }
 	VkImage                        image() const            { return image_; }
