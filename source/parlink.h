@@ -99,7 +99,7 @@ protected:
 
 	void noGetLinkError() const
 	{
-		std::string message = name;
+		std::string message = name_;
 		message = "Failed to get value from link: " + message;
 		std::cout << message << std::endl;
 		throw std::runtime_error("Failed to get value from link");
@@ -107,7 +107,7 @@ protected:
 
 	void noSetLinkError() const
 	{
-		std::string message = name;
+		std::string message = name_;
 		message = "Failed to set value to link: " + message;
 		std::cout << message << std::endl;
 		throw std::runtime_error("Failed to set value to link");
@@ -115,7 +115,7 @@ protected:
 
 	void noGetChoicesError() const
 	{
-		std::string message = name;
+		std::string message = name_;
 		message = "Failed to get choices from link: " + message;
 		std::cout << message << std::endl;
 		throw std::runtime_error("Failed to get choices from link");
@@ -130,14 +130,14 @@ public:
 
 	void set(ParLinkValue value) override
 	{
-		if (TEInstanceLinkSetBooleanValue(instance, identifier.c_str(), std::get<bool>(value)) != TEResultSuccess)
+		if (TEInstanceLinkSetBooleanValue(instance_, identifier_.c_str(), std::get<bool>(value)) != TEResultSuccess)
 			noSetLinkError();
 	}
 
 	ParLinkValue get() override
 	{
 		bool value;
-		if (TEInstanceLinkGetBooleanValue(instance, identifier.c_str(), TELinkValueCurrent, &value) != TEResultSuccess)
+		if (TEInstanceLinkGetBooleanValue(instance_, identifier_.c_str(), TELinkValueCurrent, &value) != TEResultSuccess)
 				noGetLinkError();
 		return value;
 	}
@@ -150,7 +150,7 @@ class PulseParLink : public ParLink
 
 	void set(ParLinkValue value) override
 	{
-		if (TEInstanceLinkSetBooleanValue(instance, identifier.c_str(), true) != TEResultSuccess)
+		if (TEInstanceLinkSetBooleanValue(instance_, identifier_.c_str(), true) != TEResultSuccess)
 			noSetLinkError();
 	}
 
@@ -158,7 +158,7 @@ class PulseParLink : public ParLink
 
 	void pulse() 
 	{
-		if (TEInstanceLinkSetBooleanValue(instance, identifier.c_str(), true) != TEResultSuccess)
+		if (TEInstanceLinkSetBooleanValue(instance_, identifier_.c_str(), true) != TEResultSuccess)
 			noSetLinkError();
 	}
 };
@@ -170,14 +170,14 @@ public:
 
 	void set(ParLinkValue value) override 
 	{ 
-		if (TEInstanceLinkSetBooleanValue(instance, identifier.c_str(), std::get<bool>(value)) != TEResultSuccess)
+		if (TEInstanceLinkSetBooleanValue(instance_, identifier_.c_str(), std::get<bool>(value)) != TEResultSuccess)
 			noSetLinkError();
 	}
 
 	ParLinkValue get() override
 	{
 		bool value;
-		if (TEInstanceLinkGetBooleanValue(instance, identifier.c_str(), TELinkValueCurrent, &value) != TEResultSuccess)
+		if (TEInstanceLinkGetBooleanValue(instance_, identifier_.c_str(), TELinkValueCurrent, &value) != TEResultSuccess)
 			noGetLinkError();
 
 		return value;
@@ -192,14 +192,14 @@ public:
 	
 	void set(ParLinkValue value) override
 	{
-		if (TEInstanceLinkSetStringValue(instance, identifier.c_str(), std::get<std::string>(value).c_str()) != TEResultSuccess)
+		if (TEInstanceLinkSetStringValue(instance_, identifier_.c_str(), std::get<std::string>(value).c_str()) != TEResultSuccess)
 			noSetLinkError();
 	}
 
 	ParLinkValue get() override
 	{
 		TEString* val = nullptr;
-		if (TEInstanceLinkGetStringValue(instance, identifier.c_str(), TELinkValueCurrent, &val) != TEResultSuccess)
+		if (TEInstanceLinkGetStringValue(instance_, identifier_.c_str(), TELinkValueCurrent, &val) != TEResultSuccess)
 			noGetLinkError();
 
 		return std::string(val->string);
@@ -213,14 +213,14 @@ public:
 
 	void set(ParLinkValue value) override
 	{
-		if (TEInstanceLinkSetIntValue(instance, identifier.c_str(), &std::get<int32_t>(value), count) != TEResultSuccess)
+		if (TEInstanceLinkSetIntValue(instance_, identifier_.c_str(), &std::get<int32_t>(value), count_) != TEResultSuccess)
 			noSetLinkError();
 	}
 
 	ParLinkValue get() override
 	{
 		int32_t value;
-		if (TEInstanceLinkGetIntValue(instance, identifier.c_str(), TELinkValueCurrent, &value, count) != TEResultSuccess)
+		if (TEInstanceLinkGetIntValue(instance_, identifier_.c_str(), TELinkValueCurrent, &value, count_) != TEResultSuccess)
 			noGetLinkError();
 
 		return value;
@@ -234,14 +234,14 @@ public:
 	Int2ParLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : ParLink(instance, linkInfo) { }
 	void set(ParLinkValue value) override
 	{
-		if (TEInstanceLinkSetIntValue(instance, identifier.c_str(), reinterpret_cast<int32_t*>(&std::get<Int2>(value)), count) != TEResultSuccess)
+		if (TEInstanceLinkSetIntValue(instance_, identifier_.c_str(), reinterpret_cast<int32_t*>(&std::get<Int2>(value)), count_) != TEResultSuccess)
 			noSetLinkError();
 	}
 
 	ParLinkValue get() override
 	{
 		Int2 value;
-		if (TEInstanceLinkGetIntValue(instance, identifier.c_str(), TELinkValueCurrent, reinterpret_cast<int32_t*>(&value), count) != TEResultSuccess)
+		if (TEInstanceLinkGetIntValue(instance_, identifier_.c_str(), TELinkValueCurrent, reinterpret_cast<int32_t*>(&value), count_) != TEResultSuccess)
 				noGetLinkError();
 
 		return value;
@@ -255,14 +255,14 @@ public:
 
 	void set(ParLinkValue value) override
 	{
-		if (TEInstanceLinkSetIntValue(instance, identifier.c_str(), reinterpret_cast<int32_t*>(&std::get<Int3>(value)), count) != TEResultSuccess)
+		if (TEInstanceLinkSetIntValue(instance_, identifier_.c_str(), reinterpret_cast<int32_t*>(&std::get<Int3>(value)), count_) != TEResultSuccess)
 			noSetLinkError();
 	}
 
 	ParLinkValue get() override
 	{
 		Int3 value;
-		if (TEInstanceLinkGetIntValue(instance, identifier.c_str(), TELinkValueCurrent, reinterpret_cast<int32_t*>(&value), count) != TEResultSuccess)
+		if (TEInstanceLinkGetIntValue(instance_, identifier_.c_str(), TELinkValueCurrent, reinterpret_cast<int32_t*>(&value), count_) != TEResultSuccess)
 			noGetLinkError();
 
 		return value;
@@ -276,14 +276,14 @@ public:
 
 	void set(ParLinkValue value) override
 	{
-		if (TEInstanceLinkSetIntValue(instance, identifier.c_str(), reinterpret_cast<int32_t*>(&std::get<Int4>(value)), count) != TEResultSuccess)
+		if (TEInstanceLinkSetIntValue(instance_, identifier_.c_str(), reinterpret_cast<int32_t*>(&std::get<Int4>(value)), count_) != TEResultSuccess)
 			noSetLinkError();
 	}
 
 	ParLinkValue get() override
 	{
 		Int4 value;
-		if (TEInstanceLinkGetIntValue(instance, identifier.c_str(), TELinkValueCurrent, reinterpret_cast<int32_t*>(&value), count) != TEResultSuccess)
+		if (TEInstanceLinkGetIntValue(instance_, identifier_.c_str(), TELinkValueCurrent, reinterpret_cast<int32_t*>(&value), count_) != TEResultSuccess)
 			noGetLinkError();
 
 		return value;
@@ -298,14 +298,14 @@ public:
 
 	void set(ParLinkValue value) override
 	{
-		if (TEInstanceLinkSetDoubleValue(instance, identifier.c_str(), &std::get<double>(value), count) != TEResultSuccess)
+		if (TEInstanceLinkSetDoubleValue(instance_, identifier_.c_str(), &std::get<double>(value), count_) != TEResultSuccess)
 			noSetLinkError();
 	}
 
 	ParLinkValue get() override
 	{
 		double value;
-		if (TEInstanceLinkGetDoubleValue(instance, identifier.c_str(), TELinkValueCurrent, &value, count) != TEResultSuccess)
+		if (TEInstanceLinkGetDoubleValue(instance_, identifier_.c_str(), TELinkValueCurrent, &value, count_) != TEResultSuccess)
 			noGetLinkError();
 
 		return value;
@@ -319,14 +319,14 @@ public:
 
 	void set(ParLinkValue value) override
 	{
-		if (TEInstanceLinkSetDoubleValue(instance, identifier.c_str(), reinterpret_cast<double*>(&std::get<Double2>(value)), count) != TEResultSuccess)
+		if (TEInstanceLinkSetDoubleValue(instance_, identifier_.c_str(), reinterpret_cast<double*>(&std::get<Double2>(value)), count_) != TEResultSuccess)
 			noSetLinkError();
 	}
 
 	ParLinkValue get() override
 	{
 		Double2 value;
-		if (TEInstanceLinkGetDoubleValue(instance, identifier.c_str(), TELinkValueCurrent, reinterpret_cast<double*>(&value), count) != TEResultSuccess)
+		if (TEInstanceLinkGetDoubleValue(instance_, identifier_.c_str(), TELinkValueCurrent, reinterpret_cast<double*>(&value), count_) != TEResultSuccess)
 			noGetLinkError();
 
 		return value;
@@ -341,14 +341,14 @@ public:
 
 	void set(ParLinkValue value) override
 	{
-		if (TEInstanceLinkSetDoubleValue(instance, identifier.c_str(), reinterpret_cast<double*>(&std::get<Double3>(value)), count) != TEResultSuccess)
+		if (TEInstanceLinkSetDoubleValue(instance_, identifier_.c_str(), reinterpret_cast<double*>(&std::get<Double3>(value)), count_) != TEResultSuccess)
 			noSetLinkError();
 	}
 
 	ParLinkValue get() override
 	{
 		Double3 value;
-		if (TEInstanceLinkGetDoubleValue(instance, identifier.c_str(), TELinkValueCurrent, reinterpret_cast<double*>(&value), count) != TEResultSuccess)
+		if (TEInstanceLinkGetDoubleValue(instance_, identifier_.c_str(), TELinkValueCurrent, reinterpret_cast<double*>(&value), count_) != TEResultSuccess)
 			noGetLinkError();
 
 		return value;
@@ -362,14 +362,14 @@ public:
 
 	void set(ParLinkValue value) override
 	{
-		if (TEInstanceLinkSetDoubleValue(instance, identifier.c_str(), reinterpret_cast<double*>(&std::get<Double4>(value)), count) != TEResultSuccess)
+		if (TEInstanceLinkSetDoubleValue(instance_, identifier_.c_str(), reinterpret_cast<double*>(&std::get<Double4>(value)), count_) != TEResultSuccess)
 			noSetLinkError();
 	}
 
 	ParLinkValue get() override
 	{
 		Double4 value;
-		if (TEInstanceLinkGetDoubleValue(instance, identifier.c_str(), TELinkValueCurrent, reinterpret_cast<double*>(&value), count) != TEResultSuccess)
+		if (TEInstanceLinkGetDoubleValue(instance_, identifier_.c_str(), TELinkValueCurrent, reinterpret_cast<double*>(&value), count_) != TEResultSuccess)
 			noGetLinkError();
 
 		return value;
@@ -384,14 +384,14 @@ public:
 	MenuParLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : ParLink(instance, linkInfo) { }
 	void set(ParLinkValue value) override
 	{
-		if (TEInstanceLinkSetIntValue(instance, identifier.c_str(), &std::get<int32_t>(value), count) != TEResultSuccess)
+		if (TEInstanceLinkSetIntValue(instance_, identifier_.c_str(), &std::get<int32_t>(value), count_) != TEResultSuccess)
 			noSetLinkError();
 	}
 
 	ParLinkValue get() override
 	{
 		int32_t value;
-		if (TEInstanceLinkGetIntValue(instance, identifier.c_str(), TELinkValueCurrent, &value, count) != TEResultSuccess)
+		if (TEInstanceLinkGetIntValue(instance_, identifier_.c_str(), TELinkValueCurrent, &value, count_) != TEResultSuccess)
 				noGetLinkError();
 
 		return value;
@@ -402,7 +402,7 @@ public:
 		std::vector<std::string> names;
 		TouchObject<TEStringArray> stringArray;
 
-		if (TEInstanceLinkGetChoiceValues(instance, identifier.c_str(), stringArray.take()) != TEResultSuccess)
+		if (TEInstanceLinkGetChoiceValues(instance_, identifier_.c_str(), stringArray.take()) != TEResultSuccess)
 			noGetChoicesError();
 
 		for (int i = 0; i < stringArray->count; i++)
@@ -423,14 +423,14 @@ public:
 
 	void set(ParLinkValue value) override
 	{
-		if (TEInstanceLinkSetDoubleValue(instance, identifier.c_str(), reinterpret_cast<double*>(&std::get<ColorRGBA>(value)), count) != TEResultSuccess)
+		if (TEInstanceLinkSetDoubleValue(instance_, identifier_.c_str(), reinterpret_cast<double*>(&std::get<ColorRGBA>(value)), count_) != TEResultSuccess)
 			noSetLinkError();
 	}
 
 	ParLinkValue get() override
 	{
 		ColorRGBA value;
-		if (TEInstanceLinkGetDoubleValue(instance, identifier.c_str(), TELinkValueCurrent, reinterpret_cast<double*>(&value), count) != TEResultSuccess)
+		if (TEInstanceLinkGetDoubleValue(instance_, identifier_.c_str(), TELinkValueCurrent, reinterpret_cast<double*>(&value), count_) != TEResultSuccess)
 			noGetLinkError();
 
 		return value;

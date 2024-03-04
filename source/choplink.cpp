@@ -12,10 +12,10 @@ ChopLink::ChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> lin
 
 ChopLink::~ChopLink() { }
 
-void ChopLink::updateOutput()
+void ChopLink::onOuputValueChange()
 {
 	TouchObject<TEFloatBuffer> buffer;
-	if (TEInstanceLinkGetFloatBufferValue(instance, identifier.c_str(), TELinkValueCurrent, buffer.take()) == TEResultSuccess)
+	if (TEInstanceLinkGetFloatBufferValue(instance_, identifier_.c_str(), TELinkValueCurrent, buffer.take()) == TEResultSuccess)
 	{
 		if (buffer)
 		{
@@ -73,7 +73,7 @@ ChopLink::updateTeBuffer()
 	int bufferIndex = activeTeBuffer_.load(std::memory_order_acquire) ^ 1;
 	TouchObject<TEFloatBuffer>& buffer = teBuffers_[bufferIndex];
 
-	if (TEInstanceLinkGetFloatBufferValue(instance, identifier.c_str(), TELinkValueCurrent, buffer.take()) == TEResultSuccess)
+	if (TEInstanceLinkGetFloatBufferValue(instance_, identifier_.c_str(), TELinkValueCurrent, buffer.take()) == TEResultSuccess)
 	{
 		if (buffer)
 		{
@@ -214,7 +214,7 @@ ChopLink::set(const float** values, int32_t channelCount, uint32_t valueCount, d
 	rate_ = rate;
 
 	TouchObject<TEFloatBuffer> buffer;
-	TEResult result = TEInstanceLinkGetFloatBufferValue(instance, identifier.c_str(), TELinkValueCurrent, buffer.take());
+	TEResult result = TEInstanceLinkGetFloatBufferValue(instance_, identifier_.c_str(), TELinkValueCurrent, buffer.take());
 	if(result == TEResultSuccess)
 	{
 		if (buffer && !bufferCopyable(buffer, names))
@@ -231,7 +231,7 @@ ChopLink::set(const float** values, int32_t channelCount, uint32_t valueCount, d
 		
 		result = TEFloatBufferSetValues(buffer, values, valueCount_);
 		if (result == TEResultSuccess)
-			result = TEInstanceLinkSetFloatBufferValue(instance, identifier.c_str(), buffer);
+			result = TEInstanceLinkSetFloatBufferValue(instance_, identifier_.c_str(), buffer);
 	}
 
 	if (result != TEResultSuccess)

@@ -4,10 +4,11 @@
 #include "renderer.h"
 #include "texture.h"
 #include "common/cuda_helpers.h"
-#include "parlink.h"
+
+#include "texturelink.h"
 #include "choplink.h"
 #include "datlink.h"
-
+#include "parlink.h"
 
 #include <string>
 #include <mutex>
@@ -65,9 +66,6 @@ private:
 	std::vector<std::string> changedOutputFloatBuffers_;
 	std::vector<std::string> changedOutputStringData_;
 
-	std::unordered_map<HANDLE, Texture>     outputTextures_;
-	std::unordered_map<HANDLE, Texture>     inputTextures_;
-
 	std::unique_ptr<Renderer>               renderer_;
 	VkDevice                                device_              { VK_NULL_HANDLE };
 	VkPhysicalDevice                        physicalDevice_      { VK_NULL_HANDLE };
@@ -87,7 +85,8 @@ private:
 
 	std::chrono::high_resolution_clock::time_point lastFrameTime_{};
 
-	
+	std::unique_ptr<TextureLinks>      inputTextureLinks_;
+	std::unique_ptr<TextureLinks>      outputTextureLinks_;
 	std::unique_ptr<ChopLinks>         inputChopLinks_;
 	std::unique_ptr<ChopLinks>         outputChopLinks_;
 	std::unique_ptr<DatLinks>          inputDatLinks_;
@@ -98,6 +97,7 @@ private:
 
 	void initComp();
 	void load();
+
 
 	void applyLayoutChange();
 	bool applyOutputTextureChange();
@@ -130,7 +130,7 @@ private:
 	void onEventInstanceReady(TEResult result);
 	void onEventInstanceDidLoad(TEResult result);
 	void onEventInstanceDidUnload(TEResult result);
-	void onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale);
+	void onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale);
 	void onEventGeneral(TEResult result, uint64_t start_time, uint64_t end_time);
 
 	static void	linkEventCallback(
@@ -149,7 +149,7 @@ private:
 	void onLinkEventStateChange(const char* identifier) { onLinkLayoutChange(TELinkEventStateChange, identifier); }
 	void onLinkEventChildChange(const char* identifier) { onLinkLayoutChange(TELinkEventChildChange, identifier); }    
 
-
+	void printLinkInfo(TouchObject<TELinkInfo> info);
 
 
 

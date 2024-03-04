@@ -14,10 +14,10 @@ DatLink::~DatLink()
 }
 
 void
-DatLink::updateOutput()
+DatLink::onOuputValueChange()
 {
 	TouchObject<TEObject> value;
-	TEResult result = TEInstanceLinkGetObjectValue(instance, identifier.c_str(), TELinkValueCurrent, value.take());
+	TEResult result = TEInstanceLinkGetObjectValue(instance_, identifier().c_str(), TELinkValueCurrent, value.take());
 	// String data can be a TETable or TEString, so check the type
 	if (value && TEGetType(value) == TEObjectTypeTable)
 	{
@@ -52,7 +52,7 @@ DatLink::set(const Table& table)
 {
 	type_ = DatLinkType::Table;
 	TouchObject<TEObject> currentValue;
-	TEResult result = TEInstanceLinkGetObjectValue(instance, identifier.c_str(), TELinkValueCurrent, currentValue.take());
+	TEResult result = TEInstanceLinkGetObjectValue(instance_, identifier_.c_str(), TELinkValueCurrent, currentValue.take());
 
 	if (result == TEResultSuccess)
 	{
@@ -67,7 +67,7 @@ DatLink::set(const Table& table)
 			for (int32_t row = 0; row < table.numCols; ++row)
 				TETableSetStringValue(teTable, row, col, table.data[static_cast<size_t>(row * table.numCols + col)].c_str());
 		
-		result = TEInstanceLinkSetTableValue(instance, identifier.c_str(), teTable);
+		result = TEInstanceLinkSetTableValue(instance_, identifier_.c_str(), teTable);
 	}
 
 	if (result != TEResultSuccess)
@@ -78,7 +78,7 @@ void
 DatLink::set(const char* string)
 {
 	type_ = DatLinkType::String;
-	TEResult result = TEInstanceLinkSetStringValue(instance, identifier.c_str(), string);
+	TEResult result = TEInstanceLinkSetStringValue(instance_, identifier_.c_str(), string);
 	if (result != TEResultSuccess)
 		std::cerr << "Failed to set table value: " << TEResultGetDescription(result) << std::endl;
 }
