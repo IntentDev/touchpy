@@ -20,7 +20,7 @@ Comp::Comp(const std::string& filePath)
 	load();
 }
 
-void 
+void
 Comp::initComp()
 {
 	createRenderer();
@@ -535,6 +535,12 @@ Comp::update()
 		applyOutputFloatBufferChange();
 		applyOutputStringDataChange();
 
+		if (onFrameStartCallback_)
+			onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
+
+		//if(updateCallback_)
+		//	updateCallback_(updateCallbackUserData_);
+
 		for (size_t i = 0; i < inputTextureLinks_->size() && i < outputTextureLinks_->size(); ++i)
 		{
 			auto outputTex = (*outputTextureLinks_)[i].currentTexture();
@@ -561,16 +567,16 @@ Comp::update()
 			}
 		}
 
-		for (size_t i = 0; i < inputDatLinks_->size() && i < outputDatLinks_->size(); ++i)
-		{
-			auto& outputDatLink = (*outputDatLinks_)[i];
-			auto& inputDatLink = (*inputDatLinks_)[i];
+		//for (size_t i = 0; i < inputDatLinks_->size() && i < outputDatLinks_->size(); ++i)
+		//{
+		//	auto& outputDatLink = (*outputDatLinks_)[i];
+		//	auto& inputDatLink = (*inputDatLinks_)[i];
 
-			if (outputDatLink.type() == DatLink::DatLinkType::Table)
-				inputDatLink.set(outputDatLink.getTable());
-			else
-				inputDatLink.set(outputDatLink.getString());
-		}
+		//	if (outputDatLink.type() == DatLink::DatLinkType::Table)
+		//		inputDatLink.set(outputDatLink.getTable());
+		//	else
+		//		inputDatLink.set(outputDatLink.getString());
+		//}
 
 		static float testFloat = 0.0f;
 		(*parLinks_)["Float"].set(testFloat);
@@ -583,16 +589,47 @@ Comp::update()
 		{
 			std::cout << "update() TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
 			setInFrame(false);
+			return;
 		}
 
+		
 		//std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
 		//std::cout << "Frame time: " << std::chrono::duration_cast<std::chrono::milliseconds>(
 		//	now - lastFrameTime_).count() << "ms" << std::endl;
 		//lastFrameTime_ = now;
 
+		++frameCount_;
 	}
 
 
+}
+
+void Comp::setOnFrameStartCallback(
+	std::function<void(Comp&, std::shared_ptr<void>)> callback,
+	std::shared_ptr<void> userData)
+{
+	onFrameStartCallback_ = callback;
+	onFrameStartCallbackUserData_ = userData;
+}
+
+//void Comp::setUpdateCallback(void(*callback)(void*), void* userData)
+//{
+//	updateCallback_ = callback;
+//	updateCallbackUserData_ = userData;
+//}
+
+void Comp::runUpdateLoop()
+{
+	updateLoopRunning_ = true;
+	while (updateLoopRunning_)
+	{
+		update();
+	}
+}
+
+void Comp::stopUpdateLoop()
+{
+	updateLoopRunning_ = false;
 }
 
 void 

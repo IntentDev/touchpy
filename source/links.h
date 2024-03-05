@@ -121,6 +121,16 @@ public:
 
 	size_t size() const { return links_.size(); }
 
+	std::vector<std::string> getLinkNames() const
+	{
+		std::vector<std::string> names;
+		for (const auto& link : links_)
+		{
+			names.push_back(link->name());
+		}
+		return names;
+	}
+
 	T& operator[](const std::string& name) 
 	{ 
 		auto link = getLinkByName(name);
