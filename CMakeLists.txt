@@ -161,19 +161,19 @@ target_link_libraries(touchpy pybind11::module)
 # TouchEngine-Windows
 # should come with clone of the repo (use git clone --recursive touchpy_url) 
 #################################################################################################
-target_link_directories(touchpy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/lib)
+target_link_directories(touchpy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/lib)
 target_link_libraries(touchpy TouchEngine)
-target_include_directories(touchpy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/include)
+target_include_directories(touchpy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/include)
 add_custom_command(TARGET touchpy POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/bin $<TARGET_FILE_DIR:touchpy>)
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin $<TARGET_FILE_DIR:touchpy>)
 
-target_link_directories(touchloader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/lib)
+target_link_directories(touchloader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/lib)
 target_link_libraries(touchloader TouchEngine)
-target_include_directories(touchloader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/include)
+target_include_directories(touchloader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/include)
 add_custom_command(TARGET touchloader POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
-	${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/bin $<TARGET_FILE_DIR:touchloader>)
+	${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin $<TARGET_FILE_DIR:touchloader>)
 
 
 # dependencies so touchpy depends on tocuhloader being built first
