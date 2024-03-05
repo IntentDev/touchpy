@@ -1,4 +1,4 @@
-﻿# CMakeList.txt : CMake project for tdpy, include source and define
+﻿# CMakeList.txt : CMake project for touchpy, include source and define
 # project specific logic here.
 #
 cmake_minimum_required (VERSION 3.21)
@@ -52,13 +52,13 @@ list(FILTER ALL_TPY_SOURCES EXCLUDE REGEX ".*main\\.cpp$")
 set(PRINT_SOURCE_FILES Off)
 if(PRINT_SOURCE_FILES)
     foreach(source IN LISTS ALL_TPY_SOURCES)
-      message(STATUS "tdpy source: ${source}")
+      message(STATUS "touchpy source: ${source}")
     endforeach()
 endif()
 
-add_library(tdpy MODULE ${ALL_TPY_SOURCES})
-set_target_properties(tdpy PROPERTIES PREFIX "" SUFFIX ".pyd")
-target_include_directories(tdpy PRIVATE ${SOURCE_DIR})
+add_library(touchpy MODULE ${ALL_TPY_SOURCES})
+set_target_properties(touchpy PROPERTIES PREFIX "" SUFFIX ".pyd")
+target_include_directories(touchpy PRIVATE ${SOURCE_DIR})
 
 file(GLOB_RECURSE ALL_TL_SOURCES 
     "${SOURCE_DIR}/*.cpp" "${SOURCE_DIR}/*.c" "${SOURCE_DIR}/*.cu" "${SOURCE_DIR}/*.h")
@@ -89,7 +89,7 @@ if (WIN32)
     )
 endif ()
 
-target_compile_definitions(tdpy PRIVATE ${COMPILE_DEFINITIONS})
+target_compile_definitions(touchpy PRIVATE ${COMPILE_DEFINITIONS})
 target_compile_definitions(touchloader PRIVATE ${COMPILE_DEFINITIONS})
 
 # Check if VCPKG_ROOT is set as an environment variable
@@ -109,7 +109,7 @@ message(STATUS "VCPKG_ROOT=${VCPKG_ROOT}")
 #################################################################################################
 find_package(Vulkan REQUIRED)
 message(STATUS Vulkan_INCLUDE_DIR=${Vulkan_INCLUDE_DIR})
-target_link_libraries(tdpy Vulkan::Vulkan)
+target_link_libraries(touchpy Vulkan::Vulkan)
 target_link_libraries(touchloader Vulkan::Vulkan)
 
 
@@ -118,7 +118,7 @@ target_link_libraries(touchloader Vulkan::Vulkan)
 # .\vcpkg install vulkan-memory-allocator 
 #################################################################################################
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
-target_link_libraries(tdpy GPUOpen::VulkanMemoryAllocator)
+target_link_libraries(touchpy GPUOpen::VulkanMemoryAllocator)
 target_link_libraries(touchloader GPUOpen::VulkanMemoryAllocator)
 
 # causing CUDA to not compile, commented calls to it for now
@@ -126,43 +126,47 @@ target_link_libraries(touchloader GPUOpen::VulkanMemoryAllocator)
 # # .\vcpkg install openimageio ### only needed for VRI to compile, keeping it for now
 # #################################################################################################
 # find_package(OpenImageIO CONFIG REQUIRED )
-# target_link_libraries(tdpy OpenImageIO::OpenImageIO)
+# target_link_libraries(touchpy OpenImageIO::OpenImageIO)
 
 # CUDA
 #################################################################################################
 find_package(CUDAToolkit REQUIRED)
 message(STATUS CUDAToolkit_INCLUDE_DIRS=${CUDAToolkit_INCLUDE_DIRS})
-target_include_directories(tdpy PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
-target_link_libraries(tdpy CUDA::cudart)
+target_include_directories(touchpy PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+target_link_libraries(touchpy CUDA::cudart)
 target_include_directories(touchloader PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 target_link_libraries(touchloader CUDA::cudart)
-
+# Post-build command to copy the CUDA runtime DLL to the output directory
+set(cuda_runtime_dll "${CUDAToolkit_BIN_DIR}/cudart64_110.dll")
+add_custom_command(TARGET touchpy POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    ${cuda_runtime_dll} $<TARGET_FILE_DIR:touchpy>)
 
 # Python
 # make sure path to python is in the system PATH
 #################################################################################################
 find_package(Python3 COMPONENTS Development Interpreter REQUIRED)
 message(STATUS Python3_INCLUDE_DIRS=${Python3_INCLUDE_DIRS})
-target_include_directories(tdpy PRIVATE ${Python3_INCLUDE_DIRS})
-target_link_libraries(tdpy Python3::Python)
+target_include_directories(touchpy PRIVATE ${Python3_INCLUDE_DIRS})
+target_link_libraries(touchpy Python3::Python)
 
 # pybind11
 # .\vcpkg install pybind11
 #################################################################################################
 find_package(pybind11 REQUIRED)
 message(STATUS pybind11_INCLUDE_DIRS=${pybind11_INCLUDE_DIRS})
-target_include_directories(tdpy PRIVATE ${pybind11_INCLUDE_DIRS})
-target_link_libraries(tdpy pybind11::module)
+target_include_directories(touchpy PRIVATE ${pybind11_INCLUDE_DIRS})
+target_link_libraries(touchpy pybind11::module)
 
 # TouchEngine-Windows
 # should come with clone of the repo (use git clone --recursive touchpy_url) 
 #################################################################################################
-target_link_directories(tdpy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/lib)
-target_link_libraries(tdpy TouchEngine)
-target_include_directories(tdpy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/include)
-add_custom_command(TARGET tdpy POST_BUILD
+target_link_directories(touchpy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/lib)
+target_link_libraries(touchpy TouchEngine)
+target_include_directories(touchpy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/include)
+add_custom_command(TARGET touchpy POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/bin $<TARGET_FILE_DIR:tdpy>)
+    ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/bin $<TARGET_FILE_DIR:touchpy>)
 
 target_link_directories(touchloader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/lib)
 target_link_libraries(touchloader TouchEngine)
@@ -172,13 +176,13 @@ add_custom_command(TARGET touchloader POST_BUILD
 	${CMAKE_CURRENT_SOURCE_DIR}/TouchEngine-Windows/bin $<TARGET_FILE_DIR:touchloader>)
 
 
-# dependencies so tdpy depends on tocuhloader being built first
-add_dependencies(tdpy touchloader)
+# dependencies so touchpy depends on tocuhloader being built first
+add_dependencies(touchpy touchloader)
 
 add_definitions(-DCMAKE_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
 
 # install
 #################################################################################################
 #################################################################################################
-install(TARGETS tdpy LIBRARY DESTINATION modules)
+install(TARGETS touchpy LIBRARY DESTINATION modules)
 install(TARGETS touchloader RUNTIME DESTINATION bin)

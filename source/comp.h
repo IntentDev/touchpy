@@ -13,6 +13,7 @@
 #include <string>
 #include <mutex>
 #include <memory>
+#include <functional>
 #include <chrono>
 
 
@@ -28,7 +29,19 @@ public:
 	bool loaded() const; 
 	bool ready() const { return ready_; }
 	void update();
+	void setOnFrameStartCallback(
+		std::function<void(Comp&, std::shared_ptr<void>)> callback, 
+		std::shared_ptr<void> userData
+	);
+	void runUpdateLoop();
+	void stopUpdateLoop();
 
+	TextureLinks& inputTextureLinks() { return *inputTextureLinks_; }
+	TextureLinks& outputTextureLinks() { return *outputTextureLinks_; }
+	ChopLinks& inputChopLinks() { return *inputChopLinks_; }
+	ChopLinks& outputChopLinks() { return *outputChopLinks_; }
+	DatLinks& inputDatLinks() { return *inputDatLinks_; }
+	DatLinks& outputDatLinks() { return *outputDatLinks_; }
 	ParLinkCollection& parLinks() { return *parLinks_; }
 
 private:
@@ -53,31 +66,29 @@ private:
 	// main thread only
 	//-----------------------------------------------------------------------------------------------------------------
 
-	std::string                             filePath_;
-	size_t								    buffersPerInputLink  { 2 };
-	TouchObject<TEInstance>                 instance_            { nullptr };
-	bool 									ready_				 { false };
-	double                                  inputSampleRate_     { 60.0 };
-	int32_t                                 inputChannelCount_   { 0 };
+	std::string                        filePath_;
+	size_t                             buffersPerInputLink { 2 };
+	TouchObject<TEInstance>            instance_           { nullptr };
+	bool                               ready_              { false };
+	double                             inputSampleRate_    { 60.0 };
+	int32_t                            inputChannelCount_  { 0 };
+	int64_t                            framesPerSecond_    { 60 };
 
-	int64_t                                 framesPerSecond_     { 60 };
+	std::unique_ptr<Renderer>          renderer_;
+	VkDevice                           device_             { VK_NULL_HANDLE };
+	VkPhysicalDevice                   physicalDevice_     { VK_NULL_HANDLE };
+	std::vector<uint32_t>              queueFamilyIndices_;
+	VkQueue                            queue_              { VK_NULL_HANDLE };
+	VkCommandBuffer                    commandBuffer_      { VK_NULL_HANDLE };
+	VkFence                            submitFence_        { VK_NULL_HANDLE };
 
-	std::vector<std::string> changedOutputTextures_;
-	std::vector<std::string> changedOutputFloatBuffers_;
-	std::vector<std::string> changedOutputStringData_;
+	cudaStream_t                       cudaStream_         { nullptr };
+	int                                cudaDevice_         { -1 };
 
-	std::unique_ptr<Renderer>               renderer_;
-	VkDevice                                device_              { VK_NULL_HANDLE };
-	VkPhysicalDevice                        physicalDevice_      { VK_NULL_HANDLE };
-	std::vector<uint32_t>                   queueFamilyIndices_;
-	VkQueue                                 queue_               { VK_NULL_HANDLE };
-	VkCommandBuffer                         commandBuffer_       { VK_NULL_HANDLE };
-	VkFence                                 submitFence_		 { VK_NULL_HANDLE };
 
-	cudaStream_t                            cudaStream_          { nullptr };
-	int										cudaDevice_ 		 { -1 };
-
-	std::chrono::high_resolution_clock::time_point lastFrameTime_{};
+	std::vector<std::string>           changedOutputTextures_;
+	std::vector<std::string>           changedOutputFloatBuffers_;
+	std::vector<std::string>           changedOutputStringData_;
 
 	std::unique_ptr<TextureLinks>      inputTextureLinks_;
 	std::unique_ptr<TextureLinks>      outputTextureLinks_;
@@ -88,7 +99,12 @@ private:
 	std::unique_ptr<ParLinkCollection> parLinks_;
 
 	bool                               doubleBufferOutputs_ { false };
+	bool							   updateLoopRunning_	{ false };
+	uint64_t 						   frameCount_          { 0 };
+	std::shared_ptr<void>              onFrameStartCallbackUserData_ { nullptr };
+	std::function<void(Comp&, std::shared_ptr<void>)>	   onFrameStartCallback_ { nullptr };
 
+	std::chrono::high_resolution_clock::time_point lastFrameTime_{};
 	void initComp();
 	void load();
 
