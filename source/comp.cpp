@@ -557,15 +557,15 @@ Comp::update()
 			inputTexLink.transferTextureToInputLink(renderer_->teContext());
 		}
 
-		for (size_t i = 0; i < inputChopLinks_->size() && i < outputChopLinks_->size(); ++i)
-		{
-			auto& outputChop = (*outputChopLinks_)[i];
-			auto& inputChop = (*inputChopLinks_)[i];
-			if (outputChop.isUpdated())
-			{
-				inputChop.set(outputChop.channelData(), outputChop.valueCount(), outputChop.rate(), outputChop.names());
-			}
-		}
+		//for (size_t i = 0; i < inputChopLinks_->size() && i < outputChopLinks_->size(); ++i)
+		//{
+		//	auto& outputChop = (*outputChopLinks_)[i];
+		//	auto& inputChop = (*inputChopLinks_)[i];
+		//	if (outputChop.isUpdated())
+		//	{
+		//		inputChop.set(outputChop.channelData(), outputChop.valueCount(), outputChop.rate(), outputChop.names());
+		//	}
+		//}
 
 		//for (size_t i = 0; i < inputDatLinks_->size() && i < outputDatLinks_->size(); ++i)
 		//{

@@ -28,6 +28,7 @@ public:
 
 	const bool isUpdated() const { return isUpdated_; }
 
+	const float* data() const { return channelData_.data(); }
 	const std::vector<float>& channelData() const { return channelData_; }
 	const std::vector<const float*>& channelPtrs() const { return chanDataPtrs_; }
 	const std::vector<std::string>& names() const { return names_; }
@@ -52,7 +53,7 @@ public:
 	void set(const std::vector<float>& channels, uint32_t valueCount, double rate, const std::vector<std::string>& names);
 	void set(const std::vector<std::vector<float>>& channels, double rate = -1.0);
 	void set(const std::vector<std::vector<float>>& channels, double rate, const std::vector<std::string>& names);
-	void set(const float** values, int32_t channelCount, uint32_t valueCount, double rate, const char** names = nullptr);
+	void set(const float** values, int32_t channelCount, uint32_t valueCount, double rate = -1., const char** names = nullptr);
 
 		
 private:
@@ -61,8 +62,6 @@ private:
 	uint32_t capacity_ { 0 }; // capacity of the TEFloatBuffer not the number of values per channel in channelData_
 	uint32_t valueCount_ { 0 };
 	bool isTimeDependent_ { false };
-
-
 
 	// output only
 	//-----------------------------------------------------------------------------------------------------------------
