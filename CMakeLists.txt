@@ -9,34 +9,18 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
-# if(MSVC)
-#   set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-# endif()
-
-# # Set runtime library for different build types
-# foreach(flag_var
-#         CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-#         CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-#    if(${flag_var} MATCHES "/MD")
-#       string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-#    endif()
-# endforeach()
-
-# # Set debug information flags for Debug build
-# if(MSVC)
-#     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi /MDd")
-#     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od")
-# endif()
-
-
-# set(CMAKE_CUDA_ARCHITECTURES 89)
 set(CMAKE_CUDA_ARCHITECTURES 75;80;86;89)
 
 # set cpp staandard for all targets unless otherwise specified 
 # with target_compile_features() or set_property()
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17) # need to upgrade CUDA to 12.1 to use C++20, also need to check if nanobind supports C++20
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
 
 project ("TouchPy" LANGUAGES CXX CUDA)
 
@@ -56,8 +40,8 @@ if(PRINT_SOURCE_FILES)
     endforeach()
 endif()
 
-add_library(touchpy MODULE ${ALL_TPY_SOURCES})
-set_target_properties(touchpy PROPERTIES PREFIX "" SUFFIX ".pyd")
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/nanobind)
+nanobind_add_module(touchpy NOMINSIZE ${ALL_TPY_SOURCES})
 target_include_directories(touchpy PRIVATE ${SOURCE_DIR})
 
 file(GLOB_RECURSE ALL_TL_SOURCES 
@@ -109,7 +93,7 @@ message(STATUS "VCPKG_ROOT=${VCPKG_ROOT}")
 #################################################################################################
 find_package(Vulkan REQUIRED)
 message(STATUS Vulkan_INCLUDE_DIR=${Vulkan_INCLUDE_DIR})
-target_link_libraries(touchpy Vulkan::Vulkan)
+target_link_libraries(touchpy PRIVATE Vulkan::Vulkan)
 target_link_libraries(touchloader Vulkan::Vulkan)
 
 
@@ -118,7 +102,7 @@ target_link_libraries(touchloader Vulkan::Vulkan)
 # .\vcpkg install vulkan-memory-allocator 
 #################################################################################################
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
-target_link_libraries(touchpy GPUOpen::VulkanMemoryAllocator)
+target_link_libraries(touchpy PRIVATE GPUOpen::VulkanMemoryAllocator)
 target_link_libraries(touchloader GPUOpen::VulkanMemoryAllocator)
 
 # causing CUDA to not compile, commented calls to it for now
@@ -133,7 +117,7 @@ target_link_libraries(touchloader GPUOpen::VulkanMemoryAllocator)
 find_package(CUDAToolkit REQUIRED)
 message(STATUS CUDAToolkit_INCLUDE_DIRS=${CUDAToolkit_INCLUDE_DIRS})
 target_include_directories(touchpy PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
-target_link_libraries(touchpy CUDA::cudart)
+target_link_libraries(touchpy PRIVATE CUDA::cudart)
 target_include_directories(touchloader PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 target_link_libraries(touchloader CUDA::cudart)
 # Post-build command to copy the CUDA runtime DLL to the output directory
@@ -145,25 +129,20 @@ add_custom_command(TARGET touchpy POST_BUILD
 # Python
 # make sure path to python is in the system PATH
 #################################################################################################
-find_package(Python3 COMPONENTS Development Interpreter REQUIRED)
-message(STATUS Python3_INCLUDE_DIRS=${Python3_INCLUDE_DIRS})
-target_include_directories(touchpy PRIVATE ${Python3_INCLUDE_DIRS})
-target_link_libraries(touchpy Python3::Python)
+find_package(Python COMPONENTS Interpreter Development.Module Development.SABIModule REQUIRED)
+# target_link_libraries(touchpy Python::Module Python::SABIModule)
 
-# pybind11
-# .\vcpkg install pybind11
-#################################################################################################
-find_package(pybind11 REQUIRED)
-message(STATUS pybind11_INCLUDE_DIRS=${pybind11_INCLUDE_DIRS})
-target_include_directories(touchpy PRIVATE ${pybind11_INCLUDE_DIRS})
-target_link_libraries(touchpy pybind11::module)
+# find_package(Python COMPONENTS Interpreter Development REQUIRED)
+# target_link_libraries(touchpy Python::Python)
+# target_include_directories(touchpy PRIVATE ${Python_INCLUDE_DIRS})
 
 # TouchEngine-Windows
 # should come with clone of the repo (use git clone --recursive touchpy_url) 
 #################################################################################################
 target_link_directories(touchpy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/lib)
-target_link_libraries(touchpy TouchEngine)
+target_link_libraries(touchpy PRIVATE TouchEngine)
 target_include_directories(touchpy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/include)
+
 add_custom_command(TARGET touchpy POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin $<TARGET_FILE_DIR:touchpy>)
@@ -176,10 +155,12 @@ add_custom_command(TARGET touchloader POST_BUILD
 	${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin $<TARGET_FILE_DIR:touchloader>)
 
 
-# dependencies so touchpy depends on tocuhloader being built first
+# dependencies so touchpy depends on touchloader being built first
+#################################################################################################
 add_dependencies(touchpy touchloader)
 
 add_definitions(-DCMAKE_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
+
 
 # install
 #################################################################################################

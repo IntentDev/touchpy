@@ -625,6 +625,7 @@ void Comp::runUpdateLoop()
 	{
 		update();
 	}
+
 }
 
 void Comp::stopUpdateLoop()

@@ -1,78 +1,70 @@
-﻿
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/unique_ptr.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/function.h>
+
 #include "comp.h"
+#include "texturelink.h"
+#include "choplink.h"
+#include "datlink.h"
+#include "parlink.h"
 
-#include <texturelink.h>
-#include <choplink.h>
-#include <datlink.h>
-#include <parlink.h>
-
-
-#include <pybind11/pybind11.h>
-#include <pybind11/functional.h>
-#include <pybind11/stl.h>
 #include <memory>
 
+namespace nb = nanobind;
+using namespace nb::literals;
 
-namespace py = pybind11;
+int add(int a, int b) { return a + b; }
 
+NB_MODULE(touchpy, m) {
+    m.def("add", &add);
 
-
-PYBIND11_MODULE(touchpy, m) 
-{
-    m.doc() = "Comp: Loads a TouchDesigner .tox file and runs in process."; 
-
-    py::class_<Comp> comp(m, "Comp");
-    comp.def(py::init<>())
-		.def(py::init<std::string>())
-		.def("load_tox", &Comp::loadTox)
-		.def("loaded", &Comp::loaded)
-		.def("update", &Comp::update)
-        .def("start", &Comp::runUpdateLoop)
-        .def("stop", &Comp::stopUpdateLoop)
-        .def_property_readonly("input_textures", &Comp::inputTextureLinks, py::return_value_policy::reference)
-        .def_property_readonly("output_textures", &Comp::outputTextureLinks, py::return_value_policy::reference)
-        .def_property_readonly("input_chops", &Comp::inputChopLinks, py::return_value_policy::reference)
-        .def_property_readonly("output_chops", &Comp::outputChopLinks, py::return_value_policy::reference)
-        .def_property_readonly("input_dats", &Comp::inputDatLinks, py::return_value_policy::reference)
-        .def_property_readonly("output_dats", &Comp::outputDatLinks, py::return_value_policy::reference)
-  	    //.def("par_links", &Comp::parLinks, py::return_value_policy::reference)
+    nb::class_<Comp> comp(m, "Comp");
+    comp.def(nb::init<>())
+        .def(nb::init<const std::string&>(), nb::rv_policy::reference_internal)
+        .def("load_tox", &Comp::loadTox, nb::rv_policy::reference_internal)
+        .def("loaded", &Comp::loaded, nb::rv_policy::reference_internal)
+        .def("update", &Comp::update, nb::rv_policy::reference_internal)
+        .def("start", &Comp::runUpdateLoop, nb::rv_policy::reference_internal)
+        .def("stop", &Comp::stopUpdateLoop, nb::rv_policy::reference_internal)
+        .def_prop_ro("input_textures", &Comp::inputTextureLinks, nb::rv_policy::reference_internal)
+        .def_prop_ro("output_textures", &Comp::outputTextureLinks, nb::rv_policy::reference_internal)
+        .def_prop_ro("input_chops", &Comp::inputChopLinks, nb::rv_policy::reference_internal)
+        .def_prop_ro("output_chops", &Comp::outputChopLinks, nb::rv_policy::reference_internal)
+        .def_prop_ro("input_dats", &Comp::inputDatLinks, nb::rv_policy::reference_internal)
+        .def_prop_ro("output_dats", &Comp::outputDatLinks, nb::rv_policy::reference_internal)
+        //.def("par_links", &Comp::parLinks, nb::rv_policy::reference)
         ;
 
-    comp.def("set_on_frame_start_callback", [](
-        Comp& self,
-        py::function callback,
-        py::object userData)
+    comp.def("set_on_frame_callback", [](Comp& self, nb::callable pythonCallback, nb::object userData)
         {
-            auto userDataPtr = std::make_shared<py::object>(userData);
-            self.setOnFrameStartCallback(
-                [callback](Comp& comp, std::shared_ptr<void> userData)
+            auto userDataPtr = std::make_shared<nb::object>(userData);
+            self.setOnFrameStartCallback([pythonCallback](Comp& comp, std::shared_ptr<void> userData)
                 {
-                    auto userDataPyObj = *std::static_pointer_cast<py::object>(userData);
-                    callback(comp, userDataPyObj);
+                    auto& userDataPyObj = *std::static_pointer_cast<nb::object>(userData);
+                    pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userDataPyObj);
                 },
                 userDataPtr);
         });
 
-    py::class_<DatLink> datLink(m, "DatLink");
-    datLink.def(py::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
-		.def("on_output_value_change", &DatLink::onOuputValueChange)
-		.def("get_table", &DatLink::getTable)
-		.def("get_string", &DatLink::getString)
-        .def("set_table", py::overload_cast<const DatLink::Table&>(&DatLink::set))
-		.def("set_string",py::overload_cast<const std::string&>(&DatLink::set))
-		.def("get_type", &DatLink::type)
-		.def("get_type_description", &DatLink::getTypeDescription)
-		;
+    nb::class_<DatLink> datLink(m, "DatLink");
+    datLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+        .def("on_output_value_change", &DatLink::onOuputValueChange)
+        .def("get_table", &DatLink::getTable)
+        .def("get_string", &DatLink::getString)
+        .def("set_table", nb::overload_cast<const DatLink::Table&>(&DatLink::set))
+        .def("set_string", nb::overload_cast<const std::string&>(&DatLink::set))
+        .def("get_type", &DatLink::type)
+        .def("get_type_description", &DatLink::getTypeDescription)
+        ;
 
-    py::class_<DatLinks> datLinks(m, "DatLinks");
-	datLinks.def(py::init<>())
+    nb::class_<DatLinks> datLinks(m, "DatLinks");
+    datLinks.def(nb::init<>())
         .def("num_links", &DatLinks::size)
         .def("link_names", &DatLinks::getLinkNames)
-		.def("__getitem__", [](DatLinks& self, const std::string& name) { return self.getLinkByName(name); }, py::return_value_policy::reference)
-        .def("__getitem__", [](DatLinks& self, size_t index) { return self.getLinkByIndex(index); }, py::return_value_policy::reference)
-		;
-
+        .def("__getitem__", [](DatLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference)
+        .def("__getitem__", [](DatLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference)
+        ;
 
 
 }
-

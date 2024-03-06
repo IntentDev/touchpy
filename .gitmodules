@@ -1,3 +1,6 @@
 [submodule "TouchEngine-Windows"]
 	path = external/TouchEngine-Windows
 	url = https://github.com/TouchDesigner/TouchEngine-Windows.git
+[submodule "ext/nanobind"]
+	path = external/nanobind
+	url = https://github.com/wjakob/nanobind
