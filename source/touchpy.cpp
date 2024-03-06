@@ -45,7 +45,8 @@ NB_MODULE(touchpy, m) {
                     pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userDataPyObj);
                 },
                 userDataPtr);
-        });
+        }
+    );
 
     nb::class_<DatLink> datLink(m, "DatLink");
     datLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
