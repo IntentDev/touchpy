@@ -225,7 +225,7 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 {
 	//if (doubleBufferOutputs_)
 	//{
-	//	for (auto& chop : outputChopLinks_)
+	//	for (auto& chop : outChopLinks_)
 	//	{
 	//		chop->updateTeBuffer();
 	//		chop->swapTeBuffers();
@@ -323,7 +323,7 @@ Comp::onLinkEventValueChange(const char* identifier)
 		{
 			if (doubleBufferOutputs_)
 			{
-				ChopLink& chopLink = *outputChopLinks_->getLinkByIdentifier(link->identifier);
+				OutChopLink& chopLink = *outChopLinks_->getLinkByIdentifier(link->identifier);
 				chopLink.updateTeBuffer();
 				chopLink.swapTeBuffers();
 			}
@@ -393,14 +393,14 @@ Comp::applyLayoutChange()
 {
 	std:: cout << "Applying layout change" << std::endl;
 
-	outputTextureLinks_ = std::make_unique<TextureLinks>(instance_, renderer_->teContext(), physicalDevice_, device_);
-	inputTextureLinks_ = std::make_unique<TextureLinks>(instance_, renderer_->teContext(), physicalDevice_, device_);
+	inTextureLinks_ = std::make_unique<InTextureLinks>(instance_, renderer_->teContext(), physicalDevice_, device_);
+	outTextureLinks_ = std::make_unique<OutTextureLinks>(instance_, renderer_->teContext(), physicalDevice_, device_);
 
-	outputChopLinks_ = std::make_unique<ChopLinks>(instance_);
-	inputChopLinks_ = std::make_unique<ChopLinks>(instance_);
-	
-	outputDatLinks_ = std::make_unique<DatLinks>(instance_);
-	inputDatLinks_ = std::make_unique<DatLinks>(instance_);
+	inChopLinks_ = std::make_unique<InChopLinks>(instance_);
+	outChopLinks_ = std::make_unique<OutChopLinks>(instance_);
+
+	inDatLinks_ = std::make_unique<InDatLinks>(instance_);
+	outDatLinks_ = std::make_unique<OutDatLinks>(instance_);
 
 	parLinks_ = std::make_unique <ParLinkCollection>(instance_);
 
@@ -436,31 +436,29 @@ Comp::applyLayoutChange()
 							
 							if (info->type == TELinkTypeTexture)
 							{
-								if (info->scope == TEScopeOutput)
-									outputTextureLinks_->addLink(info);
-									//outputTextureLinks_->addLink(info);
-								
-								else if (info->scope == TEScopeInput)
-									inputTextureLinks_->addLink(info);
-									//inputTextureLinks_->addLink(info);
+								if (info->scope == TEScopeInput)
+									inTextureLinks_->addLink(info);
+
+								else if (info->scope == TEScopeOutput)
+									outTextureLinks_->addLink(info);
 							}
 
 							if (info->type == TELinkTypeFloatBuffer)
 							{
-								if (info->scope == TEScopeOutput)
-									outputChopLinks_->addLink(info);
-								
-								else if (info->scope == TEScopeInput)
-									inputChopLinks_->addLink(info);
+								if (info->scope == TEScopeInput)
+									inChopLinks_->addLink(info);
+
+								else if (info->scope == TEScopeOutput)
+									outChopLinks_->addLink(info);
 							}
 
 							if (info->type == TELinkTypeStringData)
 							{
-								if (info->scope == TEScopeOutput)
-									outputDatLinks_->addLink(info);
-								
-								else if (info->scope == TEScopeInput)
-									inputDatLinks_->addLink(info);
+								if (info->scope == TEScopeInput)
+									inDatLinks_->addLink(info);
+
+								else if (info->scope == TEScopeOutput)
+									outDatLinks_->addLink(info);
 							}
 
 							if (info->domain == TELinkDomainParameter)
@@ -474,25 +472,6 @@ Comp::applyLayoutChange()
 		}
 	}
 
-	//for (auto& par : parLinks_->getLinks())
-	//{
-	//	std::cout << "Par: " << par.first << std::endl;
-	//}
-
-	//auto scale = std::visit(visitor<double>, (*parLinks_)["Scale"].get());
-	//if (scale)
-	//	std::cout << "Scale: " << scale.value() << std::endl;
-	//else
-	//	std::cout << "Scale: " << "not found" << std::endl;
-
-	//double s = 2.0;
-	//(*parLinks_)["Scale"].set(s);
-
-	//// not safe
-	//double scale2 = std::get<double>((*parLinks_)["Scale"].get());
-	//std::cout << "Scale: " << scale2 << std::endl;
-
-	//std::cout << "setInFrame true after layout change" << std::endl;
 	setInFrame(true);
 	TEResult result = TEInstanceStartFrameAtTime(instance_, 0, 0, false);
 	if (result != TEResultSuccess)
@@ -533,7 +512,7 @@ Comp::update()
 
 		applyOutputTextureChange();
 		applyOutputFloatBufferChange();
-		applyOutputStringDataChange();
+		//applyOutputStringDataChange();
 
 		if (onFrameStartCallback_)
 			onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
@@ -541,26 +520,26 @@ Comp::update()
 		//if(updateCallback_)
 		//	updateCallback_(updateCallbackUserData_);
 
-		for (size_t i = 0; i < inputTextureLinks_->size() && i < outputTextureLinks_->size(); ++i)
+		for (size_t i = 0; i < inTextureLinks_->size() && i < outTextureLinks_->size(); ++i)
 		{
-			auto outputTex = (*outputTextureLinks_)[i].currentTexture();
-			auto& inputTexLink = (*inputTextureLinks_)[i];
+			auto outTex = (*outTextureLinks_)[i].currentTexture();
+			auto& inTexLink = (*inTextureLinks_)[i];
 
-			inputTexLink.copyCudaMemoryToInputTexture(
-				outputTex->cudaMemory(),
-				outputTex->format(),
-				outputTex->extent(),
-				outputTex->cudaExtSemaphore(),
-				outputTex->signalValue(),
+			inTexLink.copyCudaMemoryToInputTexture(
+				outTex->cudaMemory(),
+				outTex->format(),
+				outTex->extent(),
+				outTex->cudaExtSemaphore(),
+				outTex->signalValue(),
 				cudaStream_);
 			
-			inputTexLink.transferTextureToInputLink(renderer_->teContext());
+			inTexLink.transferTextureToInputLink(renderer_->teContext());
 		}
 
-		//for (size_t i = 0; i < inputChopLinks_->size() && i < outputChopLinks_->size(); ++i)
+		//for (size_t i = 0; i < inChopLinks_->size() && i < outChopLinks_->size(); ++i)
 		//{
-		//	auto& outputChop = (*outputChopLinks_)[i];
-		//	auto& inputChop = (*inputChopLinks_)[i];
+		//	auto& outputChop = (*outChopLinks_)[i];
+		//	auto& inputChop = (*inChopLinks_)[i];
 		//	if (outputChop.isUpdated())
 		//	{
 		//		inputChop.set(outputChop.channelData(), outputChop.valueCount(), outputChop.rate(), outputChop.names());
@@ -572,10 +551,14 @@ Comp::update()
 		//	auto& outputDatLink = (*outputDatLinks_)[i];
 		//	auto& inputDatLink = (*inputDatLinks_)[i];
 
+		//	//if (outputDatLink.type() == DatLink::DatLinkType::Table)
+		//	//	inputDatLink.set(outputDatLink.getTable());
+		//	//else
+		//	//	inputDatLink.set(outputDatLink.getString());
+
 		//	if (outputDatLink.type() == DatLink::DatLinkType::Table)
-		//		inputDatLink.set(outputDatLink.getTable());
-		//	else
-		//		inputDatLink.set(outputDatLink.getString());
+		//		//inputDatLink.set(outputDatLink.asTable());
+		//		inputDatLink.set(outputDatLink.asString());
 		//}
 
 		static float testFloat = 0.0f;
@@ -638,7 +621,7 @@ Comp::applyOutputTextureChange()
 {
 	for (const auto& identifier : changedOutputTextures_)
 	{
-		auto& textureLink = *outputTextureLinks_->getLinkByIdentifier(identifier);
+		auto& textureLink = *outTextureLinks_->getLinkByIdentifier(identifier);
 		textureLink.onOutputTextureChange(cudaStream_);
 	}
 }
@@ -650,7 +633,7 @@ Comp::applyOutputFloatBufferChange()
 	{
 		for (const auto& identifier : changedOutputFloatBuffers_)
 		{
-			auto& chop = *outputChopLinks_->getLinkByIdentifier(identifier);
+			auto& chop = *outChopLinks_->getLinkByIdentifier(identifier);
 			chop.onOuputValueChange();
 		}
 	}
@@ -658,7 +641,7 @@ Comp::applyOutputFloatBufferChange()
 	{
 		for (const auto& identifier : changedOutputFloatBuffers_)
 		{
-			auto& chop = *outputChopLinks_->getLinkByIdentifier(identifier);
+			auto& chop = *outChopLinks_->getLinkByIdentifier(identifier);
 			chop.readTeBuffer();
 		}
 	}
@@ -670,7 +653,7 @@ Comp::applyOutputStringDataChange()
 	for (const auto& identifier : changedOutputStringData_)
 	{
 		//std::cout << "OutputStringDataChange: " << identifier << std::endl;
-		auto& datLink = *outputDatLinks_->getLinkByIdentifier(identifier);
+		auto& datLink = *outDatLinks_->getLinkByIdentifier(identifier);
 		datLink.onOuputValueChange();
 	}
 }

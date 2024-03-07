@@ -31,23 +31,49 @@ class ExampleRunComp:
 			comp.stop()
 			return
 
-		comp.input_chops[0].from_numpy(this.test_array)
+		comp.in_chops[0].from_numpy(this.test_array)
 		this.test_array += 1
 
 		# get a reference to the numpy array, some functions that do not copy 
 		# will not work with this passed as an argument, such as ChopLink.from_numpy() 
 		# faster than a copy though for large arrays... good for read only operations
-		chans1_ref = comp.output_chops['chopOut1'].as_numpy_ref() 
+		chans1_ref = comp.out_chops['chopOut1'].as_numpy_ref() 
+		# comp.in_chops[1].from_numpy(chans1) # this will not work!
 
-		chans1 = comp.output_chops[1].as_numpy()
-		comp.input_chops[1].from_numpy(chans1)
+		chans1 = comp.out_chops[1].as_numpy()
+		comp.in_chops[1].from_numpy(chans1) # this will work!
 
-		chans2 = comp.output_chops[2].as_numpy()
-		print(chans2)
+		chans2 = comp.out_chops[2].as_numpy()
+		# print(chans2)
+
+		# comp.in_dats[0].from_string(f"Hello World! frame: {this.frame}")
+				
+				
+		datTable = tp.DatTable()
+		testList = [['g', 'b', 'c'], ['g', 'h', 'i'], ['t', 'w', 'a']]
+		datTable.from_list(testList)
+
+		# comp.in_dats['datIn2'].from_table(datTable)
+		comp.in_dats['datIn2'].from_list(testList)
+
+		datOut1 = comp.out_dats['datOut1']
+		if (datOut1 is not None):
+			# print(datOut1.type_desc(), datOut1.as_string())
+			# print(datOut1.as_table().row(0))
+			# print(datOut1.as_table().row(1))
+			# print(datOut1.as_table().col(0))
+			# print(datOut1.as_table().cell(2,2))
+			# print(datOut1.as_table().as_list())
+			pass
+			
+		datOut2 = comp.out_dats[1]
+		if (datOut2 is not None):
+			# print(datOut2.type_desc(), datOut2.as_string())
+			# print(datOut2.as_table().as_list())
+			pass
+		
 
 
-		comp.input_dats[0].set_string(f"Hello World! frame: {this.frame}")
-		comp.input_dats['datIn2'].set_string(f"Hello Again! frame: {this.frame}")
 
 
 		this.frame += 1
@@ -56,6 +82,10 @@ class ExampleRunComp:
 		comp = tp.Comp(tox_path)
 		comp.set_on_frame_callback(self.on_frame, self)
 		comp.start()
+
+		datTable = tp.DatTable()
+		datTable.from_list([['a', 'b', 'c'], [1, 2.3, 3], ['g', 'h', 'i']], True)
+		print(datTable.as_list())
 
 		# del(comp)
 		# while not (keyboard.is_pressed('q')):

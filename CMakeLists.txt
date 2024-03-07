@@ -1,5 +1,4 @@
-﻿# CMakeList.txt : CMake project for touchpy, include source and define
-# project specific logic here.
+﻿# CMakeList.txt : CMake project for touchpy
 #
 cmake_minimum_required (VERSION 3.21)
 
@@ -11,9 +10,9 @@ endif()
 
 set(CMAKE_CUDA_ARCHITECTURES 75;80;86;89)
 
-# set cpp staandard for all targets unless otherwise specified 
+# set cpp standard for all targets unless otherwise specified 
 # with target_compile_features() or set_property()
-set(CMAKE_CXX_STANDARD 17) # need to upgrade CUDA to 12.1 to use C++20, also need to check if nanobind supports C++20
+set(CMAKE_CXX_STANDARD 17) # need to upgrade CUDA to 12.1 to use C++20
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
