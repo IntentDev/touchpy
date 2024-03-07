@@ -1,9 +1,12 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/unique_ptr.h>
+#include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/string_view.h>
 #include <nanobind/stl/vector.h>
 #include <nanobind/stl/function.h>
+#include <nanobind/stl/variant.h>
+//#include <nanobind/stl/optional.h>
 #include <nanobind/ndarray.h>
 
 #include "comp.h"
@@ -65,7 +68,27 @@ DatTable tableFromList(const nb::list& list, bool cast = false)
 	return table;
 }
 
-
+//nb::object parLinkValueToPyObject(const ParLinkValue& value) {
+//	return std::visit([](auto&& arg) -> nb::object {
+//		using T = std::decay_t<decltype(arg)>;
+//		if constexpr (std::is_same_v<T, bool>) {
+//			return nb::cast(arg);
+//		}
+//		else if constexpr (std::is_same_v<T, std::string>) {
+//			return nb::cast(arg);
+//		}
+//		else if constexpr (std::is_same_v<T, int32_t>) {
+//			return nb::cast(arg);
+//			// Handle other types similarly...
+//		}
+//		else if constexpr (std::is_same_v<T, double>) {
+//			return nb::cast(arg);
+//		}
+//		else {
+//			throw std::runtime_error("Unsupported type in ParLinkValue variant");
+//		}
+//		}, value);
+//}
 
 
 NB_MODULE(touchpy, m)
@@ -90,7 +113,7 @@ NB_MODULE(touchpy, m)
 		.def_prop_ro("out_chops", &Comp::outChopLinks, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_dats", &Comp::inDatLinks, nb::rv_policy::reference_internal)
 		.def_prop_ro("out_dats", &Comp::outDatLinks, nb::rv_policy::reference_internal)
-		.def_prop_ro("par_links", &Comp::parLinks, nb::rv_policy::reference_internal)
+		.def_prop_ro("par", &Comp::parLinks, nb::rv_policy::reference_internal)
 		;
 
 	comp.def("set_on_frame_callback", [](Comp& self, nb::callable pythonCallback, nb::object userData)
@@ -113,6 +136,7 @@ NB_MODULE(touchpy, m)
 	nb::class_<OutChopLink> outChopLink(m, "OutChopLink");
 	outChopLink.doc() = "Represents a in or out CHOP in a TouchDesigner component";
 	outChopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
+	outChopLink.def("chan_names", &OutChopLink::names, nb::rv_policy::reference_internal);
 
 	outChopLink.def("as_numpy", [](OutChopLink& self) 
 		{  
@@ -134,8 +158,8 @@ NB_MODULE(touchpy, m)
 	outChopLinks.def(nb::init<>())
 		.def("num_links", &OutChopLinks::size)
 		.def("link_names", &OutChopLinks::getLinkNames)
-		.def("__getitem__", [](OutChopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference)
-		.def("__getitem__", [](OutChopLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference)
+		.def("__getitem__", [](OutChopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](OutChopLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
 
 	nb::class_<InChopLink> inChopLink(m, "InChopLink");
@@ -160,8 +184,8 @@ NB_MODULE(touchpy, m)
 	inChopLinks.def(nb::init<>())
 		.def("num_links", &InChopLinks::size)
 		.def("link_names", &InChopLinks::getLinkNames)
-		.def("__getitem__", [](InChopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference)
-		.def("__getitem__", [](InChopLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference)
+		.def("__getitem__", [](InChopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](InChopLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
 
 
@@ -217,8 +241,8 @@ NB_MODULE(touchpy, m)
 	inDatLinks.def(nb::init<>())
 		.def("num_links", &InDatLinks::size)
 		.def("link_names", &InDatLinks::getLinkNames)
-		.def("__getitem__", [](InDatLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference)
-		.def("__getitem__", [](InDatLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference)
+		.def("__getitem__", [](InDatLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](InDatLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
 
 	nb::class_<OutDatLink> outDatLink(m, "OutDatLink");
@@ -233,8 +257,50 @@ NB_MODULE(touchpy, m)
 	outDatLinks.def(nb::init<>())
 		.def("num_links", &OutDatLinks::size)
 		.def("link_names", &OutDatLinks::getLinkNames)
-		.def("__getitem__", [](OutDatLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference)
-		.def("__getitem__", [](OutDatLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference)
+		.def("__getitem__", [](OutDatLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](OutDatLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
 
-}
+	// ParLinks
+	//--------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------
+	nb::class_<Int2> int2(m, "Int2");
+	int2.def(nb::init<int32_t, int32_t>()).def_rw("x", &Int2::x).def_rw("y", &Int2::y);
+
+	nb::class_<Int3> int3(m, "Int3");
+	int3.def(nb::init<int32_t, int32_t>()).def_rw("x", &Int3::x).def_rw("y", &Int3::y).def_rw("z", &Int3::z);
+
+	nb::class_<Int4> int4(m, "Int4");
+	int4.def(nb::init<int32_t, int32_t>()).def_rw("x", &Int4::x).def_rw("y", &Int4::y).def_rw("z", &Int4::z).def_rw("w", &Int4::w);
+
+	nb::class_<Double2> double2(m, "Float2");
+	double2.def(nb::init<double, double>()).def_rw("x", &Double2::x).def_rw("y", &Double2::y);
+
+	nb::class_<Double3> double3(m, "Float3");
+	double3.def(nb::init<double, double, double>()).def_rw("x", &Double3::x).def_rw("y", &Double3::y).def_rw("z", &Double3::z);
+
+	nb::class_<Double4> double4(m, "Float4");
+	double4.def(nb::init<double, double, double, double>())
+		.def_rw("x", &Double4::x).def_rw("y", &Double4::y).def_rw("z", &Double4::z).def_rw("w", &Double4::w);
+
+	nb::class_<ColorRGBA> colorRGBA(m, "Color");
+	colorRGBA.def(nb::init<double, double, double, double>(), "r"_a = 1.0, "g"_a = 1.0, "b"_a = 1.0, "a"_a = 1.0)
+		.def_rw("r", &ColorRGBA::r).def_rw("g", &ColorRGBA::g).def_rw("b", &ColorRGBA::b).def_rw("a", &ColorRGBA::a);
+
+	nb::class_ <ParLink> parLink(m, "ParLink");
+	parLink.doc() = "Represents a parameter in a TouchDesigner component";
+	parLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+		.def("set", &ParLink::set)
+		.def("get", &ParLink::get)
+		.def_prop_rw("val", &ParLink::get, &ParLink::set)
+		;
+
+	nb::class_<ParLinkCollection> parLinks(m, "ParLinkCollection");
+	parLinks.doc() = "Represents a collection of parameters in a TouchDesigner component";
+	parLinks.def(nb::init<>())
+		.def("count", &ParLinkCollection::size)
+		.def("names", &ParLinkCollection::getParNames)
+		.def("__getitem__", [](ParLinkCollection& self, const std::string& name) -> std::shared_ptr<ParLink> 
+			{ return self.getParLinkByName(name); }, nb::rv_policy::reference_internal)
+		;
+}q

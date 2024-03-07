@@ -561,9 +561,9 @@ Comp::update()
 		//		inputDatLink.set(outputDatLink.asString());
 		//}
 
-		static float testFloat = 0.0f;
-		(*parLinks_)["Float"].set(testFloat);
-		testFloat += 1.1f;
+		//static float testFloat = 0.0f;
+		//(*parLinks_)["Float"].set(testFloat);
+		//testFloat += 1.1f;
 
 		//std::cout << "setInFrame true after update" << std::endl;
 		setInFrame(true);

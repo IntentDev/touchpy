@@ -13,6 +13,30 @@
 
 // TODO - import Color class from Vision
 
+struct Int2
+{
+	int32_t x, y;
+	Int2(int32_t x = 0, int32_t y = 0) : x(x), y(y) { }
+};
+static_assert(sizeof(Int2) == sizeof(int32_t) * 2, "Int2 size does not match expected size.");
+static_assert(std::is_standard_layout_v<Int2>, "Int2 must be standard layout.");
+
+struct Int3
+{
+	int32_t x, y, z;
+	Int3(int32_t x = 0, int32_t y = 0, int32_t z = 0) : x(x), y(y), z(z) { }
+};
+static_assert(sizeof(Int3) == sizeof(int32_t) * 3, "Int3 size does not match expected size.");
+static_assert(std::is_standard_layout_v<Int3>, "Int3 must be standard layout.");
+
+struct Int4
+{
+	int32_t x, y, z, w;
+	Int4(int32_t x = 0, int32_t y = 0, int32_t z = 0, int32_t w = 0) : x(x), y(y), z(z), w(w) { }
+};
+static_assert(sizeof(Int4) == sizeof(int32_t) * 4, "Int4 size does not match expected size.");
+static_assert(std::is_standard_layout_v<Int4>, "Int4 must be standard layout.");
+
 struct Double2
 {
 	double x, y;
@@ -40,35 +64,10 @@ static_assert(std::is_standard_layout_v<Double4>, "Double4 must be standard layo
 struct ColorRGBA
 {
 	double r, g, b, a;
-	ColorRGBA(double r = 0.0, double g = 0.0, double b = 0.0, double a = 0.0) : r(r), g(g), b(b), a(a) { }
+	ColorRGBA(double r = 0.0, double g = 0.0, double b = 0.0, double a = 1.0) : r(r), g(g), b(b), a(a) { }
 };
 static_assert(sizeof(ColorRGBA) == sizeof(double) * 4, "ColorRGBA size does not match expected size.");
 static_assert(std::is_standard_layout_v<ColorRGBA>, "ColorRGBA must be standard layout.");
-
-struct Int2
-{
-	int32_t x, y;
-	Int2(int32_t x = 0, int32_t y = 0) : x(x), y(y) { }
-};
-static_assert(sizeof(Int2) == sizeof(int32_t) * 2, "Int2 size does not match expected size.");
-static_assert(std::is_standard_layout_v<Int2>, "Int2 must be standard layout.");
-
-struct Int3
-{
-	int32_t x, y, z;
-	Int3(int32_t x = 0, int32_t y = 0, int32_t z = 0) : x(x), y(y), z(z) { }
-};
-static_assert(sizeof(Int3) == sizeof(int32_t) * 3, "Int3 size does not match expected size.");
-static_assert(std::is_standard_layout_v<Int3>, "Int3 must be standard layout.");
-
-struct Int4
-{
-	int32_t x, y, z, w;
-	Int4(int32_t x = 0, int32_t y = 0, int32_t z = 0, int32_t w = 0) : x(x), y(y), z(z), w(w) { }
-};
-static_assert(sizeof(Int4) == sizeof(int32_t) * 4, "Int4 size does not match expected size.");
-static_assert(std::is_standard_layout_v<Int4>, "Int4 must be standard layout.");
-
 
 using ParLinkValue = std::variant<
 	bool,
@@ -90,8 +89,8 @@ public:
 	ParLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) :  Link<ParLink>(instance, linkInfo) { }
 	virtual ~ParLink() = default;
 
-	virtual void set(ParLinkValue value) = 0;
-	virtual ParLinkValue get() = 0;
+	virtual void set(ParLinkValue value) { }
+	virtual ParLinkValue get() { return ParLinkValue(); }
 
 
 protected:
@@ -474,18 +473,35 @@ public:
 			break;
 		}
 	}
-
 	void reset() { pars.clear(); }
+	std::unordered_map<std::string, std::shared_ptr<ParLink>>& getLinks() { return pars; }
+
+
+	const std::shared_ptr<ParLink> getParLinkByName(const std::string& name) const
+	{
+		return pars.at(name);
+	}
 
 	ParLink& operator[](const std::string& name) {
 		return *pars[name];
 	}
 
-	std::unordered_map<std::string, std::unique_ptr<ParLink>>& getLinks() { return pars; }
+	std::vector<std::string_view> getParNames() const
+	{
+		std::vector<std::string_view> names;
+		for (const auto& [name, link] : pars)
+		{
+			names.push_back(name);
+		}
+		return names;
+	}
+
+	size_t size() const { return pars.size(); }
+
 
 private:
 	TouchObject<TEInstance> instance_;
-	std::unordered_map<std::string, std::unique_ptr<ParLink>> pars;
+	std::unordered_map<std::string, std::shared_ptr<ParLink>> pars;
 
 	void addDoubleParLink(TouchObject<TELinkInfo> linkInfo)
 	{

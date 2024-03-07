@@ -40,13 +40,17 @@ class ExampleRunComp:
 		chans1_ref = comp.out_chops['chopOut1'].as_numpy_ref() 
 		# comp.in_chops[1].from_numpy(chans1) # this will not work!
 
-		chans1 = comp.out_chops[1].as_numpy()
-		comp.in_chops[1].from_numpy(chans1) # this will work!
+		chans2 = comp.out_chops[1].as_numpy()
+		chans2_names = comp.out_chops[1].chan_names()
+		# print(chans2_names)
 
-		chans2 = comp.out_chops[2].as_numpy()
+		comp.in_chops[1].from_numpy(chans2) # this will work!
+		chans3 = comp.out_chops[2].as_numpy()
 		# print(chans2)
 
-		# comp.in_dats[0].from_string(f"Hello World! frame: {this.frame}")
+
+
+		comp.in_dats[0].from_string(f"Hello World! frame: {this.frame}")
 				
 				
 		datTable = tp.DatTable()
@@ -72,6 +76,21 @@ class ExampleRunComp:
 			# print(datOut2.as_table().as_list())
 			pass
 		
+		parNames = comp.par.names()
+		if (this.frame == 0):
+			for name in parNames:
+				print(f"{name}: {comp.par[name].val}")
+			
+		# rgba = comp.par['Rgba'].val
+		# rgba.r = .1
+		# rgba.g = .2
+		# rgba.b = .3
+		comp.par['Rgba'].val.a = .5 + this.frame * 0.01
+		# comp.par['Rgba'].val = tp.Color(0.1, 0.2, 0.3)
+
+		scale = comp.par['Scale']
+		scale.val = 0.0 + this.frame * 0.01
+		# print(scale.val)
 
 
 
@@ -83,9 +102,9 @@ class ExampleRunComp:
 		comp.set_on_frame_callback(self.on_frame, self)
 		comp.start()
 
-		datTable = tp.DatTable()
-		datTable.from_list([['a', 'b', 'c'], [1, 2.3, 3], ['g', 'h', 'i']], True)
-		print(datTable.as_list())
+		# datTable = tp.DatTable()
+		# datTable.from_list([['a', 'b', 'c'], [1, 2.3, 3], ['g', 'h', 'i']], True)
+		# print(datTable.as_list())
 
 		# del(comp)
 		# while not (keyboard.is_pressed('q')):
