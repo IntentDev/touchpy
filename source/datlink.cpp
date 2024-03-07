@@ -3,52 +3,125 @@
 #include <iostream>
 
 
-DatLink::DatLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo)
-	:	Link<DatLink>(instance, linkInfo)
+OutDatLink::OutDatLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo)
+	:	DatLink(instance, linkInfo)
 {
-	table_ = std::make_unique<Table>();
+	table_ = std::make_unique<DatTable>();
 }
 
-DatLink::~DatLink()
+OutDatLink::~OutDatLink()
 {
 }
 
-void
-DatLink::onOuputValueChange()
+const DatTable& 
+OutDatLink::asTable()
 {
 	TouchObject<TEObject> value;
 	TEResult result = TEInstanceLinkGetObjectValue(instance_, identifier().c_str(), TELinkValueCurrent, value.take());
-	// String data can be a TETable or TEString, so check the type
-	if (value && TEGetType(value) == TEObjectTypeTable)
+	if (result == TEResultSuccess)
 	{
-		type_ = DatLinkType::Table;
-		TouchObject<TETable> teTable;
-		teTable.reset();
-		teTable.set(static_cast<TETable*>(value.get()));
+		if (value && TEGetType(value) == TEObjectTypeTable)
+		{
+			teTable_.reset();
+			teTable_.set(static_cast<TETable*>(value.get()));
 
-		table_->numRows = static_cast<uint32_t>(TETableGetRowCount(teTable.get()));
-		table_->numCols = static_cast<uint32_t>(TETableGetColumnCount(teTable.get()));
-		table_->data.resize(static_cast<size_t>(table_->numRows * table_->numCols));
+			table_->numRows = static_cast<uint32_t>(TETableGetRowCount(teTable_.get()));
+			table_->numCols = static_cast<uint32_t>(TETableGetColumnCount(teTable_.get()));
+			table_->values.resize(static_cast<size_t>(table_->numRows * table_->numCols));
 
-		for (int32_t row = 0; row < table_->numRows; ++row)
-			for (int32_t col = 0; col < table_->numCols; ++col)
-				table_->data[static_cast<size_t>(row * table_->numCols + col)] = TETableGetStringValue(teTable.get(), row, col);
+			for (int32_t row = 0; row < table_->numRows; ++row)
+				for (int32_t col = 0; col < table_->numCols; ++col)
+					table_->values[static_cast<size_t>(row * table_->numCols + col)] = TETableGetStringValue(teTable_.get(), row, col);
 
-		//std::cout << "DatLink::updateOutput() " << getName() << " - rows / cols: " << TETableGetRowCount(teTable.get()) 
-		// << " / " << TETableGetColumnCount(teTable.get()) << std::endl;
+		}
+		else if (value && TEGetType(value) == TEObjectTypeString)
+		{
+			TouchObject<TEString> teString;
+			teString.reset();
+			teString.set(static_cast<TEString*>(value.get()));
+			table_->numRows = 1u;
+			table_->numCols = 1u;
+			table_->values.resize(1u);
+			table_->values[0] = teString->string;
+		}
 	}
-	else if (value && TEGetType(value) == TEObjectTypeString)
+	return *table_;
+}
+
+const std::string& 
+OutDatLink::asString()
+{
+	TouchObject<TEObject> value;
+	TEResult result = TEInstanceLinkGetObjectValue(instance_, identifier().c_str(), TELinkValueCurrent, value.take());
+	if (result == TEResultSuccess)
 	{
-		type_ = DatLinkType::String;
-		TouchObject<TEString> teString;
-		teString.reset();
-		teString.set(static_cast<TEString*>(value.get()));
-		string_ = teString->string;
+		if (value && TEGetType(value) == TEObjectTypeTable)
+		{
+			teTable_.reset();
+			teTable_.set(static_cast<TETable*>(value.get()));
+			auto numRows = static_cast<uint32_t>(TETableGetRowCount(teTable_.get()));
+			auto numCols = static_cast<uint32_t>(TETableGetColumnCount(teTable_.get()));
+			auto lastRow = numRows - 1;
+
+			string_ = "";
+			for (int32_t row = 0; row < numRows; ++row)
+			{
+				for (int32_t col = 0; col < numCols; ++col)
+				{
+					if (col > 0) string_ += "\t";
+					string_ += TETableGetStringValue(teTable_.get(), row, col);
+				}
+				if (row < lastRow) string_ += "\n";
+			}
+		}
+		else if (value && TEGetType(value) == TEObjectTypeString)
+		{
+			TouchObject<TEString> teString;
+			teString.reset();
+			teString.set(static_cast<TEString*>(value.get()));
+			string_ = teString->string;
+		}
+	}
+	return string_;
+}
+
+
+
+void
+OutDatLink::onOuputValueChange()
+{
+	TouchObject<TEObject> value;
+	TEResult result = TEInstanceLinkGetObjectValue(instance_, identifier().c_str(), TELinkValueCurrent, value.take());
+	if (result == TEResultSuccess)
+	{
+		if (value && TEGetType(value) == TEObjectTypeTable)
+		{
+			type_ = DatLinkType::Table;
+			//TouchObject<TETable> teTable;
+			teTable_.reset();
+			teTable_.set(static_cast<TETable*>(value.get()));
+
+			table_->numRows = static_cast<uint32_t>(TETableGetRowCount(teTable_.get()));
+			table_->numCols = static_cast<uint32_t>(TETableGetColumnCount(teTable_.get()));
+			table_->values.resize(static_cast<size_t>(table_->numRows * table_->numCols));
+
+			for (int32_t row = 0; row < table_->numRows; ++row)
+				for (int32_t col = 0; col < table_->numCols; ++col)
+					table_->values[static_cast<size_t>(row * table_->numCols + col)] = TETableGetStringValue(teTable_.get(), row, col);
+		}
+		else if (value && TEGetType(value) == TEObjectTypeString)
+		{
+			type_ = DatLinkType::String;
+			TouchObject<TEString> teString;
+			teString.reset();
+			teString.set(static_cast<TEString*>(value.get()));
+			string_ = teString->string;
+		}
 	}
 }
 
 void 
-DatLink::set(const Table& table)
+InDatLink::set(const DatTable& table)
 {
 	type_ = DatLinkType::Table;
 	TouchObject<TEObject> currentValue;
@@ -65,7 +138,7 @@ DatLink::set(const Table& table)
 		TETableResize(teTable, table.numRows, table.numCols);
 		for (int32_t col = 0; col < table.numRows; ++col)
 			for (int32_t row = 0; row < table.numCols; ++row)
-				TETableSetStringValue(teTable, row, col, table.data[static_cast<size_t>(row * table.numCols + col)].c_str());
+				TETableSetStringValue(teTable, row, col, table.values[static_cast<size_t>(row * table.numCols + col)].c_str());
 		
 		result = TEInstanceLinkSetTableValue(instance_, identifier_.c_str(), teTable);
 	}
@@ -75,7 +148,7 @@ DatLink::set(const Table& table)
 }
 
 void 
-DatLink::set(const char* string)
+InDatLink::set(const char* string)
 {
 	type_ = DatLinkType::String;
 	TEResult result = TEInstanceLinkSetStringValue(instance_, identifier_.c_str(), string);

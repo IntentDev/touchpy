@@ -36,12 +36,12 @@ public:
 	void runUpdateLoop();
 	void stopUpdateLoop();
 
-	TextureLinks& inputTextureLinks() { return *inputTextureLinks_; }
-	TextureLinks& outputTextureLinks() { return *outputTextureLinks_; }
-	ChopLinks& inputChopLinks() { return *inputChopLinks_; }
-	ChopLinks& outputChopLinks() { return *outputChopLinks_; }
-	DatLinks& inputDatLinks() { return *inputDatLinks_; }
-	DatLinks& outputDatLinks() { return *outputDatLinks_; }
+	InTextureLinks& inputTextureLinks() { return *inTextureLinks_; }
+	OutTextureLinks& outputTextureLinks() { return *outTextureLinks_; }
+	InChopLinks& inChopLinks() { return *inChopLinks_; }
+	OutChopLinks& outChopLinks() { return *outChopLinks_; }
+	InDatLinks& inDatLinks() { return *inDatLinks_; }
+	OutDatLinks& outDatLinks() { return *outDatLinks_; }
 	ParLinkCollection& parLinks() { return *parLinks_; }
 
 private:
@@ -90,12 +90,12 @@ private:
 	std::vector<std::string>           changedOutputFloatBuffers_;
 	std::vector<std::string>           changedOutputStringData_;
 
-	std::unique_ptr<TextureLinks>      inputTextureLinks_;
-	std::unique_ptr<TextureLinks>      outputTextureLinks_;
-	std::unique_ptr<ChopLinks>         inputChopLinks_;
-	std::unique_ptr<ChopLinks>         outputChopLinks_;
-	std::unique_ptr<DatLinks>          inputDatLinks_;
-	std::unique_ptr<DatLinks>          outputDatLinks_;
+	std::unique_ptr<InTextureLinks>    inTextureLinks_;
+	std::unique_ptr<OutTextureLinks>   outTextureLinks_;
+	std::unique_ptr<InChopLinks>       inChopLinks_;
+	std::unique_ptr<OutChopLinks>      outChopLinks_;
+	std::unique_ptr<InDatLinks>        inDatLinks_;
+	std::unique_ptr<OutDatLinks>       outDatLinks_;
 	std::unique_ptr<ParLinkCollection> parLinks_;
 
 	bool                               doubleBufferOutputs_ { false };

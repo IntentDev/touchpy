@@ -1,0 +1,17 @@
+{
+  "version": "0.1.1",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "python",
+      "name": "Python: Run example_run_comp.py",
+      "projectTarget": "ExampleRunComp",
+      "projectName": "TouchPy",
+      "pythonPath": "${command:python.path}",
+      "program": "${workspaceRoot}/test/example_run_comp.py",
+      "cwd": "${workspaceRoot}/test",
+      "args": [],
+      "request": "launch"
+    }
+  ]
+}
