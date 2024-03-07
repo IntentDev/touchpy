@@ -5,6 +5,7 @@
 #include "renderer.h"
 #include "common/cuda_helpers.h"
 #include <memory>
+#include <array>
 
 class TextureLink : public Link<TextureLink>
 {
@@ -25,6 +26,7 @@ public:
 
 	Texture* currentTexture() { return handleMap_[currentTextureHandle_]; }
 	const std::vector<std::unique_ptr<Texture>>& textures() const { return textures_; }
+	std::array<size_t, 3> shape();
 
 protected:
 	TouchObject<TEGraphicsContext> context_ { nullptr };
@@ -113,8 +115,9 @@ public:
 
 	void addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTexture* teTexture);
 	void onOutputTextureChange(cudaStream_t cudaStream_);
+	void* cudaMemory() { return static_cast<void*>(currentTexture()->cudaMemory()); }
 
-};
+};	
 
 class OutTextureLinks : public Links<OutTextureLinks, OutTextureLink>
 {

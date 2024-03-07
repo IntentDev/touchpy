@@ -6,8 +6,8 @@
 #include <nanobind/stl/vector.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/variant.h>
-//#include <nanobind/stl/optional.h>
 #include <nanobind/ndarray.h>
+
 
 #include "comp.h"
 #include "texturelink.h"
@@ -127,6 +127,45 @@ NB_MODULE(touchpy, m)
 				userDataPtr);
 		}
 	);
+	// TextureLinks
+	//--------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------
+
+	nb::class_<OutTextureLink> outTopLink(m, "OutTopLink");
+	outTopLink.doc() = "Represents an OutTOP in a TouchDesigner component";
+	outTopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
+	outTopLink.def("as_tensor", [](OutTextureLink& self) 
+		{ 
+			auto shape = self.shape();
+			// (numBytes, num_bytes_px * self.w, num_bytes_px)
+			const std::array<int64_t, 3> strides = { 
+				static_cast<int64_t>(shape[0] * shape[1] * shape[2]),
+				static_cast<int64_t>(shape[0] * shape[2]),
+				static_cast<int64_t>(shape[2])
+			};
+
+			nb::dlpack::dtype dtype;
+			dtype.code = static_cast<uint8_t>(nb::dlpack::dtype_code::UInt);
+			dtype.bits = 8;
+			dtype.lanes = 1;
+
+			void* data = self.cudaMemory();
+
+			//nb::pytorch, uint8_t, nb::ndim<3>, const size_t*, nb::handle, const int64_t*, nb::dlpack::dtype, int32_t, int32_t
+			return nb::ndarray<uint8_t, nb::ndim<3>>(
+				self.cudaMemory(),
+				3u, 
+				shape.data(),
+				nb::handle(),
+				strides.data(),
+				dtype,
+				nb::device::cuda::value,
+				0
+			);
+		}, nb::rv_policy::reference_internal);
+
+
+
 
 
 	// ChopLinks
@@ -303,4 +342,4 @@ NB_MODULE(touchpy, m)
 		.def("__getitem__", [](ParLinkCollection& self, const std::string& name) -> std::shared_ptr<ParLink> 
 			{ return self.getParLinkByName(name); }, nb::rv_policy::reference_internal)
 		;
-}q
+}

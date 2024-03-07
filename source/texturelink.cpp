@@ -15,6 +15,17 @@ TextureLink::TextureLink(
 
 TextureLink::~TextureLink() { }
 
+std::array<size_t, 3> TextureLink::shape()
+{
+	std::array<size_t, 3> extent { 0, 0, 4u };
+	auto currentTex = currentTexture();
+	extent[0] = static_cast<size_t>(currentTex->width());
+	extent[1] = static_cast<size_t>(currentTex->height());
+
+	return extent;
+}
+
+
 void 
 OutTextureLink::addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTexture* teTexture)
 {
