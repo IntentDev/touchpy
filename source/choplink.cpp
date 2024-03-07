@@ -3,16 +3,8 @@
 #include <iostream>
 #include <algorithm>
 
-
-
-ChopLink::ChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo)
-	:	Link<ChopLink>(instance, linkInfo) 
-{
-}
-
-ChopLink::~ChopLink() { }
-
-void ChopLink::onOuputValueChange()
+void 
+OutChopLink::onOuputValueChange()
 {
 	TouchObject<TEFloatBuffer> buffer;
 	if (TEInstanceLinkGetFloatBufferValue(instance_, identifier_.c_str(), TELinkValueCurrent, buffer.take()) == TEResultSuccess)
@@ -61,13 +53,13 @@ void ChopLink::onOuputValueChange()
 }
 
 void
-ChopLink::swapTeBuffers()
+OutChopLink::swapTeBuffers()
 {
 	activeTeBuffer_.fetch_xor(1, std::memory_order_release);
 }
 
 void
-ChopLink::updateTeBuffer()
+OutChopLink::updateTeBuffer()
 {
 
 	int bufferIndex = activeTeBuffer_.load(std::memory_order_acquire) ^ 1;
@@ -96,7 +88,8 @@ ChopLink::updateTeBuffer()
 
 }
 
-void ChopLink::readTeBuffer()
+void 
+OutChopLink::readTeBuffer()
 {
 	std::unique_lock<std::mutex> lock(mutex_);
 	cv_.wait(lock, [this] { return ready_; }); // Wait until data is ready
@@ -129,7 +122,7 @@ void ChopLink::readTeBuffer()
 }
 
 void 
-ChopLink::set(const std::vector<float>& data, uint32_t valueCount, double rate)
+InChopLink::set(const std::vector<float>& data, uint32_t valueCount, double rate)
 {
 	if (data.size() == 0 || valueCount == 0) return;
 	int32_t channelCount = static_cast<int32_t>(data.size() / valueCount);
@@ -142,7 +135,7 @@ ChopLink::set(const std::vector<float>& data, uint32_t valueCount, double rate)
 }
 
 void 
-ChopLink::set(const std::vector<float>& channels, uint32_t valueCount, double rate, const std::vector<std::string>& names)
+InChopLink::set(const std::vector<float>& channels, uint32_t valueCount, double rate, const std::vector<std::string>& names)
 {
 	if (channels.size() == 0 || valueCount == 0) return;
 	int32_t channelCount = static_cast<int32_t>(channels.size() / valueCount);
@@ -162,7 +155,7 @@ ChopLink::set(const std::vector<float>& channels, uint32_t valueCount, double ra
 }
 
 void 
-ChopLink::set(const std::vector<std::vector<float>>& channels, double rate)
+InChopLink::set(const std::vector<std::vector<float>>& channels, double rate)
 {
 	if (channels.size() == 0) return;
 	uint32_t valueCount = static_cast<uint32_t>(channels[0].size());
@@ -181,7 +174,7 @@ ChopLink::set(const std::vector<std::vector<float>>& channels, double rate)
 }
 
 void 
-ChopLink::set(const std::vector<std::vector<float>>& channels, double rate, const std::vector<std::string>& names)
+InChopLink::set(const std::vector<std::vector<float>>& channels, double rate, const std::vector<std::string>& names)
 {
 	if (channels.size() == 0) return;
 	uint32_t valueCount = static_cast<uint32_t>(channels[0].size());
@@ -204,7 +197,7 @@ ChopLink::set(const std::vector<std::vector<float>>& channels, double rate, cons
 }
 
 void 
-ChopLink::set(const float** values, int32_t channelCount, uint32_t valueCount, double rate, const char** names)
+InChopLink::set(const float** values, int32_t channelCount, uint32_t valueCount, double rate, const char** names)
 {
 	if (!values || channelCount <= 0 || valueCount == 0) return;
 
@@ -241,7 +234,7 @@ ChopLink::set(const float** values, int32_t channelCount, uint32_t valueCount, d
 }
 
 bool
-ChopLink::bufferCopyable(TouchObject<TEFloatBuffer> buffer, const char** names) const
+InChopLink::bufferCopyable(TouchObject<TEFloatBuffer> buffer, const char** names) const
 {
 	auto newChannelCount = TEFloatBufferGetChannelCount(buffer);
 	if (newChannelCount != channelCount_

@@ -2,8 +2,6 @@
 #include <TouchEngine/TEVulkan.h>
 
 
-
-
 TextureLink::TextureLink(
 	TouchObject<TEInstance> instance,
 	TouchObject<TEGraphicsContext> context,
@@ -17,7 +15,19 @@ TextureLink::TextureLink(
 
 TextureLink::~TextureLink() { }
 
-void TextureLink::addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTexture* teTexture)
+std::array<size_t, 3> TextureLink::shape()
+{
+	std::array<size_t, 3> extent { 0, 0, 4u };
+	auto currentTex = currentTexture();
+	extent[0] = static_cast<size_t>(currentTex->width());
+	extent[1] = static_cast<size_t>(currentTex->height());
+
+	return extent;
+}
+
+
+void 
+OutTextureLink::addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTexture* teTexture)
 {
 	if (scope_ != Link::Scope::Output)
 		return;
@@ -26,7 +36,8 @@ void TextureLink::addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanT
 	handleMap_[textures_.back()->textureHandle()] = textures_.back().get();
 }
 
-void TextureLink::onOutputTextureChange(cudaStream_t cudaStream_)
+void 
+OutTextureLink::onOutputTextureChange(cudaStream_t cudaStream_)
 {
 	if (scope_ != Link::Scope::Output)
 		return;
@@ -74,7 +85,8 @@ void TextureLink::onOutputTextureChange(cudaStream_t cudaStream_)
 
 }
 
-void TextureLink::setInputTexture(VkExtent2D extent, VkFormat format)
+void 
+InTextureLink::setInputTexture(VkExtent2D extent, VkFormat format)
 {
 	if (scope_ != Link::Scope::Input)
 		return;
@@ -86,7 +98,7 @@ void TextureLink::setInputTexture(VkExtent2D extent, VkFormat format)
 }
 
 void
-TextureLink::copyCudaMemoryToInputTexture(
+InTextureLink::copyCudaMemoryToInputTexture(
 	uint8_t* memory,
 	VkFormat format,
 	VkExtent2D extent,
@@ -119,7 +131,7 @@ TextureLink::copyCudaMemoryToInputTexture(
 }
 
 void
-TextureLink::transferTextureToInputLink(TouchObject<TEGraphicsContext> context)
+InTextureLink::transferTextureToInputLink(TouchObject<TEGraphicsContext> context)
 {
 	if (textures_.size() == 0 || scope_ != Link::Scope::Input)
 		return;
