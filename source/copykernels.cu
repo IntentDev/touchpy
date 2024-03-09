@@ -25,7 +25,7 @@ inline int divUp(int a, int b)
 }
 
 __global__ void
-copyFromSurfaceCharBRGA(uint8_t* dst, int width, int height, cudaSurfaceObject_t src)
+copyFromSurfaceCharBRGA(void* dst, int width, int height, cudaSurfaceObject_t src)
 {
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -36,13 +36,13 @@ copyFromSurfaceCharBRGA(uint8_t* dst, int width, int height, cudaSurfaceObject_t
 	uchar4 color;
 	surf2Dread(&color, src, x * 4, y, cudaBoundaryModeZero);
 
-	uchar4* dstPtr = (uchar4*)(dst + y * width * sizeof(uchar4));
+	uchar4* dstPtr = (uchar4*)((uint8_t*)dst + y * width * sizeof(uchar4));
 	dstPtr[x] = color;
 }
 
 cudaError_t
 memCopyFromSurfaceCharBRGA(
-	uint8_t* dst,
+	void* dst,
 	int width,
 	int height,
 	cudaSurfaceObject_t src,
@@ -56,7 +56,7 @@ memCopyFromSurfaceCharBRGA(
 }
 
 __global__ void
-copyToSurfaceCharBRGA(cudaSurfaceObject_t dst, int width, int height, const uint8_t* src)
+copyToSurfaceCharBRGA(cudaSurfaceObject_t dst, int width, int height, const void* src)
 {
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -64,7 +64,7 @@ copyToSurfaceCharBRGA(cudaSurfaceObject_t dst, int width, int height, const uint
 	if (x >= width || y >= height)
 		return;
 
-	uchar4 color = *(uchar4*)(src + x * 4 + y * width * sizeof(uchar4));
+	uchar4 color = *(uchar4*)((uint8_t*)src + x * 4 + y * width * sizeof(uchar4));
 	//uchar4 color { 255, 255, 255, 255 };
 
 	surf2Dwrite(color, dst, x * 4, y, cudaBoundaryModeZero);
@@ -75,7 +75,7 @@ memCopyToSurfaceCharBRGA(
 	cudaSurfaceObject_t dst,
 	int width,
 	int height,
-	const uint8_t* src,
+	const void* src,
 	cudaStream_t stream)
 {
 	dim3 blockSize(16, 16, 1);

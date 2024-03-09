@@ -1,10 +1,12 @@
 #pragma once
 
-#include <vri/vri.h>
-#include <TouchEngine/TouchEngine.h>
-#include <common/cuda_helpers.h>
+#include "vri/vri.h"
+#include "common/cuda_helpers.h"
+#include "cudamemory.h"
 
+#include <TouchEngine/TouchEngine.h>
 #include <vector>
+
 
 class Texture
 {
@@ -48,6 +50,9 @@ public:
 
 	void                     setSignalValue(uint64_t value) { signalValue_ = value; }
 
+	uint8_t 				numComponents() const  { return numComponents_; }
+	size_t					componentSize() const  { return componentSize_; }
+
 	void importSemaphore(TEInstance* teInstance, TETexture* teTexture);
 	void cmdTransitionImageLayout(
 		VkCommandBuffer cmdBuffer, 
@@ -58,10 +63,10 @@ public:
 	static void VulkanSemaphoreCallback(HANDLE semaphore, TEObjectEvent event, void* info);
 	static void VulkanTextureCallback(HANDLE texture, TEObjectEvent event, void* info);
 
-	void copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream);
+	void copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream, bool signal = false);
 
 	void copyCudaMemToImage(
-		uint8_t* memory,
+		void* memory,
 		cudaExternalSemaphore_t waitSemaphore, 
 		cudaExternalSemaphore_t signalSemaphore,
 		uint64_t waitValue,
@@ -69,7 +74,9 @@ public:
 		cudaStream_t stream
 	);
 
-	uint8_t* cudaMemory() const { return cudaBuffer_; }
+	void* cudaBuffer() const { return cudaBuffer_; }
+	size_t cudaBufferSize() const { return cudaBufferSize_; }
+	const CUDAMemory& cudaMemory() const { return cudaMemory_; }
 
 	void transferToInputLink(
 		TouchObject<TEInstance> teInstance, 
@@ -125,12 +132,16 @@ private:
 	//VkSemaphore             cudaCudaUpdateVkSemaphore_    { VK_NULL_HANDLE };
 	//cudaExternalSemaphore_t cudaExtCudaUpdateVkSemaphore_ { nullptr };
 
-	cudaExternalMemory_t    cudaExtImageMemory_           { nullptr };
-	cudaSurfaceObject_t     cudaSurface_                  { 0 };
-	cudaMipmappedArray_t    cudaMipmappedArray_			  { nullptr };
-	cudaArray_t             cudaArray_                    { nullptr };
-	uint8_t*                cudaBuffer_                   { nullptr };
+	cudaExternalMemory_t             cudaExtImageMemory_ { nullptr };
+	cudaSurfaceObject_t              cudaSurface_        { 0 };
+	cudaMipmappedArray_t             cudaMipmappedArray_ { nullptr };
+	cudaArray_t                      cudaArray_          { nullptr };
+	void*                            cudaBuffer_         { nullptr };
+	size_t                           cudaBufferSize_     { 0 };
 
+	uint8_t                          numComponents_      { 4 };
+	size_t                           componentSize_      { 1 };
+	CUDAMemory                       cudaMemory_         { };
 
 	void setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory);
 	void cudaImportTimelineSemaphore(HANDLE semaphoreHandle);
@@ -147,7 +158,7 @@ private:
 
 cudaError_t
 memCopyFromSurfaceCharBRGA(
-	uint8_t* dst,
+	void* dst,
 	int width,
 	int height,
 	cudaSurfaceObject_t src,
@@ -159,6 +170,6 @@ memCopyToSurfaceCharBRGA(
 	cudaSurfaceObject_t output,
 	int width,
 	int height,
-	const uint8_t* src,
+	const void* src,
 	cudaStream_t stream
 );

@@ -3,7 +3,7 @@
 #include "links.h"
 #include "texture.h"
 #include "renderer.h"
-#include "common/cuda_helpers.h"
+
 #include <memory>
 #include <array>
 
@@ -57,14 +57,16 @@ public:
 
 	//template <typename T> make template...
 	void copyCudaMemoryToInputTexture(
-		uint8_t* memory,
+		void* memory,
 		VkFormat format,
 		VkExtent2D extent,
 		cudaExternalSemaphore_t waitSemaphore,
 		uint64_t waitValue,
 		cudaStream_t stream);
 
-	void transferTextureToInputLink(TouchObject<TEGraphicsContext> context);
+	void transferTextureToInputLink();
+
+	void copyCudaMemory(void* memory, uint32_t width, uint32_t height, uint32_t numComponents, cudaStream_t stream);
 
 
 };
@@ -115,7 +117,7 @@ public:
 
 	void addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTexture* teTexture);
 	void onOutputTextureChange(cudaStream_t cudaStream_);
-	void* cudaMemory() { return static_cast<void*>(currentTexture()->cudaMemory()); }
+	const CUDAMemory& cudaMemory() { return currentTexture()->cudaMemory(); }
 
 };	
 

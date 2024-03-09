@@ -4,6 +4,8 @@
 #include <Windows.h>
 #include <algorithm>
 
+#include "cudamemory.h"
+
 Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* teInstance, TEVulkanTexture* texture)
 	:	physicalDevice_(physicalDevice_),
 		device_(device),
@@ -16,6 +18,8 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 
 	VkExternalMemoryHandleTypeFlagsKHR handleType = TEVulkanTextureGetHandleType(texture);
 	format_ = TEVulkanTextureGetFormat(texture);
+	numComponents_ = numCompsFromVkFormat(format_);
+	componentSize_ = componentSizeFromVkFormat(format_);
 	extent_ = {
 		static_cast<uint32_t> (TEVulkanTextureGetWidth(texture)),
 		static_cast<uint32_t> (TEVulkanTextureGetHeight(texture))
@@ -23,7 +27,7 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 
 	// need to create function that sets up pitch depending on format and sets the 
 	// format for cuda memory allocation
-	imagePitch_ = extent_.width * sizeof(uint8_t) * 4;
+	imagePitch_ = extent_.width * componentSize_ * numComponents_;
 
 	VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
 	externalMemoryImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
@@ -117,9 +121,9 @@ Texture::Texture(
 		format_(format)
 
 {
-	// need to create function that sets up pitch depending on format and sets the 
-	// format for cuda memory allocation
-	imagePitch_ = extent_.width * sizeof(uint8_t) * 4;
+	numComponents_ = numCompsFromVkFormat(format_);
+	componentSize_ = componentSizeFromVkFormat(format_);
+	imagePitch_ = extent_.width * componentSize_ * numComponents_;
 
 	std::cout << "Creating Texture to TE" << std::endl;
 
@@ -503,23 +507,24 @@ HANDLE Texture::getVkMemoryHandle(VkExternalMemoryHandleTypeFlagBitsKHR external
 	return handle;
 }
 
-void Texture::copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream)
+void Texture::copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream, bool signal)
 {
 	cudaVkSemaphoreWait(cudaExtSemaphore_, waitValue, stream);
 	CUDA_CHECK(memCopyFromSurfaceCharBRGA(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
+	//if (signal)
 	cudaVkSemaphoreSignal(cudaExtSemaphore_, ++waitValue, stream);
 	waitValue_ = waitValue;
 }
 
-void Texture::copyCudaMemToImage(uint8_t* memory,
+void Texture::copyCudaMemToImage(void* memory,
 	cudaExternalSemaphore_t waitSemaphore,
 	cudaExternalSemaphore_t signalSemaphore,
 	uint64_t waitValue, 
 	uint64_t signalValue,
 	cudaStream_t stream)
 {	
-	
-	cudaVkSemaphoreWait(waitSemaphore, waitValue, stream);
+	if (waitSemaphore)
+		cudaVkSemaphoreWait(waitSemaphore, waitValue, stream);
 	CUDA_CHECK(memCopyToSurfaceCharBRGA(cudaSurface_, extent_.width, extent_.height, memory, stream));
 	//waitValue_ = ++waitValue;
 
@@ -546,8 +551,13 @@ void Texture::setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, boo
 	cudaImportTimelineSemaphore(semaphoreHandle_);
 	cudaImportImageMemory(textureHandle_);
 
+	// we are only actually allocating memory for the cuda buffer if we are copying from the texture.
+	// In the case of allocation, the size is the actual number of bytes in the image, not imageSize_
+	// which is the size of the memory requirements for the VkImage
 	if (allocateMemory)
+	{
 		cudaAllocateMemory();
+	}
 }
 
 void Texture::cudaImportTimelineSemaphore(HANDLE semaphoreHandle)
@@ -611,7 +621,23 @@ void Texture::cudaImportImageMemory(HANDLE imageHandle)
 
 void Texture::cudaAllocateMemory()
 {
-	CUDA_CHECK(cudaMalloc((void**)&cudaBuffer_, imageSize_));
+	auto pixelSize = numComponents_ * componentSize_;
+	cudaBufferSize_ = extent_.width * extent_.height * pixelSize;
+
+	CUDA_CHECK(cudaMalloc((void**)&cudaBuffer_, cudaBufferSize_));
+
+	cudaMemory_.shape.width = extent_.width;
+	cudaMemory_.shape.height = extent_.height;
+	cudaMemory_.shape.numComponents = numComponents_;
+	cudaMemory_.shape.componentSize = componentSize_;
+	cudaMemory_.shape.dataType = cudaDataTypeFromVkFormat(format_);
+	cudaMemory_.shape.strides[0] = componentSize_;
+	cudaMemory_.shape.strides[1] = extent_.width * pixelSize;
+	cudaMemory_.shape.strides[2] = pixelSize;
+
+	cudaMemory_.ptr = cudaBuffer_;
+	cudaMemory_.size = cudaBufferSize_;
+
 }
 
 void Texture::cudaVkSemaphoreWait(cudaExternalSemaphore_t semaphore, uint64_t waitValue, cudaStream_t stream) {

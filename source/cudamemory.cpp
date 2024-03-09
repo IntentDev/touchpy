@@ -1,0 +1,101 @@
+#include "cudamemory.h"
+
+VkFormat vkFormatFromCUDAMemoryShape(CUDAMemoryShape shape)
+{
+	switch (shape.numComponents)
+	{
+	case 4:
+		switch (shape.dataType)
+		{
+		case CUDADataType::UInt8:   return VK_FORMAT_B8G8R8A8_UNORM;
+		case CUDADataType::Float32: return VK_FORMAT_R32G32B32A32_SFLOAT;
+		case CUDADataType::Float16: return VK_FORMAT_R16G16B16A16_SFLOAT;
+		}
+		break;
+	case 3:
+		switch (shape.dataType)
+		{
+		case CUDADataType::UInt8:   return VK_FORMAT_B8G8R8_UNORM;
+		case CUDADataType::Float32: return VK_FORMAT_R32G32B32_SFLOAT;
+		case CUDADataType::Float16: return VK_FORMAT_R16G16B16_SFLOAT;
+		}
+		break;
+	case 2:
+		switch (shape.dataType)
+		{
+		case CUDADataType::UInt8:   return VK_FORMAT_R8G8_UNORM;
+		case CUDADataType::Float32: return VK_FORMAT_R32G32_SFLOAT;
+		case CUDADataType::Float16: return VK_FORMAT_R16G16_SFLOAT;
+		}
+		break;
+	case 1:
+		switch (shape.dataType)
+		{
+		case CUDADataType::UInt8:   return VK_FORMAT_R8_UNORM;
+		case CUDADataType::Float32: return VK_FORMAT_R32_SFLOAT;
+		case CUDADataType::Float16: return VK_FORMAT_R16_SFLOAT;
+		}
+		break;
+	}
+	return VK_FORMAT_UNDEFINED;
+}
+
+CUDADataType cudaDataTypeFromVkFormat(VkFormat format)
+{
+	switch (format)
+	{
+	case VK_FORMAT_B8G8R8A8_UNORM:      return CUDADataType::UInt8;
+	case VK_FORMAT_R32G32B32A32_SFLOAT: return CUDADataType::Float32;
+	case VK_FORMAT_R16G16B16A16_SFLOAT: return CUDADataType::Float16;
+	case VK_FORMAT_B8G8R8_UNORM:        return CUDADataType::UInt8;
+	case VK_FORMAT_R32G32B32_SFLOAT:    return CUDADataType::Float32;
+	case VK_FORMAT_R16G16B16_SFLOAT:    return CUDADataType::Float16;
+	case VK_FORMAT_R8G8_UNORM:          return CUDADataType::UInt8;
+	case VK_FORMAT_R32G32_SFLOAT:       return CUDADataType::Float32;
+	case VK_FORMAT_R16G16_SFLOAT:       return CUDADataType::Float16;
+	case VK_FORMAT_R8_UNORM:            return CUDADataType::UInt8;
+	case VK_FORMAT_R32_SFLOAT:          return CUDADataType::Float32;
+	case VK_FORMAT_R16_SFLOAT:          return CUDADataType::Float16;
+	}
+	return CUDADataType::Undefined;
+}
+
+uint8_t numCompsFromVkFormat(VkFormat format)
+{
+	switch (format)
+	{
+	case VK_FORMAT_B8G8R8A8_UNORM:		return 4;
+	case VK_FORMAT_R32G32B32A32_SFLOAT: return 4;
+	case VK_FORMAT_R16G16B16A16_SFLOAT: return 4;
+	case VK_FORMAT_B8G8R8_UNORM:        return 3;
+	case VK_FORMAT_R32G32B32_SFLOAT:    return 3;
+	case VK_FORMAT_R16G16B16_SFLOAT:    return 3;
+	case VK_FORMAT_R8G8_UNORM:          return 2;
+	case VK_FORMAT_R32G32_SFLOAT:       return 2;
+	case VK_FORMAT_R16G16_SFLOAT:       return 2;
+	case VK_FORMAT_R8_UNORM:            return 1;
+	case VK_FORMAT_R32_SFLOAT:          return 1;
+	case VK_FORMAT_R16_SFLOAT:          return 1;
+	}
+	return 0;
+}
+
+size_t componentSizeFromVkFormat(VkFormat format)
+{
+	switch (format)
+	{
+	case VK_FORMAT_B8G8R8A8_UNORM:      return sizeof(uint8_t);
+	case VK_FORMAT_R32G32B32A32_SFLOAT: return sizeof(float);
+	case VK_FORMAT_R16G16B16A16_SFLOAT: return sizeof(uint16_t);
+	case VK_FORMAT_B8G8R8_UNORM:        return sizeof(uint8_t);
+	case VK_FORMAT_R32G32B32_SFLOAT:    return sizeof(float);
+	case VK_FORMAT_R16G16B16_SFLOAT:    return sizeof(uint16_t);
+	case VK_FORMAT_R8G8_UNORM:          return sizeof(uint8_t);
+	case VK_FORMAT_R32G32_SFLOAT:       return sizeof(float);
+	case VK_FORMAT_R16G16_SFLOAT:       return sizeof(uint16_t);
+	case VK_FORMAT_R8_UNORM:            return sizeof(uint8_t);
+	case VK_FORMAT_R32_SFLOAT:          return sizeof(float);
+	case VK_FORMAT_R16_SFLOAT:          return sizeof(uint16_t);
+	}
+	return 0;
+}

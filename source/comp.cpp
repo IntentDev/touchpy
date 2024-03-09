@@ -34,6 +34,7 @@ Comp::initComp()
 
 Comp::~Comp()
 {
+	CUDA_CHECK(cudaStreamDestroy(cudaStream_));
 	TE_CHECK(TEInstanceUnload(instance_));
 	vkDestroyFence(device_, submitFence_, nullptr);
 }
@@ -388,6 +389,24 @@ Comp::setInFrame(bool inFrame)
 	//std::cout << "setInFrame: " << std::boolalpha << inFrame << std::endl;
 }
 
+void Comp::setOnFrameStartCallback(
+	std::function<void(Comp&, std::shared_ptr<void>)> callback,
+	std::shared_ptr<void> userData)
+{
+	onFrameStartCallback_ = callback;
+	onFrameStartCallbackUserData_ = userData;
+}
+
+void Comp::runUpdateLoop()
+{
+	updateLoopRunning_ = true;
+	while (updateLoopRunning_)
+	{
+		update();
+	}
+
+}
+
 void 
 Comp::applyLayoutChange()
 {
@@ -510,60 +529,12 @@ Comp::update()
 
 		}
 
-		applyOutputTextureChange();
-		applyOutputFloatBufferChange();
-		//applyOutputStringDataChange();
+		applyValueChanges();
 
 		if (onFrameStartCallback_)
 			onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
 
-		//if(updateCallback_)
-		//	updateCallback_(updateCallbackUserData_);
-
-		for (size_t i = 0; i < inTextureLinks_->size() && i < outTextureLinks_->size(); ++i)
-		{
-			auto outTex = (*outTextureLinks_)[i].currentTexture();
-			auto& inTexLink = (*inTextureLinks_)[i];
-
-			inTexLink.copyCudaMemoryToInputTexture(
-				outTex->cudaMemory(),
-				outTex->format(),
-				outTex->extent(),
-				outTex->cudaExtSemaphore(),
-				outTex->signalValue(),
-				cudaStream_);
-			
-			inTexLink.transferTextureToInputLink(renderer_->teContext());
-		}
-
-		//for (size_t i = 0; i < inChopLinks_->size() && i < outChopLinks_->size(); ++i)
-		//{
-		//	auto& outputChop = (*outChopLinks_)[i];
-		//	auto& inputChop = (*inChopLinks_)[i];
-		//	if (outputChop.isUpdated())
-		//	{
-		//		inputChop.set(outputChop.channelData(), outputChop.valueCount(), outputChop.rate(), outputChop.names());
-		//	}
-		//}
-
-		//for (size_t i = 0; i < inputDatLinks_->size() && i < outputDatLinks_->size(); ++i)
-		//{
-		//	auto& outputDatLink = (*outputDatLinks_)[i];
-		//	auto& inputDatLink = (*inputDatLinks_)[i];
-
-		//	//if (outputDatLink.type() == DatLink::DatLinkType::Table)
-		//	//	inputDatLink.set(outputDatLink.getTable());
-		//	//else
-		//	//	inputDatLink.set(outputDatLink.getString());
-
-		//	if (outputDatLink.type() == DatLink::DatLinkType::Table)
-		//		//inputDatLink.set(outputDatLink.asTable());
-		//		inputDatLink.set(outputDatLink.asString());
-		//}
-
-		//static float testFloat = 0.0f;
-		//(*parLinks_)["Float"].set(testFloat);
-		//testFloat += 1.1f;
+		copyOutsToIns();
 
 		//std::cout << "setInFrame true after update" << std::endl;
 		setInFrame(true);
@@ -587,33 +558,16 @@ Comp::update()
 
 }
 
-void Comp::setOnFrameStartCallback(
-	std::function<void(Comp&, std::shared_ptr<void>)> callback,
-	std::shared_ptr<void> userData)
-{
-	onFrameStartCallback_ = callback;
-	onFrameStartCallbackUserData_ = userData;
-}
-
-//void Comp::setUpdateCallback(void(*callback)(void*), void* userData)
-//{
-//	updateCallback_ = callback;
-//	updateCallbackUserData_ = userData;
-//}
-
-void Comp::runUpdateLoop()
-{
-	updateLoopRunning_ = true;
-	while (updateLoopRunning_)
-	{
-		update();
-	}
-
-}
-
 void Comp::stopUpdateLoop()
 {
 	updateLoopRunning_ = false;
+}
+
+void Comp::applyValueChanges()
+{
+	applyOutputTextureChange();
+	applyOutputFloatBufferChange();
+	//applyOutputStringDataChange();
 }
 
 void 
@@ -622,7 +576,8 @@ Comp::applyOutputTextureChange()
 	for (const auto& identifier : changedOutputTextures_)
 	{
 		auto& textureLink = *outTextureLinks_->getLinkByIdentifier(identifier);
-		textureLink.onOutputTextureChange(cudaStream_);
+		//textureLink.onOutputTextureChange(cudaStream_);
+		textureLink.onOutputTextureChange(nullptr);
 	}
 }
 
@@ -658,19 +613,71 @@ Comp::applyOutputStringDataChange()
 	}
 }
 
-void 
-Comp::setInputTextures()
+
+void Comp::copyOutsToIns()
 {
+	//copyOutTopsToInTops();
+	//copyOutChopsToInChops(); // requires applyOutputFloatBufferChange() to be called first
+	//copyOutDatsToInDats(); // requires applyOutputStringDataChange() to be called first
+	//getSetParValues();
 }
 
-void 
-Comp::setInputFloatBuffers()
+void Comp::copyOutTopsToInTops()
 {
+	for (size_t i = 0; i < inTextureLinks_->size() && i < outTextureLinks_->size(); ++i)
+	{
+		auto outTex = (*outTextureLinks_)[i].currentTexture();
+		auto& inTexLink = (*inTextureLinks_)[i];
+
+		inTexLink.copyCudaMemoryToInputTexture(
+			outTex->cudaBuffer(),
+			outTex->format(),
+			outTex->extent(),
+			outTex->cudaExtSemaphore(),
+			outTex->signalValue(),
+			nullptr); //cudaStream_);
+
+		inTexLink.transferTextureToInputLink();
+	}
+
 }
 
-void 
-Comp::setInputStringData()
+void Comp::copyOutChopsToInChops()
 {
+	for (size_t i = 0; i < inChopLinks_->size() && i < outChopLinks_->size(); ++i)
+	{
+		auto& outputChop = (*outChopLinks_)[i];
+		auto& inputChop = (*inChopLinks_)[i];
+		if (outputChop.isUpdated())
+		{
+			inputChop.set(outputChop.channelData(), outputChop.valueCount(), outputChop.rate(), outputChop.names());
+		}
+	}
+}
+
+void Comp::copyOutDatsToInDats()
+{
+	for (size_t i = 0; i < inDatLinks_->size() && i < outDatLinks_->size(); ++i)
+	{
+		auto& outDatLink = (*outDatLinks_)[i];
+		auto& inDatLink = (*inDatLinks_)[i];
+
+		//if (outputDatLink.type() == DatLink::DatLinkType::Table)
+		//	inputDatLink.set(outputDatLink.getTable());
+		//else
+		//	inputDatLink.set(outputDatLink.getString());
+
+		if (outDatLink.type() == DatLink::DatLinkType::Table)
+			//inputDatLink.set(outputDatLink.asTable());
+			inDatLink.set(outDatLink.asString());
+	}
+}
+
+void Comp::getSetParValues()
+{
+	static float testFloat = 0.0f;
+	(*parLinks_)["Float"].set(testFloat);
+	testFloat += 1.1f;
 }
 
 

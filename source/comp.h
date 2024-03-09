@@ -110,14 +110,10 @@ private:
 
 
 	void applyLayoutChange();
+	void applyValueChanges();
 	void applyOutputTextureChange();
 	void applyOutputFloatBufferChange();
 	void applyOutputStringDataChange();
-
-	void setInputTextures();
-	void setInputFloatBuffers();
-	void setInputStringData();
-
 
 	void createRenderer();
 	void cudaInit();
@@ -161,6 +157,13 @@ private:
 
 	void printLinkInfo(TouchObject<TELinkInfo> info);
 
+	// Test/Debug
+	//-----------------------------------------------------------------------------------------------------------------
+	void copyOutsToIns();
+	void copyOutTopsToInTops();
+	void copyOutChopsToInChops();
+	void copyOutDatsToInDats();
+	void getSetParValues();
 
 
 };
