@@ -10,7 +10,7 @@
 
 
 #include "comp.h"
-#include "texturelink.h"
+#include "toplink.h"
 #include "choplink.h"
 #include "datlink.h"
 #include "parlink.h"
@@ -112,37 +112,6 @@ nb::dlpack::dtype dtypeFromCUDADataType(CUDADataType type)
 	return dtype;
 }
 
-//class TopLinkArrayInterface 
-//{
-
-	//TopLinkArrayInterface(TextureLink& topLink, cudaStream_t stream = nullptr);
-	//CUDAMemory = topLink.cudaMemory(stream);
-	//self.w, self.h = mem.shape.width, mem.shape.height
-	//self.ncomps = mem.shape.numComps
-	//self.dtype = mem.shape.dataType
-	//shape = (mem.shape.numComps, self.h, self.w)
-	//dtype_info = NP_TYPE_MAP[mem.shape.dataType]
-	//dtype_descr = dtype_info['descr']
-	//numBytes = dtype_info['numBytes']
-	//num_bytes_px = numBytes * mem.shape.numComps
-
-	//	self.__cuda_array_interface__ = {
-	//		"version": 3,
-	//		"shape" : shape,
-	//		"typestr" : dtype_descr[0][1],
-	//		"descr" : dtype_descr,
-	//		"stream" : stream,
-	//		"strides" : (numBytes, num_bytes_px * self.w, num_bytes_px),
-	//		"data" : (mem.ptr, False),
-	//}
-
-	//def update(self, top, stream = 0) :
-	//	mem = top.cudaMemory(stream = stream)
-	//	self.__cuda_array_interface__['stream'] = stream
-	//	self.__cuda_array_interface__['data'] = (mem.ptr, False)
-	//	return
-//};
-
 
 NB_MODULE(touchpy, m)
 {
@@ -160,8 +129,8 @@ NB_MODULE(touchpy, m)
 		.def("update", &Comp::update, nb::rv_policy::reference_internal)
 		.def("start", &Comp::runUpdateLoop, nb::rv_policy::reference_internal)
 		.def("stop", &Comp::stopUpdateLoop, nb::rv_policy::reference_internal)
-		.def_prop_ro("in_tops", &Comp::inputTextureLinks, nb::rv_policy::reference_internal)
-		.def_prop_ro("out_tops", &Comp::outputTextureLinks, nb::rv_policy::reference_internal)
+		.def_prop_ro("in_tops", &Comp::inputTopLinks, nb::rv_policy::reference_internal)
+		.def_prop_ro("out_tops", &Comp::outputTopLinks, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_chops", &Comp::inChopLinks, nb::rv_policy::reference_internal)
 		.def_prop_ro("out_chops", &Comp::outChopLinks, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_dats", &Comp::inDatLinks, nb::rv_policy::reference_internal)
@@ -180,7 +149,7 @@ NB_MODULE(touchpy, m)
 				userDataPtr);
 		}
 	);
-	// TextureLinks
+	// TopLinks
 	//--------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------
 
@@ -195,12 +164,12 @@ NB_MODULE(touchpy, m)
 		{ return reinterpret_cast<uintptr_t>(self.ptr); }, nb::rv_policy::reference_internal);
 	cudaMemory.def_ro("size", &CUDAMemory::size, nb::rv_policy::reference_internal);
 
-	nb::class_<OutTextureLink> outTopLink(m, "OutTopLink");
+	nb::class_<OutTopLink> outTopLink(m, "OutTopLink");
 	outTopLink.doc() = "Represents an OutTOP in a TouchDesigner component";
 	outTopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
-	outTopLink.def("cudaMemory", &OutTextureLink::cudaMemory);
+	outTopLink.def("cuda_memory", &OutTopLink::cudaMemory);
 
-	//outTopLink.def("as_dlpack", [](OutTextureLink& self) 
+	//outTopLink.def("as_dlpack", [](OutTopLink& self) 
 	//	{ 
 	//		auto shape = self.shape();
 	//		// (numBytes, num_bytes_px * self.w, num_bytes_px)
@@ -230,7 +199,7 @@ NB_MODULE(touchpy, m)
 	//		);
 	//	}, nb::rv_policy::reference_internal);
 
-	//outTopLink.def("as_tensor", [](OutTextureLink& self)
+	//outTopLink.def("as_tensor", [](OutTopLink& self)
 	//	{
 	//		auto shape = self.shape();
 	//		// (numBytes, num_bytes_px * self.w, num_bytes_px)
@@ -260,20 +229,20 @@ NB_MODULE(touchpy, m)
 	//		);
 	//	}, nb::rv_policy::reference_internal);
 
-	nb::class_<OutTextureLinks> outTopLinks(m, "OutTopLinks");
+	nb::class_<OutTopLinks> outTopLinks(m, "OutTopLinks");
 	outTopLinks.doc() = "Represents a collection of OutTOP links in a TouchDesigner component";
 	outTopLinks.def(nb::init<>())
-		.def("num_links", &OutTextureLinks::size)
-		.def("link_names", &OutTextureLinks::getLinkNames)
-		.def("__getitem__", [](OutTextureLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
-		.def("__getitem__", [](OutTextureLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
+		.def("num_links", &OutTopLinks::size)
+		.def("link_names", &OutTopLinks::getLinkNames)
+		.def("__getitem__", [](OutTopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](OutTopLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
 
-	nb::class_<InTextureLink> inTopLink(m, "InTopLink");
+	nb::class_<InTopLink> inTopLink(m, "InTopLink");
 	inTopLink.doc() = "Represents an InTOP in a TouchDesigner component";
 	inTopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
 	//inTopLink.def("from_dlpack", [](
-	//	InTextureLink& self, 
+	//	InTopLink& self, 
 	//	nb::ndarray<uint8_t, nb::ndim<3>, nb::device::cuda> array, 
 	//	uint32_t width, 
 	//	uint32_t height)
@@ -281,23 +250,23 @@ NB_MODULE(touchpy, m)
 	//		self.copyCudaMemory(array.data(), width, height, 4, nullptr);
 	//	});
 
-	//inTopLink.def("from_tensor", [](InTextureLink& self, nb::ndarray<nb::pytorch, uint8_t, nb::ndim<3>> array, uint32_t width, uint32_t height)
+	//inTopLink.def("from_tensor", [](InTopLink& self, nb::ndarray<nb::pytorch, uint8_t, nb::ndim<3>> array, uint32_t width, uint32_t height)
 	//	{
 	//		self.copyCudaMemory(array.data(), width, height, 4, nullptr);
 	//	});
 
-	inTopLink.def("copy_cuda_memory", [](InTextureLink& self, CUDAMemory& memory, uint32_t width, uint32_t height, uint32_t numBytesPx)
+	inTopLink.def("copy_cuda_memory", [](InTopLink& self, const CUDAMemory& memory)
 		{
-			self.copyCudaMemory(memory.ptr, width, height, numBytesPx, nullptr);
+			self.copyCudaMemory(memory, nullptr);
 		});
 
-	nb::class_<InTextureLinks> inTopLinks(m, "InTopLinks");
+	nb::class_<InTopLinks> inTopLinks(m, "InTopLinks");
 	inTopLinks.doc() = "Represents a collection of InTOP links in a TouchDesigner component";
 	inTopLinks.def(nb::init<>())
-		.def("num_links", &InTextureLinks::size)
-		.def("link_names", &InTextureLinks::getLinkNames)
-		.def("__getitem__", [](InTextureLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
-		.def("__getitem__", [](InTextureLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
+		.def("num_links", &InTopLinks::size)
+		.def("link_names", &InTopLinks::getLinkNames)
+		.def("__getitem__", [](InTopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](InTopLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
 
 

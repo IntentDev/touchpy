@@ -7,22 +7,22 @@
 #include <memory>
 #include <array>
 
-class TextureLink : public Link<TextureLink>
+class TopLink : public Link<TopLink>
 {
 public:
 	// need a better solution for this, virtual function addLink in Links requires it,
 	// not to be used... 
-	TextureLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) 
-		:	 Link<TextureLink>(instance, linkInfo) { }
+	TopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) 
+		:	 Link<TopLink>(instance, linkInfo) { }
 
-	TextureLink(
+	TopLink(
 		TouchObject<TEInstance> instance,
 		TouchObject<TEGraphicsContext> context,
 		VkPhysicalDevice physicalDevice,
 		VkDevice device,
 		TouchObject<TELinkInfo> linkInfo);
 
-	~TextureLink();
+	~TopLink();
 
 	Texture* currentTexture() { return handleMap_[currentTextureHandle_]; }
 	const std::vector<std::unique_ptr<Texture>>& textures() const { return textures_; }
@@ -39,19 +39,19 @@ protected:
 
 };
 
-class InTextureLink : public TextureLink
+class InTopLink : public TopLink
 {
 public:
-	InTextureLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : TextureLink(instance, linkInfo) { }
-	InTextureLink(
+	InTopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : TopLink(instance, linkInfo) { }
+	InTopLink(
 		TouchObject<TEInstance> instance,
 		TouchObject<TEGraphicsContext> context,
 		VkPhysicalDevice physicalDevice,
 		VkDevice device,
 		TouchObject<TELinkInfo> linkInfo)
-		: TextureLink(instance, context, physicalDevice, device, linkInfo) { }
+		: TopLink(instance, context, physicalDevice, device, linkInfo) { }
 
-	~InTextureLink() { }
+	~InTopLink() { }
 
 	void setInputTexture(VkExtent2D extent, VkFormat format);
 
@@ -66,30 +66,30 @@ public:
 
 	void transferTextureToInputLink();
 
-	void copyCudaMemory(void* memory, uint32_t width, uint32_t height, uint32_t numComponents, cudaStream_t stream);
-
+	//void copyCudaMemory(void* memory, uint32_t width, uint32_t height, uint32_t numComponents, cudaStream_t stream);
+	void copyCudaMemory(const CUDAMemory& cudaMemory, cudaStream_t stream);
 
 };
 
-class InTextureLinks : public Links<InTextureLinks, InTextureLink>
+class InTopLinks : public Links<InTopLinks, InTopLink>
 {
 public:
-	InTextureLinks() = default;
-	InTextureLinks(
+	InTopLinks() = default;
+	InTopLinks(
 		TouchObject<TEInstance> instance,
 		TouchObject<TEGraphicsContext> context,
 		VkPhysicalDevice physicalDevice,
 		VkDevice device)
-		:	Links<InTextureLinks, InTextureLink>(instance),
+		:	Links<InTopLinks, InTopLink>(instance),
 			context_(context),
 			physicalDevice_(physicalDevice),
 			device_(device) { }
 
-	~InTextureLinks() {};
+	~InTopLinks() {};
 
 	void addLink(TouchObject<TELinkInfo> linkInfo) override
 	{
-		links_.push_back(std::make_unique<InTextureLink>(instance_, context_, physicalDevice_, device_, linkInfo));
+		links_.push_back(std::make_unique<InTopLink>(instance_, context_, physicalDevice_, device_, linkInfo));
 		nameMap_[linkInfo->name] = links_.back().get();
 		identifierMap_[linkInfo->identifier] = links_.back().get();
 	}
@@ -101,19 +101,19 @@ private:
 };
 
 
-class OutTextureLink : public TextureLink
+class OutTopLink : public TopLink
 {
 public:
-	OutTextureLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : TextureLink(instance, linkInfo) { }
-	OutTextureLink(
+	OutTopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : TopLink(instance, linkInfo) { }
+	OutTopLink(
 		TouchObject<TEInstance> instance,
 		TouchObject<TEGraphicsContext> context,
 		VkPhysicalDevice physicalDevice,
 		VkDevice device,
 		TouchObject<TELinkInfo> linkInfo)
-		: TextureLink(instance, context, physicalDevice, device, linkInfo) { }
+		: TopLink(instance, context, physicalDevice, device, linkInfo) { }
 
-	~OutTextureLink() { }
+	~OutTopLink() { }
 
 	void addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTexture* teTexture);
 	void onOutputTextureChange(cudaStream_t cudaStream_);
@@ -121,25 +121,25 @@ public:
 
 };	
 
-class OutTextureLinks : public Links<OutTextureLinks, OutTextureLink>
+class OutTopLinks : public Links<OutTopLinks, OutTopLink>
 {
 public:
-	OutTextureLinks() = default;
-	OutTextureLinks(
+	OutTopLinks() = default;
+	OutTopLinks(
 		TouchObject<TEInstance> instance,
 		TouchObject<TEGraphicsContext> context,
 		VkPhysicalDevice physicalDevice,
 		VkDevice device)
-		: Links<OutTextureLinks, OutTextureLink>(instance),
+		: Links<OutTopLinks, OutTopLink>(instance),
 		context_(context),
 		physicalDevice_(physicalDevice),
 		device_(device) { }
 
-	~OutTextureLinks() {};
+	~OutTopLinks() {};
 
 	void addLink(TouchObject<TELinkInfo> linkInfo) override
 	{
-		links_.push_back(std::make_unique<OutTextureLink>(instance_, context_, physicalDevice_, device_, linkInfo));
+		links_.push_back(std::make_unique<OutTopLink>(instance_, context_, physicalDevice_, device_, linkInfo));
 		nameMap_[linkInfo->name] = links_.back().get();
 		identifierMap_[linkInfo->identifier] = links_.back().get();
 	}

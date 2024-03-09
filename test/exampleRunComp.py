@@ -34,8 +34,8 @@ class ExampleRunComp:
 			return
 		
 		# prev_cuda_ptr = 0
-		cudamem = comp.out_tops[0].cudaMemory()
-		comp.in_tops[0].copy_cuda_memory(cudamem, 1920, 1080, 4)
+		cudamem = comp.out_tops[0].cuda_memory()
+		comp.in_tops[0].copy_cuda_memory(cudamem)
 		
 		# prev_cuda_ptr = 0	
 		# tensor = comp.out_tops[0].as_tensor()
