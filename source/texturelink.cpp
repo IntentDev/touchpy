@@ -76,7 +76,7 @@ OutTextureLink::onOutputTextureChange(cudaStream_t cudaStream_)
 
 		if (result == TEResultSuccess)
 			if (TESemaphoreGetType(teSemaphore) == TESemaphoreTypeVulkan)
-				texture->copyImageToCudaMem(waitValue, cudaStream_);
+				texture->copyImageToCudaMem(waitValue, cudaStream_, true);
 
 		currentTextureHandle_ = handle;
 	}
@@ -84,6 +84,24 @@ OutTextureLink::onOutputTextureChange(cudaStream_t cudaStream_)
 		std::cout << "onOutputTextureChange: " << identifier_ << ", " << TEResultGetDescription(result) << std::endl;
 
 }
+
+//CUDAMemory OutTextureLink::cudaMemory()
+//{
+//	auto currentTex = currentTexture();
+//	CUDAMemory cudaMemory;
+//	cudaMemory.ptr = static_cast<void*>(currentTex->cudaBuffer());
+//	cudaMemory.size = currentTex->cudaBufferSize();
+//
+//	CUDAMemoryShape shape;
+//	shape.width = currentTex->width();
+//	shape.height = currentTex->height();
+//	shape.numComponents = 4;
+//	cudaMemory.shape = shape;
+//
+//
+//
+//	return cudaMemory;
+//}
 
 void 
 InTextureLink::setInputTexture(VkExtent2D extent, VkFormat format)
@@ -99,7 +117,7 @@ InTextureLink::setInputTexture(VkExtent2D extent, VkFormat format)
 
 void
 InTextureLink::copyCudaMemoryToInputTexture(
-	uint8_t* memory,
+	void* memory,
 	VkFormat format,
 	VkExtent2D extent,
 	cudaExternalSemaphore_t waitSemaphore, 
@@ -131,18 +149,26 @@ InTextureLink::copyCudaMemoryToInputTexture(
 }
 
 void
-InTextureLink::transferTextureToInputLink(TouchObject<TEGraphicsContext> context)
+InTextureLink::transferTextureToInputLink()
 {
 	if (textures_.size() == 0 || scope_ != Link::Scope::Input)
 		return;
 
 	TouchObject<TETexture> teTexture;
 	teTexture.set(textures_[0]->teVkTexture());
-	TEResult result = TEInstanceLinkSetTextureValue(instance_, identifier_.c_str(), teTexture, context);
+	TEResult result = TEInstanceLinkSetTextureValue(instance_, identifier_.c_str(), teTexture, context_);
 	if (result == TEResultSuccess)
 		result = TEInstanceAddTextureTransfer(instance_, teTexture, textures_[0]->teVkSemaphore(), textures_[0]->signalValue());
 
 	if (result != TEResultSuccess)
 		std::cout << "transferToInputLink: " << identifier_ << ", " << TEResultGetDescription(result) << std::endl;
+}
+
+void 
+InTextureLink::copyCudaMemory(void* memory, uint32_t width, uint32_t height, uint32_t numComponents, cudaStream_t stream)
+{
+	VkExtent2D extent = { width, height };
+	copyCudaMemoryToInputTexture(memory, VK_FORMAT_R8G8B8A8_UNORM, extent, nullptr, 0, stream);
+	transferTextureToInputLink();
 }
 

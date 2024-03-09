@@ -2,6 +2,8 @@ import sys
 import os
 import keyboard
 import numpy as np
+import torch
+from PIL import Image
 
 # get the path to touchpy.pyd: ../out/build/x64-release
 path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'out', 'build', 'x64-release'))
@@ -30,6 +32,28 @@ class ExampleRunComp:
 		if (keyboard.is_pressed('q')):
 			comp.stop()
 			return
+		
+		# prev_cuda_ptr = 0
+		cudamem = comp.out_tops[0].cudaMemory()
+		comp.in_tops[0].copy_cuda_memory(cudamem, 1920, 1080, 4)
+		
+		# prev_cuda_ptr = 0	
+		# tensor = comp.out_tops[0].as_tensor()
+		# cuda_ptr = tensor.data_ptr()
+		# if cuda_ptr != 0 and cuda_ptr != prev_cuda_ptr:
+		# 	tensor_size = tensor.element_size() * tensor.numel()
+		# 	print("tensor: ", tensor.data_ptr(), tensor_size, tensor.shape, tensor.dtype)
+		# 	prev_cuda_ptr = cuda_ptr
+		# 	tensor_copy = tensor.clone()
+
+		# if (this.frame == 4):
+		# 	cudamem = comp.out_tops[0].cudaMemory()
+		# 	print("cudamem: ",  cudamem.ptr, cudamem.ptr.data(), cudamem.size)
+		# 	tensor = comp.out_tops[0].as_tensor()
+		# 	print(tensor.shape, tensor.dtype)
+		# 	image = Image.fromarray(tensor.cpu().numpy().astype('uint8'), 'RGBA')
+		# 	image.show()
+		# 	comp.in_tops[0].from_tensor(tensor)
 
 		comp.in_chops[0].from_numpy(this.test_array)
 		this.test_array += 1
@@ -113,12 +137,11 @@ class ExampleRunComp:
 
 
 if __name__ == '__main__':
-
 	example = ExampleRunComp()
 	tox_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'TopChopDatIO.tox'))
 	example.runComp(tox_path)
 
-	pass
+
 
 	
 	

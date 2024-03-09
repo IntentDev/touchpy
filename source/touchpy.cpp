@@ -68,27 +68,80 @@ DatTable tableFromList(const nb::list& list, bool cast = false)
 	return table;
 }
 
-//nb::object parLinkValueToPyObject(const ParLinkValue& value) {
-//	return std::visit([](auto&& arg) -> nb::object {
-//		using T = std::decay_t<decltype(arg)>;
-//		if constexpr (std::is_same_v<T, bool>) {
-//			return nb::cast(arg);
-//		}
-//		else if constexpr (std::is_same_v<T, std::string>) {
-//			return nb::cast(arg);
-//		}
-//		else if constexpr (std::is_same_v<T, int32_t>) {
-//			return nb::cast(arg);
-//			// Handle other types similarly...
-//		}
-//		else if constexpr (std::is_same_v<T, double>) {
-//			return nb::cast(arg);
-//		}
-//		else {
-//			throw std::runtime_error("Unsupported type in ParLinkValue variant");
-//		}
-//		}, value);
-//}
+CUDADataType cudaDataTypeFromArray(nb::ndarray<> array)
+{
+	auto dtype = array.dtype();
+	if (dtype.code == static_cast<uint8_t>(nb::dlpack::dtype_code::UInt))
+	{
+		if (dtype.bits == 8)
+			return CUDADataType::UInt8;
+	}
+	else if (dtype.code == static_cast<uint8_t>(nb::dlpack::dtype_code::Float))
+	{
+		if (dtype.bits == 16)
+			return CUDADataType::Float16;
+		else if (dtype.bits == 32)
+			return CUDADataType::Float32;
+	}
+	return CUDADataType::Undefined;
+}
+
+nb::dlpack::dtype dtypeFromCUDADataType(CUDADataType type)
+{
+	nb::dlpack::dtype dtype;
+	dtype.lanes = 1;
+	switch (type)
+	{
+	case CUDADataType::UInt8:
+		dtype.code = static_cast<uint8_t>(nb::dlpack::dtype_code::UInt);
+		dtype.bits = 8;
+		break;
+	case CUDADataType::Float32:
+		dtype.code = static_cast<uint8_t>(nb::dlpack::dtype_code::Float);
+		dtype.bits = 32;
+		break;
+	case CUDADataType::Float16:
+		dtype.code = static_cast<uint8_t>(nb::dlpack::dtype_code::Float);
+		dtype.bits = 16;
+		break;
+	default:
+		dtype.code = static_cast<uint8_t>(nb::dlpack::dtype_code::UInt);
+		dtype.bits = 8;
+		break;
+	}
+	return dtype;
+}
+
+//class TopLinkArrayInterface 
+//{
+
+	//TopLinkArrayInterface(TextureLink& topLink, cudaStream_t stream = nullptr);
+	//CUDAMemory = topLink.cudaMemory(stream);
+	//self.w, self.h = mem.shape.width, mem.shape.height
+	//self.ncomps = mem.shape.numComps
+	//self.dtype = mem.shape.dataType
+	//shape = (mem.shape.numComps, self.h, self.w)
+	//dtype_info = NP_TYPE_MAP[mem.shape.dataType]
+	//dtype_descr = dtype_info['descr']
+	//numBytes = dtype_info['numBytes']
+	//num_bytes_px = numBytes * mem.shape.numComps
+
+	//	self.__cuda_array_interface__ = {
+	//		"version": 3,
+	//		"shape" : shape,
+	//		"typestr" : dtype_descr[0][1],
+	//		"descr" : dtype_descr,
+	//		"stream" : stream,
+	//		"strides" : (numBytes, num_bytes_px * self.w, num_bytes_px),
+	//		"data" : (mem.ptr, False),
+	//}
+
+	//def update(self, top, stream = 0) :
+	//	mem = top.cudaMemory(stream = stream)
+	//	self.__cuda_array_interface__['stream'] = stream
+	//	self.__cuda_array_interface__['data'] = (mem.ptr, False)
+	//	return
+//};
 
 
 NB_MODULE(touchpy, m)
@@ -107,8 +160,8 @@ NB_MODULE(touchpy, m)
 		.def("update", &Comp::update, nb::rv_policy::reference_internal)
 		.def("start", &Comp::runUpdateLoop, nb::rv_policy::reference_internal)
 		.def("stop", &Comp::stopUpdateLoop, nb::rv_policy::reference_internal)
-		.def_prop_ro("in_textures", &Comp::inputTextureLinks, nb::rv_policy::reference_internal)
-		.def_prop_ro("out_textures", &Comp::outputTextureLinks, nb::rv_policy::reference_internal)
+		.def_prop_ro("in_tops", &Comp::inputTextureLinks, nb::rv_policy::reference_internal)
+		.def_prop_ro("out_tops", &Comp::outputTextureLinks, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_chops", &Comp::inChopLinks, nb::rv_policy::reference_internal)
 		.def_prop_ro("out_chops", &Comp::outChopLinks, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_dats", &Comp::inDatLinks, nb::rv_policy::reference_internal)
@@ -131,39 +184,121 @@ NB_MODULE(touchpy, m)
 	//--------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------
 
+	//nb::class_<cudaStream_t>(m, "cudaStream");
+
+
+
+	nb::class_<CUDAMemory> cudaMemory(m, "CudaMemory");
+	cudaMemory.doc() = "Represents a memory block on the GPU";
+	cudaMemory.def(nb::init<>());
+	cudaMemory.def_prop_ro("ptr", [](CUDAMemory& self) -> uintptr_t 
+		{ return reinterpret_cast<uintptr_t>(self.ptr); }, nb::rv_policy::reference_internal);
+	cudaMemory.def_ro("size", &CUDAMemory::size, nb::rv_policy::reference_internal);
+
 	nb::class_<OutTextureLink> outTopLink(m, "OutTopLink");
 	outTopLink.doc() = "Represents an OutTOP in a TouchDesigner component";
 	outTopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
-	outTopLink.def("as_tensor", [](OutTextureLink& self) 
-		{ 
-			auto shape = self.shape();
-			// (numBytes, num_bytes_px * self.w, num_bytes_px)
-			const std::array<int64_t, 3> strides = { 
-				static_cast<int64_t>(shape[0] * shape[1] * shape[2]),
-				static_cast<int64_t>(shape[0] * shape[2]),
-				static_cast<int64_t>(shape[2])
-			};
+	outTopLink.def("cudaMemory", &OutTextureLink::cudaMemory);
 
-			nb::dlpack::dtype dtype;
-			dtype.code = static_cast<uint8_t>(nb::dlpack::dtype_code::UInt);
-			dtype.bits = 8;
-			dtype.lanes = 1;
+	//outTopLink.def("as_dlpack", [](OutTextureLink& self) 
+	//	{ 
+	//		auto shape = self.shape();
+	//		// (numBytes, num_bytes_px * self.w, num_bytes_px)
+	//		const std::array<int64_t, 3> strides = { 
+	//			static_cast<int64_t>(shape[0] * shape[1] * shape[2]),
+	//			static_cast<int64_t>(shape[0] * shape[2]),
+	//			static_cast<int64_t>(shape[2])
+	//		};
 
-			void* data = self.cudaMemory();
+	//		nb::dlpack::dtype dtype;
+	//		dtype.code = static_cast<uint8_t>(nb::dlpack::dtype_code::UInt);
+	//		dtype.bits = 8;
+	//		dtype.lanes = 1;
 
-			//nb::pytorch, uint8_t, nb::ndim<3>, const size_t*, nb::handle, const int64_t*, nb::dlpack::dtype, int32_t, int32_t
-			return nb::ndarray<uint8_t, nb::ndim<3>>(
-				self.cudaMemory(),
-				3u, 
-				shape.data(),
-				nb::handle(),
-				strides.data(),
-				dtype,
-				nb::device::cuda::value,
-				0
-			);
-		}, nb::rv_policy::reference_internal);
+	//		void* data = self.cudaMemory();
 
+	//		//nb::pytorch, uint8_t, nb::ndim<3>, const size_t*, nb::handle, const int64_t*, nb::dlpack::dtype, int32_t, int32_t
+	//		return nb::ndarray<uint8_t, nb::ndim<3>>(
+	//			self.cudaMemory(),
+	//			3u, 
+	//			shape.data(),
+	//			nb::handle(),
+	//			strides.data(),
+	//			dtype,
+	//			nb::device::cuda::value,
+	//			0
+	//		);
+	//	}, nb::rv_policy::reference_internal);
+
+	//outTopLink.def("as_tensor", [](OutTextureLink& self)
+	//	{
+	//		auto shape = self.shape();
+	//		// (numBytes, num_bytes_px * self.w, num_bytes_px)
+	//		const std::array<int64_t, 3> strides = {
+	//			static_cast<int64_t>(shape[0] * shape[1] * shape[2]),
+	//			static_cast<int64_t>(shape[0] * shape[2]),
+	//			static_cast<int64_t>(shape[2])
+	//		};
+
+	//		nb::dlpack::dtype dtype;
+	//		dtype.code = static_cast<uint8_t>(nb::dlpack::dtype_code::UInt);
+	//		dtype.bits = 8;
+	//		dtype.lanes = 1;
+
+	//		void* data = self.cudaMemory().ptr;
+
+	//		//nb::pytorch, uint8_t, nb::ndim<3>, const size_t*, nb::handle, const int64_t*, nb::dlpack::dtype, int32_t, int32_t
+	//		return nb::ndarray<nb::pytorch, uint8_t, nb::ndim<3>>(
+	//			&data,
+	//			3u,
+	//			shape.data(),
+	//			nb::handle(),
+	//			strides.data(),
+	//			dtype,
+	//			nb::device::cuda::value,
+	//			0
+	//		);
+	//	}, nb::rv_policy::reference_internal);
+
+	nb::class_<OutTextureLinks> outTopLinks(m, "OutTopLinks");
+	outTopLinks.doc() = "Represents a collection of OutTOP links in a TouchDesigner component";
+	outTopLinks.def(nb::init<>())
+		.def("num_links", &OutTextureLinks::size)
+		.def("link_names", &OutTextureLinks::getLinkNames)
+		.def("__getitem__", [](OutTextureLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](OutTextureLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
+		;
+
+	nb::class_<InTextureLink> inTopLink(m, "InTopLink");
+	inTopLink.doc() = "Represents an InTOP in a TouchDesigner component";
+	inTopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
+	//inTopLink.def("from_dlpack", [](
+	//	InTextureLink& self, 
+	//	nb::ndarray<uint8_t, nb::ndim<3>, nb::device::cuda> array, 
+	//	uint32_t width, 
+	//	uint32_t height)
+	//	{
+	//		self.copyCudaMemory(array.data(), width, height, 4, nullptr);
+	//	});
+
+	//inTopLink.def("from_tensor", [](InTextureLink& self, nb::ndarray<nb::pytorch, uint8_t, nb::ndim<3>> array, uint32_t width, uint32_t height)
+	//	{
+	//		self.copyCudaMemory(array.data(), width, height, 4, nullptr);
+	//	});
+
+	inTopLink.def("copy_cuda_memory", [](InTextureLink& self, CUDAMemory& memory, uint32_t width, uint32_t height, uint32_t numBytesPx)
+		{
+			self.copyCudaMemory(memory.ptr, width, height, numBytesPx, nullptr);
+		});
+
+	nb::class_<InTextureLinks> inTopLinks(m, "InTopLinks");
+	inTopLinks.doc() = "Represents a collection of InTOP links in a TouchDesigner component";
+	inTopLinks.def(nb::init<>())
+		.def("num_links", &InTextureLinks::size)
+		.def("link_names", &InTextureLinks::getLinkNames)
+		.def("__getitem__", [](InTextureLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](InTextureLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
+		;
 
 
 
