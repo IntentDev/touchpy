@@ -31,7 +31,7 @@ struct CUDAMemory
 	void*                            ptr   { nullptr };
 	size_t                           size  { 0 };
 	CUDAMemoryShape					 shape { };
-	//std::unique_ptr<CUDAMemoryShape> shape { };
+	//std::unique_ptr<CUDAMemoryShape> shape { }; 
 
 
 	//CUDAMemory() = default;

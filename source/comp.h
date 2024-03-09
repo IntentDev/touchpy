@@ -5,7 +5,7 @@
 #include "texture.h"
 #include "common/cuda_helpers.h"
 
-#include "texturelink.h"
+#include "toplink.h"
 #include "choplink.h"
 #include "datlink.h"
 #include "parlink.h"
@@ -36,8 +36,8 @@ public:
 	void runUpdateLoop();
 	void stopUpdateLoop();
 
-	InTextureLinks& inputTextureLinks() { return *inTextureLinks_; }
-	OutTextureLinks& outputTextureLinks() { return *outTextureLinks_; }
+	InTopLinks& inputTopLinks() { return *inTopLinks_; }
+	OutTopLinks& outputTopLinks() { return *outTopLinks_; }
 	InChopLinks& inChopLinks() { return *inChopLinks_; }
 	OutChopLinks& outChopLinks() { return *outChopLinks_; }
 	InDatLinks& inDatLinks() { return *inDatLinks_; }
@@ -90,8 +90,8 @@ private:
 	std::vector<std::string>           changedOutputFloatBuffers_;
 	std::vector<std::string>           changedOutputStringData_;
 
-	std::unique_ptr<InTextureLinks>    inTextureLinks_;
-	std::unique_ptr<OutTextureLinks>   outTextureLinks_;
+	std::unique_ptr<InTopLinks>    inTopLinks_;
+	std::unique_ptr<OutTopLinks>   outTopLinks_;
 	std::unique_ptr<InChopLinks>       inChopLinks_;
 	std::unique_ptr<OutChopLinks>      outChopLinks_;
 	std::unique_ptr<InDatLinks>        inDatLinks_;

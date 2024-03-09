@@ -412,8 +412,8 @@ Comp::applyLayoutChange()
 {
 	std:: cout << "Applying layout change" << std::endl;
 
-	inTextureLinks_ = std::make_unique<InTextureLinks>(instance_, renderer_->teContext(), physicalDevice_, device_);
-	outTextureLinks_ = std::make_unique<OutTextureLinks>(instance_, renderer_->teContext(), physicalDevice_, device_);
+	inTopLinks_ = std::make_unique<InTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_);
+	outTopLinks_ = std::make_unique<OutTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_);
 
 	inChopLinks_ = std::make_unique<InChopLinks>(instance_);
 	outChopLinks_ = std::make_unique<OutChopLinks>(instance_);
@@ -456,10 +456,10 @@ Comp::applyLayoutChange()
 							if (info->type == TELinkTypeTexture)
 							{
 								if (info->scope == TEScopeInput)
-									inTextureLinks_->addLink(info);
+									inTopLinks_->addLink(info);
 
 								else if (info->scope == TEScopeOutput)
-									outTextureLinks_->addLink(info);
+									outTopLinks_->addLink(info);
 							}
 
 							if (info->type == TELinkTypeFloatBuffer)
@@ -575,7 +575,7 @@ Comp::applyOutputTextureChange()
 {
 	for (const auto& identifier : changedOutputTextures_)
 	{
-		auto& textureLink = *outTextureLinks_->getLinkByIdentifier(identifier);
+		auto& textureLink = *outTopLinks_->getLinkByIdentifier(identifier);
 		//textureLink.onOutputTextureChange(cudaStream_);
 		textureLink.onOutputTextureChange(nullptr);
 	}
@@ -624,10 +624,10 @@ void Comp::copyOutsToIns()
 
 void Comp::copyOutTopsToInTops()
 {
-	for (size_t i = 0; i < inTextureLinks_->size() && i < outTextureLinks_->size(); ++i)
+	for (size_t i = 0; i < inTopLinks_->size() && i < outTopLinks_->size(); ++i)
 	{
-		auto outTex = (*outTextureLinks_)[i].currentTexture();
-		auto& inTexLink = (*inTextureLinks_)[i];
+		auto outTex = (*outTopLinks_)[i].currentTexture();
+		auto& inTexLink = (*inTopLinks_)[i];
 
 		inTexLink.copyCudaMemoryToInputTexture(
 			outTex->cudaBuffer(),

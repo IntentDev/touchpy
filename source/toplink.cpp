@@ -1,21 +1,21 @@
-#include "texturelink.h"
+#include "toplink.h"
 #include <TouchEngine/TEVulkan.h>
 
 
-TextureLink::TextureLink(
+TopLink::TopLink(
 	TouchObject<TEInstance> instance,
 	TouchObject<TEGraphicsContext> context,
 	VkPhysicalDevice physicalDevice,
 	VkDevice device,
 	TouchObject<TELinkInfo> linkInfo)
-	:	Link<TextureLink>(instance, linkInfo),
+	:	Link<TopLink>(instance, linkInfo),
 		context_(context),
 		physicalDevice_(physicalDevice),
 		device_(device) { }
 
-TextureLink::~TextureLink() { }
+TopLink::~TopLink() { }
 
-std::array<size_t, 3> TextureLink::shape()
+std::array<size_t, 3> TopLink::shape()
 {
 	std::array<size_t, 3> extent { 0, 0, 4u };
 	auto currentTex = currentTexture();
@@ -27,7 +27,7 @@ std::array<size_t, 3> TextureLink::shape()
 
 
 void 
-OutTextureLink::addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTexture* teTexture)
+OutTopLink::addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTexture* teTexture)
 {
 	if (scope_ != Link::Scope::Output)
 		return;
@@ -37,7 +37,7 @@ OutTextureLink::addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTex
 }
 
 void 
-OutTextureLink::onOutputTextureChange(cudaStream_t cudaStream_)
+OutTopLink::onOutputTextureChange(cudaStream_t cudaStream_)
 {
 	if (scope_ != Link::Scope::Output)
 		return;
@@ -85,7 +85,7 @@ OutTextureLink::onOutputTextureChange(cudaStream_t cudaStream_)
 
 }
 
-//CUDAMemory OutTextureLink::cudaMemory()
+//CUDAMemory OutTopLink::cudaMemory()
 //{
 //	auto currentTex = currentTexture();
 //	CUDAMemory cudaMemory;
@@ -104,7 +104,7 @@ OutTextureLink::onOutputTextureChange(cudaStream_t cudaStream_)
 //}
 
 void 
-InTextureLink::setInputTexture(VkExtent2D extent, VkFormat format)
+InTopLink::setInputTexture(VkExtent2D extent, VkFormat format)
 {
 	if (scope_ != Link::Scope::Input)
 		return;
@@ -116,7 +116,7 @@ InTextureLink::setInputTexture(VkExtent2D extent, VkFormat format)
 }
 
 void
-InTextureLink::copyCudaMemoryToInputTexture(
+InTopLink::copyCudaMemoryToInputTexture(
 	void* memory,
 	VkFormat format,
 	VkExtent2D extent,
@@ -149,7 +149,7 @@ InTextureLink::copyCudaMemoryToInputTexture(
 }
 
 void
-InTextureLink::transferTextureToInputLink()
+InTopLink::transferTextureToInputLink()
 {
 	if (textures_.size() == 0 || scope_ != Link::Scope::Input)
 		return;
@@ -164,11 +164,24 @@ InTextureLink::transferTextureToInputLink()
 		std::cout << "transferToInputLink: " << identifier_ << ", " << TEResultGetDescription(result) << std::endl;
 }
 
-void 
-InTextureLink::copyCudaMemory(void* memory, uint32_t width, uint32_t height, uint32_t numComponents, cudaStream_t stream)
+//void 
+//InTopLink::copyCudaMemory(void* memory, uint32_t width, uint32_t height, uint32_t numComponents, cudaStream_t stream)
+//{
+//	VkExtent2D extent = { width, height };
+//	copyCudaMemoryToInputTexture(memory, VK_FORMAT_R8G8B8A8_UNORM, extent, nullptr, 0, stream);
+//	transferTextureToInputLink();
+//}
+
+void
+InTopLink::copyCudaMemory(const CUDAMemory& cudaMemory, cudaStream_t stream)
 {
-	VkExtent2D extent = { width, height };
-	copyCudaMemoryToInputTexture(memory, VK_FORMAT_R8G8B8A8_UNORM, extent, nullptr, 0, stream);
+	VkExtent2D extent = { cudaMemory.shape.width, cudaMemory.shape.height };
+	copyCudaMemoryToInputTexture(
+		cudaMemory.ptr, 
+		vkFormatFromCUDAMemoryShape(cudaMemory.shape), 
+		extent, 
+		nullptr, 0, 
+		stream);
+
 	transferTextureToInputLink();
 }
-
