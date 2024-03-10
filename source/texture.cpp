@@ -638,6 +638,8 @@ void Texture::cudaAllocateMemory()
 	cudaMemory_.ptr = cudaBuffer_;
 	cudaMemory_.size = cudaBufferSize_;
 
+	std::cout << "Cuda Memory Allocated: " << cudaBuffer_ << std::endl;
+
 }
 
 void Texture::cudaVkSemaphoreWait(cudaExternalSemaphore_t semaphore, uint64_t waitValue, cudaStream_t stream) {

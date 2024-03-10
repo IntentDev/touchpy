@@ -4,6 +4,7 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/string_view.h>
 #include <nanobind/stl/vector.h>
+#include <nanobind/stl/array.h>
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/ndarray.h>
@@ -71,6 +72,23 @@ DatTable tableFromList(const nb::list& list, bool cast = false)
 CUDADataType cudaDataTypeFromArray(nb::ndarray<> array)
 {
 	auto dtype = array.dtype();
+	if (dtype.code == static_cast<uint8_t>(nb::dlpack::dtype_code::UInt))
+	{
+		if (dtype.bits == 8)
+			return CUDADataType::UInt8;
+	}
+	else if (dtype.code == static_cast<uint8_t>(nb::dlpack::dtype_code::Float))
+	{
+		if (dtype.bits == 16)
+			return CUDADataType::Float16;
+		else if (dtype.bits == 32)
+			return CUDADataType::Float32;
+	}
+	return CUDADataType::Undefined;
+}
+
+CUDADataType cudaDataTypeFromDtype(nb::dlpack::dtype dtype)
+{
 	if (dtype.code == static_cast<uint8_t>(nb::dlpack::dtype_code::UInt))
 	{
 		if (dtype.bits == 8)
@@ -155,79 +173,75 @@ NB_MODULE(touchpy, m)
 
 	//nb::class_<cudaStream_t>(m, "cudaStream");
 
+	nb::enum_<CUDADataType>(m, "CUDADataType")
+		.value("UInt8", CUDADataType::UInt8)
+		.value("Float16", CUDADataType::Float16)
+		.value("Float32", CUDADataType::Float32)
+		.value("Undefined", CUDADataType::Undefined)
+		;
 
+	nb::class_<CUDAMemoryShape> cudaMemoryShape(m, "CudaMemoryShape");
+	cudaMemoryShape.def(nb::init<>())
+		.def_rw("width", &CUDAMemoryShape::width)
+		.def_rw("height", &CUDAMemoryShape::height)
+		.def_rw("num_components", &CUDAMemoryShape::numComponents)
+		.def_rw("component_size", &CUDAMemoryShape::componentSize)
+		.def_rw("data_type", &CUDAMemoryShape::dataType)
+		.def_rw("strides",  &CUDAMemoryShape::strides)
+		.def("__repr__", [](CUDAMemoryShape& self)
+			{
+				return "CudaMemoryShape(" + std::to_string(self.width) + ", " + std::to_string(self.height) 
+					+ ", " + std::to_string(self.numComponents) + ", " + std::to_string(self.componentSize) 
+					+ ", " + cudaDataTypeToString(self.dataType) + ")";
+			}
+		);
 
 	nb::class_<CUDAMemory> cudaMemory(m, "CudaMemory");
 	cudaMemory.doc() = "Represents a memory block on the GPU";
-	cudaMemory.def(nb::init<>());
-	cudaMemory.def_prop_ro("ptr", [](CUDAMemory& self) -> uintptr_t 
-		{ return reinterpret_cast<uintptr_t>(self.ptr); }, nb::rv_policy::reference_internal);
-	cudaMemory.def_ro("size", &CUDAMemory::size, nb::rv_policy::reference_internal);
+	cudaMemory.def(nb::init<>())
+		.def_prop_ro("ptr", [](CUDAMemory& self) -> uintptr_t 
+			{ return reinterpret_cast<uintptr_t>(self.ptr); }, nb::rv_policy::reference_internal)
+		.def_ro("size", &CUDAMemory::size, nb::rv_policy::reference_internal)
+		.def_rw("shape", &CUDAMemory::shape, nb::rv_policy::reference_internal);
+
 
 	nb::class_<OutTopLink> outTopLink(m, "OutTopLink");
 	outTopLink.doc() = "Represents an OutTOP in a TouchDesigner component";
 	outTopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
 	outTopLink.def("cuda_memory", &OutTopLink::cudaMemory);
 
-	//outTopLink.def("as_dlpack", [](OutTopLink& self) 
-	//	{ 
-	//		auto shape = self.shape();
-	//		// (numBytes, num_bytes_px * self.w, num_bytes_px)
-	//		const std::array<int64_t, 3> strides = { 
-	//			static_cast<int64_t>(shape[0] * shape[1] * shape[2]),
-	//			static_cast<int64_t>(shape[0] * shape[2]),
-	//			static_cast<int64_t>(shape[2])
-	//		};
+	outTopLink.def("as_dlpack", [](OutTopLink& self)
+		{
+			const auto& cudaMem = self.cudaMemory();
+			return nb::ndarray<>(
+				cudaMem.ptr,
+				{ cudaMem.shape.numComponents, cudaMem.shape.height, cudaMem.shape.width },
+				nb::handle(),
+				{ cudaMem.shape.strides[0], cudaMem.shape.strides[1], cudaMem.shape.strides[2] },
+				dtypeFromCUDADataType(cudaMem.shape.dataType),
+				nb::device::cuda::value,
+				0
+			);
+		}, nb::rv_policy::reference_internal);
 
-	//		nb::dlpack::dtype dtype;
-	//		dtype.code = static_cast<uint8_t>(nb::dlpack::dtype_code::UInt);
-	//		dtype.bits = 8;
-	//		dtype.lanes = 1;
-
-	//		void* data = self.cudaMemory();
-
-	//		//nb::pytorch, uint8_t, nb::ndim<3>, const size_t*, nb::handle, const int64_t*, nb::dlpack::dtype, int32_t, int32_t
-	//		return nb::ndarray<uint8_t, nb::ndim<3>>(
-	//			self.cudaMemory(),
-	//			3u, 
-	//			shape.data(),
-	//			nb::handle(),
-	//			strides.data(),
-	//			dtype,
-	//			nb::device::cuda::value,
-	//			0
-	//		);
-	//	}, nb::rv_policy::reference_internal);
-
-	//outTopLink.def("as_tensor", [](OutTopLink& self)
-	//	{
-	//		auto shape = self.shape();
-	//		// (numBytes, num_bytes_px * self.w, num_bytes_px)
-	//		const std::array<int64_t, 3> strides = {
-	//			static_cast<int64_t>(shape[0] * shape[1] * shape[2]),
-	//			static_cast<int64_t>(shape[0] * shape[2]),
-	//			static_cast<int64_t>(shape[2])
-	//		};
-
-	//		nb::dlpack::dtype dtype;
-	//		dtype.code = static_cast<uint8_t>(nb::dlpack::dtype_code::UInt);
-	//		dtype.bits = 8;
-	//		dtype.lanes = 1;
-
-	//		void* data = self.cudaMemory().ptr;
-
-	//		//nb::pytorch, uint8_t, nb::ndim<3>, const size_t*, nb::handle, const int64_t*, nb::dlpack::dtype, int32_t, int32_t
-	//		return nb::ndarray<nb::pytorch, uint8_t, nb::ndim<3>>(
-	//			&data,
-	//			3u,
-	//			shape.data(),
-	//			nb::handle(),
-	//			strides.data(),
-	//			dtype,
-	//			nb::device::cuda::value,
-	//			0
-	//		);
-	//	}, nb::rv_policy::reference_internal);
+	outTopLink.def("as_tensor", [](OutTopLink& self)
+		{
+			const auto& cudaMem = self.cudaMemory();
+			return nb::ndarray<nb::pytorch>(
+				cudaMem.ptr,
+				{ cudaMem.shape.height, cudaMem.shape.width, cudaMem.shape.numComponents },
+				nb::handle(),
+				//{ cudaMem.shape.strides[0], cudaMem.shape.strides[1], cudaMem.shape.strides[2] },
+				{ 
+					cudaMem.shape.numComponents * cudaMem.shape.width, 
+					cudaMem.shape.numComponents, 
+					static_cast<int64_t>(cudaMem.shape.componentSize)
+				},
+				dtypeFromCUDADataType(cudaMem.shape.dataType),
+				nb::device::cuda::value,
+				0
+			);
+		}, nb::rv_policy::reference_internal);
 
 	nb::class_<OutTopLinks> outTopLinks(m, "OutTopLinks");
 	outTopLinks.doc() = "Represents a collection of OutTOP links in a TouchDesigner component";
@@ -241,19 +255,59 @@ NB_MODULE(touchpy, m)
 	nb::class_<InTopLink> inTopLink(m, "InTopLink");
 	inTopLink.doc() = "Represents an InTOP in a TouchDesigner component";
 	inTopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
-	//inTopLink.def("from_dlpack", [](
-	//	InTopLink& self, 
-	//	nb::ndarray<uint8_t, nb::ndim<3>, nb::device::cuda> array, 
-	//	uint32_t width, 
-	//	uint32_t height)
-	//	{
-	//		self.copyCudaMemory(array.data(), width, height, 4, nullptr);
-	//	});
+	inTopLink.def("from_dlpack", [](InTopLink& self, nb::ndarray<> array)
+		{
+			//CUDAMemory cudaMemory;
+			//cudaMemory.ptr = array.data();
+			//cudaMemory.size = array.size();
 
-	//inTopLink.def("from_tensor", [](InTopLink& self, nb::ndarray<nb::pytorch, uint8_t, nb::ndim<3>> array, uint32_t width, uint32_t height)
-	//	{
-	//		self.copyCudaMemory(array.data(), width, height, 4, nullptr);
-	//	});
+			//auto shape = array.shape_ptr();
+
+			//CUDAMemoryShape memoryShape;
+			//memoryShape.width = shape[1];
+			//memoryShape.height = shape[0];
+			//memoryShape.numComponents = shape[2];
+			//memoryShape.componentSize = 1;
+			//memoryShape.dataType = CUDADataType::UInt8;
+			//memoryShape.strides[0] = shape[0] * shape[1] * shape[2];
+			//memoryShape.strides[1] = shape[0] * shape[2];
+			//memoryShape.strides[2] = shape[0];
+
+			//cudaMemory.shape = memoryShape;
+
+			//std::cout << "shape: " << shape[0] << ", " << shape[1] << ", " << shape[2] 
+			//	<< ", component size: " << array.itemsize() 
+			//	<< " strides: " << array.stride_ptr()[0] << ", " << array.stride_ptr()[1] << ", " << array.stride_ptr()[2] << "\n";
+
+			//self.copyCudaMemory(cudaMemory, nullptr);
+		});
+
+	inTopLink.def("from_tensor", [](InTopLink& self, nb::ndarray<nb::pytorch> array)
+		{
+			CUDAMemory cudaMemory;
+			cudaMemory.ptr = array.data();
+			cudaMemory.size = array.size();
+
+			auto shape = array.shape_ptr();
+
+			//std::cout << "shape: " << shape[0] << ", " << shape[1] << ", " << shape[2] 
+			// << ", component size: " << array.itemsize() 
+			// << " strides: " << array.stride_ptr()[0] << ", " << array.stride_ptr()[1] << ", " << array.stride_ptr()[2] << "\n";
+
+			CUDAMemoryShape memoryShape;
+			memoryShape.width = shape[1];
+			memoryShape.height = shape[0];
+			memoryShape.numComponents = shape[2];
+			memoryShape.componentSize = array.itemsize();
+			memoryShape.dataType = cudaDataTypeFromDtype(array.dtype());
+			memoryShape.strides[0] = memoryShape.componentSize;
+			memoryShape.strides[1] = memoryShape.numComponents;
+			memoryShape.strides[2] = memoryShape.numComponents * memoryShape.width;
+
+			cudaMemory.shape = memoryShape;
+			
+			self.copyCudaMemory(cudaMemory, nullptr);
+		});
 
 	inTopLink.def("copy_cuda_memory", [](InTopLink& self, const CUDAMemory& memory)
 		{
