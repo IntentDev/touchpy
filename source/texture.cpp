@@ -101,8 +101,8 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 
 	VK_CHECK(vkCreateImageView(device_, &viewInfo, nullptr, &imageView_));
 
-	std::cout	<< "Texture Created (from TE), width: " 
-				<< extent_.width << " height: " << extent_.height << std::endl;
+	std::cout	<< "Texture Created (output), width: " 
+				<< extent_.width << " height: " << extent_.height << ", format: " << string_VkFormat(format_) << std::endl;
 
 	importSemaphore(teInstance, texture);
 
@@ -510,7 +510,7 @@ HANDLE Texture::getVkMemoryHandle(VkExternalMemoryHandleTypeFlagBitsKHR external
 void Texture::copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream, bool signal)
 {
 	cudaVkSemaphoreWait(cudaExtSemaphore_, waitValue, stream);
-	CUDA_CHECK(memCopyFromSurfaceCharBRGA(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
+	CUDA_CHECK(memCopyBRGA8USurfaceToRGBA8U(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
 	//if (signal)
 	cudaVkSemaphoreSignal(cudaExtSemaphore_, ++waitValue, stream);
 	waitValue_ = waitValue;
@@ -525,7 +525,7 @@ void Texture::copyCudaMemToImage(void* memory,
 {	
 	if (waitSemaphore)
 		cudaVkSemaphoreWait(waitSemaphore, waitValue, stream);
-	CUDA_CHECK(memCopyToSurfaceCharBRGA(cudaSurface_, extent_.width, extent_.height, memory, stream));
+	CUDA_CHECK(memCopyRGBA8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
 	//waitValue_ = ++waitValue;
 
 
