@@ -99,3 +99,14 @@ size_t componentSizeFromVkFormat(VkFormat format)
 	}
 	return 0;
 }
+
+std::string cudaDataTypeToString(CUDADataType type)
+{
+	switch (type)
+	{
+	case CUDADataType::UInt8:   return "uint8";
+	case CUDADataType::Float32: return "float32";
+	case CUDADataType::Float16: return "float16";
+	}
+	return "undefined";
+}

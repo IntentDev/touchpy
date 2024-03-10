@@ -12,7 +12,44 @@ sys.path.append(path)
 
 import touchpy as tp
 
+def tp_dtype_to_torch(tp_dtype):
+    type_map = {
+        tp.CUDADataType.Float64: torch.float64,
+        tp.CUDADataType.Float32: torch.float32,
+        tp.CUDADataType.Float16: torch.float16,
+        tp.CUDADataType.UInt8: torch.uint8
+    }
+    return type_map[tp_dtype]
 
+TP_TYPE_MAP = {}
+TP_TYPE_MAP[tp.CUDADataType.UInt8] = {'descr': [('', '|u1')], 'numBytes': 1}
+TP_TYPE_MAP[tp.CUDADataType.Float16] = {'descr': [('', '<f4')], 'numBytes': 4}
+TP_TYPE_MAP[tp.CUDADataType.Float32] = {'descr': [('', '<f4')], 'numBytes': 4}
+
+class TopLinkArray:
+	def __init__(self, topLink, stream=0):
+		mem = topLink.cuda_memory()
+		shape = (mem.shape.num_components, mem.shape.height, mem.shape.width)
+		dtype_info = TP_TYPE_MAP[mem.shape.data_type]
+		dtype_descr = dtype_info['descr']
+		numBytes = dtype_info['numBytes']
+		# num_bytes_px = numBytes * mem.shape.num_components
+		
+		self.__cuda_array_interface__ = {
+			"version": 3,
+			"shape": shape,
+			"typestr": dtype_descr[0][1],
+			"descr": dtype_descr,
+			"stream": stream,
+			"strides": mem.shape.strides,
+			"data": (mem.ptr, False),
+		}
+
+	def update(self, topLink, stream=0):
+		mem = topLink.cuda_memory(stream=stream)
+		self.__cuda_array_interface__['stream'] = stream
+		self.__cuda_array_interface__['data'] = (mem.ptr, False)
+		return
 
 class ExampleRunComp:
 	def __init__(self):
@@ -33,27 +70,21 @@ class ExampleRunComp:
 			comp.stop()
 			return
 		
-		# prev_cuda_ptr = 0
-		cudamem = comp.out_tops[0].cuda_memory()
-		comp.in_tops[0].copy_cuda_memory(cudamem)
-		
-		# prev_cuda_ptr = 0	
-		# tensor = comp.out_tops[0].as_tensor()
-		# cuda_ptr = tensor.data_ptr()
-		# if cuda_ptr != 0 and cuda_ptr != prev_cuda_ptr:
-		# 	tensor_size = tensor.element_size() * tensor.numel()
-		# 	print("tensor: ", tensor.data_ptr(), tensor_size, tensor.shape, tensor.dtype)
-		# 	prev_cuda_ptr = cuda_ptr
-		# 	tensor_copy = tensor.clone()
+		# cudamem = comp.out_tops[0].cuda_memory()
+		# comp.in_tops[0].copy_cuda_memory(cudamem)
 
-		# if (this.frame == 4):
-		# 	cudamem = comp.out_tops[0].cudaMemory()
-		# 	print("cudamem: ",  cudamem.ptr, cudamem.ptr.data(), cudamem.size)
-		# 	tensor = comp.out_tops[0].as_tensor()
-		# 	print(tensor.shape, tensor.dtype)
-		# 	image = Image.fromarray(tensor.cpu().numpy().astype('uint8'), 'RGBA')
-		# 	image.show()
-		# 	comp.in_tops[0].from_tensor(tensor)
+		# array = TopLinkArray(comp.out_tops[0])
+		# tensor = torch.as_tensor(array, device='cuda')
+		tensor = comp.out_tops[0].as_tensor()
+		# print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.dtype, "tensor device: ", tensor.device, "tensor layout: ", tensor.layout, "tensor strides: ", tensor.stride(), "tensor is_contiguous: ", tensor.is_contiguous())
+
+
+		with torch.no_grad():
+			tensor2 = tensor.clone()
+			# tensor2 = tensor.permute(2, 1, 0).contiguous()
+			# print("tensor2 shape: ", tensor2.shape, "tensor2 dtype: ", tensor2.dtype, "tensor2 device: ", tensor2.device, "tensor2 layout: ", tensor2.layout, "tensor2 strides: ", tensor2.stride(), "tensor2 is_contiguous: ", tensor2.is_contiguous())
+			
+			comp.in_tops[0].from_tensor(tensor2)
 
 		comp.in_chops[0].from_numpy(this.test_array)
 		this.test_array += 1
