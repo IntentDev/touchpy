@@ -3,6 +3,7 @@ import os
 import keyboard
 import numpy as np
 import torch
+from torch import nn
 from PIL import Image
 
 # get the path to touchpy.pyd: ../out/build/x64-release
@@ -51,13 +52,41 @@ class TopLinkArray:
 		self.__cuda_array_interface__['data'] = (mem.ptr, False)
 		return
 
+class ImageFilter(nn.Module):
+	"""
+	Function to test io with TopLink tensors
+	"""
+	def __init__(self, in_channels=4, out_channels=4, kernel_size=3):
+		super().__init__()
+
+		# Create the convolutional layer
+		self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride=1, 
+							  padding=kernel_size // 2, groups=4, bias=False)
+
+		# Initialize the weights and biases
+		nn.init.constant_(self.conv.weight, 1.0 / (kernel_size ** 2) )
+		# nn.init.normal_(self.conv.weight, 0.0, 1)
+		# nn.init.xavier_uniform_(self.conv.weight, gain=2.0)
+
+	def forward(self, x):
+		# Assuming x is of shape [batch_size, channels, height, width]
+		return self.conv(x)
+
+	def normalize(self, tensor):
+		tensor_min = tensor.min()
+		tensor_max = tensor.max()
+		normalized_tensor = (tensor - tensor_min) / (tensor_max - tensor_min)
+		return normalized_tensor
+
+
 class ExampleRunComp:
 	def __init__(self):
 		self.frame = 0
-		self.a = 1
-		self.b = 2
 		self.test_array = np.array([[1],[2],[3],[4],[5],[6],[7],[8],[9],[10]], dtype=np.float32)
 		self.test_array_chan_names = [f"channel{i}" for i in range(10)]
+
+		self.device = torch.device('cuda')
+		self.imag_filter = ImageFilter().to(self.device)
 
 	def test(self, chans):
 		print(chans)
@@ -70,8 +99,11 @@ class ExampleRunComp:
 			comp.stop()
 			return
 		
-		# cudamem = comp.out_tops[0].cuda_memory()
-		# comp.in_tops[0].copy_cuda_memory(cudamem)
+		cudamem = comp.out_tops[1].cuda_memory()
+		comp.in_tops[1].copy_cuda_memory(cudamem)
+
+		cudamem = comp.out_tops[2].cuda_memory()
+		comp.in_tops[2].copy_cuda_memory(cudamem)
 
 		# array = TopLinkArray(comp.out_tops[0])
 		# tensor = torch.as_tensor(array, device='cuda')
@@ -80,11 +112,15 @@ class ExampleRunComp:
 
 
 		with torch.no_grad():
-			tensor2 = tensor.clone()
+			# tensor2 = tensor.clone()
 			# tensor2 = tensor.permute(2, 1, 0).contiguous()
+
+			# filter tensor only works with 32bit float data
+			# tensor2 = this.imag_filter(tensor.unsqueeze(0)).squeeze(0) 
+
 			# print("tensor2 shape: ", tensor2.shape, "tensor2 dtype: ", tensor2.dtype, "tensor2 device: ", tensor2.device, "tensor2 layout: ", tensor2.layout, "tensor2 strides: ", tensor2.stride(), "tensor2 is_contiguous: ", tensor2.is_contiguous())
 			
-			comp.in_tops[0].from_tensor(tensor2)
+			comp.in_tops[0].from_tensor(tensor * 2)
 
 		comp.in_chops[0].from_numpy(this.test_array)
 		this.test_array += 1
@@ -146,9 +182,6 @@ class ExampleRunComp:
 		scale = comp.par['Scale']
 		scale.val = 0.0 + this.frame * 0.01
 		# print(scale.val)
-
-
-
 
 		this.frame += 1
 

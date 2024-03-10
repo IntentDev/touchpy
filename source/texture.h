@@ -157,19 +157,11 @@ private:
 
 
 cudaError_t
-memCopyFromSurfaceCharBRGA(
-	void* dst,
-	int width,
-	int height,
-	cudaSurfaceObject_t src,
-	cudaStream_t stream
-);
+memCopyBRGA8USurfaceToRGBA8U(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
+//cudaError_t
+//memCopyBRG8USurfaceToRGB8U(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
 
 cudaError_t
-memCopyToSurfaceCharBRGA(
-	cudaSurfaceObject_t output,
-	int width,
-	int height,
-	const void* src,
-	cudaStream_t stream
-);
+memCopyRGBA8UToBGRA8USurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);
