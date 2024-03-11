@@ -64,6 +64,8 @@ public:
 		uint64_t waitValue,
 		cudaStream_t stream);
 
+	void copyCudaMemoryToInputTexture(CUDAMemory memory, cudaStream_t stream);
+
 	void transferTextureToInputLink();
 
 	//void copyCudaMemory(void* memory, uint32_t width, uint32_t height, uint32_t numComponents, cudaStream_t stream);

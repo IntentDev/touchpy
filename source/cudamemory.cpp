@@ -5,19 +5,12 @@ VkFormat vkFormatFromCUDAMemoryShape(CUDAMemoryShape shape)
 	switch (shape.numComponents)
 	{
 	case 4:
+	case 3:
 		switch (shape.dataType)
 		{
 		case CUDADataType::UInt8:   return VK_FORMAT_B8G8R8A8_UNORM;
 		case CUDADataType::Float32: return VK_FORMAT_R32G32B32A32_SFLOAT;
 		case CUDADataType::Float16: return VK_FORMAT_R16G16B16A16_SFLOAT;
-		}
-		break;
-	case 3:
-		switch (shape.dataType)
-		{
-		case CUDADataType::UInt8:   return VK_FORMAT_B8G8R8_UNORM;
-		case CUDADataType::Float32: return VK_FORMAT_R32G32B32_SFLOAT;
-		case CUDADataType::Float16: return VK_FORMAT_R16G16B16_SFLOAT;
 		}
 		break;
 	case 2:
@@ -109,4 +102,21 @@ std::string cudaDataTypeToString(CUDADataType type)
 	case CUDADataType::Float16: return "float16";
 	}
 	return "undefined";
+}
+
+cudaChannelFormatDesc cudaChannelFormatDescFromVkFormat(VkFormat vkFormat)
+{
+	switch (vkFormat)
+	{
+		case VK_FORMAT_B8G8R8A8_UNORM: return cudaCreateChannelDesc<uchar4>();
+		case VK_FORMAT_R32G32B32A32_SFLOAT: return cudaCreateChannelDesc<float4>();
+		case VK_FORMAT_R32G32_SFLOAT: return cudaCreateChannelDesc<float2>();
+		case VK_FORMAT_R32_SFLOAT: return cudaCreateChannelDesc<float>();
+		case VK_FORMAT_R16G16B16A16_SFLOAT: return cudaCreateChannelDesc<short4>();
+		case VK_FORMAT_R16G16_SFLOAT: return cudaCreateChannelDesc<short2>();
+		case VK_FORMAT_R16_SFLOAT: return cudaCreateChannelDesc<int16_t>();
+		default : break;
+	}
+
+	return cudaCreateChannelDesc<uchar4>();
 }

@@ -88,7 +88,8 @@ private:
 	VkPhysicalDevice                      physicalDevice_      { VK_NULL_HANDLE };
 	VkExtent2D                            extent_              { 0, 0 };
 	VkFormat                              format_              { VK_FORMAT_UNDEFINED };
-
+	uint8_t								  numComponents_	   { 4 };
+	size_t								  componentSize_	   { 1 };
 	bool                                  flipped_             { false };
 
 
@@ -139,8 +140,6 @@ private:
 	void*                            cudaBuffer_         { nullptr };
 	size_t                           cudaBufferSize_     { 0 };
 
-	uint8_t                          numComponents_      { 4 };
-	size_t                           componentSize_      { 1 };
 	CUDAMemory                       cudaMemory_         { };
 
 	void setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory);
@@ -159,9 +158,11 @@ private:
 cudaError_t
 memCopyBRGA8USurfaceToRGBA8U(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
 
-//cudaError_t
-//memCopyBRG8USurfaceToRGB8U(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
-
+template<typename T, typename CompType> cudaError_t
+memCopyFromSurface(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
 
 cudaError_t
 memCopyRGBA8UToBGRA8USurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);
+
+template<typename T, typename CompType> cudaError_t
+memCopyToSurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);

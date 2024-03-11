@@ -565,8 +565,25 @@ void Comp::stopUpdateLoop()
 
 void Comp::applyValueChanges()
 {
+	// this should likely always be called on changes (unlike below) since in most cases we'll want the cuda buffer 
+	// to be filled before accessing it... We could implement a hasChanged() function to check if the buffer has changed
+	// so arrays do not need to be set every frame. 
+	// We could also devise a dependency method/graph so only outLinks being accessed are updated... 
 	applyOutputTextureChange();
+
+	// need to call applyOutputFloatBufferChange() to apply any pending changes to the output float buffers
+	// before reading data. Need to update this so that:
+	// Method 1: call applyOutputFloatBufferChange() on change and read data on update (as it is now)
+	// Method 2: call getChannels() function whenever and read data whether or not there are pending changes
+	// In addtion to both these methods create a methods that can be called to read data whether or not there are pending changes
+	// In the case of Method 1, the hasChanged() is true after the buffer is filled, in the case of Method 2, hasChanged() is changed
+	// calls the corresponding TE function to check if the buffer has changed. Need to sort out the best way to do this and probably 
+	// choose one method.
 	applyOutputFloatBufferChange();
+
+	// similar to the above, but at this moment asString() and asTable() simply read the data directly from the TE object
+	// so there is no need for updates with the current Python test script. But there is no hasChanged() function so 
+	// the function must be called every frame. 
 	//applyOutputStringDataChange();
 }
 
@@ -616,7 +633,7 @@ Comp::applyOutputStringDataChange()
 
 void Comp::copyOutsToIns()
 {
-	//copyOutTopsToInTops();
+	copyOutTopsToInTops();
 	//copyOutChopsToInChops(); // requires applyOutputFloatBufferChange() to be called first
 	//copyOutDatsToInDats(); // requires applyOutputStringDataChange() to be called first
 	//getSetParValues();
