@@ -75,6 +75,11 @@ endif ()
 target_compile_definitions(touchpy PRIVATE ${COMPILE_DEFINITIONS})
 target_compile_definitions(touchloader PRIVATE ${COMPILE_DEFINITIONS})
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_definitions(touchpy PRIVATE DISABLE_DEBUG_BUILD)
+endif()
+
+
 # Check if VCPKG_ROOT is set as an environment variable
 if(DEFINED ENV{VCPKG_ROOT})
   set(VCPKG_ROOT $ENV{VCPKG_ROOT})

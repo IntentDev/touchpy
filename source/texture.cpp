@@ -520,13 +520,13 @@ void Texture::copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream, bool 
 			//CUDA_CHECK(memCopyFromSurface<uchar4>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
 			break;
 		case VK_FORMAT_R32G32B32A32_SFLOAT:
-			memCopyFromSurface<float4, float>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
+			CUDA_CHECK(memCopyFromSurface<float4>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
 			break;
 		case VK_FORMAT_R32G32_SFLOAT:
-			memCopyFromSurface<float2, float>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
+			CUDA_CHECK(memCopyFromSurface<float2>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
 			break;
 		case VK_FORMAT_R32_SFLOAT:
-			memCopyFromSurface<float, float>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
+			CUDA_CHECK(memCopyFromSurface<float>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
 			break;
 		default:
 			return;
@@ -558,13 +558,13 @@ void Texture::copyCudaMemToImage(void* memory,
 			//CUDA_CHECK(memCopyToSurface<uchar4, uint8_t, 4>(cudaSurface_, extent_.width, extent_.height, memory, stream));
 			break;
 		case VK_FORMAT_R32G32B32A32_SFLOAT:
-			memCopyToSurface<float4, float, 4>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+			CUDA_CHECK(memCopyToSurface<float4>(cudaSurface_, extent_.width, extent_.height, memory, stream));
 			break;
 		case VK_FORMAT_R32G32_SFLOAT:
-			memCopyToSurface<float2, float, 2>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+			CUDA_CHECK(memCopyToSurface<float2>(cudaSurface_, extent_.width, extent_.height, memory, stream));
 			break;
 		case VK_FORMAT_R32_SFLOAT:
-			memCopyToSurface<float, float, 1>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+			CUDA_CHECK(memCopyToSurface<float>(cudaSurface_, extent_.width, extent_.height, memory, stream));
 			break;
 		default:
 			return;
@@ -671,7 +671,7 @@ void Texture::cudaImportImageMemory(HANDLE imageHandle)
 void Texture::cudaAllocateMemory()
 {
 	auto pixelSize = numComponents_ * componentSize_;
-	cudaBufferSize_ = extent_.width * extent_.height * pixelSize * 4;
+	cudaBufferSize_ = extent_.width * extent_.height * pixelSize;
 
 	CUDA_CHECK(cudaMalloc((void**)&cudaBuffer_, cudaBufferSize_));
 

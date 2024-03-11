@@ -275,7 +275,7 @@ NB_MODULE(touchpy, m)
 		);
 
 	nb::class_<CUDAMemory> cudaMemory(m, "CudaMemory");
-	cudaMemory.doc() = "Represents a memory block on the GPU";
+	cudaMemory.doc() = "A pointer to CUDA memory and its attributes";
 	cudaMemory.def(nb::init<>())
 		.def_ro("size",       &CUDAMemory::size, nb::rv_policy::reference_internal)
 		.def_rw("shape",      &CUDAMemory::shape, nb::rv_policy::reference_internal)

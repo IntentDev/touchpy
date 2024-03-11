@@ -3,6 +3,7 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include <stdint.h>
+#include <cstdio>
 
 #ifdef _DEBUG
 #define CHECK_CUDA_ERROR_AND_RETURN_STATUS(call) do { \
@@ -61,7 +62,7 @@ fromSurfaceBRGA8UToRGB8U(void* dst, int width, int height, cudaSurfaceObject_t s
 }
 
 // RGBAFS32, RGFS32, RFS32, RGBAFS16, RGFS16, RFS16, RGU8, RU8
-template<typename T, typename CompType> __global__ void
+template<typename T> __global__ void
 fromSurface(void* dst, int width, int height, cudaSurfaceObject_t src)
 {
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -73,7 +74,7 @@ fromSurface(void* dst, int width, int height, cudaSurfaceObject_t src)
 	T color;
 	size_t size = sizeof(T);
 	surf2Dread(&color, src, x * size, y, cudaBoundaryModeZero);
-	T* dstPtr = (T*)((CompType*)dst + y * width * size);
+	T* dstPtr = (T*)((T*)dst + y * width);
 	dstPtr[x] = color;
 }
 
@@ -116,7 +117,7 @@ toSurfaceBRGA8UFromRGB8U(cudaSurfaceObject_t dst, int width, int height, const v
 }
 
 // RGBAFS32, RGFS32, RFS32, RGBAFS16, RGFS16, RFS16, RGU8, RU8
-template<typename T, typename CompType, uint8_t numComps> __global__ void
+template<typename T> __global__ void
 toSurface(cudaSurfaceObject_t dst, int width, int height, const void* src)
 {
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -125,7 +126,7 @@ toSurface(cudaSurfaceObject_t dst, int width, int height, const void* src)
 	if (x >= width || y >= height)
 		return;
 
-	size_t size = sizeof(T);       // # of components
-	T color = *(T*)((CompType*)src + x * numComps + y * width * size);
+	size_t size = sizeof(T);  
+	T color = *(T*)((T*)src + x + y * width);
 	surf2Dwrite(color, dst, x * size, y, cudaBoundaryModeZero);
 }
