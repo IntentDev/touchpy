@@ -149,6 +149,36 @@ InTopLink::copyCudaMemoryToInputTexture(
 }
 
 void
+InTopLink::copyCudaMemoryToInputTexture(CUDAMemory memory, cudaStream_t stream)
+{
+	if (scope_ != Link::Scope::Input)
+		return;
+
+	VkExtent2D extent { memory.shape.width, memory.shape.height };
+	VkFormat format = vkFormatFromCUDAMemoryShape(memory.shape);
+
+	if (textures_.size() == 0)
+		setInputTexture(extent, format);
+	else if (textures_[0]->format() != format || textures_[0]->width() != extent.width || textures_[0]->height() != extent.height)
+	{
+		textures_[0].reset();
+		setInputTexture(extent, format);
+	}
+
+	uint64_t signalValue;
+	VK_CHECK(vkGetSemaphoreCounterValue(device_, textures_[0]->semaphore(), &signalValue));
+	textures_[0]->setSignalValue(++signalValue);
+
+	textures_[0]->copyCudaMemToImage(
+		memory.ptr,
+		nullptr,
+		textures_[0]->cudaExtSemaphore(),
+		0,
+		signalValue,
+		stream);
+}
+
+void
 InTopLink::transferTextureToInputLink()
 {
 	if (textures_.size() == 0 || scope_ != Link::Scope::Input)
@@ -164,24 +194,9 @@ InTopLink::transferTextureToInputLink()
 		std::cout << "transferToInputLink: " << identifier_ << ", " << TEResultGetDescription(result) << std::endl;
 }
 
-//void 
-//InTopLink::copyCudaMemory(void* memory, uint32_t width, uint32_t height, uint32_t numComponents, cudaStream_t stream)
-//{
-//	VkExtent2D extent = { width, height };
-//	copyCudaMemoryToInputTexture(memory, VK_FORMAT_R8G8B8A8_UNORM, extent, nullptr, 0, stream);
-//	transferTextureToInputLink();
-//}
-
 void
 InTopLink::copyCudaMemory(const CUDAMemory& cudaMemory, cudaStream_t stream)
 {
-	VkExtent2D extent = { cudaMemory.shape.width, cudaMemory.shape.height };
-	copyCudaMemoryToInputTexture(
-		cudaMemory.ptr, 
-		vkFormatFromCUDAMemoryShape(cudaMemory.shape), 
-		extent, 
-		nullptr, 0, 
-		stream);
-
+	copyCudaMemoryToInputTexture(cudaMemory, stream);
 	transferTextureToInputLink();
 }

@@ -13,45 +13,6 @@ sys.path.append(path)
 
 import touchpy as tp
 
-def tp_dtype_to_torch(tp_dtype):
-    type_map = {
-        tp.CUDADataType.Float64: torch.float64,
-        tp.CUDADataType.Float32: torch.float32,
-        tp.CUDADataType.Float16: torch.float16,
-        tp.CUDADataType.UInt8: torch.uint8
-    }
-    return type_map[tp_dtype]
-
-TP_TYPE_MAP = {}
-TP_TYPE_MAP[tp.CUDADataType.UInt8] = {'descr': [('', '|u1')], 'numBytes': 1}
-TP_TYPE_MAP[tp.CUDADataType.Float16] = {'descr': [('', '<f4')], 'numBytes': 4}
-TP_TYPE_MAP[tp.CUDADataType.Float32] = {'descr': [('', '<f4')], 'numBytes': 4}
-
-class TopLinkArray:
-	def __init__(self, topLink, stream=0):
-		mem = topLink.cuda_memory()
-		shape = (mem.shape.num_components, mem.shape.height, mem.shape.width)
-		dtype_info = TP_TYPE_MAP[mem.shape.data_type]
-		dtype_descr = dtype_info['descr']
-		numBytes = dtype_info['numBytes']
-		# num_bytes_px = numBytes * mem.shape.num_components
-		
-		self.__cuda_array_interface__ = {
-			"version": 3,
-			"shape": shape,
-			"typestr": dtype_descr[0][1],
-			"descr": dtype_descr,
-			"stream": stream,
-			"strides": mem.shape.strides,
-			"data": (mem.ptr, False),
-		}
-
-	def update(self, topLink, stream=0):
-		mem = topLink.cuda_memory(stream=stream)
-		self.__cuda_array_interface__['stream'] = stream
-		self.__cuda_array_interface__['data'] = (mem.ptr, False)
-		return
-
 class ImageFilter(nn.Module):
 	"""
 	Function to test io with TopLink tensors
@@ -102,12 +63,11 @@ class ExampleRunComp:
 		cudamem = comp.out_tops[1].cuda_memory()
 		comp.in_tops[1].copy_cuda_memory(cudamem)
 
-		cudamem = comp.out_tops[2].cuda_memory()
-		comp.in_tops[2].copy_cuda_memory(cudamem)
+		# cudamem = comp.out_tops[2].cuda_memory()
+		# comp.in_tops[2].copy_cuda_memory(cudamem)
 
-		# array = TopLinkArray(comp.out_tops[0])
-		# tensor = torch.as_tensor(array, device='cuda')
 		tensor = comp.out_tops[0].as_tensor()
+		# tensor = comp.out_tops[0].as_tensor(tp.ComponentMask.RGB)
 		# print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.dtype, "tensor device: ", tensor.device, "tensor layout: ", tensor.layout, "tensor strides: ", tensor.stride(), "tensor is_contiguous: ", tensor.is_contiguous())
 
 

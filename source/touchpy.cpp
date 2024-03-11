@@ -8,6 +8,7 @@
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/variant.h>
 #include <nanobind/ndarray.h>
+#include <nanobind/operators.h>
 
 
 #include "comp.h"
@@ -130,6 +131,28 @@ nb::dlpack::dtype dtypeFromCUDADataType(CUDADataType type)
 	return dtype;
 }
 
+template<typename ...Args>
+nb::ndarray<Args...> arrayFromCudaMem(OutTopLink& outTopLink, ComponentMask componentMask = ComponentMask::RGBA)
+{
+	const auto& cudaMem = outTopLink.cudaMemory();
+	auto numActiveComps = std::min(numActiveComponents(componentMask), cudaMem.shape.numComponents);
+	auto compSize = static_cast<int64_t>(cudaMem.shape.componentSize);
+
+	return nb::ndarray<Args...>(
+		cudaMem.ptr,
+		{ cudaMem.shape.height, cudaMem.shape.width, numActiveComps },
+		nb::handle(),
+		{
+			cudaMem.shape.numComponents * cudaMem.shape.width,
+			cudaMem.shape.numComponents,
+			compSize
+		},
+		dtypeFromCUDADataType(cudaMem.shape.dataType),
+		nb::device::cuda::value,
+		0
+	);
+}
+
 template<typename T>
 void copyArrayToCudaMemory(InTopLink& inTopLink, T array)
 {
@@ -207,22 +230,43 @@ NB_MODULE(touchpy, m)
 
 	//nb::class_<cudaStream_t>(m, "cudaStream");
 
+	nb::enum_<ComponentMask>(m, "ComponentMask")
+		.value("None", ComponentMask::None)
+		.value("R",    ComponentMask::R)
+		.value("G",    ComponentMask::G)
+		.value("B",    ComponentMask::B)
+		.value("A",    ComponentMask::A)
+		.value("RG",   ComponentMask::RG)
+		.value("RGB",  ComponentMask::RGB)
+		.value("RGBA", ComponentMask::RGBA)
+		.def(nb::self | nb::self)
+		.def(nb::self & nb::self)
+		.def(nb::self ^ nb::self)
+		.def(~nb::self)
+		.def(nb::self |= nb::self)
+		.def(nb::self &= nb::self)
+		.def(nb::self ^= nb::self)
+		.def(!nb::self)
+		.def(nb::self == nb::self)
+		.def(nb::self != nb::self)
+		;
+
 	nb::enum_<CUDADataType>(m, "CUDADataType")
-		.value("UInt8", CUDADataType::UInt8)
-		.value("Float16", CUDADataType::Float16)
-		.value("Float32", CUDADataType::Float32)
+		.value("UInt8",     CUDADataType::UInt8)
+		.value("Float16",   CUDADataType::Float16)
+		.value("Float32",   CUDADataType::Float32)
 		.value("Undefined", CUDADataType::Undefined)
 		;
 
 	nb::class_<CUDAMemoryShape> cudaMemoryShape(m, "CudaMemoryShape");
 	cudaMemoryShape.def(nb::init<>())
-		.def_rw("width", &CUDAMemoryShape::width)
-		.def_rw("height", &CUDAMemoryShape::height)
+		.def_rw("width",          &CUDAMemoryShape::width)
+		.def_rw("height",         &CUDAMemoryShape::height)
 		.def_rw("num_components", &CUDAMemoryShape::numComponents)
 		.def_rw("component_size", &CUDAMemoryShape::componentSize)
-		.def_rw("data_type", &CUDAMemoryShape::dataType)
-		.def_rw("strides",  &CUDAMemoryShape::strides)
-		.def("__repr__", [](CUDAMemoryShape& self)
+		.def_rw("data_type",      &CUDAMemoryShape::dataType)
+		.def_rw("strides",        &CUDAMemoryShape::strides)
+		.def("__repr__", []       (CUDAMemoryShape& self)
 			{
 				return "CudaMemoryShape(" + std::to_string(self.width) + ", " + std::to_string(self.height) 
 					+ ", " + std::to_string(self.numComponents) + ", " + std::to_string(self.componentSize) 
@@ -233,49 +277,19 @@ NB_MODULE(touchpy, m)
 	nb::class_<CUDAMemory> cudaMemory(m, "CudaMemory");
 	cudaMemory.doc() = "Represents a memory block on the GPU";
 	cudaMemory.def(nb::init<>())
-		.def_prop_ro("ptr", [](CUDAMemory& self) -> uintptr_t 
-			{ return reinterpret_cast<uintptr_t>(self.ptr); }, nb::rv_policy::reference_internal)
-		.def_ro("size", &CUDAMemory::size, nb::rv_policy::reference_internal)
-		.def_rw("shape", &CUDAMemory::shape, nb::rv_policy::reference_internal);
+		.def_ro("size",       &CUDAMemory::size, nb::rv_policy::reference_internal)
+		.def_rw("shape",      &CUDAMemory::shape, nb::rv_policy::reference_internal)
+		.def_prop_ro("ptr", [](CUDAMemory& self) -> uintptr_t
+			{ return reinterpret_cast<uintptr_t>(self.ptr); }, nb::rv_policy::reference_internal);
 
 
 	nb::class_<OutTopLink> outTopLink(m, "OutTopLink");
 	outTopLink.doc() = "Represents an OutTOP in a TouchDesigner component";
-	outTopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
-	outTopLink.def("cuda_memory", &OutTopLink::cudaMemory);
-
-	outTopLink.def("as_dlpack", [](OutTopLink& self)
-		{
-			const auto& cudaMem = self.cudaMemory();
-			return nb::ndarray<>(
-				cudaMem.ptr,
-				{ cudaMem.shape.numComponents, cudaMem.shape.height, cudaMem.shape.width },
-				nb::handle(),
-				{ cudaMem.shape.strides[0], cudaMem.shape.strides[1], cudaMem.shape.strides[2] },
-				dtypeFromCUDADataType(cudaMem.shape.dataType),
-				nb::device::cuda::value,
-				0
-			);
-		}, nb::rv_policy::reference_internal);
-
-	outTopLink.def("as_tensor", [](OutTopLink& self)
-		{
-			const auto& cudaMem = self.cudaMemory();
-			return nb::ndarray<nb::pytorch>(
-				cudaMem.ptr,
-				{ cudaMem.shape.height, cudaMem.shape.width, cudaMem.shape.numComponents },
-				nb::handle(),
-				//{ cudaMem.shape.strides[0], cudaMem.shape.strides[1], cudaMem.shape.strides[2] },
-				{ 
-					cudaMem.shape.numComponents * cudaMem.shape.width, 
-					cudaMem.shape.numComponents, 
-					static_cast<int64_t>(cudaMem.shape.componentSize)
-				},
-				dtypeFromCUDADataType(cudaMem.shape.dataType),
-				nb::device::cuda::value,
-				0
-			);
-		}, nb::rv_policy::reference_internal);
+	outTopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+		.def("cuda_memory", &OutTopLink::cudaMemory)
+		.def("as_dlpack", &arrayFromCudaMem<>, "componentMask"_a = ComponentMask::RGBA, nb::rv_policy::reference_internal)
+		.def("as_tensor", &arrayFromCudaMem<nb::pytorch>, "componentMask"_a = ComponentMask::RGBA, nb::rv_policy::reference_internal)
+		;
 
 	nb::class_<OutTopLinks> outTopLinks(m, "OutTopLinks");
 	outTopLinks.doc() = "Represents a collection of OutTOP links in a TouchDesigner component";
@@ -428,6 +442,22 @@ NB_MODULE(touchpy, m)
 		}, "list"_a, "cast"_a = false
 	);
 
+	nb::class_<OutDatLink> outDatLink(m, "OutDatLink");
+	outDatLink.doc() = "Represents a in or out DAT in a TouchDesigner component";
+	outDatLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+		.def("as_table", &OutDatLink::asTable)
+		.def("as_string", &OutDatLink::asString)
+		;
+
+	nb::class_<OutDatLinks> outDatLinks(m, "OutDatLinks");
+	outDatLinks.doc() = "Represents a collection of DAT links in a TouchDesigner component";
+	outDatLinks.def(nb::init<>())
+		.def("num_links", &OutDatLinks::size)
+		.def("link_names", &OutDatLinks::getLinkNames)
+		.def("__getitem__", [](OutDatLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](OutDatLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
+		;
+
 	nb::class_<InDatLink> inDatLink(m, "InDatLink");
 	inDatLink.doc() = "Represents a in or out DAT in a TouchDesigner component";
 	inDatLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
@@ -449,22 +479,6 @@ NB_MODULE(touchpy, m)
 		.def("link_names", &InDatLinks::getLinkNames)
 		.def("__getitem__", [](InDatLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](InDatLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
-		;
-
-	nb::class_<OutDatLink> outDatLink(m, "OutDatLink");
-	outDatLink.doc() = "Represents a in or out DAT in a TouchDesigner component";
-	outDatLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
-		.def("as_table", &OutDatLink::asTable)
-		.def("as_string", &OutDatLink::asString)
-		;
-
-	nb::class_<OutDatLinks> outDatLinks(m, "OutDatLinks");
-	outDatLinks.doc() = "Represents a collection of DAT links in a TouchDesigner component";
-	outDatLinks.def(nb::init<>())
-		.def("num_links", &OutDatLinks::size)
-		.def("link_names", &OutDatLinks::getLinkNames)
-		.def("__getitem__", [](OutDatLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
-		.def("__getitem__", [](OutDatLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
 
 	// ParLinks

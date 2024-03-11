@@ -27,6 +27,8 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 
 	// need to create function that sets up pitch depending on format and sets the 
 	// format for cuda memory allocation
+
+	std::cout << "Texture Component Size: " << componentSize_ << ", Num Components: " << static_cast<int>(numComponents_) << std::endl;
 	imagePitch_ = extent_.width * componentSize_ * numComponents_;
 
 	VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
@@ -509,9 +511,30 @@ HANDLE Texture::getVkMemoryHandle(VkExternalMemoryHandleTypeFlagBitsKHR external
 
 void Texture::copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream, bool signal)
 {
+	// TODO: change the sequence of calls so the switch is before the wait
 	cudaVkSemaphoreWait(cudaExtSemaphore_, waitValue, stream);
-	CUDA_CHECK(memCopyBRGA8USurfaceToRGBA8U(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
-	//if (signal)
+	switch (format_)
+	{
+		case VK_FORMAT_B8G8R8A8_UNORM:
+			CUDA_CHECK(memCopyBRGA8USurfaceToRGBA8U(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
+			//CUDA_CHECK(memCopyFromSurface<uchar4>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
+			break;
+		case VK_FORMAT_R32G32B32A32_SFLOAT:
+			memCopyFromSurface<float4, float>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
+			break;
+		case VK_FORMAT_R32G32_SFLOAT:
+			memCopyFromSurface<float2, float>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
+			break;
+		case VK_FORMAT_R32_SFLOAT:
+			memCopyFromSurface<float, float>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
+			break;
+		default:
+			return;
+	}
+
+
+
+	/*CUDA_CHECK(memCopyBRGA8USurfaceToRGBA8U(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));*/
 	cudaVkSemaphoreSignal(cudaExtSemaphore_, ++waitValue, stream);
 	waitValue_ = waitValue;
 }
@@ -525,10 +548,30 @@ void Texture::copyCudaMemToImage(void* memory,
 {	
 	if (waitSemaphore)
 		cudaVkSemaphoreWait(waitSemaphore, waitValue, stream);
-	CUDA_CHECK(memCopyRGBA8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
-	//waitValue_ = ++waitValue;
+
+	// TODO: change the sequence of calls so the switch is before the wait
+	// format_ has already been set by the function that called this one, the switch should be in that function
+	switch (format_)
+	{
+		case VK_FORMAT_B8G8R8A8_UNORM:
+			CUDA_CHECK(memCopyRGBA8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
+			//CUDA_CHECK(memCopyToSurface<uchar4>(cudaSurface_, extent_.width, extent_.height, memory, stream));
+			break;
+		case VK_FORMAT_R32G32B32A32_SFLOAT:
+			memCopyToSurface<float4, float>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+			break;
+		case VK_FORMAT_R32G32_SFLOAT:
+			memCopyToSurface<float2, float>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+			break;
+		case VK_FORMAT_R32_SFLOAT:
+			memCopyToSurface<float, float>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+			break;
+		default:
+			return;
+	}
 
 
+	/*CUDA_CHECK(memCopyRGBA8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));*/
 	cudaVkSemaphoreSignal(signalSemaphore, signalValue, stream);
 
 }
@@ -593,13 +636,19 @@ void Texture::cudaImportImageMemory(HANDLE imageHandle)
 	cudaExtMemHandleDesc.size = imageSize_;
 	cudaExtMemHandleDesc.flags = 0;
 
+	std::cout << "Cuda External Memory Handle: " << imageHandle << ", Size: " << imageSize_ << std::endl;
+
 	CUDA_CHECK(cudaImportExternalMemory(&cudaExtImageMemory_, &cudaExtMemHandleDesc));
 
 	std::cout << "Cuda Imported External Memory:" << cudaExtImageMemory_ << std::endl;
 
 	cudaExternalMemoryMipmappedArrayDesc cudaExtMemMipArrayDesc;
 	std::memset(&cudaExtMemMipArrayDesc, 0, sizeof(cudaExtMemMipArrayDesc));
-	cudaExtMemMipArrayDesc.formatDesc = { 8, 8, 8, 8, cudaChannelFormatKindUnsigned };
+
+	auto chanDesc = cudaChannelFormatDescFromVkFormat(format_);
+	std::cout << "Channel Format: " << chanDesc.x << ", " << chanDesc.y << ", " << chanDesc.z << ", " << chanDesc.w << ", " << chanDesc.f << std::endl;
+
+	cudaExtMemMipArrayDesc.formatDesc = chanDesc; // { 8, 8, 8, 8, cudaChannelFormatKindUnsigned };
 	cudaExtMemMipArrayDesc.extent = { extent_.width, extent_.height, 0 }; // depth is 0 for 2D extent...
 	cudaExtMemMipArrayDesc.flags = 0;
 	cudaExtMemMipArrayDesc.numLevels = 1;
@@ -622,7 +671,7 @@ void Texture::cudaImportImageMemory(HANDLE imageHandle)
 void Texture::cudaAllocateMemory()
 {
 	auto pixelSize = numComponents_ * componentSize_;
-	cudaBufferSize_ = extent_.width * extent_.height * pixelSize;
+	cudaBufferSize_ = extent_.width * extent_.height * pixelSize * 4;
 
 	CUDA_CHECK(cudaMalloc((void**)&cudaBuffer_, cudaBufferSize_));
 
@@ -638,7 +687,7 @@ void Texture::cudaAllocateMemory()
 	cudaMemory_.ptr = cudaBuffer_;
 	cudaMemory_.size = cudaBufferSize_;
 
-	std::cout << "Cuda Memory Allocated: " << cudaBuffer_ << std::endl;
+	std::cout << "Cuda Memory Allocated: " << cudaBuffer_ << ", per pixel: " << pixelSize << std::endl;
 
 }
 
