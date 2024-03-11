@@ -40,18 +40,18 @@ memCopyRGBA8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, con
 	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
 }
 
-template<typename T, typename CompType> cudaError_t
+template<typename T, typename CompType, uint8_t numComps> cudaError_t
 memCopyToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)
 {
 	dim3 blockSize(16, 16, 1);
 	dim3 gridSize(divUp(width, blockSize.x), divUp(height, blockSize.y), 1);
-	toSurface<T, CompType> <<<gridSize, blockSize, 0, stream>>> (dst, width, height, src);
+	toSurface<T, CompType, numComps> <<<gridSize, blockSize, 0, stream>>> (dst, width, height, src);
 
 	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
 }
 
 // instantiate the template for the types we need, so the compiler can generate the code
-template cudaError_t memCopyToSurface<float4, float>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
-template cudaError_t memCopyToSurface<float2, float>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
-template cudaError_t memCopyToSurface<float, float>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
-template cudaError_t memCopyToSurface<uchar4, uint8_t>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+template cudaError_t memCopyToSurface<float4, float, 4>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+template cudaError_t memCopyToSurface<float2, float, 2>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+template cudaError_t memCopyToSurface<float, float, 1>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+template cudaError_t memCopyToSurface<uchar4, uint8_t, 4>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
