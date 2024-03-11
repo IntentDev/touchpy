@@ -116,7 +116,7 @@ toSurfaceBRGA8UFromRGB8U(cudaSurfaceObject_t dst, int width, int height, const v
 }
 
 // RGBAFS32, RGFS32, RFS32, RGBAFS16, RGFS16, RFS16, RGU8, RU8
-template<typename T, typename CompType> __global__ void
+template<typename T, typename CompType, uint8_t numComps> __global__ void
 toSurface(cudaSurfaceObject_t dst, int width, int height, const void* src)
 {
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -126,6 +126,6 @@ toSurface(cudaSurfaceObject_t dst, int width, int height, const void* src)
 		return;
 
 	size_t size = sizeof(T);       // # of components
-	T color = *(T*)((CompType*)src + x * 4 + y * width * size);
+	T color = *(T*)((CompType*)src + x * numComps + y * width * size);
 	surf2Dwrite(color, dst, x * size, y, cudaBoundaryModeZero);
 }

@@ -164,5 +164,5 @@ memCopyFromSurface(void* dst, int width, int height, cudaSurfaceObject_t src, cu
 cudaError_t
 memCopyRGBA8UToBGRA8USurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);
 
-template<typename T, typename CompType> cudaError_t
+template<typename T, typename CompType, uint8_t numComps> cudaError_t
 memCopyToSurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);

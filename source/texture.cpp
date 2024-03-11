@@ -555,16 +555,16 @@ void Texture::copyCudaMemToImage(void* memory,
 	{
 		case VK_FORMAT_B8G8R8A8_UNORM:
 			CUDA_CHECK(memCopyRGBA8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
-			//CUDA_CHECK(memCopyToSurface<uchar4>(cudaSurface_, extent_.width, extent_.height, memory, stream));
+			//CUDA_CHECK(memCopyToSurface<uchar4, uint8_t, 4>(cudaSurface_, extent_.width, extent_.height, memory, stream));
 			break;
 		case VK_FORMAT_R32G32B32A32_SFLOAT:
-			memCopyToSurface<float4, float>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+			memCopyToSurface<float4, float, 4>(cudaSurface_, extent_.width, extent_.height, memory, stream);
 			break;
 		case VK_FORMAT_R32G32_SFLOAT:
-			memCopyToSurface<float2, float>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+			memCopyToSurface<float2, float, 2>(cudaSurface_, extent_.width, extent_.height, memory, stream);
 			break;
 		case VK_FORMAT_R32_SFLOAT:
-			memCopyToSurface<float, float>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+			memCopyToSurface<float, float, 1>(cudaSurface_, extent_.width, extent_.height, memory, stream);
 			break;
 		default:
 			return;

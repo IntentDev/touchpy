@@ -63,8 +63,8 @@ class ExampleRunComp:
 		cudamem = comp.out_tops[1].cuda_memory()
 		comp.in_tops[1].copy_cuda_memory(cudamem)
 
-		# cudamem = comp.out_tops[2].cuda_memory()
-		# comp.in_tops[2].copy_cuda_memory(cudamem)
+		cudamem = comp.out_tops[2].cuda_memory()
+		comp.in_tops[2].copy_cuda_memory(cudamem)
 
 		tensor = comp.out_tops[0].as_tensor()
 		# tensor = comp.out_tops[0].as_tensor(tp.ComponentMask.RGB)
