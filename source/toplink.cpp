@@ -154,8 +154,10 @@ InTopLink::copyCudaMemoryToInputTexture(CUDAMemory memory, cudaStream_t stream)
 	if (scope_ != Link::Scope::Input)
 		return;
 
+	
 	VkExtent2D extent { memory.shape.width, memory.shape.height };
 	VkFormat format = vkFormatFromCUDAMemoryShape(memory.shape);
+
 
 	if (textures_.size() == 0)
 		setInputTexture(extent, format);
@@ -169,6 +171,7 @@ InTopLink::copyCudaMemoryToInputTexture(CUDAMemory memory, cudaStream_t stream)
 	VK_CHECK(vkGetSemaphoreCounterValue(device_, textures_[0]->semaphore(), &signalValue));
 	textures_[0]->setSignalValue(++signalValue);
 
+	textures_[0]->setCudaMemoryShape(memory.shape);
 	textures_[0]->copyCudaMemToImage(
 		memory.ptr,
 		nullptr,

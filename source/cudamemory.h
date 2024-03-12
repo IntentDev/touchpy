@@ -24,7 +24,7 @@ struct CUDAMemoryShape
 	size_t                  componentSize { 1 };
 	ComponentMask			componentMask { ComponentMask::RGBA };
 	CUDADataType            dataType      { CUDADataType::Undefined };
-	std::array<uint32_t, 3> strides       { 0, 0, 0 };
+	std::array<uint32_t, 3> strides       { 0, 0, 0 }; // in bytes
 };
 
 struct CUDAMemory

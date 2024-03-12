@@ -633,7 +633,7 @@ Comp::applyOutputStringDataChange()
 
 void Comp::copyOutsToIns()
 {
-	copyOutTopsToInTops();
+	//copyOutTopsToInTops();
 	//copyOutChopsToInChops(); // requires applyOutputFloatBufferChange() to be called first
 	//copyOutDatsToInDats(); // requires applyOutputStringDataChange() to be called first
 	//getSetParValues();

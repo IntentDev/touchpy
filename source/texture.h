@@ -77,6 +77,7 @@ public:
 	void* cudaBuffer() const { return cudaBuffer_; }
 	size_t cudaBufferSize() const { return cudaBufferSize_; }
 	const CUDAMemory& cudaMemory() const { return cudaMemory_; }
+	void setCudaMemoryShape(CUDAMemoryShape shape) { cudaMemory_.shape = shape; }
 
 	void transferToInputLink(
 		TouchObject<TEInstance> teInstance, 
@@ -164,5 +165,11 @@ memCopyFromSurface(void* dst, int width, int height, cudaSurfaceObject_t src, cu
 cudaError_t
 memCopyRGBA8UToBGRA8USurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);
 
+cudaError_t
+memCopyRGB8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+
 template<typename T> cudaError_t
+memCopyToSurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);
+
+template<typename DstT, typename SrcT> cudaError_t
 memCopyToSurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);

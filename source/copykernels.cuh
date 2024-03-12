@@ -130,3 +130,21 @@ toSurface(cudaSurfaceObject_t dst, int width, int height, const void* src)
 	T color = *(T*)((T*)src + x + y * width);
 	surf2Dwrite(color, dst, x * size, y, cudaBoundaryModeZero);
 }
+
+template<typename DstT, typename SrcT> __global__ void
+toSurface(cudaSurfaceObject_t dst, int width, int height, const void* src)
+{
+	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (x >= width || y >= height)
+		return;
+
+	SrcT srcColor = *(SrcT*)((SrcT*)src + x + y * width);
+	DstT color;
+	color.x = srcColor.x;
+	color.y = srcColor.y;
+	color.z = srcColor.z;
+	color.w = 255;
+	surf2Dwrite(color, dst, x * sizeof(DstT), y, cudaBoundaryModeZero);
+}
