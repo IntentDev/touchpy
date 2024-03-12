@@ -142,11 +142,14 @@ nb::ndarray<Args...> arrayFromCudaMem(OutTopLink& outTopLink, ComponentMask comp
 		cudaMem.ptr,
 		{ cudaMem.shape.height, cudaMem.shape.width, numActiveComps },
 		nb::handle(),
-		{
-			cudaMem.shape.numComponents * cudaMem.shape.width,
-			cudaMem.shape.numComponents,
-			compSize
+		{   
+			// dlpack strides are in elements, not bytes so we can't use the strides from 
+			// the CUDAMemoryShape unless we divide by the component size or set directly
+			cudaMem.shape.numComponents * cudaMem.shape.width, // distance to next row
+			cudaMem.shape.numComponents, // distance to next pixel
+			1 // distance to next component
 		},
+
 		dtypeFromCUDADataType(cudaMem.shape.dataType),
 		nb::device::cuda::value,
 		0
@@ -171,9 +174,11 @@ void copyArrayToCudaMemory(InTopLink& inTopLink, T array)
 		memoryShape.numComponents = shape[2];
 		memoryShape.componentSize = array.itemsize();
 		memoryShape.dataType = cudaDataTypeFromDtype(array.dtype());
-		memoryShape.strides[0] = strides[2];
-		memoryShape.strides[1] = strides[0];
-		memoryShape.strides[2] = strides[1];
+
+		// dlpack strides are in elements, not bytes so we need to convert
+		memoryShape.strides[0] = strides[2] * memoryShape.numComponents;
+		memoryShape.strides[1] = strides[1] * memoryShape.numComponents;
+		memoryShape.strides[2] = strides[0] * memoryShape.numComponents;
 
 		cudaMemory.shape = memoryShape;
 

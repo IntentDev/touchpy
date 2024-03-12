@@ -40,6 +40,16 @@ memCopyRGBA8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, con
 	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
 }
 
+cudaError_t
+memCopyRGB8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)
+{
+	dim3 blockSize(16, 16, 1);
+	dim3 gridSize(divUp(width, blockSize.x), divUp(height, blockSize.y), 1);
+	toSurfaceBRGA8UFromRGB8U <<<gridSize, blockSize, 0, stream>>> (dst, width, height, src);
+
+	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
+}
+
 template<typename T> cudaError_t
 memCopyToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)
 {
@@ -55,3 +65,17 @@ template cudaError_t memCopyToSurface<float4>(cudaSurfaceObject_t dst, int width
 template cudaError_t memCopyToSurface<float2>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 template cudaError_t memCopyToSurface<float>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 template cudaError_t memCopyToSurface<uchar4>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+
+template<typename DstT, typename SrcT> cudaError_t
+memCopyToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)
+{
+	dim3 blockSize(16, 16, 1);
+	dim3 gridSize(divUp(width, blockSize.x), divUp(height, blockSize.y), 1);
+	toSurface<DstT, SrcT> << <gridSize, blockSize, 0, stream >> > (dst, width, height, src);
+
+	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
+}
+
+template cudaError_t memCopyToSurface<float4, float3>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+//template cudaError_t memCopyToSurface<short4, short3>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+template cudaError_t memCopyToSurface<uchar4, uchar3>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);

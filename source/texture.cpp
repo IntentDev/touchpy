@@ -13,10 +13,11 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 
 {
 	textureHandle_ = TEVulkanTextureGetHandle(texture);
-
 	std::cout << "TE Texture Handle: " << textureHandle_ << std::endl;
 
 	VkExternalMemoryHandleTypeFlagsKHR handleType = TEVulkanTextureGetHandleType(texture);
+	//std::cout << "Texture Handle Type: " << string_VkExternalMemoryHandleTypeFlagsKHR(handleType) << std::endl;
+
 	format_ = TEVulkanTextureGetFormat(texture);
 	numComponents_ = numCompsFromVkFormat(format_);
 	componentSize_ = componentSizeFromVkFormat(format_);
@@ -69,6 +70,27 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 		memRequirements.memoryTypeBits,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 	);
+
+
+	//VkMemoryWin32HandlePropertiesKHR handleProperties = {};
+	//handleProperties.sType = VK_STRUCTURE_TYPE_MEMORY_WIN32_HANDLE_PROPERTIES_KHR;
+	//handleProperties.pNext = nullptr;
+
+	//auto vkGetMemoryWin32HandlePropertiesKHR = PFN_vkGetMemoryWin32HandlePropertiesKHR(
+	//	vkGetDeviceProcAddr(device_, "vkGetMemoryWin32HandlePropertiesKHR"));
+
+	//VK_CHECK(vkGetMemoryWin32HandlePropertiesKHR(
+	//	device_, 
+	//	VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT,
+	//	textureHandle_, 
+	//	&handleProperties));
+
+	//uint32_t memoryTypeIndex = vri::findMemoryType(
+	//	physicalDevice_,
+	//	handleProperties.memoryTypeBits,
+	//	VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+	//);
+
 	imageSize_ = static_cast<size_t>(memRequirements.size);
 
 	std::cout << "Allocating Vk Memory, Size: " << memRequirements.size
@@ -554,11 +576,30 @@ void Texture::copyCudaMemToImage(void* memory,
 	switch (format_)
 	{
 		case VK_FORMAT_B8G8R8A8_UNORM:
-			CUDA_CHECK(memCopyRGBA8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
-			//CUDA_CHECK(memCopyToSurface<uchar4, uint8_t, 4>(cudaSurface_, extent_.width, extent_.height, memory, stream));
+			switch (cudaMemory_.shape.numComponents)
+			{
+				case 3:
+					CUDA_CHECK(memCopyRGB8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
+					break;
+				case 4:
+					CUDA_CHECK(memCopyRGBA8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
+					break;
+				default:
+					return;
+			}
 			break;
 		case VK_FORMAT_R32G32B32A32_SFLOAT:
-			CUDA_CHECK(memCopyToSurface<float4>(cudaSurface_, extent_.width, extent_.height, memory, stream));
+			switch (cudaMemory_.shape.numComponents)
+							{
+				case 3:
+					memCopyToSurface<float4, float3>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+					break;
+				case 4:
+					CUDA_CHECK(memCopyToSurface<float4>(cudaSurface_, extent_.width, extent_.height, memory, stream));
+					break;
+				default:
+					return;
+			}
 			break;
 		case VK_FORMAT_R32G32_SFLOAT:
 			CUDA_CHECK(memCopyToSurface<float2>(cudaSurface_, extent_.width, extent_.height, memory, stream));
@@ -636,17 +677,15 @@ void Texture::cudaImportImageMemory(HANDLE imageHandle)
 	cudaExtMemHandleDesc.size = imageSize_;
 	cudaExtMemHandleDesc.flags = 0;
 
-	std::cout << "Cuda External Memory Handle: " << imageHandle << ", Size: " << imageSize_ << std::endl;
+	//std::cout << "Cuda External Memory Handle: " << imageHandle << ", Size: " << imageSize_ << std::endl;
 
 	CUDA_CHECK(cudaImportExternalMemory(&cudaExtImageMemory_, &cudaExtMemHandleDesc));
-
 	std::cout << "Cuda Imported External Memory:" << cudaExtImageMemory_ << std::endl;
 
 	cudaExternalMemoryMipmappedArrayDesc cudaExtMemMipArrayDesc;
 	std::memset(&cudaExtMemMipArrayDesc, 0, sizeof(cudaExtMemMipArrayDesc));
-
 	auto chanDesc = cudaChannelFormatDescFromVkFormat(format_);
-	std::cout << "Channel Format: " << chanDesc.x << ", " << chanDesc.y << ", " << chanDesc.z << ", " << chanDesc.w << ", " << chanDesc.f << std::endl;
+	//std::cout << "Channel Format: " << chanDesc.x << ", " << chanDesc.y << ", " << chanDesc.z << ", " << chanDesc.w << ", " << chanDesc.f << std::endl;
 
 	cudaExtMemMipArrayDesc.formatDesc = chanDesc; // { 8, 8, 8, 8, cudaChannelFormatKindUnsigned };
 	cudaExtMemMipArrayDesc.extent = { extent_.width, extent_.height, 0 }; // depth is 0 for 2D extent...
@@ -679,10 +718,10 @@ void Texture::cudaAllocateMemory()
 	cudaMemory_.shape.height = extent_.height;
 	cudaMemory_.shape.numComponents = numComponents_;
 	cudaMemory_.shape.componentSize = componentSize_;
-	cudaMemory_.shape.dataType = cudaDataTypeFromVkFormat(format_);
-	cudaMemory_.shape.strides[0] = componentSize_;
-	cudaMemory_.shape.strides[1] = extent_.width * pixelSize;
-	cudaMemory_.shape.strides[2] = pixelSize;
+	cudaMemory_.shape.dataType = cudaDataTypeFromVkFormat(format_);			
+	cudaMemory_.shape.strides[0] = componentSize_; // component stride // distance to next component
+	cudaMemory_.shape.strides[1] = pixelSize; // pixel stride // distance to next pixel
+	cudaMemory_.shape.strides[2] = extent_.width * pixelSize; // row stride // distance to next row
 
 	cudaMemory_.ptr = cudaBuffer_;
 	cudaMemory_.size = cudaBufferSize_;

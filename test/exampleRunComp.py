@@ -4,7 +4,6 @@ import keyboard
 import numpy as np
 import torch
 from torch import nn
-from PIL import Image
 
 # get the path to touchpy.pyd: ../out/build/x64-release
 path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'out', 'build', 'x64-release'))
@@ -68,10 +67,15 @@ class ExampleRunComp:
 
 		tensor = comp.out_tops[0].as_tensor()
 		# tensor = comp.out_tops[0].as_tensor(tp.ComponentMask.RGB)
-		# print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.dtype, "tensor device: ", tensor.device, "tensor layout: ", tensor.layout, "tensor strides: ", tensor.stride(), "tensor is_contiguous: ", tensor.is_contiguous())
+		
+
+
+		# print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.
+		# dtype, "tensor device: ", tensor.device, "tensor layout: ", tensor.layout, "tensor strides: ", tensor.stride(), "tensor is_contiguous: ", tensor.is_contiguous())
 
 
 		with torch.no_grad():
+			tensor2 = tensor * 2
 			# tensor2 = tensor.clone()
 			# tensor2 = tensor.permute(2, 1, 0).contiguous()
 
@@ -80,7 +84,8 @@ class ExampleRunComp:
 
 			# print("tensor2 shape: ", tensor2.shape, "tensor2 dtype: ", tensor2.dtype, "tensor2 device: ", tensor2.device, "tensor2 layout: ", tensor2.layout, "tensor2 strides: ", tensor2.stride(), "tensor2 is_contiguous: ", tensor2.is_contiguous())
 			
-			comp.in_tops[0].from_tensor(tensor * 2)
+			comp.in_tops[0].from_tensor(tensor2)
+			pass
 
 		comp.in_chops[0].from_numpy(this.test_array)
 		this.test_array += 1
@@ -136,8 +141,8 @@ class ExampleRunComp:
 		# rgba.r = .1
 		# rgba.g = .2
 		# rgba.b = .3
-		comp.par['Rgba'].val.a = .5 + this.frame * 0.01
-		# comp.par['Rgba'].val = tp.Color(0.1, 0.2, 0.3)
+		# comp.par['Rgba'].val.a = .5 + this.frame * 0.01
+		comp.par['Rgba'].val = tp.Color(0.1, 0.2, 0.3, .5)
 
 		scale = comp.par['Scale']
 		scale.val = 0.0 + this.frame * 0.01
