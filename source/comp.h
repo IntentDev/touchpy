@@ -90,8 +90,8 @@ private:
 	std::vector<std::string>           changedOutputFloatBuffers_;
 	std::vector<std::string>           changedOutputStringData_;
 
-	std::unique_ptr<InTopLinks>    inTopLinks_;
-	std::unique_ptr<OutTopLinks>   outTopLinks_;
+	std::unique_ptr<InTopLinks>		   inTopLinks_;
+	std::unique_ptr<OutTopLinks>       outTopLinks_;
 	std::unique_ptr<InChopLinks>       inChopLinks_;
 	std::unique_ptr<OutChopLinks>      outChopLinks_;
 	std::unique_ptr<InDatLinks>        inDatLinks_;

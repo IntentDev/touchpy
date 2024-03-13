@@ -18,7 +18,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "InstallRelease" "MinSizeRel" "RelWithDebInfo")
 endif()
 
 project ("TouchPy" LANGUAGES CXX CUDA)
@@ -169,5 +169,13 @@ add_definitions(-DCMAKE_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
 # install
 #################################################################################################
 #################################################################################################
-install(TARGETS touchpy LIBRARY DESTINATION modules)
-install(TARGETS touchloader RUNTIME DESTINATION bin)
+
+message("CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+if(CMAKE_BUILD_TYPE STREQUAL "InstallRelease")
+    set(INSTALL_BUILD_DEFINITIONS TOUCHPY_INSTALL)
+    list(APPEND INSTALL_BUILD_DEFINITIONS COMPILE_DEFINITIONS )
+    target_compile_definitions(touchpy PRIVATE INSTALL_BUILD_DEFINITIONS)
+endif()
+
+install(TARGETS touchpy LIBRARY DESTINATION modules CONFIGURATIONS InstallRelease)
+# install(TARGETS touchloader RUNTIME DESTINATION bin)
