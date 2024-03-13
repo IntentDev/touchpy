@@ -43,7 +43,7 @@ class ExampleRunComp:
 	def __init__(self):
 		self.frame = 0
 		self.test_array = np.array([[1],[2],[3],[4],[5],[6],[7],[8],[9],[10]], dtype=np.float32)
-		self.test_array_chan_names = [f"channel{i}" for i in range(10)]
+		self.test_array_chan_names = [f"chn{i}" for i in range(10)]
 
 		self.device = torch.device('cuda')
 		self.imag_filter = ImageFilter().to(self.device)
@@ -67,7 +67,7 @@ class ExampleRunComp:
 
 		tensor = comp.out_tops[0].as_tensor()
 		# tensor = comp.out_tops[0].as_tensor(tp.ComponentMask.RGB)
-		
+
 
 
 		# print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.
@@ -87,7 +87,7 @@ class ExampleRunComp:
 			comp.in_tops[0].from_tensor(tensor2)
 			pass
 
-		comp.in_chops[0].from_numpy(this.test_array)
+		comp.in_chops[0].from_numpy(this.test_array, this.test_array_chan_names)
 		this.test_array += 1
 
 		# get a reference to the numpy array, some functions that do not copy 
@@ -100,7 +100,7 @@ class ExampleRunComp:
 		chans2_names = comp.out_chops[1].chan_names()
 		# print(chans2_names)
 
-		comp.in_chops[1].from_numpy(chans2) # this will work!
+		comp.in_chops[1].from_numpy(chans2, chans2_names)
 		chans3 = comp.out_chops[2].as_numpy()
 		# print(chans2)
 
@@ -137,16 +137,20 @@ class ExampleRunComp:
 			for name in parNames:
 				print(f"{name}: {comp.par[name].val}")
 			
-		# rgba = comp.par['Rgba'].val
-		# rgba.r = .1
-		# rgba.g = .2
-		# rgba.b = .3
-		# comp.par['Rgba'].val.a = .5 + this.frame * 0.01
-		comp.par['Rgba'].val = tp.Color(0.1, 0.2, 0.3, .5)
+		rgba = comp.par['Rgba']
+		rgba.r = .8
+		rgba.g = rgba.g + .2
+		# comp.par['Rgba'].val = tp.Color(0.1, 0.2, 0.3, .5)
 
 		scale = comp.par['Scale']
 		scale.val = 0.0 + this.frame * 0.01
 		# print(scale.val)
+
+		translate = comp.par['Translate']
+		translate.val = tp.Float3(11.1, 22.2, 33.3)
+
+		xyzw = comp.par['Xyzw']
+		xyzw.val = [1, 2, 3, 4]
 
 		this.frame += 1
 

@@ -42,6 +42,16 @@
       }
     },
     {
+      "name": "x64-installrelease",
+      "displayName": "x64 Install Release",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "CMAKE_BUILD_TYPE": "InstallRelease",
+        "TDPY_BUILD_DIR": "${sourceDir}/out/build/${presetName}"
+      }
+    },
+    {
       "name": "x64-relwithdebuginfo",
       "displayName": "x64 RelWithDebInfo",
       "inherits": "windows-base",

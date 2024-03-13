@@ -245,6 +245,11 @@ public:
 
 		return value;
 	}
+
+	void    setX(int32_t x) { Int2 vec = std::get<Int2>(get()); vec.x = x; set(vec); }
+	void    setY(int32_t y) { Int2 vec = std::get<Int2>(get()); vec.y = y; set(vec); }
+	int32_t getX()          { return std::get<Int2>(get()).x; }
+	int32_t getY()          { return std::get<Int2>(get()).y; }
 };
 
 class Int3ParLink : public ParLink
@@ -266,6 +271,13 @@ public:
 
 		return value;
 	}
+
+	void    setX(int32_t x) { Int3 vec = std::get<Int3>(get()); vec.x = x; set(vec); }
+	void    setY(int32_t y) { Int3 vec = std::get<Int3>(get()); vec.y = y; set(vec); }
+	void    setZ(int32_t z) { Int3 vec = std::get<Int3>(get()); vec.z = z; set(vec); }
+	int32_t getX()          { return std::get<Int3>(get()).x; }
+	int32_t getY()          { return std::get<Int3>(get()).y; }
+	int32_t getZ()          { return std::get<Int3>(get()).z; }
 };
 
 class Int4ParLink : public ParLink
@@ -287,6 +299,15 @@ public:
 
 		return value;
 	}
+
+	void    setX(int32_t x) { Int4 vec = std::get<Int4>(get()); vec.x = x; set(vec); }
+	void    setY(int32_t y) { Int4 vec = std::get<Int4>(get()); vec.y = y; set(vec); }
+	void    setZ(int32_t z) { Int4 vec = std::get<Int4>(get()); vec.z = z; set(vec); }
+	void    setW(int32_t w) { Int4 vec = std::get<Int4>(get()); vec.w = w; set(vec); }
+	int32_t getX()          { return std::get<Int4>(get()).x; }
+	int32_t getY()          { return std::get<Int4>(get()).y; }
+	int32_t getZ()          { return std::get<Int4>(get()).z; }
+	int32_t getW()          { return std::get<Int4>(get()).w; }
 };
 
 class DoubleParLink : public ParLink
@@ -330,6 +351,11 @@ public:
 
 		return value;
 	}
+
+	void   setX(double x) { Double2 vec = std::get<Double2>(get()); vec.x = x; set(vec); }
+	void   setY(double y) { Double2 vec = std::get<Double2>(get()); vec.y = y; set(vec); }
+	double getX()         { return std::get<Double2>(get()).x; }
+	double getY()         { return std::get<Double2>(get()).y; }
 };
 
 
@@ -352,6 +378,13 @@ public:
 
 		return value;
 	}
+
+	void   setX(double x) { Double3 vec = std::get<Double3>(get()); vec.x = x; set(vec); }
+	void   setY(double y) { Double3 vec = std::get<Double3>(get()); vec.y = y; set(vec); }
+	void   setZ(double z) { Double3 vec = std::get<Double3>(get()); vec.z = z; set(vec); }
+	double getX()         { return std::get<Double3>(get()).x; }
+	double getY()         { return std::get<Double3>(get()).y; }
+	double getZ()         { return std::get<Double3>(get()).z; }
 };
 
 class Double4ParLink : public ParLink
@@ -373,6 +406,17 @@ public:
 
 		return value;
 	}
+
+	void   setX(double x) { Double4 vec = std::get<Double4>(get()); vec.x = x; set(vec); }
+	void   setY(double y) { Double4 vec = std::get<Double4>(get()); vec.y = y; set(vec); }
+	void   setZ(double z) { Double4 vec = std::get<Double4>(get()); vec.z = z; set(vec); }
+	void   setW(double w) { Double4 vec = std::get<Double4>(get()); vec.w = w; set(vec); }
+	double getX()         { return std::get<Double4>(get()).x; }
+	double getY()         { return std::get<Double4>(get()).y; }
+	double getZ()         { return std::get<Double4>(get()).z; }
+	double getW()         { return std::get<Double4>(get()).w; }
+
+
 };
 
 
@@ -434,7 +478,15 @@ public:
 
 		return value;
 	}
-	
+
+	void setR(double r) { ColorRGBA rgba = std::get<ColorRGBA>(get()); rgba.r = r; set(rgba); }
+	void setG(double g) { ColorRGBA rgba = std::get<ColorRGBA>(get()); rgba.g = g; set(rgba); }
+	void setB(double b) { ColorRGBA rgba = std::get<ColorRGBA>(get()); rgba.b = b; set(rgba); }
+	void setA(double a) { ColorRGBA rgba = std::get<ColorRGBA>(get()); rgba.a = a; set(rgba); }
+	double getR() { return std::get<ColorRGBA>(get()).r; }
+	double getG() { return std::get<ColorRGBA>(get()).g; }
+	double getB() { return std::get<ColorRGBA>(get()).b; }
+	double getA() { return std::get<ColorRGBA>(get()).a; }
 };
 
 class ParLinkCollection
@@ -540,11 +592,27 @@ private:
 			break;
 
 		case TELinkIntentUVW:
-			pars[name] = std::make_unique<Double3ParLink>(instance_, linkInfo);
+			switch (count)
+			{
+			case 2:
+				pars[name] = std::make_unique<Double2ParLink>(instance_, linkInfo);
+				break;
+			case 3:
+				pars[name] = std::make_unique<Double3ParLink>(instance_, linkInfo);
+				break;
+			}
 			break;
 
 		case TELinkIntentPositionXYZW:
-			pars[name] = std::make_unique<Double4ParLink>(instance_, linkInfo);
+			switch (count)
+			{
+			case 3:
+				pars[name] = std::make_unique<Double3ParLink>(instance_, linkInfo);
+				break;
+			case 4:
+				pars[name] = std::make_unique<Double4ParLink>(instance_, linkInfo);
+				break;
+			}
 			break;
 
 		default:
@@ -619,167 +687,6 @@ private:
 		}
 	}
 };
-
-
-
-/*
-class ParLinkCollection : public Links<ParLinkCollection, ParLink>
-{   
-public:
-	ParLinkCollection () = default;
-	ParLinkCollection(TouchObject<TEInstance> instance) : Links<ParLinkCollection, ParLink>(instance) { }
-
-	void addLink(TouchObject<TELinkInfo> linkInfo) override
-	{
-		TELinkType type = linkInfo->type;
-
-		switch (type)
-		{
-		case (TELinkTypeDouble):
-		{
-			addDoubleParLink(linkInfo);
-			break;
-		}
-		case (TELinkTypeInt):
-		{
-			addIntParLink(linkInfo);
-			break;
-		}
-		case (TELinkTypeString):
-		{
-			addStringParLink(linkInfo);
-			break;
-		}
-		case (TELinkTypeBoolean):
-		{
-			addBoolParLink(linkInfo);
-			break;
-		}
-		default:
-			break;
-		}
-	}
-
-private:
-	//TouchObject<TEInstance> instance;
-	//std::unordered_map<std::string, std::unique_ptr<ParLink>> pars;
-
-	template <typename T>
-	void pushBackLink(TouchObject<TELinkInfo> linkInfo)
-	{
-		links.push_back(std::make_unique<T>(instance, linkInfo));
-		nameMap[linkInfo->name] = links.back().get();
-		identifierMap[linkInfo->identifier] = links.back().get();
-	}
-
-	void addDoubleParLink(TouchObject<TELinkInfo> linkInfo)
-	{
-		switch (linkInfo->intent)
-		{
-		case TELinkIntentNotSpecified:
-			switch (linkInfo->count)
-			{
-			case 1:
-				pushBackLink<DoubleParLink>(linkInfo);
-				break;
-			case 2:
-				pushBackLink<Double2ParLink>(linkInfo);
-				break;
-			case 3:
-				pushBackLink<Double3ParLink>(linkInfo);
-				break;
-			case 4:
-				pushBackLink<Double4ParLink>(linkInfo);
-				break;
-			default:
-				break;
-			}
-			break;
-
-		case TELinkIntentColorRGBA:
-			pushBackLink<ColorParLink>(linkInfo);
-			break;
-
-		case TELinkIntentSizeWH:
-			pushBackLink<Double2ParLink>(linkInfo);
-			break;
-
-		case TELinkIntentUVW:
-			pushBackLink<Double3ParLink>(linkInfo);
-			break;
-
-		case TELinkIntentPositionXYZW:
-			pushBackLink<Double4ParLink>(linkInfo);
-			break;
-
-		default:
-			break;
-		}
-	}
-
-	void addIntParLink(TouchObject<TELinkInfo> linkInfo)
-	{
-		if (!TEInstanceLinkHasChoices(instance, linkInfo->identifier))
-		{
-			switch (linkInfo->count)
-			{
-			case 1:
-				pushBackLink<IntParLink>(linkInfo);
-				break;
-
-			case 2:
-				pushBackLink<Int2ParLink>(linkInfo);
-				break;
-
-			case 3:
-				pushBackLink<Int3ParLink>(linkInfo);
-				break;
-
-			case 4:
-				pushBackLink<Int4ParLink>(linkInfo);
-				break;
-
-			default:
-				break;
-			}
-		}
-		else
-		{
-			pushBackLink<MenuParLink>(linkInfo);
-		}
-	}
-
-	void addStringParLink(TouchObject<TELinkInfo> linkInfo)
-	{
-		std::string name = linkInfo->name;
-		pushBackLink<StringParLink>(linkInfo);
-	}
-
-	void addBoolParLink(TouchObject<TELinkInfo> linkInfo)
-	{
-		std::string name = linkInfo->name;
-		TELinkIntent intent = linkInfo->intent;
-
-		switch (intent)
-		{
-		case (TELinkIntentNotSpecified):
-			pushBackLink<BoolParLink>(linkInfo);
-			break;
-
-		case (TELinkIntentPulse):
-			pushBackLink<PulseParLink>(linkInfo);
-			break;
-
-		case (TELinkIntentMomentary):
-			pushBackLink<MomentaryParLink>(linkInfo);
-			break;
-
-		default:
-			break;
-		}
-	}
-};
-*/
 
 // visitor that attempts to assign only if the type matches
 template<typename T>

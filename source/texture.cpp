@@ -726,7 +726,7 @@ void Texture::cudaAllocateMemory()
 	cudaMemory_.ptr = cudaBuffer_;
 	cudaMemory_.size = cudaBufferSize_;
 
-	std::cout << "Cuda Memory Allocated: " << cudaBuffer_ << ", per pixel: " << pixelSize << std::endl;
+	//std::cout << "Cuda Memory Allocated: " << cudaMemory_.size << ", per pixel: " << pixelSize << std::endl;
 
 }
 

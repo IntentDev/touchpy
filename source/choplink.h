@@ -42,7 +42,7 @@ public:
 	InChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : ChopLink(instance, linkInfo) { }
 	~InChopLink() { }
 
-	// use setFrom[type] naming for Python bindings
+	// use from_[type] naming for Python bindings
 	void set(const std::vector<float>& channels, uint32_t valueCount, double rate = -1.0);
 	void set(const std::vector<float>& channels, uint32_t valueCount, double rate, const std::vector<std::string>& names);
 	void set(const std::vector<std::vector<float>>& channels, double rate = -1.0);

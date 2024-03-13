@@ -407,6 +407,61 @@ void Comp::runUpdateLoop()
 
 }
 
+void Comp::stopUpdateLoop()
+{
+	updateLoopRunning_ = false;
+}
+
+void
+Comp::update()
+{
+	bool ready, loaded, linksLayoutChanged, inFrame;
+	getState(ready, loaded, linksLayoutChanged, inFrame);
+
+	if (!loaded || !ready) return;
+
+	if (linksLayoutChanged)
+	{
+		applyLayoutChange();
+		ready_ = ready;
+		return;
+	}
+
+	if (!inFrame)
+	{
+		changedOutputTextures_.clear();
+		changedOutputFloatBuffers_.clear();
+		changedOutputStringData_.clear();
+
+		{
+			std::lock_guard<std::mutex> guard(mutex_);
+			std::swap(ssPendingOutputTextures_, changedOutputTextures_);
+			std::swap(ssPendingOutputFloatBuffers, changedOutputFloatBuffers_);
+			//std::swap(ssPendingOutputStringData, changedOutputStringData_); // not calling applyOutputStringDataChange()
+
+		}
+
+		applyValueChanges();
+
+		if (onFrameStartCallback_)
+			onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
+
+		copyOutsToIns();
+
+		//std::cout << "setInFrame true after update" << std::endl;
+		setInFrame(true);
+		TEResult result = TEInstanceStartFrameAtTime(instance_, 0.0, 0.0, false);
+		if (result != TEResultSuccess)
+		{
+			std::cout << "update() TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
+			setInFrame(false);
+			return;
+		}
+
+		++frameCount_;
+	}
+}
+
 void 
 Comp::applyLayoutChange()
 {
@@ -500,69 +555,6 @@ Comp::applyLayoutChange()
 	}
 }
 
-void 
-Comp::update()
-{
-	bool ready, loaded, linksLayoutChanged, inFrame;
-	getState(ready, loaded, linksLayoutChanged, inFrame);
-
-	if (!loaded || !ready) return;
-
-	if (linksLayoutChanged) 
-	{
-		applyLayoutChange();
-		ready_ = ready;
-		return;
-	}
-
-	if (!inFrame)
-	{
-		changedOutputTextures_.clear();
-		changedOutputFloatBuffers_.clear();
-		changedOutputStringData_.clear();
-
-		{
-			std::lock_guard<std::mutex> guard(mutex_);
-			std::swap(ssPendingOutputTextures_, changedOutputTextures_);
-			std::swap(ssPendingOutputFloatBuffers, changedOutputFloatBuffers_);
-			std::swap(ssPendingOutputStringData, changedOutputStringData_);
-
-		}
-
-		applyValueChanges();
-
-		if (onFrameStartCallback_)
-			onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
-
-		copyOutsToIns();
-
-		//std::cout << "setInFrame true after update" << std::endl;
-		setInFrame(true);
-		TEResult result = TEInstanceStartFrameAtTime(instance_, 0.0, 0.0, false);
-		if (result != TEResultSuccess)
-		{
-			std::cout << "update() TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
-			setInFrame(false);
-			return;
-		}
-
-		
-		//std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
-		//std::cout << "Frame time: " << std::chrono::duration_cast<std::chrono::milliseconds>(
-		//	now - lastFrameTime_).count() << "ms" << std::endl;
-		//lastFrameTime_ = now;
-
-		++frameCount_;
-	}
-
-
-}
-
-void Comp::stopUpdateLoop()
-{
-	updateLoopRunning_ = false;
-}
-
 void Comp::applyValueChanges()
 {
 	// this should likely always be called on changes (unlike below) since in most cases we'll want the cuda buffer 
@@ -584,7 +576,9 @@ void Comp::applyValueChanges()
 	// similar to the above, but at this moment asString() and asTable() simply read the data directly from the TE object
 	// so there is no need for updates with the current Python test script. But there is no hasChanged() function so 
 	// the function must be called every frame. 
-	//applyOutputStringDataChange();
+	// 
+	// uncomment std::swap(ssPendingOutputStringData, changedOutputStringData_) in update() to use this!!!
+	//applyOutputStringDataChange(); 
 }
 
 void 

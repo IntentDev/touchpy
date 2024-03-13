@@ -22,53 +22,6 @@
 namespace nb = nanobind;
 using namespace nb::literals;
 
-DatTable tableFromList(const nb::list& list, bool cast = false)
-{
-	DatTable table;
-	auto numRows = list.size();
-	if (numRows == 0)
-		return table;
-
-	if (numRows > 0 && nb::isinstance<nb::list>(list[0]))
-	{
-		auto firstRow = nb::cast<nb::list>(list[0]);
-		auto numCols = firstRow.size();
-
-		if (numCols == 0)
-			return table;
-
-		table.values.resize(numRows * numCols);
-		table.numRows = numRows;
-		table.numCols = numCols;
-
-		if (cast)
-		{
-			for (size_t i = 0; i < numRows; ++i)
-			{
-				auto row = nb::cast<nb::list>(list[i]);
-				for (size_t j = 0; j < numCols; ++j)
-					if (nb::isinstance<nb::int_>(row[j]))
-						table.values[i * numCols + j] = std::to_string(nb::cast<int>(row[j]));
-					else if (nb::isinstance<nb::float_>(row[j]))
-						table.values[i * numCols + j] = std::to_string(nb::cast<float>(row[j]));
-					else if (nb::isinstance<nb::str>(row[j]))
-						table.values[i * numCols + j] = nb::cast<std::string>(row[j]);
-					else
-						table.values[i * numCols + j] = "";
-			}
-		}
-		else
-		{
-			for (size_t i = 0; i < numRows; ++i)
-			{
-				auto row = nb::cast<nb::list>(list[i]);
-				for (size_t j = 0; j < numCols; ++j)
-					table.values[i * numCols + j] = nb::cast<std::string>(row[j]);
-			}
-		}
-	}
-	return table;
-}
 
 CUDADataType cudaDataTypeFromArray(nb::ndarray<> array)
 {
@@ -191,6 +144,82 @@ using arrayShape3 = nb::shape<nb::any, nb::any, 3>;
 using arrayShape2 = nb::shape<nb::any, nb::any, 2>;
 using arrayShape1 = nb::shape<nb::any, nb::any, 1>;
 
+void fromNumpyToChopLink(
+	InChopLink& inChopLink, 
+	nb::ndarray<float, nb::ndim<2>, nb::device::cpu> array,
+	const std::vector<std::string>& names)
+{
+	auto view = array.view();
+	int32_t channelCount = static_cast<int32_t>(view.shape(0));
+	uint32_t valueCount = static_cast<uint32_t>(view.shape(1));
+	std::vector<const float*> chanPtrs(channelCount);
+
+	if (names.size() != channelCount)
+	{
+		for (int32_t i = 0; i < channelCount; ++i)
+			chanPtrs[i] = view.data() + i * valueCount;
+
+		inChopLink.set(chanPtrs.data(), channelCount, valueCount);
+	}
+	else
+	{
+		std::vector<const char*> namePtrs(channelCount);
+		for (int32_t i = 0; i < channelCount; ++i)
+		{
+			chanPtrs[i] = view.data() + i * valueCount;
+			namePtrs[i] = names[i].c_str();
+		}
+		inChopLink.set(chanPtrs.data(), channelCount, valueCount, -1.0, namePtrs.data());
+	}
+}
+
+DatTable tableFromList(const nb::list& list, bool cast = false)
+{
+	DatTable table;
+	auto numRows = list.size();
+	if (numRows == 0)
+		return table;
+
+	if (numRows > 0 && nb::isinstance<nb::list>(list[0]))
+	{
+		auto firstRow = nb::cast<nb::list>(list[0]);
+		auto numCols = firstRow.size();
+
+		if (numCols == 0)
+			return table;
+
+		table.values.resize(numRows * numCols);
+		table.numRows = numRows;
+		table.numCols = numCols;
+
+		if (cast)
+		{
+			for (size_t i = 0; i < numRows; ++i)
+			{
+				auto row = nb::cast<nb::list>(list[i]);
+				for (size_t j = 0; j < numCols; ++j)
+					if (nb::isinstance<nb::int_>(row[j]))
+						table.values[i * numCols + j] = std::to_string(nb::cast<int>(row[j]));
+					else if (nb::isinstance<nb::float_>(row[j]))
+						table.values[i * numCols + j] = std::to_string(nb::cast<float>(row[j]));
+					else if (nb::isinstance<nb::str>(row[j]))
+						table.values[i * numCols + j] = nb::cast<std::string>(row[j]);
+					else
+						table.values[i * numCols + j] = "";
+			}
+		}
+		else
+		{
+			for (size_t i = 0; i < numRows; ++i)
+			{
+				auto row = nb::cast<nb::list>(list[i]);
+				for (size_t j = 0; j < numCols; ++j)
+					table.values[i * numCols + j] = nb::cast<std::string>(row[j]);
+			}
+		}
+	}
+	return table;
+}
 
 
 NB_MODULE(touchpy, m)
@@ -389,20 +418,8 @@ NB_MODULE(touchpy, m)
 
 	nb::class_<InChopLink> inChopLink(m, "InChopLink");
 	inChopLink.doc() = "Represents an inCHOP in a TouchDesigner component";
-	inChopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
-
-	inChopLink.def("from_numpy", [](InChopLink& self, nb::ndarray<float, nb::ndim<2>, nb::device::cpu> array)
-		{
-			auto view = array.view();
-			int32_t channelCount = static_cast<int32_t>(view.shape(0));
-			uint32_t valueCount = static_cast<uint32_t>(view.shape(1));
-
-			std::vector<const float*> chanPtrs(channelCount);
-			for (int32_t i = 0; i < channelCount; ++i)
-				chanPtrs[i] = view.data() + i * valueCount;
-
-			self.set(chanPtrs.data(), channelCount, valueCount);
-		});
+	inChopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+		.def("from_numpy", &fromNumpyToChopLink, "array"_a, "names"_a = nb::list());
 
 	nb::class_<InChopLinks> inChopLinks(m, "InChopLinks");
 	inChopLinks.doc() = "Represents a collection of CHOP links in a TouchDesigner component";
@@ -518,6 +535,169 @@ NB_MODULE(touchpy, m)
 		.def("set", &ParLink::set)
 		.def("get", &ParLink::get)
 		.def_prop_rw("val", &ParLink::get, &ParLink::set)
+		;
+
+	nb::class_ <Int2ParLink> int2ParLink(m, "Int2ParLink");
+	int2ParLink.doc() = "Represents an int2 parameter in a TouchDesigner component";
+	int2ParLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+		.def("set", &Int2ParLink::set)
+		.def("get", &Int2ParLink::get)
+		.def_prop_rw("val", &Int2ParLink::get, &Int2ParLink::set)
+		.def_prop_rw("x", &Int2ParLink::getX, &Int2ParLink::setX)
+		.def_prop_rw("y", &Int2ParLink::getY, &Int2ParLink::setY)
+		.def_prop_rw("val", &Int2ParLink::get, [](Int2ParLink& self, const nb::list& list)
+			{
+				if (list.size() != 2)
+					throw std::invalid_argument("List must have 2 elements");
+
+				auto val = Int2(
+					nb::cast<int32_t>(list[0]),
+					nb::cast<int32_t>(list[1])
+				);
+				self.set(val);
+			})
+		;
+
+	nb::class_ <Int3ParLink> int3ParLink(m, "Int3ParLink");
+	int3ParLink.doc() = "Represents an int3 parameter in a TouchDesigner component";
+	int3ParLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+		.def("set", &Int3ParLink::set)
+		.def("get", &Int3ParLink::get)
+		.def_prop_rw("val", &Int3ParLink::get, &Int3ParLink::set)
+		.def_prop_rw("x", &Int3ParLink::getX, &Int3ParLink::setX)
+		.def_prop_rw("y", &Int3ParLink::getY, &Int3ParLink::setY)
+		.def_prop_rw("z", &Int3ParLink::getZ, &Int3ParLink::setZ)
+		.def_prop_rw("val", &Int3ParLink::get, [](Int3ParLink& self, const nb::list& list)
+			{
+				if (list.size() != 3)
+					throw std::invalid_argument("List must have 3 elements");
+
+				auto val = Int3(
+					nb::cast<int32_t>(list[0]),
+					nb::cast<int32_t>(list[1]),
+					nb::cast<int32_t>(list[2])
+				);
+				self.set(val);
+			})
+		;
+
+	nb::class_ <Int4ParLink> int4ParLink(m, "Int4ParLink");
+	int4ParLink.doc() = "Represents an int4 parameter in a TouchDesigner component";
+	int4ParLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+		.def("set", &Int4ParLink::set)
+		.def("get", &Int4ParLink::get)
+		.def_prop_rw("val", &Int4ParLink::get, &Int4ParLink::set)
+		.def_prop_rw("x", &Int4ParLink::getX, &Int4ParLink::setX)
+		.def_prop_rw("y", &Int4ParLink::getY, &Int4ParLink::setY)
+		.def_prop_rw("z", &Int4ParLink::getZ, &Int4ParLink::setZ)
+		.def_prop_rw("w", &Int4ParLink::getW, &Int4ParLink::setW)
+		.def_prop_rw("val", &Int4ParLink::get, [](Int4ParLink& self, const nb::list& list)
+			{
+				if (list.size() != 4)
+					throw std::invalid_argument("List must have 4 elements");
+
+				auto val = Int4(
+					nb::cast<int32_t>(list[0]),
+					nb::cast<int32_t>(list[1]),
+					nb::cast<int32_t>(list[2]),
+					nb::cast<int32_t>(list[3])
+				);
+				self.set(val);
+			})
+		;
+
+	nb::class_ <Double2ParLink> double2ParLink(m, "Double2ParLink");
+	double2ParLink.doc() = "Represents a float2 parameter in a TouchDesigner component";
+	double2ParLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+		.def("set", &Double2ParLink::set)
+		.def("get", &Double2ParLink::get)
+		.def_prop_rw("val", &Double2ParLink::get, &Double2ParLink::set)
+		.def_prop_rw("x", &Double2ParLink::getX, &Double2ParLink::setX)
+		.def_prop_rw("y", &Double2ParLink::getY, &Double2ParLink::setY)
+		.def_prop_rw("val", &Double2ParLink::get, [](Double2ParLink& self, const nb::list& list)
+			{
+				if (list.size() != 2)
+					throw std::invalid_argument("List must have 2 elements");
+
+				auto val = Double2(
+					nb::cast<double>(list[0]),
+					nb::cast<double>(list[1])
+				);
+				self.set(val);
+			})
+		;
+
+	nb::class_ <Double3ParLink> double3ParLink(m, "Double3ParLink");
+	double3ParLink.doc() = "Represents a float3 parameter in a TouchDesigner component";
+	double3ParLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+		.def("set", &Double3ParLink::set)
+		.def("get", &Double3ParLink::get)
+		.def_prop_rw("val", &Double3ParLink::get, &Double3ParLink::set)
+		.def_prop_rw("x", &Double3ParLink::getX, &Double3ParLink::setX)
+		.def_prop_rw("y", &Double3ParLink::getY, &Double3ParLink::setY)
+		.def_prop_rw("z", &Double3ParLink::getZ, &Double3ParLink::setZ)
+		.def_prop_rw("val", &Double3ParLink::get, [](Double3ParLink& self, const nb::list& list)
+			{
+				if (list.size() != 3)
+					throw std::invalid_argument("List must have 3 elements");
+
+				auto val = Double3(
+					nb::cast<double>(list[0]),
+					nb::cast<double>(list[1]),
+					nb::cast<double>(list[2])
+				);
+				self.set(val);
+			})
+		;
+
+	nb::class_ <Double4ParLink> double4ParLink(m, "Double4ParLink");
+	double4ParLink.doc() = "Represents a float4 parameter in a TouchDesigner component";
+	double4ParLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+		.def("set", &Double4ParLink::set)
+		.def("get", &Double4ParLink::get)
+		.def_prop_rw("val", &Double4ParLink::get, &Double4ParLink::set)
+		.def_prop_rw("x", &Double4ParLink::getX, &Double4ParLink::setX)
+		.def_prop_rw("y", &Double4ParLink::getY, &Double4ParLink::setY)
+		.def_prop_rw("z", &Double4ParLink::getZ, &Double4ParLink::setZ)
+		.def_prop_rw("w", &Double4ParLink::getW, &Double4ParLink::setW)
+		.def_prop_rw("val", &Double4ParLink::get, [](Double4ParLink& self, const nb::list& list) 
+			{ 
+				if (list.size() != 4)
+					throw std::invalid_argument("List must have 4 elements");
+
+				auto val = Double4(
+					nb::cast<double>(list[0]), 
+					nb::cast<double>(list[1]), 
+					nb::cast<double>(list[2]), 
+					nb::cast<double>(list[3])
+				);
+				self.set(val); 
+			})
+		;
+
+	nb::class_ <ColorParLink> colorParLink(m, "ColorParLink");
+	colorParLink.doc() = "Represents a color parameter in a TouchDesigner component";
+	colorParLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+		.def("set", &ColorParLink::set)
+		.def("get", &ColorParLink::get)
+		.def_prop_rw("val", &ColorParLink::get, &ColorParLink::set)
+		.def_prop_rw("r", &ColorParLink::getR, &ColorParLink::setR)
+		.def_prop_rw("g", &ColorParLink::getG, &ColorParLink::setG)
+		.def_prop_rw("b", &ColorParLink::getB, &ColorParLink::setB)
+		.def_prop_rw("a", &ColorParLink::getA, &ColorParLink::setA)
+		.def_prop_rw("val", &ColorParLink::get, [](ColorParLink& self, const nb::list& list)
+			{
+				if (list.size() != 4)
+					throw std::invalid_argument("List must have 4 elements");
+
+				auto val = ColorRGBA(
+					nb::cast<double>(list[0]),
+					nb::cast<double>(list[1]),
+					nb::cast<double>(list[2]),
+					nb::cast<double>(list[3])
+				);
+				self.set(val);
+			})
 		;
 
 	nb::class_<ParLinkCollection> parLinks(m, "ParLinkCollection");
