@@ -147,7 +147,11 @@ class ExampleRunComp:
 		# print(scale.val)
 
 		translate = comp.par['Translate']
-		translate.val = tp.Float3(11.1, 22.2, 33.3)
+		# translate.val = tp.Float3(11.1, 22.2, 33.3)
+		translate.set(tp.Float3(11.1, 22.2, 33.1))
+		translate.set([11.1, 22.2, 33.2]*)
+		translate.set(11.1, 22.2, 33.5)
+
 
 		xyzw = comp.par['Xyzw']
 		xyzw.val = [1, 2, 3, 4]
