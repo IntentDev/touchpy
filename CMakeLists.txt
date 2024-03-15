@@ -83,19 +83,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_definitions(touchpy PRIVATE DISABLE_DEBUG_BUILD)
 endif()
 
-
-# Check if VCPKG_ROOT is set as an environment variable
-if(DEFINED ENV{VCPKG_ROOT})
-  set(VCPKG_ROOT $ENV{VCPKG_ROOT})
-endif()
-
-# Allow manual setting of VCPKG_ROOT
-if(NOT DEFINED VCPKG_ROOT)
-  message(STATUS "VCPKG_ROOT not defined, setting default value.")
-  set(VCPKG_ROOT "C:/vcpkg")
-endif()
-message(STATUS "VCPKG_ROOT=${VCPKG_ROOT}")
-
 # Vulkan
 # .\vcpkg install vulkan ### haven't tested this, probably best to just install the SDK
 #################################################################################################
@@ -162,13 +149,11 @@ add_custom_command(TARGET touchloader POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 	${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin $<TARGET_FILE_DIR:touchloader>)
 
-
 # dependencies so touchpy depends on touchloader being built first
 #################################################################################################
 add_dependencies(touchpy touchloader)
 
 add_definitions(-DCMAKE_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
-
 
 # install
 #################################################################################################
@@ -177,7 +162,6 @@ add_definitions(-DCMAKE_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
 install(TARGETS touchpy LIBRARY DESTINATION modules CONFIGURATIONS InstallRelease)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin/TouchEngine.dll DESTINATION modules CONFIGURATIONS InstallRelease)
 install(FILES ${cuda_runtime_dll} DESTINATION modules CONFIGURATIONS InstallRelease)
-
 
 
 install(TARGETS touchloader RUNTIME DESTINATION bin CONFIGURATIONS InstallRelease)

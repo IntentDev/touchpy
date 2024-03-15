@@ -2,6 +2,12 @@
     "version": 3,
   "configurePresets": [
     {
+      "name": "default",
+      "cacheVariables": {
+          "CMAKE_TOOLCHAIN_FILE": "<VCPKG_ROOT_PATH_HERE>/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
       "name": "windows-base",
       "hidden": true,
       "generator": "Ninja",
@@ -26,7 +32,6 @@
         "strategy": "external"
       },
       "cacheVariables": {
-        "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "CMAKE_BUILD_TYPE": "Debug",
         "TDPY_BUILD_DIR": "${sourceDir}/out/build/${presetName}"
       }
@@ -36,7 +41,6 @@
       "displayName": "x64 Release",
       "inherits": "windows-base",
       "cacheVariables": {
-        "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "CMAKE_BUILD_TYPE": "Release",
         "TDPY_BUILD_DIR": "${sourceDir}/out/build/${presetName}"
       }
@@ -46,7 +50,6 @@
       "displayName": "x64 Install Release",
       "inherits": "windows-base",
       "cacheVariables": {
-        "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "CMAKE_BUILD_TYPE": "InstallRelease",
         "TDPY_BUILD_DIR": "${sourceDir}/out/build/${presetName}"
       }
@@ -56,7 +59,6 @@
       "displayName": "x64 RelWithDebInfo",
       "inherits": "windows-base",
       "cacheVariables": {
-        "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "TDPY_BUILD_DIR": "${sourceDir}/out/build/${presetName}"
       }
