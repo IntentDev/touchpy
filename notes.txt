@@ -4,9 +4,10 @@ Comp class
 	- load_tox()
 	- loaded()
 	- update() - called in a loop repeatedly
-	- start() - starts a loop that call update() repeatedly
-	- stop()
-	- set_on_frame_callback() - sets a callback function to be called on every frame by the update() function
+	- start() - starts a loop that calls update() repeatedly (run())
+	- stop() - stops the run loop that calls update()
+	- set_on_frame_callback() - sets a callback function to be called every frame by the update() function when 
+		data is ready to be retrieved 
 	- in_tops - InTopLinks container of InTopLink instances 
 	- out_tops - OutTopLinks container of OutTopLink instances 
 	- in_chops - InChopLinks container of InChopLink instances
@@ -15,12 +16,16 @@ Comp class
 	- out_dats - OutDatLinks container of OutDatLink instances
 	- par - ParLinkCollection of ParLink instances
 
-OutTopLinks, InTopLinks, OutChopLinks, InChopLinks, OutDatLinks, InDatLinks, ParLinks classes
+Links class (OutTopLinks, InTopLinks, OutChopLinks, InChopLinks, OutDatLinks, InDatLinks classes)
 	- num_links() - returns the number of OutTopLink instances in the container
 	- link_names() - returns a list of the names of the OutTopLink instances in the container
 	- [index] - returns the [Derived]Link instance at the given index
 	- [name] - returns the [Derived]Link instance with the given name
 
+ParLinkCollection class
+	- count - number of ParLinks in the collecion (Pars on the Comp)
+	- names - list of names of all available ParLinks
+	- [name] - get a ParLink by name
 
 OutTopLink class
 	- cuda_memory() - returns a CudaMemory instance
