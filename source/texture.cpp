@@ -71,26 +71,6 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 	);
 
-
-	//VkMemoryWin32HandlePropertiesKHR handleProperties = {};
-	//handleProperties.sType = VK_STRUCTURE_TYPE_MEMORY_WIN32_HANDLE_PROPERTIES_KHR;
-	//handleProperties.pNext = nullptr;
-
-	//auto vkGetMemoryWin32HandlePropertiesKHR = PFN_vkGetMemoryWin32HandlePropertiesKHR(
-	//	vkGetDeviceProcAddr(device_, "vkGetMemoryWin32HandlePropertiesKHR"));
-
-	//VK_CHECK(vkGetMemoryWin32HandlePropertiesKHR(
-	//	device_, 
-	//	VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT,
-	//	textureHandle_, 
-	//	&handleProperties));
-
-	//uint32_t memoryTypeIndex = vri::findMemoryType(
-	//	physicalDevice_,
-	//	handleProperties.memoryTypeBits,
-	//	VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-	//);
-
 	imageSize_ = static_cast<size_t>(memRequirements.size);
 
 	std::cout << "Allocating Vk Memory, Size: " << memRequirements.size
@@ -103,27 +83,34 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 	memoryAllocateInfo.pNext = &importMemoryInfo;
 
 	// Import the external memory into Vulkan
-	VkDeviceMemory externalMemory;
-	VK_CHECK(vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &externalMemory));
+	// causing validation error on some systems, need to figure this out but an ImageView is not needed
+	// for the texture to be used in CUDA
+	// 
+	// Validation Error: [ VUID-VkMemoryAllocateInfo-memoryTypeIndex-00645 ] | MessageID = 0xb4ec2301 | vkAllocateMemory(): 
+	// pAllocateInfo->memoryTypeIndex is 1 but VkMemoryWin32HandlePropertiesKHR::memoryTypeBits is 0x0. 
+	// The Vulkan spec states: If the parameters define an import operation and the external handle is an NT handle or a 
+	// global share handle created outside of the Vulkan API, the value of memoryTypeIndex must be one of those returned 
+	// by vkGetMemoryWin32HandlePropertiesKHR 
+	// (https://vulkan.lunarg.com/doc/view/1.3.275.0/windows/1.3-extensions/vkspec.html#VUID-VkMemoryAllocateInfo-memoryTypeIndex-00645)
+	// 
+	//VkDeviceMemory externalMemory;
+	//VK_CHECK(vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &externalMemory));
+	//std::cout << "Memory Imported" << std::endl;
+	//VK_CHECK(vkBindImageMemory(device_, image_, externalMemory, 0));
+	//std::cout << "Memory Bound to Image" << std::endl;
 
-	std::cout << "Memory Imported" << std::endl;
+	//VkImageViewCreateInfo viewInfo{};
+	//viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	//viewInfo.image = image_;
+	//viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	//viewInfo.format = format_;
+	//viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	//viewInfo.subresourceRange.baseMipLevel = 0;
+	//viewInfo.subresourceRange.levelCount = 1;
+	//viewInfo.subresourceRange.baseArrayLayer = 0;
+	//viewInfo.subresourceRange.layerCount = 1;
 
-	VK_CHECK(vkBindImageMemory(device_, image_, externalMemory, 0));
-
-	std::cout << "Memory Bound to Image" << std::endl;
-
-	VkImageViewCreateInfo viewInfo{};
-	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	viewInfo.image = image_;
-	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	viewInfo.format = format_;
-	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	viewInfo.subresourceRange.baseMipLevel = 0;
-	viewInfo.subresourceRange.levelCount = 1;
-	viewInfo.subresourceRange.baseArrayLayer = 0;
-	viewInfo.subresourceRange.layerCount = 1;
-
-	VK_CHECK(vkCreateImageView(device_, &viewInfo, nullptr, &imageView_));
+	//VK_CHECK(vkCreateImageView(device_, &viewInfo, nullptr, &imageView_));
 
 	std::cout	<< "Texture Created (output), width: " 
 				<< extent_.width << " height: " << extent_.height << ", format: " << string_VkFormat(format_) << std::endl;
