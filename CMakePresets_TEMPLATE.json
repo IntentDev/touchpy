@@ -4,7 +4,7 @@
     {
       "name": "default",
       "cacheVariables": {
-          "CMAKE_TOOLCHAIN_FILE": "c:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+          "CMAKE_TOOLCHAIN_FILE": "<VCPKG_ROOT_PATH_HERE>/scripts/buildsystems/vcpkg.cmake"
       }
     },
     {
