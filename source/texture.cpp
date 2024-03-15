@@ -3,6 +3,7 @@
 #include <TouchEngine/TEVulkan.h>
 #include <Windows.h>
 #include <algorithm>
+#include <vulkan/vk_enum_string_helper.h>
 
 #include "cudamemory.h"
 
@@ -12,12 +13,6 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 		flipped_(TETextureGetOrigin(texture) == TETextureOriginBottomLeft)
 
 {
-	textureHandle_ = TEVulkanTextureGetHandle(texture);
-	std::cout << "TE Texture Handle: " << textureHandle_ << std::endl;
-
-	VkExternalMemoryHandleTypeFlagsKHR handleType = TEVulkanTextureGetHandleType(texture);
-	//std::cout << "Texture Handle Type: " << string_VkExternalMemoryHandleTypeFlagsKHR(handleType) << std::endl;
-
 	format_ = TEVulkanTextureGetFormat(texture);
 	numComponents_ = numCompsFromVkFormat(format_);
 	componentSize_ = componentSizeFromVkFormat(format_);
@@ -26,11 +21,14 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 		static_cast<uint32_t> (TEVulkanTextureGetHeight(texture))
 	};
 
-	// need to create function that sets up pitch depending on format and sets the 
-	// format for cuda memory allocation
-
 	std::cout << "Texture Component Size: " << componentSize_ << ", Num Components: " << static_cast<int>(numComponents_) << std::endl;
 	imagePitch_ = extent_.width * componentSize_ * numComponents_;
+
+	textureHandle_ = TEVulkanTextureGetHandle(texture);
+	std::cout << "TE Texture Handle: " << textureHandle_ << std::endl;
+
+	VkExternalMemoryHandleTypeFlagBits handleType = TEVulkanTextureGetHandleType(texture);
+	//std::cout << "Texture Handle Type: " << string_VkExternalMemoryHandleTypeFlags(handleType) << std::endl;
 
 	VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
 	externalMemoryImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
@@ -59,7 +57,7 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 
 	VkImportMemoryWin32HandleInfoKHR importMemoryInfo = {};
 	importMemoryInfo.sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR;
-	importMemoryInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+	importMemoryInfo.handleType = handleType;
 	importMemoryInfo.handle = textureHandle_; // Handle to the external memory
 
 	VkMemoryRequirements memRequirements;
@@ -83,7 +81,7 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 	memoryAllocateInfo.pNext = &importMemoryInfo;
 
 	// Import the external memory into Vulkan
-	// causing validation error on some systems, need to figure this out but an ImageView is not needed
+	// causing validation error in Vulkan 1.3.275.0, need to figure this out but an ImageView is not needed
 	// for the texture to be used in CUDA
 	// 
 	// Validation Error: [ VUID-VkMemoryAllocateInfo-memoryTypeIndex-00645 ] | MessageID = 0xb4ec2301 | vkAllocateMemory(): 
@@ -92,6 +90,9 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 	// global share handle created outside of the Vulkan API, the value of memoryTypeIndex must be one of those returned 
 	// by vkGetMemoryWin32HandlePropertiesKHR 
 	// (https://vulkan.lunarg.com/doc/view/1.3.275.0/windows/1.3-extensions/vkspec.html#VUID-VkMemoryAllocateInfo-memoryTypeIndex-00645)
+	// 
+	// This is a bug in Vulkan 1.3.275.0, the memoryTypeIndex is correct!!! Need to update to the next release of Vulkan
+	// when it becomes available then uncomment the code below so the texture can be used in Vulkan as well as CUDA
 	// 
 	//VkDeviceMemory externalMemory;
 	//VK_CHECK(vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &externalMemory));
