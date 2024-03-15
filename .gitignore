@@ -36,3 +36,4 @@
 */Backup
 *.dmp
 CMakeUserPresets.json
+CMakePresets.json
