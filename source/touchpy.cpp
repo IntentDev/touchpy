@@ -469,6 +469,7 @@ NB_MODULE(touchpy, m)
 	outDatLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("as_table", &OutDatLink::asTable)
 		.def("as_string", &OutDatLink::asString)
+		.def("type_desc", &OutDatLink::getTypeDescription)
 		;
 
 	nb::class_<OutDatLinks> outDatLinks(m, "OutDatLinks");
@@ -485,7 +486,6 @@ NB_MODULE(touchpy, m)
 	inDatLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("from_table", nb::overload_cast<const DatTable&>(&InDatLink::set))
 		.def("from_string", nb::overload_cast<const std::string&>(&InDatLink::set))
-		.def("type_desc", &InDatLink::getTypeDescription)
 		;
 
 	inDatLink.def("from_list", [](InDatLink& self, const nb::list& list, bool cast = false)
