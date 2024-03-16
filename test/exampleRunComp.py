@@ -4,11 +4,12 @@ import keyboard
 import numpy as np
 import torch
 from torch import nn
+import warp as wp
 
-# get the path to touchpy.pyd: ../out/build/x64-release
-# path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'out', 'build', 'x64-release'))
+# get the path to touchpy.pyd: 
+path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'out', 'build', 'x64-release'))
 # path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'out', 'build', 'x64-relwithdebuginfo'))
-path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'out', 'install', 'modules'))
+# path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'out', 'install', 'modules'))
 
 sys.path.append(path)
 
@@ -63,20 +64,11 @@ class ExampleRunComp:
 		# 	comp.stop()
 		# 	return
 		
-		cudamem = comp.out_tops[1].cuda_memory()
-		comp.in_tops[1].copy_cuda_memory(cudamem)
-
-		cudamem = comp.out_tops[2].cuda_memory()
-		comp.in_tops[2].copy_cuda_memory(cudamem)
-
 		tensor = comp.out_tops[0].as_tensor()
 		# tensor = comp.out_tops[0].as_tensor(tp.ComponentMask.RGB)
 
-
-
 		# print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.
 		# dtype, "tensor device: ", tensor.device, "tensor layout: ", tensor.layout, "tensor strides: ", tensor.stride(), "tensor is_contiguous: ", tensor.is_contiguous())
-
 
 		with torch.no_grad():
 			tensor2 = tensor * 2
@@ -90,6 +82,17 @@ class ExampleRunComp:
 			
 			comp.in_tops[0].from_tensor(tensor2)
 			pass
+
+
+		cudamem = comp.out_tops[1].cuda_memory()
+		comp.in_tops[1].copy_cuda_memory(cudamem)
+
+		# cudamem = comp.out_tops[2].cuda_memory()
+		# comp.in_tops[2].copy_cuda_memory(cudamem)
+
+		warp_array = wp.from_dlpack(comp.out_tops[2].as_dlpack())
+		warp_array = wp.clone(warp_array) # clone the array to avoid memory leak when copying to the input top
+		comp.in_tops[2].from_dlpack(wp.to_dlpack(warp_array))
 
 		comp.in_chops[0].from_numpy(this.test_array, this.test_array_chan_names)
 		this.test_array += 1
@@ -108,10 +111,7 @@ class ExampleRunComp:
 		chans3 = comp.out_chops[2].as_numpy()
 		# print(chans2)
 
-
-
 		comp.in_dats[0].from_string(f"Hello World! frame: {this.frame}")
-				
 				
 		datTable = tp.DatTable()
 		testList = [['g', 'b', 'c'], ['g', 'h', 'i'], ['t', 'w', 'a']]
@@ -166,8 +166,9 @@ class ExampleRunComp:
 		comp = tp.Comp(tox_path)
 		comp.set_on_frame_callback(self.on_frame, self)
 
-
-		# comp.start() # comp runs loop or comp.update() to run once
+		# comp.start() runs loop or comp.update() to run once
+		
+		# comp.start() 
 
 		while not (keyboard.is_pressed('q')):
 			comp.update()
@@ -175,12 +176,9 @@ class ExampleRunComp:
 
 
 if __name__ == '__main__':
+	wp.init()
 	example = ExampleRunComp()
-	tox_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'TopChopDatIO.tox'))
-	example.runComp(tox_path)
-
-
-
+	example.runComp('TopChopDatIO.tox')
 	
 	
 
