@@ -94,24 +94,24 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 	// This is a bug in Vulkan 1.3.275.0, the memoryTypeIndex is correct!!! Need to update to the next release of Vulkan
 	// when it becomes available then uncomment the code below so the texture can be used in Vulkan as well as CUDA
 	// 
-	//VkDeviceMemory externalMemory;
-	//VK_CHECK(vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &externalMemory));
-	//std::cout << "Memory Imported" << std::endl;
-	//VK_CHECK(vkBindImageMemory(device_, image_, externalMemory, 0));
-	//std::cout << "Memory Bound to Image" << std::endl;
+	VkDeviceMemory externalMemory;
+	VK_CHECK(vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &externalMemory));
+	std::cout << "Memory Imported" << std::endl;
+	VK_CHECK(vkBindImageMemory(device_, image_, externalMemory, 0));
+	std::cout << "Memory Bound to Image" << std::endl;
 
-	//VkImageViewCreateInfo viewInfo{};
-	//viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	//viewInfo.image = image_;
-	//viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	//viewInfo.format = format_;
-	//viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	//viewInfo.subresourceRange.baseMipLevel = 0;
-	//viewInfo.subresourceRange.levelCount = 1;
-	//viewInfo.subresourceRange.baseArrayLayer = 0;
-	//viewInfo.subresourceRange.layerCount = 1;
+	VkImageViewCreateInfo viewInfo{};
+	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewInfo.image = image_;
+	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.format = format_;
+	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	viewInfo.subresourceRange.baseMipLevel = 0;
+	viewInfo.subresourceRange.levelCount = 1;
+	viewInfo.subresourceRange.baseArrayLayer = 0;
+	viewInfo.subresourceRange.layerCount = 1;
 
-	//VK_CHECK(vkCreateImageView(device_, &viewInfo, nullptr, &imageView_));
+	VK_CHECK(vkCreateImageView(device_, &viewInfo, nullptr, &imageView_));
 
 	std::cout	<< "Texture Created (output), width: " 
 				<< extent_.width << " height: " << extent_.height << ", format: " << string_VkFormat(format_) << std::endl;

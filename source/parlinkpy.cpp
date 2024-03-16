@@ -1,9 +1,12 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/vector.h>
-#include <nanobind/stl/string_view.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/stl/string_view.h>
+#include <nanobind/stl/optional.h>
+
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/variant.h>
+
 
 #include "parlink.h"
 
@@ -240,7 +243,7 @@ void initParLinkBindings(nb::module_& m)
 	parLinks.doc() = "Represents a collection of parameters in a TouchDesigner component";
 	parLinks.def(nb::init<>())
 		.def("count", &ParLinkCollection::size)
-		.def("names", &ParLinkCollection::getParNames)
+		.def("names", &ParLinkCollection::getParNames, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](ParLinkCollection& self, const std::string& name) -> std::shared_ptr<ParLink>
 			{ return self.getParLinkByName(name); }, nb::rv_policy::reference_internal)
 		;
