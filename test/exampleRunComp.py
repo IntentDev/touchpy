@@ -6,8 +6,10 @@ import torch
 from torch import nn
 
 # get the path to touchpy.pyd: ../out/build/x64-release
-path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'out', 'build', 'x64-release'))
+# path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'out', 'build', 'x64-release'))
 # path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'out', 'build', 'x64-relwithdebuginfo'))
+path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'out', 'install', 'modules'))
+
 sys.path.append(path)
 
 import touchpy as tp
@@ -42,6 +44,7 @@ class ImageFilter(nn.Module):
 class ExampleRunComp:
 	def __init__(self):
 		self.frame = 0
+		self.running = True
 		self.test_array = np.array([[1],[2],[3],[4],[5],[6],[7],[8],[9],[10]], dtype=np.float32)
 		self.test_array_chan_names = [f"chn{i}" for i in range(10)]
 
@@ -55,9 +58,10 @@ class ExampleRunComp:
 	@staticmethod
 	def on_frame(comp, this):
 
-		if (keyboard.is_pressed('q')):
-			comp.stop()
-			return
+		# needed if comp.start() is called
+		# if (keyboard.is_pressed('q')):
+		# 	comp.stop()
+		# 	return
 		
 		cudamem = comp.out_tops[1].cuda_memory()
 		comp.in_tops[1].copy_cuda_memory(cudamem)
@@ -161,15 +165,12 @@ class ExampleRunComp:
 	def runComp(self, tox_path):
 		comp = tp.Comp(tox_path)
 		comp.set_on_frame_callback(self.on_frame, self)
-		comp.start()
 
-		# datTable = tp.DatTable()
-		# datTable.from_list([['a', 'b', 'c'], [1, 2.3, 3], ['g', 'h', 'i']], True)
-		# print(datTable.as_list())
 
-		# del(comp)
-		# while not (keyboard.is_pressed('q')):
-		# 	comp.update()
+		# comp.start() # comp runs loop or comp.update() to run once
+
+		while not (keyboard.is_pressed('q')):
+			comp.update()
 		pass
 
 

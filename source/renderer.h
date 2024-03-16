@@ -53,7 +53,7 @@ private:
     std::string getConfigureError() const;
     
 
-#ifdef TOUCHPY_INSTALL
+#ifdef NDEBUG
     const bool                         enableValidationLayers_{ false };
 #else
     const bool                         enableValidationLayers_{ true };

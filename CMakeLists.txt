@@ -18,7 +18,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "InstallRelease" "MinSizeRel" "RelWithDebInfo")
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
 
@@ -70,11 +70,6 @@ if (WIN32)
         VK_USE_PLATFORM_WIN32_KHR # use Vulkan on Windows
     )
 endif ()
-
-message("CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
-if(CMAKE_BUILD_TYPE STREQUAL "InstallRelease")
-    list(APPEND COMPILE_DEFINITIONS TOUCHPY_INSTALL)
-endif()
 
 target_compile_definitions(touchpy PRIVATE ${COMPILE_DEFINITIONS})
 target_compile_definitions(touchloader PRIVATE ${COMPILE_DEFINITIONS})
@@ -159,11 +154,11 @@ add_definitions(-DCMAKE_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
 #################################################################################################
 #################################################################################################
 
-install(TARGETS touchpy LIBRARY DESTINATION modules CONFIGURATIONS InstallRelease)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin/TouchEngine.dll DESTINATION modules CONFIGURATIONS InstallRelease)
-install(FILES ${cuda_runtime_dll} DESTINATION modules CONFIGURATIONS InstallRelease)
+install(TARGETS touchpy LIBRARY DESTINATION modules CONFIGURATIONS Release)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin/TouchEngine.dll DESTINATION modules CONFIGURATIONS Release)
+install(FILES ${cuda_runtime_dll} DESTINATION modules CONFIGURATIONS Release)
 
 
-install(TARGETS touchloader RUNTIME DESTINATION bin CONFIGURATIONS InstallRelease)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin/TouchEngine.dll DESTINATION bin CONFIGURATIONS InstallRelease)
-install(FILES ${cuda_runtime_dll} DESTINATION bin CONFIGURATIONS InstallRelease)
+install(TARGETS touchloader RUNTIME DESTINATION bin CONFIGURATIONS Release)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin/TouchEngine.dll DESTINATION bin CONFIGURATIONS Release)
+install(FILES ${cuda_runtime_dll} DESTINATION bin CONFIGURATIONS Release)

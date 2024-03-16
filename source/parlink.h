@@ -548,6 +548,17 @@ public:
 		return names;
 	}
 
+	//std::vector<std::string> getParNames() const
+	//{
+	//	std::vector<std::string> names;
+	//	for (const auto& [name, link] : pars)
+	//	{
+	//		names.push_back(name);
+	//	}
+	//	return names;
+	//}
+
+
 	size_t size() const { return pars.size(); }
 
 
