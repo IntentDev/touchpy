@@ -74,10 +74,11 @@ class ExampleRunComp:
 		in_chop2 = comp.in_chops['chopIn2']
 		in_chop2.from_numpy(chans2, chans2_names)
 
-
 		# # print some channel data
-		# chans3 = comp.out_chops[2].as_numpy()
-		# print(chans2)
+		chans3 = comp.out_chops[2]
+		arr = chans3.as_numpy()
+		# print(arr)
+		comp.in_chops[2].from_numpy(arr, chans3.chan_names())
 
 		# set first in DAT with string (inDAT will be in text mode)
 		comp.in_dats[0].from_string(f"Hello World! frame: {this.frame}")

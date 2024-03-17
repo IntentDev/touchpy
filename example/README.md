@@ -4,7 +4,20 @@ Toolkit providing various interconnectivity tools between TouchDesigner and Pyth
 
 ### Windows Install procedure
 
-#### 1. Mamba
+#### Without Environment File
+
+#### Dependencies
+- Python 3.11
+- NumPy 1.26 
+	- `pip install numpy` (no install needed if installing PyTorch)
+- PyTorch 2.2.1+cu118 (optional only needed if using outTopLink.as_tensor() or inTopLink.from_tensor())
+	- `pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118`
+- Keyboard (optional)
+	- pip install keyboard
+
+#### With Environment File
+
+##### 1. Mamba (optional)
 It’s recommended to install Mamba instead of (Ana)conda. If you have Conda installed, remove it first. 
 Mamba is a C++ rewrite of (Python based) conda, can download packages in parallel, and is therefore much faster. The mamba commands are exactly the same as for conda, just replace “conda” with “mamba”.
 
@@ -13,7 +26,7 @@ https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Win
 During install, enable both options "Create start menu shortcuts" and "Add Miniforge3 to my PATH environment variable" 
 
 
-#### 2. Setup touchpy environment
+##### 2. Setup touchpy environment
 
 
 - start the mamba prompt by searching for “Miniforge prompt” in Windows Startup menu
@@ -22,8 +35,12 @@ During install, enable both options "Create start menu shortcuts" and "Add Minif
 ```
 mamba env create -f environment.yml
 ```
-(this can take a few minutes to download and install all packages)
+or
+```
+conda env create -f environment.yml
+```
 
+(this can take a few minutes to download and install all packages)
 
 
 #### 3. Binaries
