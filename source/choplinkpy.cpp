@@ -42,7 +42,7 @@ void fromNumpyToChopLink(
 void initChopLinkBindings(nb::module_& m)
 {
 	nb::class_<OutChopLink> outChopLink(m, "OutChopLink");
-	outChopLink.doc() = "Represents a in or out CHOP in a TouchDesigner component";
+	outChopLink.doc() = "An in or out CHOP in a TouchDesigner component";
 	outChopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
 	outChopLink.def("chan_names", &OutChopLink::names, nb::rv_policy::reference_internal);
 
@@ -62,7 +62,7 @@ void initChopLinkBindings(nb::module_& m)
 
 
 	nb::class_<OutChopLinks> outChopLinks(m, "OutChopLinks");
-	outChopLinks.doc() = "Represents a collection of CHOP links in a TouchDesigner component";
+	outChopLinks.doc() = "A collection of CHOP links in a TouchDesigner component";
 	outChopLinks.def(nb::init<>())
 		.def("num_links", &OutChopLinks::size)
 		.def("link_names", &OutChopLinks::getLinkNames)
@@ -71,12 +71,12 @@ void initChopLinkBindings(nb::module_& m)
 		;
 
 	nb::class_<InChopLink> inChopLink(m, "InChopLink");
-	inChopLink.doc() = "Represents an inCHOP in a TouchDesigner component";
+	inChopLink.doc() = "An inCHOP in a TouchDesigner component";
 	inChopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("from_numpy", &fromNumpyToChopLink, "array"_a, "names"_a = nb::list());
 
 	nb::class_<InChopLinks> inChopLinks(m, "InChopLinks");
-	inChopLinks.doc() = "Represents a collection of CHOP links in a TouchDesigner component";
+	inChopLinks.doc() = "A collection of CHOP links in a TouchDesigner component";
 	inChopLinks.def(nb::init<>())
 		.def("num_links", &InChopLinks::size)
 		.def("link_names", &InChopLinks::getLinkNames)

@@ -1,10 +1,22 @@
-# touchpy
+# TouchPy
 Toolkit providing various interconnectivity tools between TouchDesigner and Python.
+
+## dependencies
+- Python 3.11
+- NumPy 1.26 
+	- `pip install numpy` (no install need if installing PyTorch)
+- PyTorch 2.2.1+cu118 (if using outTopLink.as_tensor() or inTopLink.from_tensor())
+	- `pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118`
+
+## installation
+No installation for TouchPy itself is required at this time. The file touchpy.cp311-win_amd64.pyd must be located either in the working directory or in the system PATH. TouchEngine.dll and cudart64_110.dll must be located beside touchpy.cp311-win_amd64.pyd. The simplest way to use TouchPy is to open a command prompt in the directory that contains both the Python file to execute and the TouchPy module.
 
 ## Example Usage
 
 ```
 import touchpy as tp
+import torch
+import numpy as np
 
 class MyClass:
 	def __init__(self):
@@ -16,7 +28,7 @@ class MyClass:
 		tensor = tensor * 2
 		comp.in_tops[0].from_tensor(tensor)
 
-		arr = comp.out_chops['outChop1'].as_numpy()
+		arr = comp.out_chops['anOutChopName'].as_numpy()
 		arr += 42
 		comp.in_chops[0].from_numpy(arr)
 
@@ -24,30 +36,32 @@ class MyClass:
 		datTable = tp.DatTable()
 		datTable.from_list([['a', 'b', 'c'], ['d', 'e', 'f'], [1, 2, 3]], cast=True)
 
-		color_par = comp.par['ColorPar']
+		color_par = comp.par['Acolorparname']
 		color_par.set(.2, .4, .8, 1.) 
 
-		if comp.start_next_frame():
-			# do work on non-comp members for the next frame here
-			pass
+		comp.start_next_frame():
+		# do work on non-comp members for the next frame here
 	
-	def run_comp(path):
+	def run_comp(self, path):
 		comp = tp.Comp(path)
 		comp.set_on_frame_callback(self.on_frame, self)
 		comp.start()
 
 
 myClass = MyClass()
-myClass.runComp("MyComponent.tox")
+myClass.run_comp("MyComponent.tox")
 
 ```
 
+- See example_run_comp.py for more examples
+
+
 ## Comp class
-A class representing a component in TouchDesigner.
+A TouchDesigner component loaded in a TouchEngine instance.
 
 ### Methods
 - `load_tox(path)`: Loads a .tox file at the specified path.
-- `loaded() -> bool`: Returns a boolean indicating whether the component is loaded.
+- `loaded() -> bool`: Returns a boolean indicating whether or not the component is loaded.
 - `update(start_next_frame = False)`: Called in a loop repeatedly to update the component.
 - `start_next_frame()`: If the `start_next_frame` argument in `update()` is False, this needs to be called after getting and setting all component members.
 - `start(update_starts_next_frame=False)`: Starts a loop that calls `update()` repeatedly.
@@ -62,7 +76,7 @@ A class representing a component in TouchDesigner.
 - `par`: ParLinkCollection of ParLink instances.
 
 ## Links class (OutTopLinks, InTopLinks, OutChopLinks, InChopLinks, OutDatLinks, InDatLinks classes)
-A class representing a container of links.
+A container of links.
 
 ### Methods
 - `num_links()`: Returns the number of links in the container.
@@ -71,7 +85,7 @@ A class representing a container of links.
 - `[name]`: Returns the link instance with the given name.
 
 ## ParLinkCollection class
-A class representing a collection of parameter links.
+A collection of parameter links.
 
 ### Properties
 - `count`: The number of parameter links in the collection.
@@ -81,7 +95,7 @@ A class representing a collection of parameter links.
 - `[name]`: Gets a parameter link by name.
 
 ## OutTopLink class
-A class representing an output top link.
+An output top link.
 
 ### Methods
 - `cuda_memory()`: Returns a CudaMemory instance.
@@ -89,7 +103,7 @@ A class representing an output top link.
 - `as_tensor()`: Returns a PyTorch tensor.
 
 ## InTopLink class
-A class representing an input top link.
+An input top link.
 
 ### Methods
 - `copy_cuda_memory(cudamemory)`: Copies the data from a CudaMemory instance.
@@ -97,7 +111,7 @@ A class representing an input top link.
 - `from_tensor(tensor)`: Sets the data from a PyTorch tensor (overloads for 1, 2, 3, 4 component arrays).
 
 ## OutChopLink class
-A class representing an output chop link.
+An output chop link.
 
 ### Methods
 - `chan_names()`: Returns a list of the channel names.
@@ -105,13 +119,13 @@ A class representing an output chop link.
 - `as_numpy_ref()`: Returns a numpy array reference (will not copy the data, unless explicitly copied).
 
 ## InChopLink class
-A class representing an input chop link.
+An input chop link.
 
 ### Methods
 - `from_numpy(array, names=[])`: Sets the data from a numpy array (2d), with optional channel names (must be exactly the same length as the size of the first dimension of the array).
 
 ## DatTable class
-Represents a table in a DAT link
+A table in a DAT link
 
 ### Methods
 - `num_rows`: Returns the number of rows in the table
@@ -123,7 +137,7 @@ Represents a table in a DAT link
 - `from_list(list, cast=False)`: set table data from a list of lists (will use first list in parent list for number of columns)
 
 ## OutDatLink class
-A class representing an output dat link.
+An output dat link.
 
 ### Methods
 - `as_string()`: Returns the data as a string.
@@ -131,7 +145,7 @@ A class representing an output dat link.
 - `getTypeDescription()`: Returns the type description of the data (string or DatTable).
 
 ## InDatLink class
-A class representing an input dat link.
+An input dat link.
 
 ### Methods
 - `from_string(string)`: Sets the data as text from a string (DAT will be contain text).
@@ -139,7 +153,7 @@ A class representing an input dat link.
 - `from_list(list)`: Sets the data as a table from a list of lists.
 
 ## ParLink class
-A class representing a parameter link.
+A parameter link.
 
 ### Properties
 - `val`: Gets or sets the value of the parameter.

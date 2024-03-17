@@ -39,7 +39,7 @@ void initParLinkBindings(nb::module_& m)
 		.def_rw("r", &ColorRGBA::r).def_rw("g", &ColorRGBA::g).def_rw("b", &ColorRGBA::b).def_rw("a", &ColorRGBA::a);
 
 	nb::class_ <ParLink> parLink(m, "ParLink");
-	parLink.doc() = "Represents a parameter in a TouchDesigner component";
+	parLink.doc() = "A parameter in a TouchDesigner component";
 	parLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("set", &ParLink::set)
 		.def("get", &ParLink::get)
@@ -47,7 +47,7 @@ void initParLinkBindings(nb::module_& m)
 		;
 
 	nb::class_ <Int2ParLink> int2ParLink(m, "Int2ParLink");
-	int2ParLink.doc() = "Represents an int2 parameter in a TouchDesigner component";
+	int2ParLink.doc() = "An int2 parameter in a TouchDesigner component";
 	int2ParLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("set", &Int2ParLink::set)
 		.def("get", &Int2ParLink::get)
@@ -69,7 +69,7 @@ void initParLinkBindings(nb::module_& m)
 		;
 
 	nb::class_ <Int3ParLink> int3ParLink(m, "Int3ParLink");
-	int3ParLink.doc() = "Represents an int3 parameter in a TouchDesigner component";
+	int3ParLink.doc() = "An int3 parameter in a TouchDesigner component";
 	int3ParLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("set", &Int3ParLink::set)
 		.def("get", &Int3ParLink::get)
@@ -97,7 +97,7 @@ void initParLinkBindings(nb::module_& m)
 				;
 
 	nb::class_ <Int4ParLink> int4ParLink(m, "Int4ParLink");
-	int4ParLink.doc() = "Represents an int4 parameter in a TouchDesigner component";
+	int4ParLink.doc() = "An int4 parameter in a TouchDesigner component";
 	int4ParLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("set", &Int4ParLink::set)
 		.def("get", &Int4ParLink::get)
@@ -127,7 +127,7 @@ void initParLinkBindings(nb::module_& m)
 				;
 
 	nb::class_ <Double2ParLink> double2ParLink(m, "Double2ParLink");
-	double2ParLink.doc() = "Represents a float2 parameter in a TouchDesigner component";
+	double2ParLink.doc() = "A float2 parameter in a TouchDesigner component";
 	double2ParLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("set", &Double2ParLink::set)
 		.def("get", &Double2ParLink::get)
@@ -153,7 +153,7 @@ void initParLinkBindings(nb::module_& m)
 				;
 
 	nb::class_ <Double3ParLink> double3ParLink(m, "Double3ParLink");
-	double3ParLink.doc() = "Represents a float3 parameter in a TouchDesigner component";
+	double3ParLink.doc() = "A float3 parameter in a TouchDesigner component";
 	double3ParLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("set", &Double3ParLink::set)
 		.def("get", &Double3ParLink::get)
@@ -180,7 +180,7 @@ void initParLinkBindings(nb::module_& m)
 				;
 
 	nb::class_ <Double4ParLink> double4ParLink(m, "Double4ParLink");
-	double4ParLink.doc() = "Represents a float4 parameter in a TouchDesigner component";
+	double4ParLink.doc() = "A float4 parameter in a TouchDesigner component";
 	double4ParLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("set", &Double4ParLink::set)
 		.def("get", &Double4ParLink::get)
@@ -210,7 +210,7 @@ void initParLinkBindings(nb::module_& m)
 				;
 
 	nb::class_ <ColorParLink> colorParLink(m, "ColorParLink");
-	colorParLink.doc() = "Represents a color parameter in a TouchDesigner component";
+	colorParLink.doc() = "A color parameter in a TouchDesigner component";
 	colorParLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("set", &ColorParLink::set)
 		.def("get", &ColorParLink::get)
@@ -240,7 +240,7 @@ void initParLinkBindings(nb::module_& m)
 				;
 
 	nb::class_<ParLinkCollection> parLinks(m, "ParLinkCollection");
-	parLinks.doc() = "Represents a collection of parameters in a TouchDesigner component";
+	parLinks.doc() = "A collection of parameters in a TouchDesigner component";
 	parLinks.def(nb::init<>())
 		.def("count", &ParLinkCollection::size)
 		.def("names", &ParLinkCollection::getParNames, nb::rv_policy::reference_internal)

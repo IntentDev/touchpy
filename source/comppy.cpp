@@ -6,32 +6,25 @@
 namespace nb = nanobind;
 using namespace nb::literals;
 
-const char* testDoc = R"(
-		this is at test doc string
-		which can be multiline have "quotes" and be used as an argument 
-		to the doc parameter of the def function
-		)";
+const char* load_toxDoc = 
+R"(Loads a .tox file, creates and initializes a TouchEngine Instance
+Args:
+	path: the path to the .tox file
+
+Returns:
+	True if the .tox file was loaded successfully, False otherwise
+)";
 
 
 
 void initCompBindings(nb::module_& m)
 {
 	nb::class_<Comp> comp(m, "Comp");
-	comp.doc() = "Loads and runs a TouchDesigner component loaded from .tox file";
+	comp.doc() = "A TouchDesigner component loaded in a TouchEngine instance.";
 	comp.def(nb::init<>())
 		.def(nb::init<const std::string&>(), nb::rv_policy::reference_internal)
 
-		.def("load_tox", &Comp::loadTox, "path"_a, nb::rv_policy::reference_internal, 
-			R"(		
-		Loads a .tox file, creates and initializes a TouchEngine Instance
-
-		Args:
-			path: the path to the .tox file
-
-		Returns:
-			True if the .tox file was loaded successfully, False otherwise
-		)")
-
+		.def("load_tox", &Comp::loadTox, "path"_a, nb::rv_policy::reference_internal, load_toxDoc)
 		.def("loaded", &Comp::loaded, nb::rv_policy::reference_internal)
 		.def("update", &Comp::update, "start_next_frame"_a = false, nb::rv_policy::reference_internal)
 		.def("start_next_frame", &Comp::startNextFrame, nb::rv_policy::reference_internal)

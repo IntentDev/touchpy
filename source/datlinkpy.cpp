@@ -58,7 +58,7 @@ DatTable tableFromList(const nb::list& list, bool cast = false)
 void initDatLinkBindings(nb::module_& m)
 {
 	nb::class_<DatTable> datTable(m, "DatTable");
-	datTable.doc() = "Represents a table of data in a DAT link";
+	datTable.doc() = "A table of data in a DAT link";
 	datTable.def(nb::init<>())
 		.def("num_rows", [](DatTable& self) { return self.numRows; })
 		.def("num_cols", [](DatTable& self) { return self.numCols; })
@@ -87,7 +87,7 @@ void initDatLinkBindings(nb::module_& m)
 	);
 
 	nb::class_<OutDatLink> outDatLink(m, "OutDatLink");
-	outDatLink.doc() = "Represents a in or out DAT in a TouchDesigner component";
+	outDatLink.doc() = "A in or out DAT in a TouchDesigner component";
 	outDatLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("as_table", &OutDatLink::asTable)
 		.def("as_string", &OutDatLink::asString)
@@ -95,7 +95,7 @@ void initDatLinkBindings(nb::module_& m)
 		;
 
 	nb::class_<OutDatLinks> outDatLinks(m, "OutDatLinks");
-	outDatLinks.doc() = "Represents a collection of DAT links in a TouchDesigner component";
+	outDatLinks.doc() = "A collection of DAT links in a TouchDesigner component";
 	outDatLinks.def(nb::init<>())
 		.def("num_links", &OutDatLinks::size)
 		.def("link_names", &OutDatLinks::getLinkNames)
@@ -104,7 +104,7 @@ void initDatLinkBindings(nb::module_& m)
 		;
 
 	nb::class_<InDatLink> inDatLink(m, "InDatLink");
-	inDatLink.doc() = "Represents a in or out DAT in a TouchDesigner component";
+	inDatLink.doc() = "A in or out DAT in a TouchDesigner component";
 	inDatLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("from_table", nb::overload_cast<const DatTable&>(&InDatLink::set))
 		.def("from_string", nb::overload_cast<const std::string&>(&InDatLink::set))
@@ -117,7 +117,7 @@ void initDatLinkBindings(nb::module_& m)
 	);
 
 	nb::class_<InDatLinks> inDatLinks(m, "InDatLinks");
-	inDatLinks.doc() = "Represents a collection of DAT links in a TouchDesigner component";
+	inDatLinks.doc() = "A collection of DAT links in a TouchDesigner component";
 	inDatLinks.def(nb::init<>())
 		.def("num_links", &InDatLinks::size)
 		.def("link_names", &InDatLinks::getLinkNames)
