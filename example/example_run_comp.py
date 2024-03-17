@@ -4,14 +4,6 @@ import keyboard
 import numpy as np
 import torch
 from torch import nn
-import warp as wp
-
-# get the path to touchpy.pyd: 
-path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'out', 'build', 'x64-release'))
-# path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'out', 'build', 'x64-relwithdebuginfo'))
-# path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'out', 'install', 'modules'))
-
-sys.path.append(path)
 
 import touchpy as tp
 
@@ -59,10 +51,10 @@ class ExampleRunComp:
 	@staticmethod
 	def on_frame(comp, this):
 
-		# needed if comp.start() is called
-		# if (keyboard.is_pressed('q')):
-		# 	comp.stop()
-		# 	return
+		# used to quit if comp.start() is called
+		if (keyboard.is_pressed('q')):
+			comp.stop()
+			return
 		
 		tensor = comp.out_tops[0].as_tensor()
 		# tensor = comp.out_tops[0].as_tensor(tp.ComponentMask.RGB)
@@ -87,15 +79,12 @@ class ExampleRunComp:
 		cudamem = comp.out_tops[1].cuda_memory()
 		comp.in_tops[1].copy_cuda_memory(cudamem)
 
-		# cudamem = comp.out_tops[2].cuda_memory()
-		# comp.in_tops[2].copy_cuda_memory(cudamem)
+		cudamem = comp.out_tops[2].cuda_memory()
+		comp.in_tops[2].copy_cuda_memory(cudamem)
 
-		warp_array = wp.from_dlpack(comp.out_tops[2].as_dlpack())
-		warp_array = wp.clone(warp_array) # clone the array to avoid memory leak when copying to the input top
-		comp.in_tops[2].from_dlpack(wp.to_dlpack(warp_array))
-
-		comp.in_chops[0].from_numpy(this.test_array, this.test_array_chan_names)
-		this.test_array += 1
+		comp.in_chops[0].from_numpy(comp.out_chops[0].as_numpy(), comp.out_chops[0].chan_names())
+		# comp.in_chops[0].from_numpy(this.test_array, this.test_array_chan_names)
+		this.test_array += .001
 
 		# get a reference to the numpy array, some functions that do not copy 
 		# will not work with this passed as an argument, such as ChopLink.from_numpy() 
@@ -160,7 +149,19 @@ class ExampleRunComp:
 		xyzw = comp.par['Xyzw']
 		xyzw.set([1, 2, 3, 4])
 
+
+		
+		if comp.start_next_frame():
+			# do work on non-comp members for the next frame here
+			pass
+		else:
+			# we have a problem with TouchEngine starting the next frame.
+			# Currently the error will be printed in the console but start_next_frame()
+			# will need to be updated to return an enum with the result for error handling.
+			pass
+
 		this.frame += 1
+
 
 	def runComp(self, tox_path):
 		comp = tp.Comp(tox_path)
@@ -168,15 +169,17 @@ class ExampleRunComp:
 
 		# comp.start() runs loop or comp.update() to run once
 		
-		# comp.start() 
+		# comp.start(True) # update function starts next frame
+		comp.start() # need to manually call start_next_frame() in on_frame callback to start next frame
 
-		while not (keyboard.is_pressed('q')):
-			comp.update()
+
+		# while not (keyboard.is_pressed('q')):
+		#	# comp.update(True) # update function starts next frame
+		# 	comp.update() #  need to manually call start_next_frame() in on_frame callback to start next frame
 		pass
 
 
 if __name__ == '__main__':
-	wp.init()
 	example = ExampleRunComp()
 	example.runComp('TopChopDatIO.tox')
 	

@@ -157,7 +157,7 @@ void initTopLinkBindings(nb::module_& m)
 		.value("UInt8", CUDADataType::UInt8)
 		.value("Float16", CUDADataType::Float16)
 		.value("Float32", CUDADataType::Float32)
-		.value("Undefined", CUDADataType::Undefined)
+		.value("Undefined", CUDADataType::Undefined).doc() = "The data type of a CUDA memory buffer";
 		;
 
 	nb::class_<CUDAMemoryShape> cudaMemoryShape(m, "CudaMemoryShape");

@@ -6,16 +6,36 @@
 namespace nb = nanobind;
 using namespace nb::literals;
 
+const char* testDoc = R"(
+		this is at test doc string
+		which can be multiline have "quotes" and be used as an argument 
+		to the doc parameter of the def function
+		)";
+
+
+
 void initCompBindings(nb::module_& m)
 {
 	nb::class_<Comp> comp(m, "Comp");
-	comp.doc() = "Runs a TouchDesigner component loaded from .tox file";
+	comp.doc() = "Loads and runs a TouchDesigner component loaded from .tox file";
 	comp.def(nb::init<>())
 		.def(nb::init<const std::string&>(), nb::rv_policy::reference_internal)
-		.def("load_tox", &Comp::loadTox, nb::rv_policy::reference_internal)
+
+		.def("load_tox", &Comp::loadTox, "path"_a, nb::rv_policy::reference_internal, 
+			R"(		
+		Loads a .tox file, creates and initializes a TouchEngine Instance
+
+		Args:
+			path: the path to the .tox file
+
+		Returns:
+			True if the .tox file was loaded successfully, False otherwise
+		)")
+
 		.def("loaded", &Comp::loaded, nb::rv_policy::reference_internal)
-		.def("update", &Comp::update, nb::rv_policy::reference_internal)
-		.def("start", &Comp::runUpdateLoop, nb::rv_policy::reference_internal)
+		.def("update", &Comp::update, "start_next_frame"_a = false, nb::rv_policy::reference_internal)
+		.def("start_next_frame", &Comp::startNextFrame, nb::rv_policy::reference_internal)
+		.def("start", &Comp::runUpdateLoop, "update_starts_next_frame"_a = false, nb::rv_policy::reference_internal)
 		.def("stop", &Comp::stopUpdateLoop, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_tops", &Comp::inputTopLinks, nb::rv_policy::reference_internal)
 		.def_prop_ro("out_tops", &Comp::outputTopLinks, nb::rv_policy::reference_internal)
