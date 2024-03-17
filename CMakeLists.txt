@@ -78,6 +78,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_definitions(touchpy PRIVATE DISABLE_DEBUG_BUILD)
 endif()
 
+add_custom_command(TARGET touchpy POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:touchpy> ${CMAKE_CURRENT_SOURCE_DIR}/example) 
+
 # Vulkan
 # .\vcpkg install vulkan ### haven't tested this, probably best to just install the SDK
 #################################################################################################
@@ -116,6 +120,10 @@ add_custom_command(TARGET touchpy POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     ${cuda_runtime_dll} $<TARGET_FILE_DIR:touchpy>)
 
+add_custom_command(TARGET touchpy POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    ${cuda_runtime_dll} ${CMAKE_CURRENT_SOURCE_DIR}/example)
+
 # Python
 # make sure path to python is in the system PATH
 #################################################################################################
@@ -136,6 +144,10 @@ target_include_directories(touchpy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/
 add_custom_command(TARGET touchpy POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin $<TARGET_FILE_DIR:touchpy>)
+
+add_custom_command(TARGET touchpy POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin ${CMAKE_CURRENT_SOURCE_DIR}/example)    
 
 target_link_directories(touchloader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/lib)
 target_link_libraries(touchloader TouchEngine)

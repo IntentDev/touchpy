@@ -24,16 +24,17 @@ public:
 	Comp(const std::string& filePath);
 	~Comp();
 
-	void loadTox(const std::string& filePath);
+	bool loadTox(const std::string& filePath);
 	void unload();
 	bool loaded() const; 
 	bool ready() const { return ready_; }
-	void update();
+	void update(bool callStartNextFrame = false);
+	bool startNextFrame();
 	void setOnFrameStartCallback(
 		std::function<void(Comp&, std::shared_ptr<void>)> callback, 
 		std::shared_ptr<void> userData
 	);
-	void runUpdateLoop();
+	void runUpdateLoop(bool updateStartsNextFrame = false);
 	void stopUpdateLoop();
 
 	InTopLinks& inputTopLinks() { return *inTopLinks_; }
@@ -106,7 +107,7 @@ private:
 
 	std::chrono::high_resolution_clock::time_point lastFrameTime_{};
 	void initComp();
-	void load();
+	bool load();
 
 
 	void applyLayoutChange();

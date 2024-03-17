@@ -114,7 +114,7 @@ Comp::setCudaDevice()
 	exit(1);
 }
 
-void 
+bool 
 Comp::load()
 {
 	std::cout << "Loading tox: \t" << std::string(filePath_.begin(), filePath_.end()) << std::endl;
@@ -137,12 +137,12 @@ Comp::load()
 
 }
 
-void 
+bool
 Comp::loadTox(const std::string& filePath)
 {
 	filePath_ = filePath;
 	unload();
-	load();
+	return load();
 }
 
 
@@ -397,12 +397,12 @@ void Comp::setOnFrameStartCallback(
 	onFrameStartCallbackUserData_ = userData;
 }
 
-void Comp::runUpdateLoop()
+void Comp::runUpdateLoop(bool updateStartsNextFrame)
 {
 	updateLoopRunning_ = true;
 	while (updateLoopRunning_)
 	{
-		update();
+		update(updateStartsNextFrame);
 	}
 }
 
@@ -412,7 +412,7 @@ void Comp::stopUpdateLoop()
 }
 
 void
-Comp::update()
+Comp::update(bool callStartNextFrame)
 {
 	bool ready, loaded, linksLayoutChanged, inFrame;
 	getState(ready, loaded, linksLayoutChanged, inFrame);
@@ -445,20 +445,27 @@ Comp::update()
 		if (onFrameStartCallback_)
 			onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
 
-		copyOutsToIns();
+		//copyOutsToIns();
 
-		//std::cout << "setInFrame true after update" << std::endl;
-		setInFrame(true);
-		TEResult result = TEInstanceStartFrameAtTime(instance_, 0.0, 0.0, false);
-		if (result != TEResultSuccess)
-		{
-			std::cout << "update() TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
-			setInFrame(false);
-			return;
-		}
+		if (callStartNextFrame)
+			startNextFrame();
 
-		++frameCount_;
 	}
+}
+
+bool Comp::startNextFrame()
+{
+	setInFrame(true);
+	TEResult result = TEInstanceStartFrameAtTime(instance_, 0.0, 0.0, false);
+	if (result != TEResultSuccess)
+	{
+		std::cout << "update() TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
+		setInFrame(false);
+		return false;
+	}
+
+	++frameCount_;
+	return true;
 }
 
 void 
@@ -626,10 +633,10 @@ Comp::applyOutputStringDataChange()
 
 void Comp::copyOutsToIns()
 {
-	//copyOutTopsToInTops();
-	//copyOutChopsToInChops(); // requires applyOutputFloatBufferChange() to be called first
-	//copyOutDatsToInDats(); // requires applyOutputStringDataChange() to be called first
-	//getSetParValues();
+	copyOutTopsToInTops();
+	copyOutChopsToInChops(); // requires applyOutputFloatBufferChange() to be called first
+	copyOutDatsToInDats(); // requires applyOutputStringDataChange() to be called first
+	getSetParValues();
 }
 
 void Comp::copyOutTopsToInTops()
