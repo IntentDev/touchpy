@@ -1,14 +1,14 @@
 # TouchPy
 Toolkit providing various interconnectivity tools between TouchDesigner and Python.
 
-## dependencies
+## Dependencies
 - Python 3.11
 - NumPy 1.26 
 	- `pip install numpy` (no install need if installing PyTorch)
 - PyTorch 2.2.1+cu118 (if using outTopLink.as_tensor() or inTopLink.from_tensor())
 	- `pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118`
 
-## installation
+## Installation
 No installation for TouchPy itself is required at this time. The file touchpy.cp311-win_amd64.pyd must be located either in the working directory or in the system PATH. TouchEngine.dll and cudart64_110.dll must be located beside touchpy.cp311-win_amd64.pyd. The simplest way to use TouchPy is to open a command prompt in the directory that contains both the Python file to execute and the TouchPy module.
 
 ## Example Usage
