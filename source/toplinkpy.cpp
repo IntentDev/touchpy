@@ -186,7 +186,7 @@ void initTopLinkBindings(nb::module_& m)
 
 
 	nb::class_<OutTopLink> outTopLink(m, "OutTopLink");
-	outTopLink.doc() = "Represents an OutTOP in a TouchDesigner component";
+	outTopLink.doc() = "An OutTOP in a TouchDesigner component";
 	outTopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("cuda_memory", &OutTopLink::cudaMemory)
 		.def("as_dlpack", &arrayFromCudaMem<>, "componentMask"_a = ComponentMask::RGBA, nb::rv_policy::reference_internal)
@@ -194,7 +194,7 @@ void initTopLinkBindings(nb::module_& m)
 		;
 
 	nb::class_<OutTopLinks> outTopLinks(m, "OutTopLinks");
-	outTopLinks.doc() = "Represents a collection of OutTOP links in a TouchDesigner component";
+	outTopLinks.doc() = "A collection of OutTOP links in a TouchDesigner component";
 	outTopLinks.def(nb::init<>())
 		.def("num_links", &OutTopLinks::size)
 		.def("link_names", &OutTopLinks::getLinkNames)
@@ -203,7 +203,7 @@ void initTopLinkBindings(nb::module_& m)
 		;
 
 	nb::class_<InTopLink> inTopLink(m, "InTopLink");
-	inTopLink.doc() = "Represents an InTOP in a TouchDesigner component";
+	inTopLink.doc() = "An InTOP in a TouchDesigner component";
 	inTopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
 
 	inTopLink.def("from_dlpack",
@@ -240,7 +240,7 @@ void initTopLinkBindings(nb::module_& m)
 		});
 
 	nb::class_<InTopLinks> inTopLinks(m, "InTopLinks");
-	inTopLinks.doc() = "Represents a collection of InTOP links in a TouchDesigner component";
+	inTopLinks.doc() = "A collection of InTOP links in a TouchDesigner component";
 	inTopLinks.def(nb::init<>())
 		.def("num_links", &InTopLinks::size)
 		.def("link_names", &InTopLinks::getLinkNames)
