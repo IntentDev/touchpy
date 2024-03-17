@@ -134,7 +134,7 @@ Comp::load()
 
 	TE_CHECK(TEInstanceResume(instance_));
 
-
+	return true;
 }
 
 bool
