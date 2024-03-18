@@ -102,6 +102,7 @@ A TouchDesigner component loaded in a TouchEngine instance.
 - `start(update_starts_next_frame=False)`: Starts a loop that calls `update()` repeatedly.
 - `stop()`: Stops the loop that calls `update()`.
 - `set_on_frame_callback()`: Sets a callback function to be called every frame by the `update()` function when data is ready to be retrieved.
+### Members
 - `in_tops`: InTopLinks container of InTopLink instances.
 - `out_tops`: OutTopLinks container of OutTopLink instances.
 - `in_chops`: InChopLinks container of InChopLink instances.
@@ -116,6 +117,7 @@ A container of links.
 ### Methods
 - `num_links()`: Returns the number of links in the container.
 - `link_names()`: Returns a list of the names of the links in the container.
+### Members
 - `[index]`: Returns the link instance at the given index.
 - `[name]`: Returns the link instance with the given name.
 
@@ -163,8 +165,8 @@ An input chop link.
 A table in a DAT link
 
 ### Methods
-- `num_rows`: Returns the number of rows in the table
-- `num_cols`: Returns the number of columns in the table
+- `num_rows()`: Returns the number of rows in the table
+- `num_cols()`: Returns the number of columns in the table
 - `row(index)`: Returns a single row as a list of strings
 - `col(index)`: Returns a single column as a list of strings
 - `cell(row_index, col_index)`: Returns a cell as a string
@@ -213,7 +215,7 @@ A parameter link.
 ## CUDADataType enum class
 An enum class representing CUDA data types.
 
-### Values
+### Members
 - Float32
 - Int32
 - UInt8
