@@ -82,6 +82,21 @@ add_custom_command(TARGET touchpy POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     $<TARGET_FILE:touchpy> ${CMAKE_CURRENT_SOURCE_DIR}/example) 
 
+# Google Test
+#################################################################################################
+#################################################################################################
+set(GTEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/gtest)
+
+file(GLOB_RECURSE TEST_SOURCES "${GTEST_SOURCE_DIR}/*gtest*.cpp")
+
+set(TOUCHPY_TEST_SOURCES ${ALL_TPY_SOURCES})
+list(FILTER TOUCHPY_TEST_SOURCES EXCLUDE REGEX ".*py\\.cpp$")
+
+add_executable (touchpygtest ${GTEST_SOURCE_DIR} ${TOUCHPY_TEST_SOURCES})
+target_include_directories(touchpygtest PRIVATE ${SOURCE_DIR})
+
+
+
 # Vulkan
 # .\vcpkg install vulkan ### haven't tested this, probably best to just install the SDK
 #################################################################################################
@@ -155,6 +170,18 @@ target_include_directories(touchloader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/exter
 add_custom_command(TARGET touchloader POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 	${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin $<TARGET_FILE_DIR:touchloader>)
+
+# Google Test
+# .\vcpkg install gtest
+#################################################################################################
+# find_package(GTest CONFIG REQUIRED)
+# # For Windows: Prevent overriding the parent project's compiler/linker settings
+# set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+# target_link_libraries(touchpygtests PRIVATE GTest::gtest_main)
+# include(GoogleTest)
+# gtest_discover_tests(touchpygtests)
+
 
 # dependencies so touchpy depends on touchloader being built first
 #################################################################################################
