@@ -35,5 +35,6 @@
 /.vs
 */Backup
 *.dmp
+__pycache__
 CMakeUserPresets.json
 CMakePresets.json
