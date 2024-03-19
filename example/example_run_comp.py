@@ -1,4 +1,4 @@
-import keyboard # pip install keyboard
+# import keyboard # optional, used to quit the loop
 import numpy as np
 import torch
 
@@ -20,51 +20,22 @@ class ExampleRunComp:
 	@staticmethod
 	def on_frame(comp, this):
 
-		# used to quit if comp.start() is called
-		if (keyboard.is_pressed('q')):
-			comp.stop()
-			return
-		
-
-		tensor = comp.out_tops[0].as_tensor() # get the first top as a tensor
-		# tensor = comp.out_tops[0].as_tensor(tp.ComponentMask.RGB) # get just the first 3 channels
-
-		# print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.
-		# dtype, "tensor device: ", tensor.device, "tensor layout: ", tensor.layout, 
-		# "tensor strides: ", tensor.stride(), "tensor is_contiguous: ", tensor.is_contiguous())
-
-		with torch.no_grad():
-			tensor2 = tensor * 2 # do some work on the tensor
-			comp.in_tops[0].from_tensor(tensor2)
-
-			# filter tensor only works with 32bit float data (comp.out_tops[2] is 32bit float in this example)
-			# filteer expects (b, c, h, w) layout
-			# tensor2 = this.imag_filter(tensor.permute(2, 0, 1).unsqueeze(0)).squeeze(0) 
-
-			# print("tensor2 shape: ", tensor2.shape, "tensor2 dtype: ", tensor2.dtype, 
-			# "tensor2 device: ", tensor2.device, "tensor2 layout: ", tensor2.layout, 
-			# "tensor2 strides: ", tensor2.stride(), "tensor2 is_contiguous: ", tensor2.is_contiguous())
-			
-			# this is a copy, need to update TopLink to support different strides, TouchPy expects (h, w, c) layout
-			# comp.in_tops[2].from_tensor(tensor2.permute(1, 2, 0).contiguous()) 
-			pass
-
-		# copy the cuda memory from out_top_link to in_top_link
-		cudamem = comp.out_tops[1].cuda_memory()
-		comp.in_tops[1].copy_cuda_memory(cudamem)
-
-		# copy the cuda memory from out_top_link to in_top_link
-		cudamem = comp.out_tops[2].cuda_memory()
-		comp.in_tops[2].copy_cuda_memory(cudamem)
+		# optional used to quit if comp.start() is called
+		# if (keyboard.is_pressed('q')):
+		# 	comp.stop()
+		# 	return
 
 		# copy out_chop to in_chop with channel names. Only NumPy arrays are supported for now.
-		comp.in_chops[0].from_numpy(comp.out_chops[0].as_numpy(), comp.out_chops[0].chan_names())
-
+		arr = comp.out_chops[0].as_numpy()
+		names = comp.out_chops[0].chan_names()
+		arr *= 2
+		comp.in_chops[0].from_numpy(arr, names)
+		
 		# set in_chops[0] with local data
 		# comp.in_chops[0].from_numpy(this.test_array, this.test_array_chan_names)
 
 		# update the local data
-		this.test_array += .001
+		this.test_array += .01
 
 		chans2 = comp.out_chops[1].as_numpy()
 		chans2_names = comp.out_chops[1].chan_names()
@@ -139,6 +110,39 @@ class ExampleRunComp:
 		translate.set([11.1, 22.2, 33.2])
 		translate.set(11.1, 22.2, 33.5)
 
+		# copy the cuda memory from out_top_link to in_top_link
+		cudamem = comp.out_tops[1].cuda_memory()
+		comp.in_tops[1].copy_cuda_memory(cudamem)
+
+		# copy the cuda memory from out_top_link to in_top_link
+		cudamem = comp.out_tops[2].cuda_memory()
+		comp.in_tops[2].copy_cuda_memory(cudamem)
+		
+		tensor = comp.out_tops[0].as_tensor() # get the first top as a tensor
+		# tensor = comp.out_tops[0].as_tensor(tp.ComponentMask.RGB) # get just the first 3 channels
+		tensor2 = tensor * 2 # do some work on the tensor
+		# print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.
+		# dtype, "tensor device: ", tensor.device, "tensor layout: ", tensor.layout, 
+		# "tensor strides: ", tensor.stride(), "tensor is_contiguous: ", tensor.is_contiguous())
+
+		with torch.no_grad():
+			
+			comp.in_tops[0].from_tensor(tensor2)
+
+			# filter tensor only works with 32bit float data (comp.out_tops[2] is 32bit float in this example)
+			# filteer expects (b, c, h, w) layout
+			# tensor2 = this.imag_filter(tensor.permute(2, 0, 1).unsqueeze(0)).squeeze(0) 
+
+			# print("tensor2 shape: ", tensor2.shape, "tensor2 dtype: ", tensor2.dtype, 
+			# "tensor2 device: ", tensor2.device, "tensor2 layout: ", tensor2.layout, 
+			# "tensor2 strides: ", tensor2.stride(), "tensor2 is_contiguous: ", tensor2.is_contiguous())
+			
+			# this is a copy, need to update TopLink to support different strides, TouchPy expects (h, w, c) layout
+			# comp.in_tops[2].from_tensor(tensor2.permute(1, 2, 0).contiguous()) 
+			pass
+
+
+
 		# comp.start_next_frame() is only needed if comp.start(start_next_frame=False)
 		# or comp.update(call_start_next_frame=False), they are both False by default
 		#
@@ -173,6 +177,7 @@ class ExampleRunComp:
 
 		# run the loop in Python anc call update manually
 		# while not (keyboard.is_pressed('q')):
+		# while self.running:
 		#	# comp.update(True) # update function starts next frame
 		# 	comp.update() #  need to manually call start_next_frame() in on_frame callback to start next frame
 		pass
