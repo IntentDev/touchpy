@@ -108,7 +108,9 @@ class TestClass:
 		val = self.comp.par[parname].val
 		ref = self.referenceValues["Test"][parname]["val"]
 		assert val == ref
-
+		
+		self.done = True
+		print("done is: ", self.done)
 
 	
 	@staticmethod
@@ -120,20 +122,18 @@ class TestClass:
 			comp.stop()
 			return
 		
-		if this.done == True:
-			print("done is true")
-			comp.stop()
-			return
 		
-		#if comp.start_next_frame():
+		if comp.start_next_frame():
 			# do work on non-comp members for the next frame here
-		#	pass
-		#else:
+			comp.stop()
+			del(comp)
+			pass
+		else:
 			# we have a problem with TouchEngine starting the next frame.
 			# Currently the error will be printed in the console but start_next_frame()
 			# will need to be updated to return an enum with the result for error handling
 			# in the future
-			#pass
+			pass
 
 		
 		this.frame += 1
@@ -151,11 +151,7 @@ class TestClass:
 
 	
 		# this runs a loop that calls update() internally
-		#self.comp.start() # need to manually call start_next_frame() in on_frame callback to start next frame
-		self.comp.start(True) # update function starts next frame automatically
+		self.comp.start() # need to manually call start_next_frame() in on_frame callback to start next frame
+		#self.comp.start(True) # update function starts next frame automatically
 
-		
-
-# create an instance of a class that runs the comp
-#test = TestClass()
 
