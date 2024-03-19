@@ -1,4 +1,4 @@
-# import keyboard # optional, used to quit the loop
+import keyboard # optional, used to quit the loop
 import numpy as np
 import torch
 
@@ -21,9 +21,9 @@ class ExampleRunComp:
 	def on_frame(comp, this):
 
 		# optional used to quit if comp.start() is called
-		# if (keyboard.is_pressed('q')):
-		# 	comp.stop()
-		# 	return
+		if (keyboard.is_pressed('q')):
+			comp.stop()
+			return
 
 		# copy out_chop to in_chop with channel names. Only NumPy arrays are supported for now.
 		arr = comp.out_chops[0].as_numpy()
@@ -115,33 +115,32 @@ class ExampleRunComp:
 		comp.in_tops[1].copy_cuda_memory(cudamem)
 
 		# copy the cuda memory from out_top_link to in_top_link
-		cudamem = comp.out_tops[2].cuda_memory()
-		comp.in_tops[2].copy_cuda_memory(cudamem)
-		
-		tensor = comp.out_tops[0].as_tensor() # get the first top as a tensor
-		# tensor = comp.out_tops[0].as_tensor(tp.ComponentMask.RGB) # get just the first 3 channels
-		tensor2 = tensor * 2 # do some work on the tensor
-		# print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.
-		# dtype, "tensor device: ", tensor.device, "tensor layout: ", tensor.layout, 
-		# "tensor strides: ", tensor.stride(), "tensor is_contiguous: ", tensor.is_contiguous())
-
+		# cudamem = comp.out_tops[2].cuda_memory()
+		# comp.in_tops[2].copy_cuda_memory(cudamem)
+	
 		with torch.no_grad():
-			
-			comp.in_tops[0].from_tensor(tensor2)
+			# tensor = comp.out_tops[0].as_tensor() # get the first top as a tensor
+			# tensor = comp.out_tops[0].as_tensor(tp.ComponentMask.RGB) # get just the first 3 channels
+			# tensor2 = tensor * 2 # do some work on the tensor
+			# comp.in_tops[0].from_tensor(tensor2)
+
+			tensor = comp.out_tops[2].as_tensor()
+			if (this.frame == 2):
+				print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.
+				dtype, "tensor device: ", tensor.device, "tensor layout: ", tensor.layout, 
+				"tensor strides: ", tensor.stride(), "tensor is_contiguous: ", tensor.is_contiguous())
 
 			# filter tensor only works with 32bit float data (comp.out_tops[2] is 32bit float in this example)
-			# filteer expects (b, c, h, w) layout
-			# tensor2 = this.imag_filter(tensor.permute(2, 0, 1).unsqueeze(0)).squeeze(0) 
+			# filter expects (b, c, h, w) layout
+			tensor2 = this.imag_filter(tensor.unsqueeze(0)).squeeze(0) 
 
-			# print("tensor2 shape: ", tensor2.shape, "tensor2 dtype: ", tensor2.dtype, 
-			# "tensor2 device: ", tensor2.device, "tensor2 layout: ", tensor2.layout, 
-			# "tensor2 strides: ", tensor2.stride(), "tensor2 is_contiguous: ", tensor2.is_contiguous())
+			if (this.frame == 2):
+				print("tensor2 shape: ", tensor2.shape, "tensor2 dtype: ", tensor2.dtype, 
+				"tensor2 device: ", tensor2.device, "tensor2 layout: ", tensor2.layout, 
+				"tensor2 strides: ", tensor2.stride(), "tensor2 is_contiguous: ", tensor2.is_contiguous())
 			
-			# this is a copy, need to update TopLink to support different strides, TouchPy expects (h, w, c) layout
-			# comp.in_tops[2].from_tensor(tensor2.permute(1, 2, 0).contiguous()) 
+			comp.in_tops[2].from_tensor(tensor2)
 			pass
-
-
 
 		# comp.start_next_frame() is only needed if comp.start(start_next_frame=False)
 		# or comp.update(call_start_next_frame=False), they are both False by default

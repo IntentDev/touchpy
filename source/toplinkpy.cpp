@@ -73,22 +73,14 @@ template<typename ...Args>
 nb::ndarray<Args...> arrayFromCudaMem(OutTopLink& outTopLink, ComponentMask componentMask = ComponentMask::RGBA)
 {
 	const auto& cudaMem = outTopLink.cudaMemory();
-	auto numActiveComps = std::min(numActiveComponents(componentMask), cudaMem.shape.numComponents);
-	auto compSize = static_cast<int64_t>(cudaMem.shape.componentSize);
+	auto compSize = static_cast<int64_t>(cudaMem.desc.componentSize);
 
 	return nb::ndarray<Args...>(
 		cudaMem.ptr,
-		{ cudaMem.shape.height, cudaMem.shape.width, numActiveComps },
+		{ cudaMem.desc.shape[0], cudaMem.desc.shape[1], cudaMem.desc.shape[2] },
 		nb::handle(),
-		{
-			// dlpack strides are in elements, not bytes so we can't use the strides from 
-			// the CUDAMemoryShape unless we divide by the component size or set directly
-			cudaMem.shape.numComponents * cudaMem.shape.width, // distance to next row
-			cudaMem.shape.numComponents, // distance to next pixel
-			1 // distance to next component
-		},
-
-		dtypeFromCUDADataType(cudaMem.shape.dataType),
+		{ cudaMem.desc.strides[0], cudaMem.desc.strides[1], cudaMem.desc.strides[2] },
+		dtypeFromCUDADataType(cudaMem.desc.dataType),
 		nb::device::cuda::value,
 		0
 	);
@@ -106,28 +98,26 @@ void copyArrayToCudaMemory(InTopLink& inTopLink, T array)
 		auto shape = array.shape_ptr();
 		auto strides = array.stride_ptr();
 
-		CUDAMemoryShape memoryShape;
-		memoryShape.width = shape[1];
-		memoryShape.height = shape[0];
-		memoryShape.numComponents = shape[2];
-		memoryShape.componentSize = array.itemsize();
-		memoryShape.dataType = cudaDataTypeFromDtype(array.dtype());
+		CUDAMemoryDesc desc;
+		for (int i = 0; i < array.ndim(); i++)
+		{
+			desc.shape[i] = shape[i];
+			desc.strides[i] = strides[i];
+		}
 
-		// dlpack strides are in elements, not bytes so we need to convert
-		memoryShape.strides[0] = strides[2] * memoryShape.numComponents;
-		memoryShape.strides[1] = strides[1] * memoryShape.numComponents;
-		memoryShape.strides[2] = strides[0] * memoryShape.numComponents;
-
-		cudaMemory.shape = memoryShape;
+		desc.componentSize = array.itemsize();
+		desc.dataType = cudaDataTypeFromDtype(array.dtype());
+		cudaMemory.desc = desc;
 
 		inTopLink.copyCudaMemory(cudaMemory, nullptr);
 	}
 }
 
-using arrayShape4 = nb::shape<nb::any, nb::any, 4>;
-using arrayShape3 = nb::shape<nb::any, nb::any, 3>;
-using arrayShape2 = nb::shape<nb::any, nb::any, 2>;
-using arrayShape1 = nb::shape<nb::any, nb::any, 1>;
+
+using arrayShape4 = nb::shape<4, nb::any, nb::any>;
+using arrayShape3 = nb::shape<3, nb::any, nb::any>;
+using arrayShape2 = nb::shape<2, nb::any, nb::any>;
+using arrayShape1 = nb::shape<1, nb::any, nb::any>;
 
 void initTopLinkBindings(nb::module_& m)
 {
@@ -160,27 +150,28 @@ void initTopLinkBindings(nb::module_& m)
 		.value("Undefined", CUDADataType::Undefined).doc() = "The data type of a CUDA memory buffer";
 		;
 
-	nb::class_<CUDAMemoryShape> cudaMemoryShape(m, "CudaMemoryShape");
-	cudaMemoryShape.def(nb::init<>())
-		.def_rw("width", &CUDAMemoryShape::width)
-		.def_rw("height", &CUDAMemoryShape::height)
-		.def_rw("num_components", &CUDAMemoryShape::numComponents)
-		.def_rw("component_size", &CUDAMemoryShape::componentSize)
-		.def_rw("data_type", &CUDAMemoryShape::dataType)
-		.def_rw("strides", &CUDAMemoryShape::strides)
-		.def("__repr__", [](CUDAMemoryShape& self)
-			{
-				return "CudaMemoryShape(" + std::to_string(self.width) + ", " + std::to_string(self.height)
-					+ ", " + std::to_string(self.numComponents) + ", " + std::to_string(self.componentSize)
-					+ ", " + cudaDataTypeToString(self.dataType) + ")";
-			}
-	);
+	nb::class_<CUDAMemoryDesc> cudaMemoryDesc(m, "CudaMemoryDesc");
+	cudaMemoryDesc.def(nb::init<>())
+		//.def_rw("width", &CUDAMemoryShape::width)
+		//.def_rw("height", &CUDAMemoryShape::height)
+		//.def_rw("num_components", &CUDAMemoryShape::numComponents)
+		.def_rw("shape", &CUDAMemoryDesc::shape)
+		.def_rw("component_size", &CUDAMemoryDesc::componentSize)
+		.def_rw("data_type", &CUDAMemoryDesc::dataType)
+		.def_rw("strides", &CUDAMemoryDesc::strides)
+		//.def("__repr__", [](CUDAMemoryShape& self)
+		//	{
+		//		return "CudaMemoryShape(" + std::to_string(self.width) + ", " + std::to_string(self.height)
+		//			+ ", " + std::to_string(self.numComponents) + ", " + std::to_string(self.componentSize)
+		//			+ ", " + cudaDataTypeToString(self.dataType) + ")";
+		//	})
+	;
 
 	nb::class_<CUDAMemory> cudaMemory(m, "CudaMemory");
 	cudaMemory.doc() = "A pointer to CUDA memory and its attributes";
 	cudaMemory.def(nb::init<>())
 		.def_ro("size", &CUDAMemory::size, nb::rv_policy::reference_internal)
-		.def_rw("shape", &CUDAMemory::shape, nb::rv_policy::reference_internal)
+		.def_rw("desc", &CUDAMemory::desc, nb::rv_policy::reference_internal)
 		.def_prop_ro("ptr", [](CUDAMemory& self) -> uintptr_t
 			{ return reinterpret_cast<uintptr_t>(self.ptr); }, nb::rv_policy::reference_internal);
 
@@ -206,9 +197,10 @@ void initTopLinkBindings(nb::module_& m)
 	inTopLink.doc() = "An InTOP in a TouchDesigner component";
 	inTopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
 
-	inTopLink.def("from_dlpack",
-		[](InTopLink& self, nb::ndarray<arrayShape4, nb::device::cuda> array)
-		{ copyArrayToCudaMemory<nb::ndarray<arrayShape4, nb::device::cuda>>(self, array); })
+	inTopLink
+		.def("from_dlpack",
+			[](InTopLink& self, nb::ndarray<arrayShape4, nb::device::cuda> array)
+			{ copyArrayToCudaMemory<nb::ndarray<arrayShape4, nb::device::cuda>>(self, array); })
 		.def("from_dlpack",
 			[](InTopLink& self, nb::ndarray<arrayShape3, nb::device::cuda> array)
 			{ copyArrayToCudaMemory<nb::ndarray<arrayShape3, nb::device::cuda>>(self, array); })
@@ -220,9 +212,13 @@ void initTopLinkBindings(nb::module_& m)
 			{ copyArrayToCudaMemory<nb::ndarray<arrayShape1, nb::device::cuda>>(self, array); })
 		;
 
-	inTopLink.def("from_tensor",
-		[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShape4, nb::device::cuda> array)
-		{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShape4, nb::device::cuda>>(self, array); })
+	inTopLink
+		.def("from_tensor",
+			[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShape4, nb::device::cuda> array)
+			{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShape4, nb::device::cuda>>(self, array); })
+		.def("from_tensor",
+			[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShape4, nb::device::cuda> array)
+			{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShape4, nb::device::cuda>>(self, array); })
 		.def("from_tensor",
 			[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShape3, nb::device::cuda> array)
 			{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShape3, nb::device::cuda>>(self, array); })
