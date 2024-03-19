@@ -4,22 +4,25 @@
 
 // Notes to use GTest:
 
-// create a file with the same name as the header file you want to test, but with _gtest appended to the end
-// include <gtest/gtest.h> and the header file you want to test
+// Create a file with the same name as the header file you want to test, but with _gtest appended to the end
+// include <gtest/gtest.h> and the header file you want to test.
 // 
-// create a test suite with TEST(TestSuiteName, testName) { /* test code here */ }
-// all tests in the same file should have the same TestSuiteName
+// Create a test suite with TEST(TestSuiteName, testName) { /* test code here */ }
+// all tests in the same file should have the same TestSuiteName.
 // 
-// best practice is to have one test per function if possible (or at least one test per logical unit)
-// operators belows is not really best practice and should be split into separate tests for each operator
-// but in this case they are so simple that it's not really necessary
+// Best practice is to have one test per function if possible (or at least one test per logical unit) unless the 
+// function is very simple. The test "operators" belows could be split into separate tests for each operator but 
+// in this case they are so simple that it's not really necessary.
 // 
-// run tests by selecting touchpygtest.exe as the startup project and pressing F5
-// existing tests will be run and the results will be displayed in the output window
+// Run tests by selecting touchpygtest.exe as the startup project and pressing F5
+// existing tests will be run and the results will be displayed in the output window.
 //
-// note when making a new file, cmake has to rebuild the project before the new file will be included in the build
+// Note: when making a new file, cmake has to rebuild the project before the new file will be included in the build
 // the fastest way to do this in VS I've found is to have cmake file open and press ctrl-s to save it, 
-// then press F5 to build and run the tests
+// then press F5 to build and run the tests.
+//
+// Also note: if you add a new test file, don't add it to the CMakeLists.text file (if popup appears asking if you 
+// want to reload, say no, it can be disable in options). CMake automatically includes all files in the project.
 
 
 TEST(ComponentMask, operators)
