@@ -86,65 +86,69 @@ constexpr bool operator||(ComponentMask a, ComponentMask b)
 	return static_cast<bool>(a | b);
 }
 
-inline uint8_t numActiveComponents(ComponentMask flags)
+namespace componentMask
 {
-	uint8_t result = 0;
-	if (flags && ComponentMask::R)
+	inline uint8_t numActiveComponents(ComponentMask flags)
 	{
-		++result;
-	}
-	if (flags && ComponentMask::G)
-	{
-		++result;
-	}
-	if (flags && ComponentMask::B)
-	{
-		++result;
-	}
-	if (flags && ComponentMask::A)
-	{
-		++result;
-	}
-	return result;
-}
-
-inline std::string ComponentMaskToString(ComponentMask flags)
-{
-	std::string result;
-	if (flags == ComponentMask::None)
-	{
-		result = "None";
-	}
-	else
-	{
+		uint8_t result = 0;
 		if (flags && ComponentMask::R)
 		{
-			result += "Red";
+			++result;
 		}
 		if (flags && ComponentMask::G)
 		{
-			if (!result.empty())
-			{
-				result += " | ";
-			}
-			result += "Green";
+			++result;
 		}
 		if (flags && ComponentMask::B)
 		{
-			if (!result.empty())
-			{
-				result += " | ";
-			}
-			result += "Blue";
+			++result;
 		}
 		if (flags && ComponentMask::A)
 		{
-			if (!result.empty())
-			{
-				result += " | ";
-			}
-			result += "Alpha";
+			++result;
 		}
+		return result;
 	}
-	return result;
+
+	inline std::string toString(ComponentMask flags)
+	{
+		std::string result;
+		if (flags == ComponentMask::None)
+		{
+			result = "None";
+		}
+		else
+		{
+			if (flags && ComponentMask::R)
+			{
+				result += "Red";
+			}
+			if (flags && ComponentMask::G)
+			{
+				if (!result.empty())
+				{
+					result += " | ";
+				}
+				result += "Green";
+			}
+			if (flags && ComponentMask::B)
+			{
+				if (!result.empty())
+				{
+					result += " | ";
+				}
+				result += "Blue";
+			}
+			if (flags && ComponentMask::A)
+			{
+				if (!result.empty())
+				{
+					result += " | ";
+				}
+				result += "Alpha";
+			}
+		}
+		return result;
+	}
 }
+
