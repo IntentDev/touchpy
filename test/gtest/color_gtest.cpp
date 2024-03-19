@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "color.h"
+#include "utils/color/color.h"
 
 TEST(ColorTest, DefaultConstructor)
 {
