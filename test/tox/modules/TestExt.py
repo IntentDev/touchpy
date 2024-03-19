@@ -1,10 +1,11 @@
 import json
 import TDJSON
 
-
 class TestExt:
 	"""
-	TestExt description
+	This component is used for unit tests.
+
+	Upon init it sets all pars to values it reads from a json.
 	"""
 	def __init__(self, ownerComp):
 		# The component to which this extension is attached
