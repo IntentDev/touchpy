@@ -43,6 +43,30 @@ fromSurfaceBRGA8UToRGBA8U(void* dst, int width, int height, cudaSurfaceObject_t 
 }
 
 __global__ void
+fromSurfaceBRGA8UToPlanarRGBA8U(void* dst, int width, int height, cudaSurfaceObject_t src)
+{
+		unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (x >= width || y >= height)
+		return;
+
+	uchar4 color;
+	size_t size = sizeof(uchar4);
+	surf2Dread(&color, src, x * size, y, cudaBoundaryModeZero);
+
+	size_t stride = width * height;
+
+	uint8_t* dstPtr = (uint8_t*)dst;
+
+	dstPtr[x + y * width			 ] = color.z;
+	dstPtr[x + y * width +	   stride] = color.y;
+	dstPtr[x + y * width + 2 * stride] = color.x;
+	dstPtr[x + y * width + 3 * stride] = color.w;
+
+}
+
+__global__ void
 fromSurfaceBRGA8UToRGB8U(void* dst, int width, int height, cudaSurfaceObject_t src)
 {
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -61,6 +85,28 @@ fromSurfaceBRGA8UToRGB8U(void* dst, int width, int height, cudaSurfaceObject_t s
 	dstPtr[2] = color.x;
 }
 
+__global__ void
+fromSurfaceBRGA8UToPlanarRGB8U(void* dst, int width, int height, cudaSurfaceObject_t src)
+{
+	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (x >= width || y >= height)
+		return;
+
+	uchar4 color;
+	surf2Dread(&color, src, x * sizeof(uchar4), y, cudaBoundaryModeZero);
+
+	size_t stride = width * height;
+
+	uint8_t* dstPtr = (uint8_t*)dst;
+
+	dstPtr[x + y * width] = color.z;
+	dstPtr[x + y * width + stride] = color.y;
+	dstPtr[x + y * width + 2 * stride] = color.x;
+}
+
+// interleave stride RGBA, RGBA, RGBA, ...
 // RGBAFS32, RGFS32, RFS32, RGBAFS16, RGFS16, RFS16, RGU8, RU8
 template<typename T> __global__ void
 fromSurface(void* dst, int width, int height, cudaSurfaceObject_t src)
@@ -76,6 +122,30 @@ fromSurface(void* dst, int width, int height, cudaSurfaceObject_t src)
 	surf2Dread(&color, src, x * size, y, cudaBoundaryModeZero);
 	T* dstPtr = (T*)((T*)dst + y * width);
 	dstPtr[x] = color;
+}
+
+// Planar stride RRRR..., GGGG..., BBBB...
+// RGBAFS32, RGFS32, RFS32, RGBAFS16, RGFS16, RFS16, RGU8, RU8
+template<typename T, typename CompType, int numComps> __global__ void
+fromSurfaceToPlanar(void* dst, int width, int height, cudaSurfaceObject_t src)
+{
+	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (x >= width || y >= height)
+		return;
+
+	T color;
+	size_t size = sizeof(T);
+	surf2Dread(&color, src, x * size, y, cudaBoundaryModeZero);
+
+	size_t stride = width * height;
+
+	for (size_t i = 0; i < numComps; i++)
+	{
+		CompType* dstPtr = (CompType*)((CompType*)dst + i * stride);
+		dstPtr[x + y * width] = ((CompType*)&color)[i];
+	}
 }
 
 __global__ void
@@ -98,6 +168,27 @@ toSurfaceBRGA8UFromRGBA8U(cudaSurfaceObject_t dst, int width, int height, const 
 }
 
 __global__ void
+toSurfaceBRGA8UFromPlanarRGBA8U(cudaSurfaceObject_t dst, int width, int height, const void* src)
+{
+	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (x >= width || y >= height)
+		return;
+
+	size_t stride = width * height;
+
+	uint8_t* srcPtr = (uint8_t*)src;
+	uchar4 color;
+	color.z = srcPtr[x + y * width];
+	color.y = srcPtr[x + y * width + stride];
+	color.x = srcPtr[x + y * width + 2 * stride];
+	color.w = srcPtr[x + y * width + 3 * stride];
+	surf2Dwrite(color, dst, x * sizeof(uchar4), y, cudaBoundaryModeZero);
+}
+
+
+__global__ void
 toSurfaceBRGA8UFromRGB8U(cudaSurfaceObject_t dst, int width, int height, const void* src)
 {
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -112,6 +203,26 @@ toSurfaceBRGA8UFromRGB8U(cudaSurfaceObject_t dst, int width, int height, const v
 	color.z = srcPtr[0];
 	color.y = srcPtr[1];
 	color.x = srcPtr[2];
+	color.w = 255;
+	surf2Dwrite(color, dst, x * sizeof(uchar4), y, cudaBoundaryModeZero);
+}
+
+__global__ void
+toSurfaceBRGA8UFromPlanarRGB8U(cudaSurfaceObject_t dst, int width, int height, const void* src)
+{
+	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (x >= width || y >= height)
+		return;
+
+	size_t stride = width * height;
+
+	uint8_t* srcPtr = (uint8_t*)src;
+	uchar4 color;
+	color.z = srcPtr[x + y * width];
+	color.y = srcPtr[x + y * width + stride];
+	color.x = srcPtr[x + y * width + 2 * stride];
 	color.w = 255;
 	surf2Dwrite(color, dst, x * sizeof(uchar4), y, cudaBoundaryModeZero);
 }
@@ -131,8 +242,32 @@ toSurface(cudaSurfaceObject_t dst, int width, int height, const void* src)
 	surf2Dwrite(color, dst, x * size, y, cudaBoundaryModeZero);
 }
 
-template<typename DstT, typename SrcT> __global__ void
+// RGBAFS32, RGFS32, RFS32, RGBAFS16, RGFS16, RFS16, RGU8, RU8
+template<typename T, typename CompType> __global__ void
 toSurface(cudaSurfaceObject_t dst, int width, int height, const void* src)
+{
+	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (x >= width || y >= height)
+		return;
+
+	size_t size = sizeof(T);
+	size_t numComps = size / sizeof(CompType);
+	size_t stride = width * height;
+
+	T color;
+	for (size_t i = 0; i < numComps; i++)
+	{
+		CompType* srcPtr = (CompType*)((CompType*)src + i * stride);
+		((CompType*)&color)[i] = srcPtr[x + y * width];
+	}
+
+	surf2Dwrite(color, dst, x * size, y, cudaBoundaryModeZero);
+}
+
+template<typename DstT, typename SrcT> __global__ void
+toSurface2(cudaSurfaceObject_t dst, int width, int height, const void* src)
 {
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;

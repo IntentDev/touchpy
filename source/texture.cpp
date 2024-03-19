@@ -526,17 +526,16 @@ void Texture::copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream, bool 
 	switch (format_)
 	{
 		case VK_FORMAT_B8G8R8A8_UNORM:
-			CUDA_CHECK(memCopyBRGA8USurfaceToRGBA8U(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
-			//CUDA_CHECK(memCopyFromSurface<uchar4>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
+			CUDA_CHECK(memCopyBRGA8USurfaceToPlanarRGBA8U(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
 			break;
 		case VK_FORMAT_R32G32B32A32_SFLOAT:
-			CUDA_CHECK(memCopyFromSurface<float4>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
+			memCopyFromSurfaceToPlanar<float4, float, 4>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
 			break;
 		case VK_FORMAT_R32G32_SFLOAT:
-			CUDA_CHECK(memCopyFromSurface<float2>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
+			memCopyFromSurfaceToPlanar<float2, float, 2>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
 			break;
 		case VK_FORMAT_R32_SFLOAT:
-			CUDA_CHECK(memCopyFromSurface<float>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
+			memCopyFromSurfaceToPlanar<float, float, 1>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
 			break;
 		default:
 			return;
@@ -564,26 +563,28 @@ void Texture::copyCudaMemToImage(void* memory,
 	switch (format_)
 	{
 		case VK_FORMAT_B8G8R8A8_UNORM:
-			switch (cudaMemory_.shape.numComponents)
+			//switch (cudaMemory_.shape.numComponents)
+			switch (cudaMemory_.desc.shape[0])
 			{
 				case 3:
-					CUDA_CHECK(memCopyRGB8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
+					CUDA_CHECK(memCopyPlanarRGB8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
 					break;
 				case 4:
-					CUDA_CHECK(memCopyRGBA8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
+					CUDA_CHECK(memCopyPlanarRGBA8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
 					break;
 				default:
 					return;
 			}
 			break;
 		case VK_FORMAT_R32G32B32A32_SFLOAT:
-			switch (cudaMemory_.shape.numComponents)
-							{
+			//switch (cudaMemory_.shape.numComponents)
+			switch (cudaMemory_.desc.shape[0])
+			{
 				case 3:
-					memCopyToSurface<float4, float3>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+					memCopyToSurface2<float4, float3>(cudaSurface_, extent_.width, extent_.height, memory, stream);
 					break;
 				case 4:
-					CUDA_CHECK(memCopyToSurface<float4>(cudaSurface_, extent_.width, extent_.height, memory, stream));
+					memCopyToSurface<float4, float>(cudaSurface_, extent_.width, extent_.height, memory, stream);
 					break;
 				default:
 					return;
@@ -702,14 +703,16 @@ void Texture::cudaAllocateMemory()
 
 	CUDA_CHECK(cudaMalloc((void**)&cudaBuffer_, cudaBufferSize_));
 
-	cudaMemory_.shape.width = extent_.width;
-	cudaMemory_.shape.height = extent_.height;
-	cudaMemory_.shape.numComponents = numComponents_;
-	cudaMemory_.shape.componentSize = componentSize_;
-	cudaMemory_.shape.dataType = cudaDataTypeFromVkFormat(format_);			
-	cudaMemory_.shape.strides[0] = componentSize_; // component stride // distance to next component
-	cudaMemory_.shape.strides[1] = pixelSize; // pixel stride // distance to next pixel
-	cudaMemory_.shape.strides[2] = extent_.width * pixelSize; // row stride // distance to next row
+	cudaMemory_.desc.shape[0] = numComponents_;
+	cudaMemory_.desc.shape[1] = extent_.height;
+	cudaMemory_.desc.shape[2] = extent_.width;
+	cudaMemory_.desc.componentSize = componentSize_;
+	cudaMemory_.desc.dataType = cudaDataTypeFromVkFormat(format_);
+
+	// Planar memory layout
+	cudaMemory_.desc.strides[0] = extent_.width * extent_.height; // component stride // num elements to next component
+	cudaMemory_.desc.strides[1] = extent_.width; // row stride // num elements to row
+	cudaMemory_.desc.strides[2] = 1; // column stride // num elements to column
 
 	cudaMemory_.ptr = cudaBuffer_;
 	cudaMemory_.size = cudaBufferSize_;

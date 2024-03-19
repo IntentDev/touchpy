@@ -16,26 +16,24 @@ enum class CUDADataType : uint8_t
 	Undefined = 0xFF
 };
 
-struct CUDAMemoryShape
+struct CUDAMemoryDesc
 {
-	uint32_t                width         { 0 };
-	uint32_t                height        { 0 };
-	uint8_t                 numComponents { 4 };
+	std::array<uint32_t, 3> shape         { 0, 0, 0 }; // numComponents, height, width
 	size_t                  componentSize { 1 };
 	ComponentMask			componentMask { ComponentMask::RGBA };
 	CUDADataType            dataType      { CUDADataType::Undefined };
-	std::array<uint32_t, 3> strides       { 0, 0, 0 }; // in bytes
+	std::array<uint32_t, 3> strides       { 0, 0, 0 }; // in elements (not bytes)
 };
 
 struct CUDAMemory
 {
 	void*                            ptr   { nullptr };
 	size_t                           size  { 0 };
-	CUDAMemoryShape					 shape { };
+	CUDAMemoryDesc					 desc { };
 };
 
 
-VkFormat vkFormatFromCUDAMemoryShape(CUDAMemoryShape shape);
+VkFormat vkFormatFromCUDAMemoryDesc(CUDAMemoryDesc desc);
 CUDADataType cudaDataTypeFromVkFormat(VkFormat format);
 uint8_t numCompsFromVkFormat(VkFormat format);
 size_t componentSizeFromVkFormat(VkFormat format);

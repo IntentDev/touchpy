@@ -1,12 +1,12 @@
 #include "cudamemory.h"
 
-VkFormat vkFormatFromCUDAMemoryShape(CUDAMemoryShape shape)
+VkFormat vkFormatFromCUDAMemoryDesc(CUDAMemoryDesc desc)
 {
-	switch (shape.numComponents)
+	switch (desc.shape[0])
 	{
 	case 4:
 	case 3:
-		switch (shape.dataType)
+		switch (desc.dataType)
 		{
 		case CUDADataType::UInt8:   return VK_FORMAT_B8G8R8A8_UNORM;
 		case CUDADataType::Float32: return VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -14,7 +14,7 @@ VkFormat vkFormatFromCUDAMemoryShape(CUDAMemoryShape shape)
 		}
 		break;
 	case 2:
-		switch (shape.dataType)
+		switch (desc.dataType)
 		{
 		case CUDADataType::UInt8:   return VK_FORMAT_R8G8_UNORM;
 		case CUDADataType::Float32: return VK_FORMAT_R32G32_SFLOAT;
@@ -22,7 +22,7 @@ VkFormat vkFormatFromCUDAMemoryShape(CUDAMemoryShape shape)
 		}
 		break;
 	case 1:
-		switch (shape.dataType)
+		switch (desc.dataType)
 		{
 		case CUDADataType::UInt8:   return VK_FORMAT_R8_UNORM;
 		case CUDADataType::Float32: return VK_FORMAT_R32_SFLOAT;
