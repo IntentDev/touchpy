@@ -77,7 +77,7 @@ public:
 	void* cudaBuffer() const { return cudaBuffer_; }
 	size_t cudaBufferSize() const { return cudaBufferSize_; }
 	const CUDAMemory& cudaMemory() const { return cudaMemory_; }
-	void setCudaMemoryShape(CUDAMemoryShape shape) { cudaMemory_.shape = shape; }
+	void setCudaMemoryDesc(CUDAMemoryDesc desc) { cudaMemory_.desc = desc; }
 
 	void transferToInputLink(
 		TouchObject<TEInstance> teInstance, 
@@ -159,17 +159,33 @@ private:
 cudaError_t
 memCopyBRGA8USurfaceToRGBA8U(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
 
+cudaError_t
+memCopyBRGA8USurfaceToPlanarRGBA8U(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
 template<typename T> cudaError_t
 memCopyFromSurface(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
+template<typename T, typename CompType, int numComps> cudaError_t
+memCopyFromSurfaceToPlanar(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
 
 cudaError_t
 memCopyRGBA8UToBGRA8USurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);
 
 cudaError_t
+memCopyPlanarRGBA8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+
+cudaError_t
 memCopyRGB8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+
+cudaError_t
+memCopyPlanarRGB8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 
 template<typename T> cudaError_t
 memCopyToSurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);
 
-template<typename DstT, typename SrcT> cudaError_t
+template<typename T, typename CompType> cudaError_t
 memCopyToSurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);
+
+template<typename DstT, typename SrcT> cudaError_t
+memCopyToSurface2(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);
