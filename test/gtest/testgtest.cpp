@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 
-TEST(TESTTEST, TEST1)
+TEST(GTESTTEST, TEST1)
 {
 	EXPECT_EQ(1, 1);
 }

@@ -63,13 +63,12 @@ target_include_directories(touchloader PRIVATE ${SOURCE_DIR})
 #################################################################################################
 #################################################################################################
 set(GTEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/gtest)
-
 file(GLOB_RECURSE TEST_SOURCES "${GTEST_SOURCE_DIR}/*gtest*.cpp")
 
 set(TOUCHPY_TEST_SOURCES ${ALL_TPY_SOURCES})
 list(FILTER TOUCHPY_TEST_SOURCES EXCLUDE REGEX ".*py\\.cpp$")
 
-add_executable (touchpygtest ${GTEST_SOURCE_DIR} ${TOUCHPY_TEST_SOURCES})
+add_executable (touchpygtest ${TEST_SOURCES} ${TOUCHPY_TEST_SOURCES})
 target_include_directories(touchpygtest PRIVATE ${SOURCE_DIR})
 
 
