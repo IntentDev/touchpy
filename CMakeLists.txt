@@ -59,6 +59,19 @@ endif()
 add_executable(touchloader ${ALL_TL_SOURCES})
 target_include_directories(touchloader PRIVATE ${SOURCE_DIR})
 
+# Google Test
+#################################################################################################
+#################################################################################################
+set(GTEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/gtest)
+file(GLOB_RECURSE TEST_SOURCES "${GTEST_SOURCE_DIR}/*gtest*.cpp")
+
+set(TOUCHPY_TEST_SOURCES ${ALL_TPY_SOURCES})
+list(FILTER TOUCHPY_TEST_SOURCES EXCLUDE REGEX ".*py\\.cpp$")
+
+add_executable (touchpygtest ${TEST_SOURCES} ${TOUCHPY_TEST_SOURCES})
+target_include_directories(touchpygtest PRIVATE ${SOURCE_DIR})
+
+
 # Compile definitions
 if (WIN32)
     list(APPEND COMPILE_DEFINITIONS 
@@ -73,6 +86,7 @@ endif ()
 
 target_compile_definitions(touchpy PRIVATE ${COMPILE_DEFINITIONS})
 target_compile_definitions(touchloader PRIVATE ${COMPILE_DEFINITIONS})
+target_compile_definitions(touchpygtest PRIVATE ${COMPILE_DEFINITIONS})
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_definitions(touchpy PRIVATE DISABLE_DEBUG_BUILD)
@@ -82,6 +96,20 @@ add_custom_command(TARGET touchpy POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     $<TARGET_FILE:touchpy> ${CMAKE_CURRENT_SOURCE_DIR}/example) 
 
+
+
+# Google Test
+# .\vcpkg install gtest
+#################################################################################################
+find_package(GTest CONFIG REQUIRED)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+target_link_libraries(touchpygtest PRIVATE GTest::gtest_main)
+include(GoogleTest)
+gtest_discover_tests(touchpygtest)
+
+
 # Vulkan
 # .\vcpkg install vulkan ### haven't tested this, probably best to just install the SDK
 #################################################################################################
@@ -89,6 +117,7 @@ find_package(Vulkan REQUIRED)
 message(STATUS Vulkan_INCLUDE_DIR=${Vulkan_INCLUDE_DIR})
 target_link_libraries(touchpy PRIVATE Vulkan::Vulkan)
 target_link_libraries(touchloader Vulkan::Vulkan)
+target_link_libraries(touchpygtest PRIVATE Vulkan::Vulkan)
 
 
 ### not used atm but vri includes it... 
@@ -98,6 +127,7 @@ target_link_libraries(touchloader Vulkan::Vulkan)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 target_link_libraries(touchpy PRIVATE GPUOpen::VulkanMemoryAllocator)
 target_link_libraries(touchloader GPUOpen::VulkanMemoryAllocator)
+target_link_libraries(touchpygtest PRIVATE GPUOpen::VulkanMemoryAllocator)
 
 # causing CUDA to not compile, commented calls to it for now
 # # OpenImageIO
@@ -114,6 +144,10 @@ target_include_directories(touchpy PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 target_link_libraries(touchpy PRIVATE CUDA::cudart)
 target_include_directories(touchloader PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 target_link_libraries(touchloader CUDA::cudart)
+target_include_directories(touchpygtest PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
+target_link_libraries(touchpygtest PRIVATE CUDA::cudart)
+
+
 # Post-build command to copy the CUDA runtime DLL to the output directory
 set(cuda_runtime_dll "${CUDAToolkit_BIN_DIR}/cudart64_110.dll")
 add_custom_command(TARGET touchpy POST_BUILD
@@ -155,6 +189,10 @@ target_include_directories(touchloader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/exter
 add_custom_command(TARGET touchloader POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 	${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin $<TARGET_FILE_DIR:touchloader>)
+
+target_link_directories(touchpygtest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/lib)
+target_link_libraries(touchpygtest PRIVATE TouchEngine)
+target_include_directories(touchpygtest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/include)
 
 # dependencies so touchpy depends on touchloader being built first
 #################################################################################################
