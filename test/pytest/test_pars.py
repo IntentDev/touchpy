@@ -95,7 +95,7 @@ class TestClass:
 		ref = self.referenceValues["Test"][parname]["val"]
 		assert val == ref
 
-	def test_rgb(self):
+	def test_rgba(self):
 		parname = "Rgba"
 		print(f"testing {parname}...")
 		val = [self.comp.par[parname].r, self.comp.par[parname].g, self.comp.par[parname].b, self.comp.par[parname].a]
