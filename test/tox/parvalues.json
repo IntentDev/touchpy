@@ -801,7 +801,7 @@
             "tuplet": [
                 "Str"
             ],
-            "val": "The \u20ac symbol is for Euros",
+            "val": "This is a string...",
             "valid": true,
             "vecIndex": 0
         }
