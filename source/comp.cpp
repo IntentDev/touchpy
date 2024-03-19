@@ -132,8 +132,6 @@ Comp::load()
 	TE_CHECK(TEInstanceLoad(instance_));
 	std::cout << "\t\tInstance loaded!" << std::endl;
 
-	TE_CHECK(TEInstanceResume(instance_));
-
 	return true;
 }
 
@@ -206,6 +204,8 @@ Comp::onEventInstanceReady(TEResult result)
 	}
 
 	std::cout << "\t\tInstance Ready: " << TEResultGetDescription(result) << std::endl;
+
+	TE_CHECK(TEInstanceResume(instance_));
 }
 
 void 
