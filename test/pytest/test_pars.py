@@ -1,67 +1,83 @@
-import pytest
-import pathlib
-import sys
+def test_float(comp, ref):
+	parname = "Float"
+	print(f"testing {parname}...")
+	val = comp.par[parname].val
+	ref = ref["Test"][parname]["val"]
+	assert val == ref
 
-localImportPath = pathlib.Path(__file__).parents[2] / 'out/build/x64-release'
-if str(localImportPath) not in sys.path:
-	sys.path.insert(0,str(localImportPath))	
+def test_float2(comp, ref):
+	parname = "Float2"
+	print(f"testing {parname}...")
+	val = [comp.par[parname].x, comp.par[parname].y]
+	ref = ref["Test"][parname]["val"]
+	assert val == ref
 
-import touchpy as tp
+def test_float3(comp, ref):
+	parname = "Float3"
+	print(f"testing {parname}...")
+	val = [comp.par[parname].x, comp.par[parname].y, comp.par[parname].z]
+	ref = ref["Test"][parname]["val"]
+	assert val == ref
 
-class TestClass:
-	def __init__(self):
-		self.running = True # used to gracefully exit the loop
-		self.frame = 0
-		self.runComp('../tox/test.tox')
-		
-	@staticmethod
-	def on_frame(comp, this):
+def test_float4(comp, ref):
+	parname = "Float4"
+	print(f"testing {parname}...")
+	val = [comp.par[parname].x, comp.par[parname].y, comp.par[parname].z, comp.par[parname].w]
+	ref = ref["Test"][parname]["val"]
+	assert val == ref
 
-		# print out all the parameters name on the first frame
-		parNames = comp.par.names()
-		if (this.frame == 0):
-			for name in parNames:
-				print(f"{name}: {comp.par[name].val}")
-			
-		
-		# comp.start_next_frame() is only needed if comp.start(start_next_frame=False)
-		# or comp.update(call_start_next_frame=False), they are both False by default
-		#
-		# this allows the user to control when the next frame starts and so they can do work on non-comp members
-		# if comp.start(True) or comp.update(True) is called, start_next_frame() will be called automatically
-		# and shouldn't be called here
-		if comp.start_next_frame():
-			# do work on non-comp members for the next frame here
-			pass
-		else:
-			# we have a problem with TouchEngine starting the next frame.
-			# Currently the error will be printed in the console but start_next_frame()
-			# will need to be updated to return an enum with the result for error handling
-			# in the future
-			pass
+def test_int(comp, ref):
+	parname = "Int"
+	print(f"testing {parname}...")
+	val = comp.par[parname].val
+	ref = ref["Test"][parname]["val"]
+	assert val == ref
 
-		this.frame += 1
+def test_int2(comp, ref):
+	parname = "Int2"
+	print(f"testing {parname}...")
+	val = [comp.par[parname].x, comp.par[parname].y]
+	ref = ref["Test"][parname]["val"]
+	assert val == ref
 
-	def runComp(self, tox_path):
-		# create a comp object and specify a path to a tox file
-		comp = tp.Comp(tox_path)
+def test_int3(comp, ref):
+	parname = "Int3"
+	print(f"testing {parname}...")
+	val = [comp.par[parname].x, comp.par[parname].y, comp.par[parname].z]
+	ref = ref["Test"][parname]["val"]
+	assert val == ref
 
-		# set the on_frame callback
-		# first are is static method (or free function) and second is the object to be passed to the callback
-		# in this case, self is passed to the callback so we can access the class members directly
-		comp.set_on_frame_callback(self.on_frame, self)
+def test_int4(comp, ref):
+	parname = "Int4"
+	print(f"testing {parname}...")
+	val = [comp.par[parname].x, comp.par[parname].y, comp.par[parname].z, comp.par[parname].w]
+	ref = ref["Test"][parname]["val"]
+	assert val == ref
 
-	
-		# this runs a loop that calls update() internally
-		#comp.start() # need to manually call start_next_frame() in on_frame callback to start next frame
-		comp.start(True) # update function starts next frame automatically
+def test_rgb(comp, ref):
+	parname = "Rgb"
+	print(f"testing {parname}...")
+	val = [comp.par[parname].r, comp.par[parname].g, comp.par[parname].b]
+	ref = ref["Test"][parname]["val"]
+	assert val == ref
 
-		# run the loop in Python anc call update manually
-		# while not (keyboard.is_pressed('q')):
-		#	# comp.update(True) # update function starts next frame
-		# 	comp.update() #  need to manually call start_next_frame() in on_frame callback to start next frame
-		pass
+def test_rgba(comp, ref):
+	parname = "Rgba"
+	print(f"testing {parname}...")
+	val = [comp.par[parname].r, comp.par[parname].g, comp.par[parname].b, comp.par[parname].a]
+	ref = ref["Test"][parname]["val"]
+	assert val == ref
 
-# create an instance of a class that runs the comp
-test = TestClass()
+def test_string(comp, ref):
+	parname = "Str"
+	print(f"testing {parname}...")
+	val = comp.par[parname].val
+	print("val", val)
+	ref = ref["Test"][parname]["val"]
+	print("ref", ref)
+	assert val == ref
 
+def test_stop(comp):
+	print(f"testing Stop...")
+	comp.stop()
+	assert 3 == 3		
