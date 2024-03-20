@@ -130,7 +130,7 @@ Comp::load()
 
 	TE_CHECK(TEInstanceSetFrameRate(instance_, framesPerSecond_, 1));
 	TE_CHECK(TEInstanceLoad(instance_));
-	std::cout << "\t\tInstance loaded!" << std::endl;
+	std::cout << "\t\tInstance loading..." << std::endl;
 
 	return true;
 }
