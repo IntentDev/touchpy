@@ -158,13 +158,5 @@ private:
 
 	void printLinkInfo(TouchObject<TELinkInfo> info);
 
-	// Test/Debug
-	//-----------------------------------------------------------------------------------------------------------------
-	void copyOutsToIns();
-	void copyOutTopsToInTops();
-	void copyOutChopsToInChops();
-	void copyOutDatsToInDats();
-	void getSetParValues();
-
 
 };

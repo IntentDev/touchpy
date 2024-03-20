@@ -224,14 +224,14 @@ Comp::onEventInstanceDidUnload(TEResult result)
 void 
 Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale)
 {
-	//if (doubleBufferOutputs_)
-	//{
-	//	for (auto& chop : outChopLinks_)
-	//	{
-	//		chop->updateTeBuffer();
-	//		chop->swapTeBuffers();
-	//	}
-	//}
+	if (doubleBufferOutputs_)
+	{
+		for (auto& chop : outChopLinks_->getLinks())
+		{
+			chop->updateTeBuffer();
+			chop->swapTeBuffers();
+		}
+	}
 
 	if (result == TEResultSuccess && start_time_value >= 0)
 	{
@@ -248,6 +248,11 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 			setInFrame(false);
 		}
 	}
+
+	//if (freeRunning_)
+	//{
+	//	TEResult result = TEInstanceStartFrameAtTime(instance_, 0, 0, false);
+	//}
 }
 
 void 
@@ -369,7 +374,6 @@ Comp::getState(bool& ready, bool& loaded, bool& linksLayoutChanged, bool& inFram
 	ready = ssReady_;
 	if (ssLoaded_ && ssReady_)
 	{
-		// For this example, we are only interested in links after load has completed
 		linksLayoutChanged = ssPendingLayoutChange_;
 		inFrame = ssInFrame_;
 		ssPendingLayoutChange_ = false;
@@ -386,7 +390,6 @@ Comp::setInFrame(bool inFrame)
 {
 	std::lock_guard<std::mutex> guard(mutex_);
 	ssInFrame_ = inFrame;
-	//std::cout << "setInFrame: " << std::boolalpha << inFrame << std::endl;
 }
 
 void Comp::setOnFrameStartCallback(
@@ -445,11 +448,8 @@ Comp::update(bool callStartNextFrame)
 		if (onFrameStartCallback_)
 			onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
 
-		//copyOutsToIns();
-
 		if (callStartNextFrame)
 			startNextFrame();
-
 	}
 }
 
@@ -629,74 +629,5 @@ Comp::applyOutputStringDataChange()
 		datLink.onOuputValueChange();
 	}
 }
-
-
-void Comp::copyOutsToIns()
-{
-	copyOutTopsToInTops();
-	copyOutChopsToInChops(); // requires applyOutputFloatBufferChange() to be called first
-	copyOutDatsToInDats(); // requires applyOutputStringDataChange() to be called first
-	getSetParValues();
-}
-
-void Comp::copyOutTopsToInTops()
-{
-	for (size_t i = 0; i < inTopLinks_->size() && i < outTopLinks_->size(); ++i)
-	{
-		auto outTex = (*outTopLinks_)[i].currentTexture();
-		auto& inTexLink = (*inTopLinks_)[i];
-
-		inTexLink.copyCudaMemoryToInputTexture(
-			outTex->cudaBuffer(),
-			outTex->format(),
-			outTex->extent(),
-			outTex->cudaExtSemaphore(),
-			outTex->signalValue(),
-			nullptr); //cudaStream_);
-
-		inTexLink.transferTextureToInputLink();
-	}
-
-}
-
-void Comp::copyOutChopsToInChops()
-{
-	for (size_t i = 0; i < inChopLinks_->size() && i < outChopLinks_->size(); ++i)
-	{
-		auto& outputChop = (*outChopLinks_)[i];
-		auto& inputChop = (*inChopLinks_)[i];
-		if (outputChop.isUpdated())
-		{
-			inputChop.set(outputChop.channelData(), outputChop.valueCount(), outputChop.rate(), outputChop.names());
-		}
-	}
-}
-
-void Comp::copyOutDatsToInDats()
-{
-	for (size_t i = 0; i < inDatLinks_->size() && i < outDatLinks_->size(); ++i)
-	{
-		auto& outDatLink = (*outDatLinks_)[i];
-		auto& inDatLink = (*inDatLinks_)[i];
-
-		//if (outputDatLink.type() == DatLink::DatLinkType::Table)
-		//	inputDatLink.set(outputDatLink.getTable());
-		//else
-		//	inputDatLink.set(outputDatLink.getString());
-
-		if (outDatLink.type() == DatLink::DatLinkType::Table)
-			//inputDatLink.set(outputDatLink.asTable());
-			inDatLink.set(outDatLink.asString());
-	}
-}
-
-void Comp::getSetParValues()
-{
-	static float testFloat = 0.0f;
-	(*parLinks_)["Float"].set(testFloat);
-	testFloat += 1.1f;
-}
-
-
 
 
