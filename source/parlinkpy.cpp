@@ -7,7 +7,6 @@
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/variant.h>
 
-
 #include "parlink.h"
 
 namespace nb = nanobind;
@@ -34,9 +33,9 @@ void initParLinkBindings(nb::module_& m)
 	double4.def(nb::init<double, double, double, double>())
 		.def_rw("x", &Double4::x).def_rw("y", &Double4::y).def_rw("z", &Double4::z).def_rw("w", &Double4::w);
 
-	nb::class_<ColorRGBA> colorRGBA(m, "Color");
-	colorRGBA.def(nb::init<double, double, double, double>(), "r"_a = 1.0, "g"_a = 1.0, "b"_a = 1.0, "a"_a = 1.0)
-		.def_rw("r", &ColorRGBA::r).def_rw("g", &ColorRGBA::g).def_rw("b", &ColorRGBA::b).def_rw("a", &ColorRGBA::a);
+	nb::class_<Color> color(m, "Color");
+	color.def(nb::init<double, double, double, double>(), "r"_a = 1.0, "g"_a = 1.0, "b"_a = 1.0, "a"_a = 1.0)
+		.def_rw("r", &Color::r).def_rw("g", &Color::g).def_rw("b", &Color::b).def_rw("a", &Color::a);
 
 	nb::class_ <ParLink> parLink(m, "ParLink");
 	parLink.doc() = "A parameter in a TouchDesigner component";
@@ -221,7 +220,7 @@ void initParLinkBindings(nb::module_& m)
 		.def_prop_rw("a", &ColorParLink::getA, &ColorParLink::setA)
 		.def("set", [](ColorParLink& self, double r = 1., double g = 1., double b = 1., double a = 1.)
 			{
-				self.set(ColorRGBA(r, g, b, a));
+				self.set(Color(r, g, b, a));
 			}, "r"_a = 1., "g"_a = 1., "b"_a = 1., "a"_a = 1.)
 
 		.def("set", [](ColorParLink& self, const nb::list& list)
@@ -229,7 +228,7 @@ void initParLinkBindings(nb::module_& m)
 				if (list.size() != 4)
 					throw std::invalid_argument("List must have 4 elements");
 
-				auto val = ColorRGBA(
+				auto val = Color(
 					nb::cast<double>(list[0]),
 					nb::cast<double>(list[1]),
 					nb::cast<double>(list[2]),

@@ -2,7 +2,7 @@
 #include "vri.h"
 #include "vri_initializers.h"
 #include "utils/utils.h"
-#include "utils/color/color.h"
+#include "color.h"
 
 #include <vulkan/vk_enum_string_helper.h>
 #include <iostream>
@@ -10,13 +10,13 @@
 #include <optional>
 #include <set>
 
-template<>
-void colorSetTo<VkClearColorValue>(const Color& color, VkClearColorValue& vkColor) {
-	vkColor.float32[0] = color.r;
-	vkColor.float32[1] = color.g;
-	vkColor.float32[2] = color.b;
-	vkColor.float32[3] = color.a;
-}
+//template<>
+//void colorSetTo<VkClearColorValue>(const Color& color, VkClearColorValue& vkColor) {
+//	vkColor.float32[0] = color.r;
+//	vkColor.float32[1] = color.g;
+//	vkColor.float32[2] = color.b;
+//	vkColor.float32[3] = color.a;
+//}
 
 NAMESPACE_BEGIN(vri)
 
@@ -43,7 +43,6 @@ VkFormat findSupportedFormat(
 
 	throw std::runtime_error("failed to find supported format!");
 }
-
 
 VkFormat findDepthFormat(const VkPhysicalDevice& physicalDevice) {
 	return findSupportedFormat(physicalDevice,
@@ -301,7 +300,6 @@ void destroyImage(const VContext& vContext, VkImage& image, VmaAllocation alloca
 {
 	vmaDestroyImage(vContext.allocator, image, allocation);
 }
-
 
 void copyBufferToImage(
 	const VContext& vContext, 

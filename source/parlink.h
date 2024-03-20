@@ -1,6 +1,7 @@
 #pragma once
 
 #include "links.h"
+#include "color.h"
 
 #include <string>
 #include <unordered_map>
@@ -61,14 +62,6 @@ struct Double4
 static_assert(sizeof(Double4) == sizeof(double) * 4, "Double4 size does not match expected size.");
 static_assert(std::is_standard_layout_v<Double4>, "Double4 must be standard layout.");
 
-struct ColorRGBA
-{
-	double r, g, b, a;
-	ColorRGBA(double r = 0.0, double g = 0.0, double b = 0.0, double a = 1.0) : r(r), g(g), b(b), a(a) { }
-};
-static_assert(sizeof(ColorRGBA) == sizeof(double) * 4, "ColorRGBA size does not match expected size.");
-static_assert(std::is_standard_layout_v<ColorRGBA>, "ColorRGBA must be standard layout.");
-
 using ParLinkValue = std::variant<
 	bool,
 	std::string,
@@ -80,7 +73,7 @@ using ParLinkValue = std::variant<
 	Double2,
 	Double3,
 	Double4,
-	ColorRGBA
+	Color
 >;
 
 class ParLink : public Link<ParLink>
@@ -466,27 +459,27 @@ public:
 
 	void set(ParLinkValue value) override
 	{
-		if (TEInstanceLinkSetDoubleValue(instance_, identifier_.c_str(), reinterpret_cast<double*>(&std::get<ColorRGBA>(value)), count_) != TEResultSuccess)
+		if (TEInstanceLinkSetDoubleValue(instance_, identifier_.c_str(), reinterpret_cast<double*>(&std::get<Color>(value)), count_) != TEResultSuccess)
 			noSetLinkError();
 	}
 
 	ParLinkValue get() override
 	{
-		ColorRGBA value;
+		Color value;
 		if (TEInstanceLinkGetDoubleValue(instance_, identifier_.c_str(), TELinkValueCurrent, reinterpret_cast<double*>(&value), count_) != TEResultSuccess)
 			noGetLinkError();
 
 		return value;
 	}
 
-	void setR(double r) { ColorRGBA rgba = std::get<ColorRGBA>(get()); rgba.r = r; set(rgba); }
-	void setG(double g) { ColorRGBA rgba = std::get<ColorRGBA>(get()); rgba.g = g; set(rgba); }
-	void setB(double b) { ColorRGBA rgba = std::get<ColorRGBA>(get()); rgba.b = b; set(rgba); }
-	void setA(double a) { ColorRGBA rgba = std::get<ColorRGBA>(get()); rgba.a = a; set(rgba); }
-	double getR() { return std::get<ColorRGBA>(get()).r; }
-	double getG() { return std::get<ColorRGBA>(get()).g; }
-	double getB() { return std::get<ColorRGBA>(get()).b; }
-	double getA() { return std::get<ColorRGBA>(get()).a; }
+	void setR(double r) { Color rgba = std::get<Color>(get()); rgba.r = r; set(rgba); }
+	void setG(double g) { Color rgba = std::get<Color>(get()); rgba.g = g; set(rgba); }
+	void setB(double b) { Color rgba = std::get<Color>(get()); rgba.b = b; set(rgba); }
+	void setA(double a) { Color rgba = std::get<Color>(get()); rgba.a = a; set(rgba); }
+	double getR() { return std::get<Color>(get()).r; }
+	double getG() { return std::get<Color>(get()).g; }
+	double getB() { return std::get<Color>(get()).b; }
+	double getA() { return std::get<Color>(get()).a; }
 };
 
 class ParLinkCollection
