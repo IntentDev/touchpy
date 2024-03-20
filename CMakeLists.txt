@@ -43,21 +43,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/nanobind)
 nanobind_add_module(touchpy NOMINSIZE ${ALL_TPY_SOURCES})
 target_include_directories(touchpy PRIVATE ${SOURCE_DIR})
 
-file(GLOB_RECURSE ALL_TL_SOURCES 
-    "${SOURCE_DIR}/*.cpp" "${SOURCE_DIR}/*.c" "${SOURCE_DIR}/*.cu" "${SOURCE_DIR}/*.h")
-list(FILTER ALL_TL_SOURCES EXCLUDE REGEX ".*gtest\\.cpp$")
-list(FILTER ALL_TL_SOURCES EXCLUDE REGEX ".*py\\.cpp$")
-
-# print all sources if on
-set(PRINT_SOURCE_FILES On)
-if(PRINT_SOURCE_FILES)
-    foreach(source IN LISTS ALL_TL_SOURCES)
-      message(STATUS "tl source: ${source}")
-    endforeach()
-endif()
-
-add_executable(touchloader ${ALL_TL_SOURCES})
-target_include_directories(touchloader PRIVATE ${SOURCE_DIR})
 
 # Google Test
 #################################################################################################
@@ -85,7 +70,6 @@ if (WIN32)
 endif ()
 
 target_compile_definitions(touchpy PRIVATE ${COMPILE_DEFINITIONS})
-target_compile_definitions(touchloader PRIVATE ${COMPILE_DEFINITIONS})
 target_compile_definitions(touchpygtest PRIVATE ${COMPILE_DEFINITIONS})
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -116,7 +100,6 @@ gtest_discover_tests(touchpygtest)
 find_package(Vulkan REQUIRED)
 message(STATUS Vulkan_INCLUDE_DIR=${Vulkan_INCLUDE_DIR})
 target_link_libraries(touchpy PRIVATE Vulkan::Vulkan)
-target_link_libraries(touchloader Vulkan::Vulkan)
 target_link_libraries(touchpygtest PRIVATE Vulkan::Vulkan)
 
 
@@ -126,7 +109,6 @@ target_link_libraries(touchpygtest PRIVATE Vulkan::Vulkan)
 #################################################################################################
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 target_link_libraries(touchpy PRIVATE GPUOpen::VulkanMemoryAllocator)
-target_link_libraries(touchloader GPUOpen::VulkanMemoryAllocator)
 target_link_libraries(touchpygtest PRIVATE GPUOpen::VulkanMemoryAllocator)
 
 # causing CUDA to not compile, commented calls to it for now
@@ -142,8 +124,6 @@ find_package(CUDAToolkit REQUIRED)
 message(STATUS CUDAToolkit_INCLUDE_DIRS=${CUDAToolkit_INCLUDE_DIRS})
 target_include_directories(touchpy PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 target_link_libraries(touchpy PRIVATE CUDA::cudart)
-target_include_directories(touchloader PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
-target_link_libraries(touchloader CUDA::cudart)
 target_include_directories(touchpygtest PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 target_link_libraries(touchpygtest PRIVATE CUDA::cudart)
 
@@ -183,20 +163,12 @@ add_custom_command(TARGET touchpy POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin ${CMAKE_CURRENT_SOURCE_DIR}/example)    
 
-target_link_directories(touchloader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/lib)
-target_link_libraries(touchloader TouchEngine)
-target_include_directories(touchloader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/include)
-add_custom_command(TARGET touchloader POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_directory
-	${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin $<TARGET_FILE_DIR:touchloader>)
-
 target_link_directories(touchpygtest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/lib)
 target_link_libraries(touchpygtest PRIVATE TouchEngine)
 target_include_directories(touchpygtest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/include)
 
 # dependencies so touchpy depends on touchloader being built first
 #################################################################################################
-add_dependencies(touchpy touchloader)
 
 add_definitions(-DCMAKE_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
 
@@ -207,8 +179,3 @@ add_definitions(-DCMAKE_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
 install(TARGETS touchpy LIBRARY DESTINATION modules CONFIGURATIONS Release)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin/TouchEngine.dll DESTINATION modules CONFIGURATIONS Release)
 install(FILES ${cuda_runtime_dll} DESTINATION modules CONFIGURATIONS Release)
-
-
-install(TARGETS touchloader RUNTIME DESTINATION bin CONFIGURATIONS Release)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin/TouchEngine.dll DESTINATION bin CONFIGURATIONS Release)
-install(FILES ${cuda_runtime_dll} DESTINATION bin CONFIGURATIONS Release)
