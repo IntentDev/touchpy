@@ -224,14 +224,14 @@ Comp::onEventInstanceDidUnload(TEResult result)
 void 
 Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale)
 {
-	if (doubleBufferOutputs_)
-	{
-		for (auto& chop : outChopLinks_->getLinks())
-		{
-			chop->updateTeBuffer();
-			chop->swapTeBuffers();
-		}
-	}
+	//if (doubleBufferOutputs_)
+	//{
+	//	for (auto& chopLink : outChopLinks_->getLinks())
+	//	{
+	//		chopLink->updateTeBuffer();
+	//		chopLink->swapTeBuffers();
+	//	}
+	//}
 
 	if (result == TEResultSuccess && start_time_value >= 0)
 	{
@@ -327,16 +327,16 @@ Comp::onLinkEventValueChange(const char* identifier)
 		}
 		case TELinkTypeFloatBuffer:
 		{
-			if (doubleBufferOutputs_)
-			{
-				OutChopLink& chopLink = *outChopLinks_->getLinkByIdentifier(link->identifier);
-				chopLink.updateTeBuffer();
-				chopLink.swapTeBuffers();
-			}
-			else
+			if (!doubleBufferOutputs_)
 			{
 				std::lock_guard<std::mutex> guard(mutex_);
 				ssPendingOutputFloatBuffers.push_back(identifier);
+			}
+			else
+			{
+				auto chopLink = outChopLinks_->getLinkByIdentifier(identifier);
+				chopLink->updateTeBuffer();
+				chopLink->swapTeBuffers();
 			}
 			break;
 		}
@@ -438,9 +438,16 @@ Comp::update(bool callStartNextFrame)
 		{
 			std::lock_guard<std::mutex> guard(mutex_);
 			std::swap(ssPendingOutputTextures_, changedOutputTextures_);
-			std::swap(ssPendingOutputFloatBuffers, changedOutputFloatBuffers_);
+			if (!doubleBufferOutputs_) std::swap(ssPendingOutputFloatBuffers, changedOutputFloatBuffers_);
 			//std::swap(ssPendingOutputStringData, changedOutputStringData_); // not calling applyOutputStringDataChange()
+		}
 
+		if (doubleBufferOutputs_)
+		{
+			for (auto& chopLink : outChopLinks_->getLinks())
+			{
+				chopLink->copyTeBuffer();
+			}
 		}
 
 		applyValueChanges();
@@ -605,16 +612,8 @@ Comp::applyOutputFloatBufferChange()
 	{
 		for (const auto& identifier : changedOutputFloatBuffers_)
 		{
-			auto& chop = *outChopLinks_->getLinkByIdentifier(identifier);
-			chop.onOuputValueChange();
-		}
-	}
-	else
-	{
-		for (const auto& identifier : changedOutputFloatBuffers_)
-		{
-			auto& chop = *outChopLinks_->getLinkByIdentifier(identifier);
-			chop.readTeBuffer();
+			auto& chopLink = *outChopLinks_->getLinkByIdentifier(identifier);
+			chopLink.onOuputValueChange();
 		}
 	}
 }
