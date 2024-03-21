@@ -3,7 +3,8 @@
 #include <iostream>
 #include <algorithm>
 
-void 
+
+void
 OutChopLink::onOuputValueChange()
 {
 	TouchObject<TEFloatBuffer> buffer;
@@ -61,9 +62,8 @@ OutChopLink::swapTeBuffers()
 void
 OutChopLink::updateTeBuffer()
 {
-
-	int bufferIndex = activeTeBuffer_.load(std::memory_order_acquire) ^ 1;
-	TouchObject<TEFloatBuffer>& buffer = teBuffers_[bufferIndex];
+	int nextBufferIndex = activeTeBuffer_.load(std::memory_order_acquire) ^ 1;
+	TouchObject<TEFloatBuffer>& buffer = teBuffers_[nextBufferIndex];
 
 	if (TEInstanceLinkGetFloatBufferValue(instance_, identifier_.c_str(), TELinkValueCurrent, buffer.take()) == TEResultSuccess)
 	{
@@ -78,21 +78,19 @@ OutChopLink::updateTeBuffer()
 			// Lock the mutex as short as possible
 			{
 				std::lock_guard<std::mutex> lock(mutex_);
-				ready_ = true; // Mark as ready for reading
+				teBufferReadReady_ = true; // Mark as ready for reading
 				cv_.notify_one(); // Notify the reading thread
 
 			}
 		}
 	}
-
-
 }
 
 void 
-OutChopLink::readTeBuffer()
+OutChopLink::copyTeBuffer()
 {
 	std::unique_lock<std::mutex> lock(mutex_);
-	cv_.wait(lock, [this] { return ready_; }); // Wait until data is ready
+	cv_.wait(lock, [this] { return teBufferReadReady_; }); // Wait until data is ready
 	int bufferIndex = activeTeBuffer_.load(std::memory_order_acquire);
 
 	if (teBuffers_[bufferIndex])
@@ -115,85 +113,8 @@ OutChopLink::readTeBuffer()
 			namePtrs_[chan] = names_[chan].c_str();
 		}
 
-		ready_ = false; // Reset ready state after reading
+		teBufferReadReady_ = false; // Reset ready state after reading
 	}
-
-
-}
-
-void 
-InChopLink::set(const std::vector<float>& data, uint32_t valueCount, double rate)
-{
-	if (data.size() == 0 || valueCount == 0) return;
-	int32_t channelCount = static_cast<int32_t>(data.size() / valueCount);
-
-	chanDataPtrs_.resize(channelCount);
-	for (size_t chan = 0; chan < channelCount; ++chan)
-		chanDataPtrs_[chan] = &data[chan * valueCount];
-	
-	set(chanDataPtrs_.data(), channelCount, valueCount, rate);
-}
-
-void 
-InChopLink::set(const std::vector<float>& channels, uint32_t valueCount, double rate, const std::vector<std::string>& names)
-{
-	if (channels.size() == 0 || valueCount == 0) return;
-	int32_t channelCount = static_cast<int32_t>(channels.size() / valueCount);
-
-	if (names.size() != channelCount) set(channels, valueCount, rate); // or return or throw() ?
-
-	chanDataPtrs_.resize(channelCount);
-	namePtrs_.resize(channelCount);
-
-	for (size_t chan = 0; chan < channelCount; ++chan)
-	{
-		chanDataPtrs_[chan] = &channels[chan * valueCount];
-		namePtrs_[chan] = names[chan].c_str();
-	}
-
-	set(chanDataPtrs_.data(), channelCount, valueCount, rate, namePtrs_.data());
-}
-
-void 
-InChopLink::set(const std::vector<std::vector<float>>& channels, double rate)
-{
-	if (channels.size() == 0) return;
-	uint32_t valueCount = static_cast<uint32_t>(channels[0].size());
-	int32_t channelCount = static_cast<int32_t>(channels.size() / valueCount);
-	if (channelCount == 0) return;
-	if (channels[0].size() == 0) return;
-
-	chanDataPtrs_.resize(channelCount);
-
-	for (size_t chan = 0; chan < channelCount; ++chan)
-	{
-		chanDataPtrs_[chan] = channels[chan].data();
-	}
-
-	set(chanDataPtrs_.data(), channelCount, valueCount, rate);
-}
-
-void 
-InChopLink::set(const std::vector<std::vector<float>>& channels, double rate, const std::vector<std::string>& names)
-{
-	if (channels.size() == 0) return;
-	uint32_t valueCount = static_cast<uint32_t>(channels[0].size());
-	int32_t channelCount = static_cast<int32_t>(channels.size() / valueCount);
-	if (channelCount == 0) return;
-	if (channels[0].size() == 0) return;
-
-	if (names.size() != channels.size()) set(channels, rate); // or return or throw() ?
-
-	chanDataPtrs_.resize(channelCount);
-	namePtrs_.resize(channelCount);
-
-	for (size_t chan = 0; chan < channelCount; ++chan)
-	{
-		chanDataPtrs_[chan] = channels[chan].data();
-		namePtrs_[chan] = names[chan].c_str();
-	}
-
-	set(chanDataPtrs_.data(), channelCount, valueCount, rate, namePtrs_.data());
 }
 
 void 
