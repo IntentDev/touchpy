@@ -83,8 +83,7 @@ public:
 
 	const DatTable& asTable();
 	const std::string& asString();
-
-	void onOuputValueChange();
+;
 	const DatTable& getTable() const { return *table_.get(); }
 	const std::string& getString() const { return string_; }
 
