@@ -224,15 +224,6 @@ Comp::onEventInstanceDidUnload(TEResult result)
 void 
 Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale)
 {
-	//if (doubleBufferOutputs_)
-	//{
-	//	for (auto& chopLink : outChopLinks_->getLinks())
-	//	{
-	//		chopLink->updateTeBuffer();
-	//		chopLink->swapTeBuffers();
-	//	}
-	//}
-
 	if (result == TEResultSuccess && start_time_value >= 0)
 	{
 		setInFrame(false);
@@ -332,7 +323,7 @@ Comp::onLinkEventValueChange(const char* identifier)
 				std::lock_guard<std::mutex> guard(mutex_);
 				ssPendingOutputFloatBuffers.push_back(identifier);
 			}
-			else
+			if (doubleBufferOutputs_)
 			{
 				auto chopLink = outChopLinks_->getLinkByIdentifier(identifier);
 				chopLink->updateTeBuffer();
@@ -449,6 +440,8 @@ Comp::update(bool callStartNextFrame)
 				chopLink->copyTeBuffer();
 			}
 		}
+
+
 
 		applyValueChanges();
 
@@ -613,7 +606,7 @@ Comp::applyOutputFloatBufferChange()
 		for (const auto& identifier : changedOutputFloatBuffers_)
 		{
 			auto& chopLink = *outChopLinks_->getLinkByIdentifier(identifier);
-			chopLink.onOuputValueChange();
+			chopLink.resetUpdated();
 		}
 	}
 }
@@ -623,10 +616,7 @@ Comp::applyOutputStringDataChange()
 {
 	for (const auto& identifier : changedOutputStringData_)
 	{
-		//std::cout << "OutputStringDataChange: " << identifier << std::endl;
 		auto& datLink = *outDatLinks_->getLinkByIdentifier(identifier);
-		datLink.onOuputValueChange();
+		//datLink.resetUpdated();
 	}
 }
-
-
