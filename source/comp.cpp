@@ -13,8 +13,8 @@ Comp::Comp()
 }
 
 
-Comp::Comp(const std::string& filePath)
-	: filePath_(filePath)
+Comp::Comp(const std::string& filePath, bool freeRunning)
+	: filePath_(filePath), freeRunning_(freeRunning)
 {	
 	initComp();
 	load();
@@ -34,6 +34,10 @@ Comp::initComp()
 
 Comp::~Comp()
 {
+	if (freeRunning_)
+	{
+		stopFreeRunning();
+	}
 	CUDA_CHECK(cudaStreamDestroy(cudaStream_));
 	TE_CHECK(TEInstanceUnload(instance_));
 	vkDestroyFence(device_, submitFence_, nullptr);
@@ -206,6 +210,10 @@ Comp::onEventInstanceReady(TEResult result)
 	std::cout << "\t\tInstance Ready: " << TEResultGetDescription(result) << std::endl;
 
 	TE_CHECK(TEInstanceResume(instance_));
+	if (freeRunning_)
+	{
+		startFreeRunning();
+	}
 }
 
 void 
@@ -224,6 +232,7 @@ Comp::onEventInstanceDidUnload(TEResult result)
 void 
 Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale)
 {
+	
 	if (result == TEResultSuccess && start_time_value >= 0)
 	{
 		setInFrame(false);
@@ -239,7 +248,6 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 			setInFrame(false);
 		}
 	}
-
 	//if (freeRunning_)
 	//{
 	//	TEResult result = TEInstanceStartFrameAtTime(instance_, 0, 0, false);
@@ -383,6 +391,7 @@ Comp::setInFrame(bool inFrame)
 	ssInFrame_ = inFrame;
 }
 
+
 void Comp::setOnFrameStartCallback(
 	std::function<void(Comp&, std::shared_ptr<void>)> callback,
 	std::shared_ptr<void> userData)
@@ -403,6 +412,67 @@ void Comp::runUpdateLoop(bool updateStartsNextFrame)
 void Comp::stopUpdateLoop()
 {
 	updateLoopRunning_ = false;
+}
+
+void Comp::startFreeRunning()
+{
+	freeRunning_ = true;
+	frRunning_ = true;
+	frThread_ = std::thread(&Comp::frUpdateLoop, this);
+
+}
+
+void Comp::stopFreeRunning()
+{
+	frRunning_.store(false);
+	if (frThread_.joinable())
+		frThread_.join();
+	freeRunning_ = false;
+}
+
+
+void Comp::frUpdateLoop()
+{
+	while (frRunning_.load())
+	{
+		bool ready, loaded, linksLayoutChanged, inFrame;
+		getState(ready, loaded, linksLayoutChanged, inFrame);
+
+		if (!loaded || !ready) continue;
+
+		if (linksLayoutChanged)
+		{
+			applyLayoutChange();
+			ready_ = ready;
+			continue;
+		}
+		
+		if (!inFrame)
+		{
+			changedOutputTextures_.clear();
+			changedOutputFloatBuffers_.clear();
+			changedOutputStringData_.clear();
+
+			{
+				std::lock_guard<std::mutex> guard(mutex_);
+				std::swap(ssPendingOutputTextures_, changedOutputTextures_);
+				if (!doubleBufferOutputs_) std::swap(ssPendingOutputFloatBuffers, changedOutputFloatBuffers_);
+				//std::swap(ssPendingOutputStringData, changedOutputStringData_); // not calling applyOutputStringDataChange()
+			}
+
+			if (doubleBufferOutputs_)
+			{
+				for (auto& chopLink : outChopLinks_->getLinks())
+				{
+					chopLink->copyTeBuffer();
+				}
+			}
+
+			applyValueChanges();
+
+			startNextFrame();
+		}
+	}
 }
 
 void

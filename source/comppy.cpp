@@ -22,7 +22,7 @@ void initCompBindings(nb::module_& m)
 	nb::class_<Comp> comp(m, "Comp");
 	comp.doc() = "A TouchDesigner component loaded in a TouchEngine instance.";
 	comp.def(nb::init<>())
-		.def(nb::init<const std::string&>(), nb::rv_policy::reference_internal)
+		.def(nb::init<const std::string&, bool>(), "tox_path"_a, "free_running"_a = false, nb::rv_policy::reference_internal)
 
 		.def("load_tox", &Comp::loadTox, "path"_a, nb::rv_policy::reference_internal, load_toxDoc)
 		.def("loaded", &Comp::loaded, nb::rv_policy::reference_internal)

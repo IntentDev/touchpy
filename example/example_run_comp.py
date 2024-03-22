@@ -110,14 +110,15 @@ class ExampleRunComp:
 		translate.set([11.1, 22.2, 33.2])
 		translate.set(11.1, 22.2, 33.5)
 
+
+		# copy the cuda memory from out_top_link to in_top_link
+		cudamem = comp.out_tops[0].cuda_memory()
+		comp.in_tops[0].copy_cuda_memory(cudamem)
+
 		# copy the cuda memory from out_top_link to in_top_link
 		cudamem = comp.out_tops[1].cuda_memory()
 		comp.in_tops[1].copy_cuda_memory(cudamem)
 
-		# copy the cuda memory from out_top_link to in_top_link
-		# cudamem = comp.out_tops[2].cuda_memory()
-		# comp.in_tops[2].copy_cuda_memory(cudamem)
-	
 		with torch.no_grad():
 			# tensor = comp.out_tops[0].as_tensor() # get the first top as a tensor
 			# tensor = comp.out_tops[0].as_tensor(tp.ComponentMask.RGB) # get just the first 3 channels

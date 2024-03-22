@@ -74,7 +74,7 @@ OutChopLink::OutChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInf
 	:	ChopLink(instance, linkInfo) { }
 
 
-void OutChopLink::setChannelsFromBuffer(TouchObject<TEFloatBuffer>& buffer)
+void OutChopLink::setChannelsFromBuffer(ChopChannels& chopChannels, TouchObject<TEFloatBuffer>& buffer)
 {
 	auto channelCount = TEFloatBufferGetChannelCount(buffer);
 	auto capacity = TEFloatBufferGetCapacity(buffer);
@@ -85,7 +85,7 @@ void OutChopLink::setChannelsFromBuffer(TouchObject<TEFloatBuffer>& buffer)
 	const float* const* data = TEFloatBufferGetValues(buffer);
 	const char* const* names = TEFloatBufferGetChannelNames(buffer);
 
-	chopChannels_.setChannels(data, channelCount, capacity, valueCount, rate, isTimeDependent, names);
+	chopChannels.setChannels(data, channelCount, capacity, valueCount, rate, isTimeDependent, names);
 }
 
 void
@@ -96,7 +96,7 @@ OutChopLink::update()
 	{
 		if (buffer)
 		{
-			setChannelsFromBuffer(buffer);
+			setChannelsFromBuffer(chopChannels_, buffer);
 			updated_ = true;
 		}
 	}
@@ -153,7 +153,7 @@ OutChopLink::copyTeBuffer()
 
 	if (buffer)
 	{
-		setChannelsFromBuffer(buffer);
+		setChannelsFromBuffer(chopChannels_, buffer);
 		updated_ = true;
 		teBufferReadReady_ = false; // Reset ready state after reading
 	}

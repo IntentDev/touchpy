@@ -15,13 +15,15 @@
 #include <memory>
 #include <functional>
 #include <chrono>
+#include <thread>
+#include <atomic>
 
 
 class Comp
 {
 public:
 	Comp();
-	Comp(const std::string& filePath);
+	Comp(const std::string& filePath, bool freeRunning = false);
 	~Comp();
 
 	bool loadTox(const std::string& filePath);
@@ -47,7 +49,7 @@ public:
 
 private:
 
-	// shared state between the main thread and the TouchEngine thread
+	// shared state between the main or free running thread and the TouchEngine thread
 	//-----------------------------------------------------------------------------------------------------------------
 
 	mutable std::mutex                      mutex_;
@@ -62,7 +64,16 @@ private:
 	void getState(bool& configured, bool& loaded, bool& linksChanged, bool& inFrame);
 	void setInFrame(bool inFrame);
 
-	
+	// free running 
+	//-----------------------------------------------------------------------------------------------------------------
+	bool 								  freeRunning_ { false };
+	std::atomic<bool>					  frRunning_ { false };
+	std::thread							  frThread_;
+
+	void								  frUpdateLoop();
+	void								  startFreeRunning();
+	void								  stopFreeRunning();
+
 
 	// main thread only
 	//-----------------------------------------------------------------------------------------------------------------

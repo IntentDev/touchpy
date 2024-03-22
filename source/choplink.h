@@ -76,7 +76,7 @@ public:
 
 
 private:
-	void setChannelsFromBuffer(TouchObject<TEFloatBuffer>& buffer);
+	void setChannelsFromBuffer(ChopChannels& chopChannels, TouchObject<TEFloatBuffer>& buffer);
 
 	TouchObject<TEFloatBuffer> teBuffers_[2];
 	std::atomic<int> activeTeBuffer_{ 0 }; // Index of the buffer that is ready for reading
@@ -85,6 +85,7 @@ private:
 	bool doubleBuffered_{ false };
 	bool teBufferReadReady_{ false };
 
+	//ChopChannels buffers_[2];
 	ChopChannels chopChannels_;
 };
 
