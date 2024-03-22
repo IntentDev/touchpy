@@ -30,10 +30,15 @@ public:
 	inline int32_t count() const { return count_; }
 	inline Scope scope() const { return scope_; }
 
+	bool updated() const			{ return updated_; }
+	void resetUpdated()			    { updated_ = false; }
+
 protected:
 	const TouchObject<TEInstance> instance_;
 	const std::string name_;
 	const std::string identifier_;
 	const int32_t count_;
 	const Scope scope_;
+
+	mutable bool updated_{ false };
 };

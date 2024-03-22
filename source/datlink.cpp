@@ -85,41 +85,6 @@ OutDatLink::asString()
 	return string_;
 }
 
-
-
-void
-OutDatLink::onOuputValueChange()
-{
-	TouchObject<TEObject> value;
-	TEResult result = TEInstanceLinkGetObjectValue(instance_, identifier().c_str(), TELinkValueCurrent, value.take());
-	if (result == TEResultSuccess)
-	{
-		if (value && TEGetType(value) == TEObjectTypeTable)
-		{
-			type_ = DatLinkType::Table;
-			//TouchObject<TETable> teTable;
-			teTable_.reset();
-			teTable_.set(static_cast<TETable*>(value.get()));
-
-			table_->numRows = static_cast<uint32_t>(TETableGetRowCount(teTable_.get()));
-			table_->numCols = static_cast<uint32_t>(TETableGetColumnCount(teTable_.get()));
-			table_->values.resize(static_cast<size_t>(table_->numRows * table_->numCols));
-
-			for (int32_t row = 0; row < table_->numRows; ++row)
-				for (int32_t col = 0; col < table_->numCols; ++col)
-					table_->values[static_cast<size_t>(row * table_->numCols + col)] = TETableGetStringValue(teTable_.get(), row, col);
-		}
-		else if (value && TEGetType(value) == TEObjectTypeString)
-		{
-			type_ = DatLinkType::String;
-			TouchObject<TEString> teString;
-			teString.reset();
-			teString.set(static_cast<TEString*>(value.get()));
-			string_ = teString->string;
-		}
-	}
-}
-
 void 
 InDatLink::set(const DatTable& table)
 {

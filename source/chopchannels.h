@@ -3,11 +3,13 @@
 #include <vector>
 #include <string>
 
+class ChopLink;
+class InChopLink;
+class OutChopLink;
 
 class ChopChannelsBase
 {
 public:
-	ChopChannelsBase() = default;
 	~ChopChannelsBase() { }
 
 	const float* chan(const std::string& name);
@@ -15,7 +17,7 @@ public:
 	const float* operator[](const std::string& name) { return chan(name); }
 	const float* operator[](uint32_t index) { return chan(index); }
 
-	const float* const* channels() const { return channels_.data(); }
+	const float** channels()		 { return channels_.data(); }
 	const char* const* names() const { return names_.data(); }
 
 	int32_t  channelCount() const    { return channelCount_; }
@@ -25,7 +27,7 @@ public:
 	bool     isTimeDependent() const { return isTimeDependent_; }
 
 protected:
-	
+	ChopChannelsBase() = default;
 	ChopChannelsBase(int32_t channelCount, uint32_t capacity, uint32_t valueCount, double rate, bool isTimeDependent);
 
 	int32_t  channelCount_    { 0 };
@@ -36,6 +38,10 @@ protected:
 
 	std::vector<const float*> channels_;
 	std::vector<const char*> names_;
+
+	friend class ChopLink;
+	friend class InChopLink;
+	friend class OutChopLink;
 };
 
 class ChopChannelsReference : public ChopChannelsBase
@@ -55,6 +61,8 @@ public:
 
 private:
 
+	friend class InChopLink;
+
 };
 
 class ChopChannels : public ChopChannelsBase
@@ -70,9 +78,29 @@ public:
 	const std::vector<float>& channelData() const { return channelData_; }
 	const std::vector<std::string>& channelNames() const { return channelNames_; }
 
+	void setChannels(const float* const* data, int32_t channelCount, uint32_t capacity, 
+		uint32_t valueCount, double rate, bool isTimeDependent, const char* const* names = nullptr);
+
+
+	// not implemented, need to make tests for each of these... 
+	//void setCapacity(uint32_t capacity);
+	//void setRate(double rate);
+	//void setIsTimeDependent(bool isTimeDependent);
+	//void appendChannel(const float* data = nullptr, uint32_t size = 0, const char* name = nullptr);
+	//void appendChannel(const float* data, const std::string& name);
+	//void appendChannel(const std::vector<float>& data, const std::string& name);
+	//void appendChannel(const std::string& name);
+	//void removeChannel(const std::string& name);
+	//void removeChannel(uint32_t index);
+	//void clear();
+
+
+
 private:
 	std::vector<float> channelData_;
 	std::vector<std::string> channelNames_;
+
+	friend class OutChopLink;
 };
 
 
