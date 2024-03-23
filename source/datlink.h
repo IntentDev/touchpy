@@ -34,6 +34,24 @@ struct DatTable
 	{
 		return values[i * numCols + j]; 
 	}
+
+	std::string asString() const
+	{
+		std::string str;
+		auto lastRow = numRows - 1;
+		auto lastCol = numCols - 1;
+
+		for (uint32_t i = 0; i < numRows; ++i)
+		{
+			for (uint32_t j = 0; j < numCols; ++j)
+			{
+				str += values[i * numCols + j];
+				if (j < lastCol) str += "\t";
+			}
+			if (i < lastRow) str += "\n";
+		}
+		return str;
+	}
 };
 
 class DatLink : public Link<DatLink>
@@ -49,11 +67,10 @@ public:
 	};
 
 	const DatLinkType type() const { return type_; }
-	const std::string getTypeDescription() const { return type_ == DatLinkType::Table ? "Table" : "String"; }
 
 protected:
 
-	DatLinkType				  type_ { DatLinkType::Table };
+	DatLinkType	type_ { DatLinkType::Table };
 
 };
 
@@ -83,29 +100,30 @@ public:
 	OutDatLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo);
 	~OutDatLink();
 
-	void update();
-
 	void writeBuffer();
 	void moveBuffer();
+	void setUsingSwapBuffer(bool usingSwapBuffer) { usingSwapBuffer_ = usingSwapBuffer; }
 
 	const DatTable& asTable();
 	const std::string& asString();
-;
-	const DatTable& getTable() const { return *table_.get(); }
-	const std::string& getString() const { return string_; }
+
 
 private:
+	void setTableFromValue(DatTable& table, const TouchObject<TEObject>& value);
+	void setStringFromValue(std::string& string, const TouchObject<TEObject>& value);
+	void update();
 
 	void swapBuffers();
+	bool usingSwapBuffer_{ false };
 	std::atomic<int> activeBuffer__{ 0 }; // Index of the buffer that is ready for reading
 	std::mutex mutex_;
 	std::condition_variable cv_;
 	bool bufferReadReady_{ false };
 
-	std::vector<DatTable>	  tableBuffers_;
+	std::vector<DatTable>	  tableSwapBuffer_;
 	std::unique_ptr<DatTable> table_;
 
-	std::vector<std::string>  stringBuffers_;
+	std::vector<std::string>  stringSwapBuffer_;
 	std::string               string_;
 
 };

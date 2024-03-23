@@ -99,13 +99,13 @@ OutChopLink::update()
 
 const float* OutChopLink::data() 
 { 
-	if (!updated_) update();
+	if (!usingSwapBuffer_ && !updated_) update();
 	return chopChannels_.data();
 }
 
 const std::vector<std::string>& OutChopLink::channelNames()
 { 
-	if (!updated_) update();
+	if (!usingSwapBuffer_ && !updated_) update();
 	return chopChannels_.channelNames();
 }
 
@@ -126,8 +126,10 @@ OutChopLink::writeBuffer()
 	{
 		if (teBuffer)
 		{
+			if (swapBuffer_.size() != 2) swapBuffer_.resize(2);
+
 			int nextBufferIndex = activeBuffer__.load(std::memory_order_acquire) ^ 1;
-			setChannelsFromBuffer(chansBuffers_[nextBufferIndex], teBuffer);
+			setChannelsFromBuffer(swapBuffer_[nextBufferIndex], teBuffer);
 			{
 				std::lock_guard<std::mutex> lock(mutex_);
 				bufferReadReady_ = true; // Mark as ready for reading
@@ -146,7 +148,7 @@ OutChopLink::moveBuffer()
 	cv_.wait(lock, [this] { return bufferReadReady_; }); // Wait until data is ready
 	int bufferIndex = activeBuffer__.load(std::memory_order_acquire);
 
-	chopChannels_ = std::move(chansBuffers_[bufferIndex]);
+	chopChannels_ = std::move(swapBuffer_[bufferIndex]);
 	bufferReadReady_ = false; // Reset ready state after reading
 }
 

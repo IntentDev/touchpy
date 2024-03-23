@@ -52,10 +52,9 @@ public:
 	OutChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo);
 	~OutChopLink() { }
 
-	void update();
-
 	void writeBuffer();
 	void moveBuffer();
+	void setUsingSwapBuffer(bool usingSwapBuffer) { usingSwapBuffer_ = usingSwapBuffer; }
 
 	const float* data();
 	const std::vector<std::string>& channelNames();
@@ -70,15 +69,17 @@ public:
 
 
 private:
+	void update();
 	void setChannelsFromBuffer(ChopChannels& chopChannels, TouchObject<TEFloatBuffer>& buffer);
 
 	void swapBuffers();
+	bool usingSwapBuffer_ { false };
 	std::atomic<int> activeBuffer__{ 0 }; // Index of the buffer that is ready for reading
 	std::mutex mutex_;
 	std::condition_variable cv_;
 	bool bufferReadReady_{ false };
 
-	ChopChannels chansBuffers_[2];
+	std::vector<ChopChannels> swapBuffer_;
 	ChopChannels chopChannels_;
 };
 

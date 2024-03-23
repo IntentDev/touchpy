@@ -51,8 +51,32 @@ OutDatLink::~OutDatLink()
 {
 }
 
-const DatTable& 
-OutDatLink::asTable()
+void 
+OutDatLink::setTableFromValue(DatTable& table, const TouchObject<TEObject>& value)
+{
+	TouchObject<TETable> teTable;
+	teTable.set(static_cast<TETable*>(value.get()));
+
+	table.numRows = static_cast<uint32_t>(TETableGetRowCount(teTable.get()));
+	table.numCols = static_cast<uint32_t>(TETableGetColumnCount(teTable.get()));
+	table.values.resize(static_cast<size_t>(table.numRows * table.numCols));
+
+	for (int32_t row = 0; row < table.numRows; ++row)
+		for (int32_t col = 0; col < table.numCols; ++col)
+			table.values[static_cast<size_t>(row * table.numCols + col)] = TETableGetStringValue(teTable.get(), row, col);
+}
+
+void 
+OutDatLink::setStringFromValue(std::string& string, const TouchObject<TEObject>& value)
+{
+	TouchObject<TEString> teString;
+	teString.reset();
+	teString.set(static_cast<TEString*>(value.get()));
+	string = teString->string;
+}
+
+void 
+OutDatLink::update()
 {
 	TouchObject<TEObject> value;
 	TEResult result = TEInstanceLinkGetObjectValue(instance_, identifier().c_str(), TELinkValueCurrent, value.take());
@@ -60,65 +84,98 @@ OutDatLink::asTable()
 	{
 		if (value && TEGetType(value) == TEObjectTypeTable)
 		{
-			TouchObject<TETable> teTable;
-			teTable.set(static_cast<TETable*>(value.get()));
-
-			table_->numRows = static_cast<uint32_t>(TETableGetRowCount(teTable.get()));
-			table_->numCols = static_cast<uint32_t>(TETableGetColumnCount(teTable.get()));
-			table_->values.resize(static_cast<size_t>(table_->numRows * table_->numCols));
-
-			for (int32_t row = 0; row < table_->numRows; ++row)
-				for (int32_t col = 0; col < table_->numCols; ++col)
-					table_->values[static_cast<size_t>(row * table_->numCols + col)] = TETableGetStringValue(teTable.get(), row, col);
-
+			type_ = DatLinkType::Table;
+			setTableFromValue(*table_, value);
 		}
 		else if (value && TEGetType(value) == TEObjectTypeString)
 		{
-			TouchObject<TEString> teString;
-			teString.reset();
-			teString.set(static_cast<TEString*>(value.get()));
-			table_->numRows = 1u;
-			table_->numCols = 1u;
-			table_->values.resize(1u);
-			table_->values[0] = teString->string;
+			type_ = DatLinkType::String;
+			setStringFromValue(string_, value);
 		}
+		updated_ = true;
 	}
-	return *table_;
+}
+
+const DatTable&
+OutDatLink::asTable()
+{
+	if (!usingSwapBuffer_ && !updated_) update();
+
+	if (type_ == DatLinkType::Table)
+	{
+		return *table_;
+	}
+	else
+	{
+		table_->numRows = 1u;
+		table_->numCols = 1u;
+		table_->values.resize(1u);
+		table_->values[0] = string_;
+		return *table_;
+	}
 }
 
 const std::string& 
 OutDatLink::asString()
 {
+	if (!usingSwapBuffer_ && !updated_) update();
+
+	if (type_ == DatLinkType::String) return string_;
+	
+	else return string_ = table_->asString();
+}
+
+void 
+OutDatLink::swapBuffers()
+{
+	activeBuffer__.fetch_xor(1, std::memory_order_release);
+}
+
+void OutDatLink::writeBuffer()
+{
 	TouchObject<TEObject> value;
 	TEResult result = TEInstanceLinkGetObjectValue(instance_, identifier().c_str(), TELinkValueCurrent, value.take());
 	if (result == TEResultSuccess)
 	{
+		int nextBufferIndex = activeBuffer__.load(std::memory_order_acquire) ^ 1;
 		if (value && TEGetType(value) == TEObjectTypeTable)
 		{
-			TouchObject<TETable> teTable;
-			teTable.set(static_cast<TETable*>(value.get()));
-			auto numRows = static_cast<uint32_t>(TETableGetRowCount(teTable.get()));
-			auto numCols = static_cast<uint32_t>(TETableGetColumnCount(teTable.get()));
-			auto lastRow = numRows - 1;
-
-			string_ = "";
-			for (int32_t row = 0; row < numRows; ++row)
-			{
-				for (int32_t col = 0; col < numCols; ++col)
-				{
-					if (col > 0) string_ += "\t";
-					string_ += TETableGetStringValue(teTable.get(), row, col);
-				}
-				if (row < lastRow) string_ += "\n";
-			}
+			if (tableSwapBuffer_.size() != 2) tableSwapBuffer_.resize(2);
+			auto& table = tableSwapBuffer_[nextBufferIndex];
+			type_ = DatLinkType::Table;
+			setTableFromValue(table, value);
 		}
 		else if (value && TEGetType(value) == TEObjectTypeString)
 		{
-			TouchObject<TEString> teString;
-			teString.reset();
-			teString.set(static_cast<TEString*>(value.get()));
-			string_ = teString->string;
+			if (stringSwapBuffer_.size() != 2) stringSwapBuffer_.resize(2);
+			auto& string = stringSwapBuffer_[nextBufferIndex];
+			type_ = DatLinkType::String;
+			setStringFromValue(string, value);
 		}
+		{
+			std::lock_guard<std::mutex> lock(mutex_);
+			bufferReadReady_ = true; // Mark as ready for writing
+			cv_.notify_one(); // Notify the writing thread
+		}
+		swapBuffers();
+		updated_ = true;
 	}
-	return string_;
 }
+
+void OutDatLink::moveBuffer()
+{
+	std::unique_lock<std::mutex> lock(mutex_);
+	cv_.wait(lock, [this] { return bufferReadReady_; }); // Wait until data is ready
+	int bufferIndex = activeBuffer__.load(std::memory_order_acquire);
+
+	if (type_ == DatLinkType::Table) *table_ = std::move(tableSwapBuffer_[bufferIndex]);
+	
+	else string_ = std::move(stringSwapBuffer_[bufferIndex]);
+	
+	bufferReadReady_ = false;
+}
+
+
+
+
+

@@ -336,22 +336,28 @@ Comp::onLinkEventValueChange(const char* identifier)
 		}
 		case TELinkTypeFloatBuffer:
 		{
-			//if (!doubleBufferOutputs_)
-			//{
-				std::lock_guard<std::mutex> guard(mutex_);
-				ssPendingOutputFloatBuffers.push_back(identifier);
-			//}
 			if (doubleBufferOutputs_)
 			{
 				auto chopLink = outChopLinks_->getLinkByIdentifier(identifier);
 				chopLink->writeBuffer();
 			}
+			{
+				std::lock_guard<std::mutex> guard(mutex_);
+				ssPendingOutputFloatBuffers.push_back(identifier);
+			}
 			break;
 		}
 		case TELinkTypeStringData:
 		{
-			std::lock_guard<std::mutex> guard(mutex_);
-			ssPendingOutputStringData.push_back(identifier);
+			if (doubleBufferOutputs_)
+			{
+				auto datLink = outDatLinks_->getLinkByIdentifier(identifier);
+				datLink->writeBuffer();
+			}
+			{
+				std::lock_guard<std::mutex> guard(mutex_);
+				ssPendingOutputStringData.push_back(identifier);
+			}
 			break;
 		}
 		default:
@@ -466,7 +472,7 @@ void Comp::frUpdateLoop()
 				std::lock_guard<std::mutex> guard(mutex_);
 				std::swap(ssPendingOutputTextures_, changedOutputTextures_);
 				std::swap(ssPendingOutputFloatBuffers, changedOutputFloatBuffers_);
-				//std::swap(ssPendingOutputStringData, changedOutputStringData_); // not calling applyOutputStringDataChange()
+				std::swap(ssPendingOutputStringData, changedOutputStringData_);
 			}
 
 			applyValueChanges();
@@ -501,7 +507,7 @@ Comp::update(bool callStartNextFrame)
 			std::lock_guard<std::mutex> guard(mutex_);
 			std::swap(ssPendingOutputTextures_, changedOutputTextures_);
 			std::swap(ssPendingOutputFloatBuffers, changedOutputFloatBuffers_);
-			//std::swap(ssPendingOutputStringData, changedOutputStringData_); // not calling applyOutputStringDataChange()
+			std::swap(ssPendingOutputStringData, changedOutputStringData_);
 		}
 
 		applyValueChanges();
@@ -590,7 +596,10 @@ Comp::applyLayoutChange()
 									inChopLinks_->addLink(info);
 
 								else if (info->scope == TEScopeOutput)
+								{
 									outChopLinks_->addLink(info);
+									(*outChopLinks_)[outChopLinks_->size() - 1].setUsingSwapBuffer(doubleBufferOutputs_);
+								}
 							}
 
 							if (info->type == TELinkTypeStringData)
@@ -599,7 +608,10 @@ Comp::applyLayoutChange()
 									inDatLinks_->addLink(info);
 
 								else if (info->scope == TEScopeOutput)
+								{
 									outDatLinks_->addLink(info);
+									(*outDatLinks_)[outDatLinks_->size() - 1].setUsingSwapBuffer(doubleBufferOutputs_);
+								}
 							}
 
 							if (info->domain == TELinkDomainParameter)
@@ -624,28 +636,9 @@ Comp::applyLayoutChange()
 
 void Comp::applyValueChanges()
 {
-	// this should likely always be called on changes (unlike below) since in most cases we'll want the cuda buffer 
-	// to be filled before accessing it... We could implement a hasChanged() function to check if the buffer has changed
-	// so arrays do not need to be set every frame. 
-	// We could also devise a dependency method/graph so only outLinks being accessed are updated... 
 	applyOutputTextureChange();
-
-	// need to call applyOutputFloatBufferChange() to apply any pending changes to the output float buffers
-	// before reading data. Need to update this so that:
-	// Method 1: call applyOutputFloatBufferChange() on change and read data on update (as it is now)
-	// Method 2: call getChannels() function whenever and read data whether or not there are pending changes
-	// In addtion to both these methods create a methods that can be called to read data whether or not there are pending changes
-	// In the case of Method 1, the hasChanged() is true after the buffer is filled, in the case of Method 2, hasChanged() is changed
-	// calls the corresponding TE function to check if the buffer has changed. Need to sort out the best way to do this and probably 
-	// choose one method.
 	applyOutputFloatBufferChange();
-
-	// similar to the above, but at this moment asString() and asTable() simply read the data directly from the TE object
-	// so there is no need for updates with the current Python test script. But there is no hasChanged() function so 
-	// the function must be called every frame. 
-	// 
-	// uncomment std::swap(ssPendingOutputStringData, changedOutputStringData_) in update() to use this!!!
-	//applyOutputStringDataChange(); 
+	applyOutputStringDataChange(); 
 }
 
 void 
@@ -695,17 +688,17 @@ Comp::applyOutputStringDataChange()
 			datLink.resetUpdated();
 		}
 	}
-	//else
-	//{
-	//	for (const auto& identifier : changedOutputStringData_)
-	//	{
-	//		auto& datLink = *outDatLinks_->getLinkByIdentifier(identifier);
-	//		if (datLink.updated())
-	//		{
-	//			datLink.moveBuffer();
-	//			datLink.resetUpdated();
-	//		}
-	//	}
-	//}
+	else
+	{
+		for (const auto& identifier : changedOutputStringData_)
+		{
+			auto& datLink = *outDatLinks_->getLinkByIdentifier(identifier);
+			if (datLink.updated())
+			{
+				datLink.moveBuffer();
+				datLink.resetUpdated();
+			}
+		}
+	}
 }
 
