@@ -133,10 +133,15 @@ Comp::load()
 	std::cout << "\t\tInstance configured!" << std::endl;
 
 	TE_CHECK(TEInstanceSetFrameRate(instance_, framesPerSecond_, 1));
+
+	std::unique_lock<std::mutex> lock(mutex_);
 	TE_CHECK(TEInstanceLoad(instance_));
 	std::cout << "\t\tInstance loading..." << std::endl;
 
-	return true;
+	// wait for instance to load
+	cv_.wait(lock, [this] { return ssReady_; });
+
+	return ssReady_;
 }
 
 bool
@@ -179,19 +184,19 @@ Comp::eventCallback(TEInstance* instance,
 	switch (event)
 	{
 	case TEEventInstanceReady:
-		comp->onEventInstanceReady(result);
+		comp->onEventInstanceReady(result, comp);
 		break;
 	case TEEventInstanceDidLoad:
-		comp->onEventInstanceDidLoad(result);
+		comp->onEventInstanceDidLoad(result, comp);
 		break;
 	case TEEventInstanceDidUnload:
-		comp->onEventInstanceDidUnload(result);
+		comp->onEventInstanceDidUnload(result, comp);
 		break;
 	case TEEventFrameDidFinish:
-		comp->onEventFrameDidFinish(result, start_time_value, start_time_scale, end_time_value, end_time_scale);
+		comp->onEventFrameDidFinish(result, start_time_value, start_time_scale, end_time_value, end_time_scale, comp);
 		break;
 	case TEEventGeneral:
-		comp->onEventGeneral(result, start_time_value, start_time_scale);
+		comp->onEventGeneral(result, start_time_value, start_time_scale, comp);
 		break;
 	default:
 		break;
@@ -199,63 +204,68 @@ Comp::eventCallback(TEInstance* instance,
 }
 
 void 
-Comp::onEventInstanceReady(TEResult result)
+Comp::onEventInstanceReady(TEResult result, Comp* comp)
 {
+	if (!comp) return;
+
 	bool temp = false;
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
-		ssReady_ = result == TEResultSuccess;
+		comp->ssReady_ = result == TEResultSuccess;
 	}
+
+	comp->cv_.notify_one(); // notify load() that instance is ready
 
 	std::cout << "\t\tInstance Ready: " << TEResultGetDescription(result) << std::endl;
 
 	TE_CHECK(TEInstanceResume(instance_));
-	if (freeRunning_)
+	if (comp->freeRunning_)
 	{
-		startFreeRunning();
+		comp->startFreeRunning();
 	}
 }
 
 void 
-Comp::onEventInstanceDidLoad(TEResult result)
+Comp::onEventInstanceDidLoad(TEResult result, Comp* comp)
 {
-	std::lock_guard<std::mutex> lock(mutex_);
-	ssLoaded_ = true;
+	std::lock_guard<std::mutex> lock(comp->mutex_);
+	comp->ssLoaded_ = true;
 }
 
 void 
-Comp::onEventInstanceDidUnload(TEResult result)
+Comp::onEventInstanceDidUnload(TEResult result, Comp* comp)
 {
 	std::cout << "Instance unloaded" << std::endl;
 }
 
 void 
-Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale)
+Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale, 
+	int64_t end_time_value, int32_t end_time_scale, Comp* comp)
 {
 	
 	if (result == TEResultSuccess && start_time_value >= 0)
 	{
-		setInFrame(false);
+		comp->setInFrame(false);
 	}
 	else
 	{
 		std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result) << ", start_time_value: " << start_time_value << ", start_time_scale : " << start_time_scale << ", end_time_value: " << end_time_value << ", end_time_scale: " << end_time_scale << std::endl;
-		setInFrame(true);
-		TEResult result = TEInstanceStartFrameAtTime(instance_, 0, 0, false);
+		comp->setInFrame(true);
+		TEResult result = TEInstanceStartFrameAtTime(comp->instance_, 0, 0, false);
 		if (result != TEResultSuccess)
 		{
 			std::cout << "onFrameDidFinish TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
-			setInFrame(false);
+			comp->setInFrame(false);
 		}
 	}
-	//if (freeRunning_)
+	//if (comp->freeRunning_)
 	//{
 	//	TEResult result = TEInstanceStartFrameAtTime(instance_, 0, 0, false);
 	//}
 }
 
 void 
-Comp::onEventGeneral(TEResult result, uint64_t start_time, uint64_t end_time)
+Comp::onEventGeneral(TEResult result, uint64_t start_time, uint64_t end_time, Comp* comp)
 {
 	//std::cout << "General event: " << TEResultGetDescription(result)
 	//	<< " start_time: " << start_time
@@ -326,16 +336,15 @@ Comp::onLinkEventValueChange(const char* identifier)
 		}
 		case TELinkTypeFloatBuffer:
 		{
-			if (!doubleBufferOutputs_)
-			{
+			//if (!doubleBufferOutputs_)
+			//{
 				std::lock_guard<std::mutex> guard(mutex_);
 				ssPendingOutputFloatBuffers.push_back(identifier);
-			}
+			//}
 			if (doubleBufferOutputs_)
 			{
 				auto chopLink = outChopLinks_->getLinkByIdentifier(identifier);
-				chopLink->updateTeBuffer();
-				chopLink->swapTeBuffers();
+				chopLink->writeBuffer();
 			}
 			break;
 		}
@@ -456,16 +465,8 @@ void Comp::frUpdateLoop()
 			{
 				std::lock_guard<std::mutex> guard(mutex_);
 				std::swap(ssPendingOutputTextures_, changedOutputTextures_);
-				if (!doubleBufferOutputs_) std::swap(ssPendingOutputFloatBuffers, changedOutputFloatBuffers_);
+				std::swap(ssPendingOutputFloatBuffers, changedOutputFloatBuffers_);
 				//std::swap(ssPendingOutputStringData, changedOutputStringData_); // not calling applyOutputStringDataChange()
-			}
-
-			if (doubleBufferOutputs_)
-			{
-				for (auto& chopLink : outChopLinks_->getLinks())
-				{
-					chopLink->copyTeBuffer();
-				}
 			}
 
 			applyValueChanges();
@@ -499,19 +500,9 @@ Comp::update(bool callStartNextFrame)
 		{
 			std::lock_guard<std::mutex> guard(mutex_);
 			std::swap(ssPendingOutputTextures_, changedOutputTextures_);
-			if (!doubleBufferOutputs_) std::swap(ssPendingOutputFloatBuffers, changedOutputFloatBuffers_);
+			std::swap(ssPendingOutputFloatBuffers, changedOutputFloatBuffers_);
 			//std::swap(ssPendingOutputStringData, changedOutputStringData_); // not calling applyOutputStringDataChange()
 		}
-
-		if (doubleBufferOutputs_)
-		{
-			for (auto& chopLink : outChopLinks_->getLinks())
-			{
-				chopLink->copyTeBuffer();
-			}
-		}
-
-
 
 		applyValueChanges();
 
@@ -679,14 +670,42 @@ Comp::applyOutputFloatBufferChange()
 			chopLink.resetUpdated();
 		}
 	}
+	else
+	{
+		for (const auto& identifier : changedOutputFloatBuffers_)
+		{
+			auto& chopLink = *outChopLinks_->getLinkByIdentifier(identifier);
+			if (chopLink.updated())
+			{
+				chopLink.moveBuffer();
+				chopLink.resetUpdated();
+			}
+		}
+	}
 }
 
 void 
 Comp::applyOutputStringDataChange()
 {
-	for (const auto& identifier : changedOutputStringData_)
+	if (!doubleBufferOutputs_)
 	{
-		auto& datLink = *outDatLinks_->getLinkByIdentifier(identifier);
-		//datLink.resetUpdated();
+		for (const auto& identifier : changedOutputStringData_)
+		{
+			auto& datLink = *outDatLinks_->getLinkByIdentifier(identifier);
+			datLink.resetUpdated();
+		}
 	}
+	//else
+	//{
+	//	for (const auto& identifier : changedOutputStringData_)
+	//	{
+	//		auto& datLink = *outDatLinks_->getLinkByIdentifier(identifier);
+	//		if (datLink.updated())
+	//		{
+	//			datLink.moveBuffer();
+	//			datLink.resetUpdated();
+	//		}
+	//	}
+	//}
 }
+

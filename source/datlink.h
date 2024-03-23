@@ -4,6 +4,10 @@
 #include "links.h"
 #include <memory>
 #include <string>
+#include <vector>
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
 
 struct DatTable
 {
@@ -48,10 +52,8 @@ public:
 	const std::string getTypeDescription() const { return type_ == DatLinkType::Table ? "Table" : "String"; }
 
 protected:
-	TouchObject<TETable>   teTable_;
-	std::unique_ptr<DatTable> table_;
-	std::string            string_;
-	DatLinkType            type_ { DatLinkType::Table };
+
+	DatLinkType				  type_ { DatLinkType::Table };
 
 };
 
@@ -81,11 +83,30 @@ public:
 	OutDatLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo);
 	~OutDatLink();
 
+	void update();
+
+	void writeBuffer();
+	void moveBuffer();
+
 	const DatTable& asTable();
 	const std::string& asString();
 ;
 	const DatTable& getTable() const { return *table_.get(); }
 	const std::string& getString() const { return string_; }
+
+private:
+
+	void swapBuffers();
+	std::atomic<int> activeBuffer__{ 0 }; // Index of the buffer that is ready for reading
+	std::mutex mutex_;
+	std::condition_variable cv_;
+	bool bufferReadReady_{ false };
+
+	std::vector<DatTable>	  tableBuffers_;
+	std::unique_ptr<DatTable> table_;
+
+	std::vector<std::string>  stringBuffers_;
+	std::string               string_;
 
 };
 

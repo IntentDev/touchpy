@@ -65,11 +65,6 @@ bool InChopLink::bufferCopyable(TouchObject<TEFloatBuffer> buffer, const ChopCha
 	return true;
 }
 
-
-OutChopLink::OutChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo, bool doubleBuffered)
-	:	ChopLink(instance, linkInfo),
-		doubleBuffered_(doubleBuffered) { }
-
 OutChopLink::OutChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) 
 	:	ChopLink(instance, linkInfo) { }
 
@@ -117,45 +112,41 @@ const std::vector<std::string>& OutChopLink::channelNames()
 
 
 void
-OutChopLink::swapTeBuffers()
+OutChopLink::swapBuffers()
 {
-	activeTeBuffer_.fetch_xor(1, std::memory_order_release);
+	activeBuffer__.fetch_xor(1, std::memory_order_release);
 }
 
 void
-OutChopLink::updateTeBuffer()
+OutChopLink::writeBuffer()
 {
-	int nextBufferIndex = activeTeBuffer_.load(std::memory_order_acquire) ^ 1;
-	TouchObject<TEFloatBuffer>& buffer = teBuffers_[nextBufferIndex];
+	TouchObject<TEFloatBuffer> teBuffer;
 
-	if (TEInstanceLinkGetFloatBufferValue(instance_, identifier_.c_str(), TELinkValueCurrent, buffer.take()) == TEResultSuccess)
+	if (TEInstanceLinkGetFloatBufferValue(instance_, identifier_.c_str(), TELinkValueCurrent, teBuffer.take()) == TEResultSuccess)
 	{
-		if (buffer)
+		if (teBuffer)
 		{
+			int nextBufferIndex = activeBuffer__.load(std::memory_order_acquire) ^ 1;
+			setChannelsFromBuffer(chansBuffers_[nextBufferIndex], teBuffer);
 			{
 				std::lock_guard<std::mutex> lock(mutex_);
-				teBufferReadReady_ = true; // Mark as ready for reading
+				bufferReadReady_ = true; // Mark as ready for reading
 				cv_.notify_one(); // Notify the reading thread
-
 			}
+			swapBuffers();
+			updated_ = true;
 		}
 	}
 }
 
-void 
-OutChopLink::copyTeBuffer()
+void
+OutChopLink::moveBuffer()
 {
 	std::unique_lock<std::mutex> lock(mutex_);
-	cv_.wait(lock, [this] { return teBufferReadReady_; }); // Wait until data is ready
-	int bufferIndex = activeTeBuffer_.load(std::memory_order_acquire);
+	cv_.wait(lock, [this] { return bufferReadReady_; }); // Wait until data is ready
+	int bufferIndex = activeBuffer__.load(std::memory_order_acquire);
 
-	TouchObject<TEFloatBuffer>& buffer = teBuffers_[bufferIndex];
-
-	if (buffer)
-	{
-		setChannelsFromBuffer(chopChannels_, buffer);
-		updated_ = true;
-		teBufferReadReady_ = false; // Reset ready state after reading
-	}
+	chopChannels_ = std::move(chansBuffers_[bufferIndex]);
+	bufferReadReady_ = false; // Reset ready state after reading
 }
 

@@ -53,6 +53,7 @@ private:
 	//-----------------------------------------------------------------------------------------------------------------
 
 	mutable std::mutex                      mutex_;
+	std::condition_variable 			    cv_;
 	bool                                    ssPendingLayoutChange_ { false };
 	bool                                    ssLoaded_              { false };
 	bool                                    ssReady_			   { false };
@@ -110,7 +111,7 @@ private:
 	std::unique_ptr<OutDatLinks>       outDatLinks_;
 	std::unique_ptr<ParLinkCollection> parLinks_;
 
-	bool                               doubleBufferOutputs_ { false };
+	bool                               doubleBufferOutputs_ { true };
 	bool							   updateLoopRunning_	{ false };
 	uint64_t 						   frameCount_          { 0 };
 	std::shared_ptr<void>              onFrameStartCallbackUserData_ { nullptr };
@@ -145,11 +146,12 @@ private:
 		int32_t     end_time_scale,
 		void*       info);
 
-	void onEventInstanceReady(TEResult result);
-	void onEventInstanceDidLoad(TEResult result);
-	void onEventInstanceDidUnload(TEResult result);
-	void onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale);
-	void onEventGeneral(TEResult result, uint64_t start_time, uint64_t end_time);
+	void onEventInstanceReady(TEResult result, Comp* comp);
+	void onEventInstanceDidLoad(TEResult result, Comp* comp);
+	void onEventInstanceDidUnload(TEResult result, Comp* comp);
+	void onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale, 
+		int64_t end_time_value, int32_t end_time_scale, Comp* comp);
+	void onEventGeneral(TEResult result, uint64_t start_time, uint64_t end_time, Comp* comp);
 
 	static void	linkEventCallback(
 		TEInstance* instance, 

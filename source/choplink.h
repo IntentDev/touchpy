@@ -13,7 +13,6 @@
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
-#include <thread>
 
 
 class ChopLink : public Link<ChopLink>
@@ -50,18 +49,13 @@ public:
 class OutChopLink : public ChopLink
 {
 public:
-	OutChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo, bool doubleBuffered);
 	OutChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo);
 	~OutChopLink() { }
 
 	void update();
 
-	void swapTeBuffers();
-	void updateTeBuffer();
-	void copyTeBuffer();
-
-	void setDoubleBuffered(bool doubleBuffered) { doubleBuffered_ = doubleBuffered; }
-	bool doubleBuffered() const { return doubleBuffered_; }
+	void writeBuffer();
+	void moveBuffer();
 
 	const float* data();
 	const std::vector<std::string>& channelNames();
@@ -78,14 +72,13 @@ public:
 private:
 	void setChannelsFromBuffer(ChopChannels& chopChannels, TouchObject<TEFloatBuffer>& buffer);
 
-	TouchObject<TEFloatBuffer> teBuffers_[2];
-	std::atomic<int> activeTeBuffer_{ 0 }; // Index of the buffer that is ready for reading
+	void swapBuffers();
+	std::atomic<int> activeBuffer__{ 0 }; // Index of the buffer that is ready for reading
 	std::mutex mutex_;
 	std::condition_variable cv_;
-	bool doubleBuffered_{ false };
-	bool teBufferReadReady_{ false };
+	bool bufferReadReady_{ false };
 
-	//ChopChannels buffers_[2];
+	ChopChannels chansBuffers_[2];
 	ChopChannels chopChannels_;
 };
 

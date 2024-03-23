@@ -3,6 +3,44 @@
 #include <iostream>
 
 
+void
+InDatLink::set(const DatTable& table)
+{
+	type_ = DatLinkType::Table;
+	TouchObject<TEObject> currentValue;
+	TEResult result = TEInstanceLinkGetObjectValue(instance_, identifier_.c_str(), TELinkValueCurrent, currentValue.take());
+
+	if (result == TEResultSuccess)
+	{
+		TouchObject<TETable> teTable;
+		if (currentValue && TEGetType(currentValue) == TEObjectTypeTable)
+			teTable.take(TETableCreateCopy(static_cast<TETable*>(currentValue.get())));
+		else
+			teTable.take(TETableCreate());
+
+		TETableResize(teTable, table.numRows, table.numCols);
+		for (int32_t col = 0; col < table.numRows; ++col)
+			for (int32_t row = 0; row < table.numCols; ++row)
+				TETableSetStringValue(teTable, row, col, table.values[static_cast<size_t>(row * table.numCols + col)].c_str());
+
+		result = TEInstanceLinkSetTableValue(instance_, identifier_.c_str(), teTable);
+	}
+
+	if (result != TEResultSuccess)
+		std::cerr << "Failed to set table value: " << TEResultGetDescription(result) << std::endl;
+}
+
+void
+InDatLink::set(const char* string)
+{
+	type_ = DatLinkType::String;
+	TEResult result = TEInstanceLinkSetStringValue(instance_, identifier_.c_str(), string);
+	if (result != TEResultSuccess)
+		std::cerr << "Failed to set table value: " << TEResultGetDescription(result) << std::endl;
+}
+
+
+
 OutDatLink::OutDatLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo)
 	:	DatLink(instance, linkInfo)
 {
@@ -22,16 +60,16 @@ OutDatLink::asTable()
 	{
 		if (value && TEGetType(value) == TEObjectTypeTable)
 		{
-			teTable_.reset();
-			teTable_.set(static_cast<TETable*>(value.get()));
+			TouchObject<TETable> teTable;
+			teTable.set(static_cast<TETable*>(value.get()));
 
-			table_->numRows = static_cast<uint32_t>(TETableGetRowCount(teTable_.get()));
-			table_->numCols = static_cast<uint32_t>(TETableGetColumnCount(teTable_.get()));
+			table_->numRows = static_cast<uint32_t>(TETableGetRowCount(teTable.get()));
+			table_->numCols = static_cast<uint32_t>(TETableGetColumnCount(teTable.get()));
 			table_->values.resize(static_cast<size_t>(table_->numRows * table_->numCols));
 
 			for (int32_t row = 0; row < table_->numRows; ++row)
 				for (int32_t col = 0; col < table_->numCols; ++col)
-					table_->values[static_cast<size_t>(row * table_->numCols + col)] = TETableGetStringValue(teTable_.get(), row, col);
+					table_->values[static_cast<size_t>(row * table_->numCols + col)] = TETableGetStringValue(teTable.get(), row, col);
 
 		}
 		else if (value && TEGetType(value) == TEObjectTypeString)
@@ -57,10 +95,10 @@ OutDatLink::asString()
 	{
 		if (value && TEGetType(value) == TEObjectTypeTable)
 		{
-			teTable_.reset();
-			teTable_.set(static_cast<TETable*>(value.get()));
-			auto numRows = static_cast<uint32_t>(TETableGetRowCount(teTable_.get()));
-			auto numCols = static_cast<uint32_t>(TETableGetColumnCount(teTable_.get()));
+			TouchObject<TETable> teTable;
+			teTable.set(static_cast<TETable*>(value.get()));
+			auto numRows = static_cast<uint32_t>(TETableGetRowCount(teTable.get()));
+			auto numCols = static_cast<uint32_t>(TETableGetColumnCount(teTable.get()));
 			auto lastRow = numRows - 1;
 
 			string_ = "";
@@ -69,7 +107,7 @@ OutDatLink::asString()
 				for (int32_t col = 0; col < numCols; ++col)
 				{
 					if (col > 0) string_ += "\t";
-					string_ += TETableGetStringValue(teTable_.get(), row, col);
+					string_ += TETableGetStringValue(teTable.get(), row, col);
 				}
 				if (row < lastRow) string_ += "\n";
 			}
@@ -84,41 +122,3 @@ OutDatLink::asString()
 	}
 	return string_;
 }
-
-void 
-InDatLink::set(const DatTable& table)
-{
-	type_ = DatLinkType::Table;
-	TouchObject<TEObject> currentValue;
-	TEResult result = TEInstanceLinkGetObjectValue(instance_, identifier_.c_str(), TELinkValueCurrent, currentValue.take());
-
-	if (result == TEResultSuccess)
-	{
-		TouchObject<TETable> teTable;
-		if (currentValue && TEGetType(currentValue) == TEObjectTypeTable)
-			teTable.take(TETableCreateCopy(static_cast<TETable*>(currentValue.get())));
-		else
-			teTable.take(TETableCreate());
-		
-		TETableResize(teTable, table.numRows, table.numCols);
-		for (int32_t col = 0; col < table.numRows; ++col)
-			for (int32_t row = 0; row < table.numCols; ++row)
-				TETableSetStringValue(teTable, row, col, table.values[static_cast<size_t>(row * table.numCols + col)].c_str());
-		
-		result = TEInstanceLinkSetTableValue(instance_, identifier_.c_str(), teTable);
-	}
-
-	if (result != TEResultSuccess)
-		std::cerr << "Failed to set table value: " << TEResultGetDescription(result) << std::endl;
-}
-
-void 
-InDatLink::set(const char* string)
-{
-	type_ = DatLinkType::String;
-	TEResult result = TEInstanceLinkSetStringValue(instance_, identifier_.c_str(), string);
-	if (result != TEResultSuccess)
-		std::cerr << "Failed to set table value: " << TEResultGetDescription(result) << std::endl;
-}
-
-
