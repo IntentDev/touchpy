@@ -3,7 +3,8 @@
 #include <iostream>
 #include <algorithm>
 
-void InChopLink::set(ChopChannelsReference&& chopChannels)
+void 
+InChopLink::set(ChopChannelsReference&& chopChannels)
 {
 
 	if (chopChannels.channelCount_ <= 0 || chopChannels.capacity_ == 0 || chopChannels.valueCount_ == 0) return;
@@ -41,7 +42,8 @@ void InChopLink::set(ChopChannelsReference&& chopChannels)
 	}
 }
 
-bool InChopLink::bufferCopyable(TouchObject<TEFloatBuffer> buffer, const ChopChannelsReference& chopChannels) const
+bool 
+InChopLink::bufferCopyable(TouchObject<TEFloatBuffer> buffer, const ChopChannelsReference& chopChannels) const
 {
 	auto newChannelCount = TEFloatBufferGetChannelCount(buffer);
 	if (newChannelCount != chopChannels.channelCount()
@@ -69,7 +71,8 @@ OutChopLink::OutChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInf
 	:	ChopLink(instance, linkInfo) { }
 
 
-void OutChopLink::setChannelsFromBuffer(ChopChannels& chopChannels, TouchObject<TEFloatBuffer>& buffer)
+void 
+OutChopLink::setChannelsFromBuffer(ChopChannels& chopChannels, TouchObject<TEFloatBuffer>& buffer)
 {
 	auto channelCount = TEFloatBufferGetChannelCount(buffer);
 	auto capacity = TEFloatBufferGetCapacity(buffer);
@@ -97,24 +100,50 @@ OutChopLink::update()
 	}
 }
 
-const float* OutChopLink::data() 
+const float* 
+OutChopLink::data() 
 { 
-	if (!usingSwapBuffer_ && !updated_) update();
-	return chopChannels_.data();
+	if (!usingSwapBuffer_)
+	{
+		if (!updated_) update();
+		return chopChannels_.data();
+	}
+	else
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		return chopChannels_.data();
+	}
 }
 
-const std::vector<std::string>& OutChopLink::channelNames()
+const std::vector<std::string>& 
+OutChopLink::channelNames()
 { 
-	if (!usingSwapBuffer_ && !updated_) update();
-	return chopChannels_.channelNames();
+	if (!usingSwapBuffer_)
+	{
+		if (!updated_) update();
+		return chopChannels_.channelNames();
+	}
+	else
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		return chopChannels_.channelNames();
+	}
 }
 
+ChopChannels& 
+OutChopLink::chopChannels() 
+{ 
+	if (!usingSwapBuffer_) return chopChannels_;
+
+	std::unique_lock<std::mutex> lock(mutex_);
+	return chopChannels_; 
+}
 
 
 void
 OutChopLink::swapBuffers()
 {
-	activeBuffer__.fetch_xor(1, std::memory_order_release);
+	activeBuffer_.fetch_xor(1, std::memory_order_release);
 }
 
 void
@@ -128,12 +157,12 @@ OutChopLink::writeBuffer()
 		{
 			if (swapBuffer_.size() != 2) swapBuffer_.resize(2);
 
-			int nextBufferIndex = activeBuffer__.load(std::memory_order_acquire) ^ 1;
+			int nextBufferIndex = activeBuffer_.load(std::memory_order_acquire) ^ 1;
 			setChannelsFromBuffer(swapBuffer_[nextBufferIndex], teBuffer);
 			{
 				std::lock_guard<std::mutex> lock(mutex_);
-				bufferReadReady_ = true; // Mark as ready for reading
-				cv_.notify_one(); // Notify the reading thread
+				bufferMoveReady_ = true;
+				cv_.notify_one();
 			}
 			swapBuffers();
 			updated_ = true;
@@ -145,10 +174,10 @@ void
 OutChopLink::moveBuffer()
 {
 	std::unique_lock<std::mutex> lock(mutex_);
-	cv_.wait(lock, [this] { return bufferReadReady_; }); // Wait until data is ready
-	int bufferIndex = activeBuffer__.load(std::memory_order_acquire);
+	cv_.wait(lock, [this] { return bufferMoveReady_; }); // Wait until data is ready
+	int bufferIndex = activeBuffer_.load(std::memory_order_acquire);
 
 	chopChannels_ = std::move(swapBuffer_[bufferIndex]);
-	bufferReadReady_ = false; // Reset ready state after reading
+	bufferMoveReady_ = false;
 }
 

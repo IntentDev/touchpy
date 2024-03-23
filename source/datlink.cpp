@@ -99,36 +99,61 @@ OutDatLink::update()
 const DatTable&
 OutDatLink::asTable()
 {
-	if (!usingSwapBuffer_ && !updated_) update();
-
-	if (type_ == DatLinkType::Table)
+	if (!usingSwapBuffer_)
 	{
-		return *table_;
+		if (!updated_) update();
+
+		if (type_ == DatLinkType::Table) return *table_;
+		
+		else
+		{
+			table_->numRows = 1u;
+			table_->numCols = 1u;
+			table_->values.resize(1u);
+			table_->values[0] = string_;
+			return *table_;
+		}
 	}
 	else
 	{
-		table_->numRows = 1u;
-		table_->numCols = 1u;
-		table_->values.resize(1u);
-		table_->values[0] = string_;
-		return *table_;
+		std::unique_lock<std::mutex> lock(mutex_);
+
+		if (type_ == DatLinkType::Table) return *table_;
+		
+		else
+		{
+			table_->numRows = 1u;
+			table_->numCols = 1u;
+			table_->values.resize(1u);
+			table_->values[0] = string_;
+			return *table_;
+		}
 	}
 }
 
 const std::string& 
 OutDatLink::asString()
 {
-	if (!usingSwapBuffer_ && !updated_) update();
+	if (!usingSwapBuffer_)
+	{
+		if (!updated_) update();
 
-	if (type_ == DatLinkType::String) return string_;
-	
-	else return string_ = table_->asString();
+		if (type_ == DatLinkType::String) return string_;
+		else							  return string_ = table_->asString();
+	}
+	else
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+
+		if (type_ == DatLinkType::String) return string_;
+		else							  return string_ = table_->asString();
+	}
 }
 
 void 
 OutDatLink::swapBuffers()
 {
-	activeBuffer__.fetch_xor(1, std::memory_order_release);
+	activeBuffer_.fetch_xor(1, std::memory_order_release);
 }
 
 void OutDatLink::writeBuffer()
@@ -137,25 +162,27 @@ void OutDatLink::writeBuffer()
 	TEResult result = TEInstanceLinkGetObjectValue(instance_, identifier().c_str(), TELinkValueCurrent, value.take());
 	if (result == TEResultSuccess)
 	{
-		int nextBufferIndex = activeBuffer__.load(std::memory_order_acquire) ^ 1;
+		DatLinkType tmpType;
+		int nextBufferIndex = activeBuffer_.load(std::memory_order_acquire) ^ 1;
 		if (value && TEGetType(value) == TEObjectTypeTable)
 		{
 			if (tableSwapBuffer_.size() != 2) tableSwapBuffer_.resize(2);
 			auto& table = tableSwapBuffer_[nextBufferIndex];
-			type_ = DatLinkType::Table;
+			tmpType = DatLinkType::Table;
 			setTableFromValue(table, value);
 		}
 		else if (value && TEGetType(value) == TEObjectTypeString)
 		{
 			if (stringSwapBuffer_.size() != 2) stringSwapBuffer_.resize(2);
 			auto& string = stringSwapBuffer_[nextBufferIndex];
-			type_ = DatLinkType::String;
+			tmpType = DatLinkType::String;
 			setStringFromValue(string, value);
 		}
 		{
 			std::lock_guard<std::mutex> lock(mutex_);
-			bufferReadReady_ = true; // Mark as ready for writing
-			cv_.notify_one(); // Notify the writing thread
+			type_ = tmpType;
+			bufferMoveReady_ = true;
+			cv_.notify_one();
 		}
 		swapBuffers();
 		updated_ = true;
@@ -165,14 +192,13 @@ void OutDatLink::writeBuffer()
 void OutDatLink::moveBuffer()
 {
 	std::unique_lock<std::mutex> lock(mutex_);
-	cv_.wait(lock, [this] { return bufferReadReady_; }); // Wait until data is ready
-	int bufferIndex = activeBuffer__.load(std::memory_order_acquire);
+	cv_.wait(lock, [this] { return bufferMoveReady_; }); // Wait until data is ready
+	int bufferIndex = activeBuffer_.load(std::memory_order_acquire);
 
 	if (type_ == DatLinkType::Table) *table_ = std::move(tableSwapBuffer_[bufferIndex]);
+	else							 string_ = std::move(stringSwapBuffer_[bufferIndex]);
 	
-	else string_ = std::move(stringSwapBuffer_[bufferIndex]);
-	
-	bufferReadReady_ = false;
+	bufferMoveReady_ = false;
 }
 
 

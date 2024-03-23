@@ -114,11 +114,12 @@ private:
 	void update();
 
 	void swapBuffers();
+
 	bool usingSwapBuffer_{ false };
-	std::atomic<int> activeBuffer__{ 0 }; // Index of the buffer that is ready for reading
+	std::atomic<int> activeBuffer_{ 0 }; // Index of the buffer that is ready for reading
 	std::mutex mutex_;
 	std::condition_variable cv_;
-	bool bufferReadReady_{ false };
+	bool bufferMoveReady_{ false };
 
 	std::vector<DatTable>	  tableSwapBuffer_;
 	std::unique_ptr<DatTable> table_;
