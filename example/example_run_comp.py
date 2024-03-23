@@ -68,19 +68,19 @@ class ExampleRunComp:
 		# print some outDat data
 		datOut1 = comp.out_dats['datOut1']
 		if (datOut1 is not None):
-			print(datOut1.as_string())
+			# print(datOut1.as_string())
 			# print(datOut1.as_table().row(0))
 			# print(datOut1.as_table().row(1))
 			# print(datOut1.as_table().col(0))
 			# print(datOut1.as_table().cell(2,2))
-			print(datOut1.as_table().as_list())
+			# print(datOut1.as_table().as_list())
 			pass
 			
 		# print some outDat data
 		datOut2 = comp.out_dats[1]
 		if (datOut2 is not None):
-			print(datOut2.as_string())
-			print(datOut2.as_table().as_list())
+			# print(datOut2.as_string())
+			# print(datOut2.as_table().as_list())
 			pass
 		
 		# print out all the parameters name on the first frame

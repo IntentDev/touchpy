@@ -587,7 +587,10 @@ Comp::applyLayoutChange()
 									inTopLinks_->addLink(info);
 
 								else if (info->scope == TEScopeOutput)
+								{
 									outTopLinks_->addLink(info);
+									(*outTopLinks_)[outTopLinks_->size() - 1].setRequiresCudaMemLock(usingSwapBuffer_);
+								}
 							}
 
 							if (info->type == TELinkTypeFloatBuffer)
