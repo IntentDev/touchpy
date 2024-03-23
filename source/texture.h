@@ -6,7 +6,7 @@
 
 #include <TouchEngine/TouchEngine.h>
 #include <vector>
-
+#include <mutex>
 
 class Texture
 {
@@ -17,7 +17,8 @@ public:
 		VkPhysicalDevice physicalDevice_, 
 		VkDevice device, 
 		TEInstance* teInstance, 
-		TEVulkanTexture* teTexture
+		TEVulkanTexture* teTexture,
+		bool requiresCudaMemLock = false
 	);
 
 	Texture(
@@ -76,8 +77,10 @@ public:
 
 	void* cudaBuffer() const { return cudaBuffer_; }
 	size_t cudaBufferSize() const { return cudaBufferSize_; }
-	const CUDAMemory& cudaMemory() const { return cudaMemory_; }
+	const CUDAMemory& cudaMemory() const;
+	void setRequiresCudaMemLock(bool requiresLock) { requiresCudaMemLock_ = requiresLock; }
 	void setCudaMemoryDesc(CUDAMemoryDesc desc) { cudaMemory_.desc = desc; }
+
 
 	void transferToInputLink(
 		TouchObject<TEInstance> teInstance, 
@@ -134,14 +137,16 @@ private:
 	//VkSemaphore             cudaCudaUpdateVkSemaphore_    { VK_NULL_HANDLE };
 	//cudaExternalSemaphore_t cudaExtCudaUpdateVkSemaphore_ { nullptr };
 
-	cudaExternalMemory_t             cudaExtImageMemory_ { nullptr };
-	cudaSurfaceObject_t              cudaSurface_        { 0 };
-	cudaMipmappedArray_t             cudaMipmappedArray_ { nullptr };
-	cudaArray_t                      cudaArray_          { nullptr };
-	void*                            cudaBuffer_         { nullptr };
-	size_t                           cudaBufferSize_     { 0 };
+	cudaExternalMemory_t cudaExtImageMemory_  { nullptr };
+	cudaSurfaceObject_t  cudaSurface_         { 0 };
+	cudaMipmappedArray_t cudaMipmappedArray_  { nullptr };
+	cudaArray_t          cudaArray_           { nullptr };
+	void*                cudaBuffer_          { nullptr };
+	size_t               cudaBufferSize_      { 0 };
 
-	CUDAMemory                       cudaMemory_         { };
+	CUDAMemory           cudaMemory_          { };
+	bool                 requiresCudaMemLock_ { false };
+	mutable              std::mutex mutex_;
 
 	void setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory);
 	void cudaImportTimelineSemaphore(HANDLE semaphoreHandle);

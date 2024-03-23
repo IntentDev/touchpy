@@ -15,16 +15,19 @@
 #include <memory>
 #include <functional>
 #include <chrono>
+#include <thread>
+#include <atomic>
 
 
 class Comp
 {
 public:
 	Comp();
-	Comp(const std::string& filePath);
+	Comp(const std::string& filePath, bool freeRunning = false);
 	~Comp();
 
 	bool loadTox(const std::string& filePath);
+	bool unloadTox();
 	void unload();
 	bool loaded() const; 
 	bool ready() const { return ready_; }
@@ -34,8 +37,13 @@ public:
 		std::function<void(Comp&, std::shared_ptr<void>)> callback, 
 		std::shared_ptr<void> userData
 	);
+	void clearOnFrameStartCallback();
+
+
 	void runUpdateLoop(bool updateStartsNextFrame = false);
 	void stopUpdateLoop();
+	void stopFreeRunning();
+	bool freeRunning() const { return freeRunning_; }
 
 	InTopLinks& inputTopLinks() { return *inTopLinks_; }
 	OutTopLinks& outputTopLinks() { return *outTopLinks_; }
@@ -47,12 +55,14 @@ public:
 
 private:
 
-	// shared state between the main thread and the TouchEngine thread
+	// shared state between the main or free running thread and the TouchEngine thread
 	//-----------------------------------------------------------------------------------------------------------------
 
 	mutable std::mutex                      mutex_;
+	std::condition_variable 			    cv_;
 	bool                                    ssPendingLayoutChange_ { false };
 	bool                                    ssLoaded_              { false };
+	//bool                                    ssUnloaded_            { false };
 	bool                                    ssReady_			   { false };
 	bool                                    ssInFrame_             { false };
 	std::vector<std::string>                ssPendingOutputTextures_;
@@ -62,6 +72,14 @@ private:
 	void getState(bool& configured, bool& loaded, bool& linksChanged, bool& inFrame);
 	void setInFrame(bool inFrame);
 
+	// free running 
+	//-----------------------------------------------------------------------------------------------------------------
+	bool 								  freeRunning_ { false };
+	std::atomic<bool>					  frRunning_ { false };
+	std::thread							  frThread_;
+
+	void								  frUpdateLoop();
+	void								  startFreeRunning();
 	
 
 	// main thread only
@@ -99,7 +117,7 @@ private:
 	std::unique_ptr<OutDatLinks>       outDatLinks_;
 	std::unique_ptr<ParLinkCollection> parLinks_;
 
-	bool                               doubleBufferOutputs_ { false };
+	bool                               usingSwapBuffer_		{ false };
 	bool							   updateLoopRunning_	{ false };
 	uint64_t 						   frameCount_          { 0 };
 	std::shared_ptr<void>              onFrameStartCallbackUserData_ { nullptr };
@@ -121,6 +139,7 @@ private:
 	void setCudaDevice();
 
 
+
 	// TouchEngine thread only
 	//-----------------------------------------------------------------------------------------------------------------
 
@@ -134,11 +153,12 @@ private:
 		int32_t     end_time_scale,
 		void*       info);
 
-	void onEventInstanceReady(TEResult result);
-	void onEventInstanceDidLoad(TEResult result);
-	void onEventInstanceDidUnload(TEResult result);
-	void onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale, int64_t end_time_value, int32_t end_time_scale);
-	void onEventGeneral(TEResult result, uint64_t start_time, uint64_t end_time);
+	void onEventInstanceReady(TEResult result, Comp* comp);
+	void onEventInstanceDidLoad(TEResult result, Comp* comp);
+	void onEventInstanceDidUnload(TEResult result, Comp* comp);
+	void onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale, 
+		int64_t end_time_value, int32_t end_time_scale, Comp* comp);
+	void onEventGeneral(TEResult result, uint64_t start_time, uint64_t end_time, Comp* comp);
 
 	static void	linkEventCallback(
 		TEInstance* instance, 

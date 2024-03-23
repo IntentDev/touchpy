@@ -64,9 +64,6 @@ void initChopLinkBindings(nb::module_& m)
 		},
 		nb::rv_policy::automatic);
 
-
-
-
 	nb::class_<OutChopLink> outChopLink(m, "OutChopLink");
 	outChopLink.doc() = "An in or out CHOP in a TouchDesigner component";
 	outChopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
@@ -74,9 +71,10 @@ void initChopLinkBindings(nb::module_& m)
 
 	outChopLink.def("as_numpy", [](OutChopLink& self)
 		{
+			auto& chans = self.chopChannels();
 			size_t shape[2] = { 
-				static_cast<size_t>(self.channelCount()),
-				static_cast<size_t>(self.valueCount())
+				static_cast<size_t>(chans.channelCount()),
+				static_cast<size_t>(chans.valueCount())
 			};
 			return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(self.data(), 2, shape);
 		},
@@ -84,9 +82,10 @@ void initChopLinkBindings(nb::module_& m)
 
 	outChopLink.def("as_numpy_ref", [](OutChopLink& self)
 		{
+			auto& chans = self.chopChannels();
 			size_t shape[2] = {
-				static_cast<size_t>(self.channelCount()),
-				static_cast<size_t>(self.valueCount())
+				static_cast<size_t>(chans.channelCount()),
+				static_cast<size_t>(chans.valueCount())
 			};
 			return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(self.data(), 2, shape);
 		},

@@ -25,15 +25,15 @@ std::array<size_t, 3> TopLink::shape()
 	return extent;
 }
 
-
 void 
 OutTopLink::addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTexture* teTexture)
 {
 	if (scope_ != Link::Scope::Output)
 		return;
 
-	textures_.push_back(std::make_unique<Texture>(physicalDevice_, device_, teInstance, teTexture));
-	handleMap_[textures_.back()->textureHandle()] = textures_.back().get();
+	textures_.push_back(std::make_unique<Texture>(physicalDevice_, device_, teInstance, teTexture, requiresCudaMemLock_));
+	auto& texture = textures_.back();
+	handleMap_[texture->textureHandle()] = texture.get();
 }
 
 void 
@@ -85,23 +85,14 @@ OutTopLink::onOutputTextureChange(cudaStream_t cudaStream_)
 
 }
 
-//CUDAMemory OutTopLink::cudaMemory()
-//{
-//	auto currentTex = currentTexture();
-//	CUDAMemory cudaMemory;
-//	cudaMemory.ptr = static_cast<void*>(currentTex->cudaBuffer());
-//	cudaMemory.size = currentTex->cudaBufferSize();
-//
-//	CUDAMemoryShape shape;
-//	shape.width = currentTex->width();
-//	shape.height = currentTex->height();
-//	shape.numComponents = 4;
-//	cudaMemory.shape = shape;
-//
-//
-//
-//	return cudaMemory;
-//}
+void 
+OutTopLink::setRequiresCudaMemLock(bool requiresCudaMemLock) 
+{ 
+	requiresCudaMemLock_ = requiresCudaMemLock; 
+
+	for (auto& tex : textures_)
+		tex->setRequiresCudaMemLock(requiresCudaMemLock_);
+}
 
 void 
 InTopLink::setInputTexture(VkExtent2D extent, VkFormat format)
