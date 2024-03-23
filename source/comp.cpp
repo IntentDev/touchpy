@@ -32,12 +32,14 @@ Comp::initComp()
 
 Comp::~Comp()
 {
-	if (freeRunning_)
-	{
-		stopFreeRunning();
-	}
+	if (freeRunning_) stopFreeRunning();
+	else if (updateLoopRunning_) stopUpdateLoop();
+
+	clearOnFrameStartCallback();
+
 	CUDA_CHECK(cudaStreamDestroy(cudaStream_));
-	TE_CHECK(TEInstanceUnload(instance_));
+
+	//unload();
 	vkDestroyFence(device_, submitFence_, nullptr);
 }
 
@@ -146,15 +148,29 @@ bool
 Comp::loadTox(const std::string& filePath)
 {
 	filePath_ = filePath;
-	unload();
+	unloadTox();
 	return load();
 }
 
+bool
+Comp::unloadTox()
+{
+	// need to implement this
+	return true;
+}
 
 void 
 Comp::unload()
 {
-	
+	// this won't work because TEEventInstanceReady is passed to the callback in addition to TEEventInstanceDidUnload
+
+	//std::unique_lock<std::mutex> lock(mutex_);
+	//if (ssLoaded_)
+	//{
+	//	std::cout << "Unloading TouchEngine instance..." << std::endl;
+	//	TE_CHECK(TEInstanceUnload(instance_));
+	//	cv_.wait(lock, [this] { return ssUnloaded_; });
+	//}
 }
 
 
@@ -233,7 +249,11 @@ Comp::onEventInstanceDidLoad(TEResult result, Comp* comp)
 void 
 Comp::onEventInstanceDidUnload(TEResult result, Comp* comp)
 {
-	std::cout << "Instance unloaded" << std::endl;
+	// this won't work because TEEventInstanceReady is passed to the callback in addition to TEEventInstanceDidUnload
+
+	//std::lock_guard<std::mutex> lock(comp->mutex_);
+	//comp->ssUnloaded_ = true;
+	//std::cout << "Unloaded TouchEngine!" << std::endl;
 }
 
 void 
@@ -409,8 +429,23 @@ void Comp::setOnFrameStartCallback(
 	std::function<void(Comp&, std::shared_ptr<void>)> callback,
 	std::shared_ptr<void> userData)
 {
+	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
+
+	if (usingSwapBuffer_) lock.lock();
+	
 	onFrameStartCallback_ = callback;
 	onFrameStartCallbackUserData_ = userData;
+
+}
+
+void Comp::clearOnFrameStartCallback()
+{
+	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
+
+	if (usingSwapBuffer_) lock.lock();
+
+	onFrameStartCallback_ = nullptr;
+	onFrameStartCallbackUserData_ = nullptr;
 }
 
 void Comp::runUpdateLoop(bool updateStartsNextFrame)

@@ -74,10 +74,6 @@ void initCompBindings(nb::module_& m)
 		}
 	);
 
-	comp.def("clear_on_frame_callback", [](Comp& self)
-		{
-			self.setOnFrameStartCallback(nullptr, nullptr);
-		}
-	);
+	comp.def("clear_on_frame_callback", &Comp::clearOnFrameStartCallback, nb::rv_policy::reference_internal);
 
 }

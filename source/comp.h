@@ -27,6 +27,7 @@ public:
 	~Comp();
 
 	bool loadTox(const std::string& filePath);
+	bool unloadTox();
 	void unload();
 	bool loaded() const; 
 	bool ready() const { return ready_; }
@@ -36,6 +37,9 @@ public:
 		std::function<void(Comp&, std::shared_ptr<void>)> callback, 
 		std::shared_ptr<void> userData
 	);
+	void clearOnFrameStartCallback();
+
+
 	void runUpdateLoop(bool updateStartsNextFrame = false);
 	void stopUpdateLoop();
 	void stopFreeRunning();
@@ -58,6 +62,7 @@ private:
 	std::condition_variable 			    cv_;
 	bool                                    ssPendingLayoutChange_ { false };
 	bool                                    ssLoaded_              { false };
+	//bool                                    ssUnloaded_            { false };
 	bool                                    ssReady_			   { false };
 	bool                                    ssInFrame_             { false };
 	std::vector<std::string>                ssPendingOutputTextures_;
