@@ -38,6 +38,7 @@ public:
 	);
 	void runUpdateLoop(bool updateStartsNextFrame = false);
 	void stopUpdateLoop();
+	void stopFreeRunning();
 
 	InTopLinks& inputTopLinks() { return *inTopLinks_; }
 	OutTopLinks& outputTopLinks() { return *outTopLinks_; }
@@ -73,7 +74,7 @@ private:
 
 	void								  frUpdateLoop();
 	void								  startFreeRunning();
-	void								  stopFreeRunning();
+	
 
 
 	// main thread only
@@ -111,7 +112,7 @@ private:
 	std::unique_ptr<OutDatLinks>       outDatLinks_;
 	std::unique_ptr<ParLinkCollection> parLinks_;
 
-	bool                               doubleBufferOutputs_ { true };
+	bool                               usingSwapBuffer_		{ false };
 	bool							   updateLoopRunning_	{ false };
 	uint64_t 						   frameCount_          { 0 };
 	std::shared_ptr<void>              onFrameStartCallbackUserData_ { nullptr };

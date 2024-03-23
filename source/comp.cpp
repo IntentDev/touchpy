@@ -336,7 +336,7 @@ Comp::onLinkEventValueChange(const char* identifier)
 		}
 		case TELinkTypeFloatBuffer:
 		{
-			if (doubleBufferOutputs_)
+			if (usingSwapBuffer_)
 			{
 				auto chopLink = outChopLinks_->getLinkByIdentifier(identifier);
 				chopLink->writeBuffer();
@@ -349,7 +349,7 @@ Comp::onLinkEventValueChange(const char* identifier)
 		}
 		case TELinkTypeStringData:
 		{
-			if (doubleBufferOutputs_)
+			if (usingSwapBuffer_)
 			{
 				auto datLink = outDatLinks_->getLinkByIdentifier(identifier);
 				datLink->writeBuffer();
@@ -431,7 +431,7 @@ void Comp::stopUpdateLoop()
 
 void Comp::startFreeRunning()
 {
-	freeRunning_ = true;
+	usingSwapBuffer_ = true;
 	frRunning_ = true;
 	frThread_ = std::thread(&Comp::frUpdateLoop, this);
 
@@ -598,7 +598,7 @@ Comp::applyLayoutChange()
 								else if (info->scope == TEScopeOutput)
 								{
 									outChopLinks_->addLink(info);
-									(*outChopLinks_)[outChopLinks_->size() - 1].setUsingSwapBuffer(doubleBufferOutputs_);
+									(*outChopLinks_)[outChopLinks_->size() - 1].setUsingSwapBuffer(usingSwapBuffer_);
 								}
 							}
 
@@ -610,7 +610,7 @@ Comp::applyLayoutChange()
 								else if (info->scope == TEScopeOutput)
 								{
 									outDatLinks_->addLink(info);
-									(*outDatLinks_)[outDatLinks_->size() - 1].setUsingSwapBuffer(doubleBufferOutputs_);
+									(*outDatLinks_)[outDatLinks_->size() - 1].setUsingSwapBuffer(usingSwapBuffer_);
 								}
 							}
 
@@ -655,7 +655,7 @@ Comp::applyOutputTextureChange()
 void 
 Comp::applyOutputFloatBufferChange()
 {
-	if (!doubleBufferOutputs_)
+	if (!usingSwapBuffer_)
 	{
 		for (const auto& identifier : changedOutputFloatBuffers_)
 		{
@@ -680,7 +680,7 @@ Comp::applyOutputFloatBufferChange()
 void 
 Comp::applyOutputStringDataChange()
 {
-	if (!doubleBufferOutputs_)
+	if (!usingSwapBuffer_)
 	{
 		for (const auto& identifier : changedOutputStringData_)
 		{
