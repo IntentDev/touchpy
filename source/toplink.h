@@ -120,6 +120,10 @@ public:
 	void addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTexture* teTexture);
 	void onOutputTextureChange(cudaStream_t cudaStream_);
 	const CUDAMemory& cudaMemory() { return currentTexture()->cudaMemory(); }
+	void setRequiresCudaMemLock(bool requiresCudaMemLock);
+
+private:
+	bool requiresCudaMemLock_ { false };
 
 };	
 

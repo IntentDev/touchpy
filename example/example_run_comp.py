@@ -68,7 +68,7 @@ class ExampleRunComp:
 		# print some outDat data
 		datOut1 = comp.out_dats['datOut1']
 		if (datOut1 is not None):
-			# print(datOut1.type_desc(), datOut1.as_string())
+			# print(datOut1.as_string())
 			# print(datOut1.as_table().row(0))
 			# print(datOut1.as_table().row(1))
 			# print(datOut1.as_table().col(0))
@@ -79,7 +79,7 @@ class ExampleRunComp:
 		# print some outDat data
 		datOut2 = comp.out_dats[1]
 		if (datOut2 is not None):
-			# print(datOut2.type_desc(), datOut2.as_string())
+			# print(datOut2.as_string())
 			# print(datOut2.as_table().as_list())
 			pass
 		
@@ -110,14 +110,15 @@ class ExampleRunComp:
 		translate.set([11.1, 22.2, 33.2])
 		translate.set(11.1, 22.2, 33.5)
 
+
+		# copy the cuda memory from out_top_link to in_top_link
+		cudamem = comp.out_tops[0].cuda_memory()
+		comp.in_tops[0].copy_cuda_memory(cudamem)
+
 		# copy the cuda memory from out_top_link to in_top_link
 		cudamem = comp.out_tops[1].cuda_memory()
 		comp.in_tops[1].copy_cuda_memory(cudamem)
 
-		# copy the cuda memory from out_top_link to in_top_link
-		# cudamem = comp.out_tops[2].cuda_memory()
-		# comp.in_tops[2].copy_cuda_memory(cudamem)
-	
 		with torch.no_grad():
 			# tensor = comp.out_tops[0].as_tensor() # get the first top as a tensor
 			# tensor = comp.out_tops[0].as_tensor(tp.ComponentMask.RGB) # get just the first 3 channels

@@ -3,7 +3,8 @@
 #include <iostream>
 #include <algorithm>
 
-void InChopLink::set(ChopChannelsReference&& chopChannels)
+void 
+InChopLink::set(ChopChannelsReference&& chopChannels)
 {
 
 	if (chopChannels.channelCount_ <= 0 || chopChannels.capacity_ == 0 || chopChannels.valueCount_ == 0) return;
@@ -41,7 +42,8 @@ void InChopLink::set(ChopChannelsReference&& chopChannels)
 	}
 }
 
-bool InChopLink::bufferCopyable(TouchObject<TEFloatBuffer> buffer, const ChopChannelsReference& chopChannels) const
+bool 
+InChopLink::bufferCopyable(TouchObject<TEFloatBuffer> buffer, const ChopChannelsReference& chopChannels) const
 {
 	auto newChannelCount = TEFloatBufferGetChannelCount(buffer);
 	if (newChannelCount != chopChannels.channelCount()
@@ -65,16 +67,12 @@ bool InChopLink::bufferCopyable(TouchObject<TEFloatBuffer> buffer, const ChopCha
 	return true;
 }
 
-
-OutChopLink::OutChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo, bool doubleBuffered)
-	:	ChopLink(instance, linkInfo),
-		doubleBuffered_(doubleBuffered) { }
-
 OutChopLink::OutChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) 
 	:	ChopLink(instance, linkInfo) { }
 
 
-void OutChopLink::setChannelsFromBuffer(TouchObject<TEFloatBuffer>& buffer)
+void 
+OutChopLink::setChannelsFromBuffer(ChopChannels& chopChannels, TouchObject<TEFloatBuffer>& buffer)
 {
 	auto channelCount = TEFloatBufferGetChannelCount(buffer);
 	auto capacity = TEFloatBufferGetCapacity(buffer);
@@ -85,7 +83,7 @@ void OutChopLink::setChannelsFromBuffer(TouchObject<TEFloatBuffer>& buffer)
 	const float* const* data = TEFloatBufferGetValues(buffer);
 	const char* const* names = TEFloatBufferGetChannelNames(buffer);
 
-	chopChannels_.setChannels(data, channelCount, capacity, valueCount, rate, isTimeDependent, names);
+	chopChannels.setChannels(data, channelCount, capacity, valueCount, rate, isTimeDependent, names);
 }
 
 void
@@ -96,66 +94,90 @@ OutChopLink::update()
 	{
 		if (buffer)
 		{
-			setChannelsFromBuffer(buffer);
+			setChannelsFromBuffer(chopChannels_, buffer);
 			updated_ = true;
 		}
 	}
 }
 
-const float* OutChopLink::data() 
+const float* 
+OutChopLink::data() 
 { 
-	if (!updated_) update();
-	return chopChannels_.data();
-}
-
-const std::vector<std::string>& OutChopLink::channelNames()
-{ 
-	if (!updated_) update();
-	return chopChannels_.channelNames();
-}
-
-
-
-void
-OutChopLink::swapTeBuffers()
-{
-	activeTeBuffer_.fetch_xor(1, std::memory_order_release);
-}
-
-void
-OutChopLink::updateTeBuffer()
-{
-	int nextBufferIndex = activeTeBuffer_.load(std::memory_order_acquire) ^ 1;
-	TouchObject<TEFloatBuffer>& buffer = teBuffers_[nextBufferIndex];
-
-	if (TEInstanceLinkGetFloatBufferValue(instance_, identifier_.c_str(), TELinkValueCurrent, buffer.take()) == TEResultSuccess)
+	if (!usingSwapBuffer_)
 	{
-		if (buffer)
+		if (!updated_) update();
+		return chopChannels_.data();
+	}
+	else
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		return chopChannels_.data();
+	}
+}
+
+const std::vector<std::string>& 
+OutChopLink::channelNames()
+{ 
+	if (!usingSwapBuffer_)
+	{
+		if (!updated_) update();
+		return chopChannels_.channelNames();
+	}
+	else
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		return chopChannels_.channelNames();
+	}
+}
+
+ChopChannels& 
+OutChopLink::chopChannels() 
+{ 
+	if (!usingSwapBuffer_) return chopChannels_;
+
+	std::unique_lock<std::mutex> lock(mutex_);
+	return chopChannels_; 
+}
+
+
+void
+OutChopLink::swapBuffers()
+{
+	activeBuffer_.fetch_xor(1, std::memory_order_release);
+}
+
+void
+OutChopLink::writeBuffer()
+{
+	TouchObject<TEFloatBuffer> teBuffer;
+
+	if (TEInstanceLinkGetFloatBufferValue(instance_, identifier_.c_str(), TELinkValueCurrent, teBuffer.take()) == TEResultSuccess)
+	{
+		if (teBuffer)
 		{
+			if (swapBuffer_.size() != 2) swapBuffer_.resize(2);
+
+			int nextBufferIndex = activeBuffer_.load(std::memory_order_acquire) ^ 1;
+			setChannelsFromBuffer(swapBuffer_[nextBufferIndex], teBuffer);
 			{
 				std::lock_guard<std::mutex> lock(mutex_);
-				teBufferReadReady_ = true; // Mark as ready for reading
-				cv_.notify_one(); // Notify the reading thread
-
+				bufferMoveReady_ = true;
+				cv_.notify_one();
 			}
+			swapBuffers();
+			updated_ = true;
 		}
 	}
 }
 
-void 
-OutChopLink::copyTeBuffer()
+void
+OutChopLink::moveBuffer()
 {
 	std::unique_lock<std::mutex> lock(mutex_);
-	cv_.wait(lock, [this] { return teBufferReadReady_; }); // Wait until data is ready
-	int bufferIndex = activeTeBuffer_.load(std::memory_order_acquire);
+	cv_.wait(lock, [this] { return bufferMoveReady_; }); // Wait until data is ready
+	int bufferIndex = activeBuffer_.load(std::memory_order_acquire);
 
-	TouchObject<TEFloatBuffer>& buffer = teBuffers_[bufferIndex];
-
-	if (buffer)
-	{
-		setChannelsFromBuffer(buffer);
-		updated_ = true;
-		teBufferReadReady_ = false; // Reset ready state after reading
-	}
+	chopChannels_ = std::move(swapBuffer_[bufferIndex]);
+	bufferMoveReady_ = false;
 }
 

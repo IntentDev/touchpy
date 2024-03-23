@@ -1,5 +1,6 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/stl/string_view.h>
 #include <nanobind/stl/vector.h>
 
 #include "datlink.h"
@@ -89,9 +90,8 @@ void initDatLinkBindings(nb::module_& m)
 	nb::class_<OutDatLink> outDatLink(m, "OutDatLink");
 	outDatLink.doc() = "A in or out DAT in a TouchDesigner component";
 	outDatLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
-		.def("as_table", &OutDatLink::asTable)
-		.def("as_string", &OutDatLink::asString)
-		.def("type_desc", &OutDatLink::getTypeDescription)
+		.def("as_table", &OutDatLink::asTable, nb::rv_policy::reference_internal)
+		.def("as_string", &OutDatLink::asString, nb::rv_policy::reference_internal)
 		;
 
 	nb::class_<OutDatLinks> outDatLinks(m, "OutDatLinks");

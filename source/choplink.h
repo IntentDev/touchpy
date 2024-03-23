@@ -13,7 +13,6 @@
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
-#include <thread>
 
 
 class ChopLink : public Link<ChopLink>
@@ -50,41 +49,37 @@ public:
 class OutChopLink : public ChopLink
 {
 public:
-	OutChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo, bool doubleBuffered);
 	OutChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo);
 	~OutChopLink() { }
 
-	void update();
-
-	void swapTeBuffers();
-	void updateTeBuffer();
-	void copyTeBuffer();
-
-	void setDoubleBuffered(bool doubleBuffered) { doubleBuffered_ = doubleBuffered; }
-	bool doubleBuffered() const { return doubleBuffered_; }
+	void writeBuffer();
+	void moveBuffer();
+	void setUsingSwapBuffer(bool usingSwapBuffer) { usingSwapBuffer_ = usingSwapBuffer; }
 
 	const float* data();
 	const std::vector<std::string>& channelNames();
-	ChopChannels& chopChannels() { return chopChannels_; }
+	ChopChannels& chopChannels();
 
-	int32_t channelCount() const { return chopChannels_.channelCount_; }
-	uint32_t capacity() const { return chopChannels_.capacity_; }
-	uint32_t valueCount() const { return chopChannels_.valueCount_; }
-	double rate () const { return chopChannels_.rate_; }
-	bool isTimeDependent() const { return chopChannels_.isTimeDependent_; }
+	//int32_t channelCount() const { return chopChannels_.channelCount_; }
+	//uint32_t capacity() const { return chopChannels_.capacity_; }
+	//uint32_t valueCount() const { return chopChannels_.valueCount_; }
+	//double rate () const { return chopChannels_.rate_; }
+	//bool isTimeDependent() const { return chopChannels_.isTimeDependent_; }
 
 
 
 private:
-	void setChannelsFromBuffer(TouchObject<TEFloatBuffer>& buffer);
+	void update();
+	void setChannelsFromBuffer(ChopChannels& chopChannels, TouchObject<TEFloatBuffer>& buffer);
 
-	TouchObject<TEFloatBuffer> teBuffers_[2];
-	std::atomic<int> activeTeBuffer_{ 0 }; // Index of the buffer that is ready for reading
+	void swapBuffers();
+	bool usingSwapBuffer_ { false };
+	std::atomic<int> activeBuffer_{ 0 }; // Index of the buffer that is ready for reading
 	std::mutex mutex_;
 	std::condition_variable cv_;
-	bool doubleBuffered_{ false };
-	bool teBufferReadReady_{ false };
+	bool bufferMoveReady_{ false };
 
+	std::vector<ChopChannels> swapBuffer_;
 	ChopChannels chopChannels_;
 };
 

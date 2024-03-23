@@ -15,14 +15,27 @@ Returns:
 	True if the .tox file was loaded successfully, False otherwise
 )";
 
+//void safeCallPythonCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, Comp& comp, std::shared_ptr<void> userData)
+//{
+//	nb::gil_scoped_acquire acquire();
+//	callback(comp, userData);
+//
+//
+//}
 
+void safeCallPythonCallback(nb::callable pythonCallback, Comp& comp, std::shared_ptr<void> userData)
+{
+	nb::gil_scoped_acquire acquire;
+	std::cout << "safeCallPythonCallback" << std::endl;
+	pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userData);
+}
 
 void initCompBindings(nb::module_& m)
 {
 	nb::class_<Comp> comp(m, "Comp");
 	comp.doc() = "A TouchDesigner component loaded in a TouchEngine instance.";
 	comp.def(nb::init<>())
-		.def(nb::init<const std::string&>(), nb::rv_policy::reference_internal)
+		.def(nb::init<const std::string&, bool>(), "tox_path"_a, "free_running"_a = false, nb::rv_policy::reference_internal)
 
 		.def("load_tox", &Comp::loadTox, "path"_a, nb::rv_policy::reference_internal, load_toxDoc)
 		.def("loaded", &Comp::loaded, nb::rv_policy::reference_internal)
@@ -30,6 +43,7 @@ void initCompBindings(nb::module_& m)
 		.def("start_next_frame", &Comp::startNextFrame, nb::rv_policy::reference_internal)
 		.def("start", &Comp::runUpdateLoop, "update_starts_next_frame"_a = false, nb::rv_policy::reference_internal)
 		.def("stop", &Comp::stopUpdateLoop, nb::rv_policy::reference_internal)
+		.def("stop_free_running", &Comp::stopFreeRunning, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_tops", &Comp::inputTopLinks, nb::rv_policy::reference_internal)
 		.def_prop_ro("out_tops", &Comp::outputTopLinks, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_chops", &Comp::inChopLinks, nb::rv_policy::reference_internal)
@@ -45,10 +59,21 @@ void initCompBindings(nb::module_& m)
 			self.setOnFrameStartCallback([pythonCallback](Comp& comp, std::shared_ptr<void> userData)
 				{
 					auto& userDataPyObj = *std::static_pointer_cast<nb::object>(userData);
-					pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userDataPyObj);
+					if (!comp.freeRunning())
+					{
+						pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userDataPyObj);
+					}
+
+					else
+					{
+						nb::gil_scoped_acquire acquire;
+						pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userDataPyObj);
+					}
 				},
 				userDataPtr);
 		}
 	);
+
+	comp.def("clear_on_frame_callback", &Comp::clearOnFrameStartCallback, nb::rv_policy::reference_internal);
 
 }

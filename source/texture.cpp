@@ -7,10 +7,11 @@
 
 #include "cudamemory.h"
 
-Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* teInstance, TEVulkanTexture* texture)
+Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* teInstance, TEVulkanTexture* texture, bool requiresCudaMemLock)
 	:	physicalDevice_(physicalDevice_),
 		device_(device),
-		flipped_(TETextureGetOrigin(texture) == TETextureOriginBottomLeft)
+		flipped_(TETextureGetOrigin(texture) == TETextureOriginBottomLeft),
+		requiresCudaMemLock_(requiresCudaMemLock)
 
 {
 	format_ = TEVulkanTextureGetFormat(texture);
@@ -606,6 +607,15 @@ void Texture::copyCudaMemToImage(void* memory,
 
 }
 
+const CUDAMemory& 
+Texture::cudaMemory() const 
+{ 
+	if (!requiresCudaMemLock_) return cudaMemory_;
+
+	std::unique_lock<std::mutex> lock(mutex_);
+	return cudaMemory_; 
+}
+
 void Texture::transferToInputLink(TouchObject<TEInstance> teInstance, TouchObject<TEGraphicsContext> context, const char* identifier)
 {
 	TouchObject<TETexture> texture;
@@ -703,21 +713,24 @@ void Texture::cudaAllocateMemory()
 
 	CUDA_CHECK(cudaMalloc((void**)&cudaBuffer_, cudaBufferSize_));
 
-	cudaMemory_.desc.shape[0] = numComponents_;
-	cudaMemory_.desc.shape[1] = extent_.height;
-	cudaMemory_.desc.shape[2] = extent_.width;
-	cudaMemory_.desc.componentSize = componentSize_;
-	cudaMemory_.desc.dataType = cudaDataTypeFromVkFormat(format_);
+	{
+		std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
+		if (requiresCudaMemLock_) lock.lock();
 
-	// Planar memory layout
-	cudaMemory_.desc.strides[0] = extent_.width * extent_.height; // component stride // num elements to next component
-	cudaMemory_.desc.strides[1] = extent_.width; // row stride // num elements to row
-	cudaMemory_.desc.strides[2] = 1; // column stride // num elements to column
+		cudaMemory_.desc.shape[0] = numComponents_;
+		cudaMemory_.desc.shape[1] = extent_.height;
+		cudaMemory_.desc.shape[2] = extent_.width;
+		cudaMemory_.desc.componentSize = componentSize_;
+		cudaMemory_.desc.dataType = cudaDataTypeFromVkFormat(format_);
 
-	cudaMemory_.ptr = cudaBuffer_;
-	cudaMemory_.size = cudaBufferSize_;
+		// Planar memory layout
+		cudaMemory_.desc.strides[0] = extent_.width * extent_.height; // component stride // num elements to next component
+		cudaMemory_.desc.strides[1] = extent_.width; // row stride // num elements to row
+		cudaMemory_.desc.strides[2] = 1; // column stride // num elements to column
 
-	//std::cout << "Cuda Memory Allocated: " << cudaMemory_.size << ", per pixel: " << pixelSize << std::endl;
+		cudaMemory_.ptr = cudaBuffer_;
+		cudaMemory_.size = cudaBufferSize_;
+	}
 
 }
 
