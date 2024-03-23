@@ -39,6 +39,7 @@ public:
 	void runUpdateLoop(bool updateStartsNextFrame = false);
 	void stopUpdateLoop();
 	void stopFreeRunning();
+	bool freeRunning() const { return freeRunning_; }
 
 	InTopLinks& inputTopLinks() { return *inTopLinks_; }
 	OutTopLinks& outputTopLinks() { return *outTopLinks_; }
@@ -75,7 +76,6 @@ private:
 	void								  frUpdateLoop();
 	void								  startFreeRunning();
 	
-
 
 	// main thread only
 	//-----------------------------------------------------------------------------------------------------------------
@@ -132,6 +132,7 @@ private:
 	void createRenderer();
 	void cudaInit();
 	void setCudaDevice();
+
 
 
 	// TouchEngine thread only

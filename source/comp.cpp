@@ -5,8 +5,6 @@
 #include <thread>
 #include <array>
 
-
-
 Comp::Comp()
 {
 	initComp();
@@ -437,6 +435,7 @@ void Comp::startFreeRunning()
 
 }
 
+
 void Comp::stopFreeRunning()
 {
 	frRunning_.store(false);
@@ -445,6 +444,8 @@ void Comp::stopFreeRunning()
 	freeRunning_ = false;
 }
 
+//extern void
+//safeCallPythonCallback(Comp* comp, std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData);
 
 void Comp::frUpdateLoop()
 {
@@ -476,6 +477,9 @@ void Comp::frUpdateLoop()
 			}
 
 			applyValueChanges();
+
+			if (onFrameStartCallback_)
+				onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
 
 			startNextFrame();
 		}

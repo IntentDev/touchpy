@@ -15,7 +15,20 @@ Returns:
 	True if the .tox file was loaded successfully, False otherwise
 )";
 
+//void safeCallPythonCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, Comp& comp, std::shared_ptr<void> userData)
+//{
+//	nb::gil_scoped_acquire acquire();
+//	callback(comp, userData);
+//
+//
+//}
 
+void safeCallPythonCallback(nb::callable pythonCallback, Comp& comp, std::shared_ptr<void> userData)
+{
+	nb::gil_scoped_acquire acquire;
+	std::cout << "safeCallPythonCallback" << std::endl;
+	pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userData);
+}
 
 void initCompBindings(nb::module_& m)
 {
@@ -46,9 +59,24 @@ void initCompBindings(nb::module_& m)
 			self.setOnFrameStartCallback([pythonCallback](Comp& comp, std::shared_ptr<void> userData)
 				{
 					auto& userDataPyObj = *std::static_pointer_cast<nb::object>(userData);
-					pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userDataPyObj);
+					if (!comp.freeRunning())
+					{
+						pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userDataPyObj);
+					}
+
+					else
+					{
+						nb::gil_scoped_acquire acquire;
+						pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userDataPyObj);
+					}
 				},
 				userDataPtr);
+		}
+	);
+
+	comp.def("clear_on_frame_callback", [](Comp& self)
+		{
+			self.setOnFrameStartCallback(nullptr, nullptr);
 		}
 	);
 
