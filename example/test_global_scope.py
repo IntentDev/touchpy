@@ -32,4 +32,5 @@ while i < 100:
 
 
 
+comp.unload()
 
