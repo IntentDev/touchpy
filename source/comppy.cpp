@@ -15,21 +15,6 @@ Returns:
 	True if the .tox file was loaded successfully, False otherwise
 )";
 
-//void safeCallPythonCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, Comp& comp, std::shared_ptr<void> userData)
-//{
-//	nb::gil_scoped_acquire acquire();
-//	callback(comp, userData);
-//
-//
-//}
-
-void safeCallPythonCallback(nb::callable pythonCallback, Comp& comp, std::shared_ptr<void> userData)
-{
-	nb::gil_scoped_acquire acquire;
-	std::cout << "safeCallPythonCallback" << std::endl;
-	pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userData);
-}
-
 void initCompBindings(nb::module_& m)
 {
 	nb::class_<Comp> comp(m, "Comp");

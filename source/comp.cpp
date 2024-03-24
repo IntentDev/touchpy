@@ -171,11 +171,7 @@ Comp::unload()
 		ssUnloading_ = true;
 
 		lock.unlock();
-		TEResult result = TEInstanceUnload(instance_);
-		if (result != TEResultSuccess)
-		{
-			std::cout << "Unload failed: " << TEResultGetDescription(result) << std::endl;
-		}
+		TE_CHECK(TEInstanceUnload(instance_));
 
 		lock.lock();
 		cv_.wait(lock, [this] { return !ssLoaded_; });
@@ -230,8 +226,6 @@ void
 Comp::onEventInstanceReady(TEResult result, Comp* comp)
 {
 	if (!comp) return;
-
-	std::cout << "onEventInstanceReady" << std::endl;
 	
 	std::unique_lock<std::mutex> lock(mutex_);
 
@@ -434,8 +428,11 @@ Comp::getState(bool& ready, bool& loaded, bool& linksLayoutChanged, bool& inFram
 void 
 Comp::setInFrame(bool inFrame)
 {
-	std::lock_guard<std::mutex> guard(mutex_);
+	std::unique_lock<std::mutex> lock(mutex_);
 	ssInFrame_ = inFrame;
+
+	if (usingSwapBuffer_) cv_.notify_one();
+	
 }
 
 
@@ -445,7 +442,12 @@ void Comp::setOnFrameStartCallback(
 {
 	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
 
-	if (usingSwapBuffer_) lock.lock();
+	if (usingSwapBuffer_) 
+	{
+		lock.lock();
+		cv_.wait(lock, [this] { return ssInFrame_; });
+	}
+
 	
 	onFrameStartCallback_ = callback;
 	onFrameStartCallbackUserData_ = userData;
@@ -456,7 +458,11 @@ void Comp::clearOnFrameStartCallback()
 {
 	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
 
-	if (usingSwapBuffer_) lock.lock();
+	if (usingSwapBuffer_)
+	{
+		lock.lock();
+		cv_.wait(lock, [this] { return ssInFrame_; });
+	}
 
 	onFrameStartCallback_ = nullptr;
 	onFrameStartCallbackUserData_ = nullptr;
@@ -527,11 +533,8 @@ void Comp::frUpdateLoop()
 
 			applyValueChanges();
 
-			{
-				std::lock_guard<std::mutex> guard(mutex_);
-				if (onFrameStartCallback_)
-					onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
-			}
+			if (onFrameStartCallback_)
+				onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
 
 			startNextFrame();
 		}
