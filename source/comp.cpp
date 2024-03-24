@@ -32,14 +32,10 @@ Comp::initComp()
 
 Comp::~Comp()
 {
-	if (freeRunning_) stopFreeRunning();
-	else if (updateLoopRunning_) stopUpdateLoop();
-
-	clearOnFrameStartCallback();
+	unload();
 
 	CUDA_CHECK(cudaStreamDestroy(cudaStream_));
 
-	//unload();
 	vkDestroyFence(device_, submitFence_, nullptr);
 }
 
@@ -162,15 +158,28 @@ Comp::unloadTox()
 void 
 Comp::unload()
 {
-	// this won't work because TEEventInstanceReady is passed to the callback in addition to TEEventInstanceDidUnload
+	clearOnFrameStartCallback();
 
-	//std::unique_lock<std::mutex> lock(mutex_);
-	//if (ssLoaded_)
-	//{
-	//	std::cout << "Unloading TouchEngine instance..." << std::endl;
-	//	TE_CHECK(TEInstanceUnload(instance_));
-	//	cv_.wait(lock, [this] { return ssUnloaded_; });
-	//}
+	if (freeRunning_) stopFreeRunning();
+	else if (updateLoopRunning_) stopUpdateLoop();
+
+	std::unique_lock<std::mutex> lock(mutex_);
+	if (ssLoaded_)
+	{
+
+		std::cout << "Unloading TouchEngine instance..." << std::endl;
+		ssUnloading_ = true;
+
+		lock.unlock();
+		TEResult result = TEInstanceUnload(instance_);
+		if (result != TEResultSuccess)
+		{
+			std::cout << "Unload failed: " << TEResultGetDescription(result) << std::endl;
+		}
+
+		lock.lock();
+		cv_.wait(lock, [this] { return !ssLoaded_; });
+	}
 }
 
 
@@ -222,12 +231,11 @@ Comp::onEventInstanceReady(TEResult result, Comp* comp)
 {
 	if (!comp) return;
 
-	bool temp = false;
-	{
-		std::lock_guard<std::mutex> lock(mutex_);
-		comp->ssReady_ = result == TEResultSuccess;
-	}
+	std::cout << "onEventInstanceReady" << std::endl;
+	
+	std::unique_lock<std::mutex> lock(mutex_);
 
+	comp->ssReady_ = result == TEResultSuccess;
 	comp->cv_.notify_one(); // notify load() that instance is ready
 
 	std::cout << "\t\tInstance Ready: " << TEResultGetDescription(result) << std::endl;
@@ -249,11 +257,11 @@ Comp::onEventInstanceDidLoad(TEResult result, Comp* comp)
 void 
 Comp::onEventInstanceDidUnload(TEResult result, Comp* comp)
 {
-	// this won't work because TEEventInstanceReady is passed to the callback in addition to TEEventInstanceDidUnload
-
-	//std::lock_guard<std::mutex> lock(comp->mutex_);
-	//comp->ssUnloaded_ = true;
-	//std::cout << "Unloaded TouchEngine!" << std::endl;
+	ssUnloading_ = false;
+	ssLoaded_ = false;
+	ssReady_ = false;
+	comp->cv_.notify_one(); // notify unload() that instance is unloaded
+	std::cout << "Unloaded TouchEngine!" << std::endl;
 }
 
 void 
@@ -267,13 +275,19 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 	}
 	else
 	{
-		std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result) << ", start_time_value: " << start_time_value << ", start_time_scale : " << start_time_scale << ", end_time_value: " << end_time_value << ", end_time_scale: " << end_time_scale << std::endl;
-		comp->setInFrame(true);
-		TEResult result = TEInstanceStartFrameAtTime(comp->instance_, 0, 0, false);
-		if (result != TEResultSuccess)
+		if(result != TEResultCancelled)
 		{
-			std::cout << "onFrameDidFinish TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
-			comp->setInFrame(false);
+			std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result) 
+				<< ", start_time_value: " << start_time_value << ", start_time_scale : " << start_time_scale 
+				<< ", end_time_value: " << end_time_value << ", end_time_scale: " << end_time_scale << std::endl;
+
+			comp->setInFrame(true);
+			TEResult result = TEInstanceStartFrameAtTime(comp->instance_, 0, 0, false);
+			if (result != TEResultSuccess)
+			{
+				std::cout << "onFrameDidFinish TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
+				comp->setInFrame(false);
+			}
 		}
 	}
 	//if (comp->freeRunning_)
@@ -513,8 +527,11 @@ void Comp::frUpdateLoop()
 
 			applyValueChanges();
 
-			if (onFrameStartCallback_)
-				onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
+			{
+				std::lock_guard<std::mutex> guard(mutex_);
+				if (onFrameStartCallback_)
+					onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
+			}
 
 			startNextFrame();
 		}

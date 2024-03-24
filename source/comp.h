@@ -62,7 +62,7 @@ private:
 	std::condition_variable 			    cv_;
 	bool                                    ssPendingLayoutChange_ { false };
 	bool                                    ssLoaded_              { false };
-	//bool                                    ssUnloaded_            { false };
+	bool                                    ssUnloading_            { false };
 	bool                                    ssReady_			   { false };
 	bool                                    ssInFrame_             { false };
 	std::vector<std::string>                ssPendingOutputTextures_;
