@@ -40,7 +40,7 @@ if(PRINT_SOURCE_FILES)
 endif()
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/nanobind)
-nanobind_add_module(touchpy NOMINSIZE ${ALL_TPY_SOURCES})
+nanobind_add_module(touchpy NB_DOMAIN NOMINSIZE ${ALL_TPY_SOURCES})
 target_include_directories(touchpy PRIVATE ${SOURCE_DIR})
 
 

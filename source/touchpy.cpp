@@ -11,6 +11,7 @@ extern void initParLinkBindings(nb::module_& m);
 
 NB_MODULE(touchpy, m)
 {
+	//nb::set_leak_warnings(false);
 	initCompBindings(m);
 	initTopLinkBindings(m);
 	initChopLinkBindings(m);
