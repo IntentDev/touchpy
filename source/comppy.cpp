@@ -39,6 +39,7 @@ void initCompBindings(nb::module_& m)
 
 		.def("load_tox", &Comp::loadTox, "path"_a, nb::rv_policy::reference_internal, load_toxDoc)
 		.def("loaded", &Comp::loaded, nb::rv_policy::reference_internal)
+		.def("unload", &Comp::unload, nb::rv_policy::reference_internal)
 		.def("update", &Comp::update, "start_next_frame"_a = false, nb::rv_policy::reference_internal)
 		.def("start_next_frame", &Comp::startNextFrame, nb::rv_policy::reference_internal)
 		.def("start", &Comp::runUpdateLoop, "update_starts_next_frame"_a = false, nb::rv_policy::reference_internal)

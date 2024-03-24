@@ -612,7 +612,7 @@ Texture::cudaMemory() const
 { 
 	if (!requiresCudaMemLock_) return cudaMemory_;
 
-	std::unique_lock<std::mutex> lock(mutex_);
+	std::lock_guard<std::mutex> guard(mutex_);
 	return cudaMemory_; 
 }
 
