@@ -17,19 +17,30 @@ Returns:
 
 void initCompBindings(nb::module_& m)
 {
+	nb::enum_<RunMode>(m, "RunMode")
+		.value("InternalTimeAuto", RunMode::InternalTimeAuto)
+		.value("InternalTimeSemiAuto", RunMode::InternalTimeSemiAuto)
+		.value("InternalTimeManual", RunMode::InternalTimeManual)
+		.value("ExternalTimeManual", RunMode::ExternalTimeManual)
+		.value("InternalTimeAsync", RunMode::InternalTimeAsync)
+		;
+
+
 	nb::class_<Comp> comp(m, "Comp");
 	comp.doc() = "A TouchDesigner component loaded in a TouchEngine instance.";
 	comp.def(nb::init<>())
-		.def(nb::init<const std::string&, bool>(), "tox_path"_a, "free_running"_a = false, nb::rv_policy::automatic)
-
-		.def("load_tox", &Comp::loadTox, "path"_a, nb::rv_policy::reference_internal, load_toxDoc)
+		.def(nb::init<const std::string&, RunMode, int64_t>(),
+			"tox_path"_a, "run_mode"_a = RunMode::InternalTimeAuto, "fps"_a = 60, nb::rv_policy::automatic)
+		.def("load_tox", &Comp::loadTox, "path"_a, "run_mode"_a = RunMode::InternalTimeAuto, "fps"_a = 60
+					, nb::rv_policy::reference_internal, load_toxDoc)
 		.def("loaded", &Comp::loaded, nb::rv_policy::reference_internal)
 		.def("unload", &Comp::unload, nb::rv_policy::reference_internal)
-		.def("update", &Comp::update, "start_next_frame"_a = false, nb::rv_policy::reference_internal)
+		.def("start", &Comp::start, nb::rv_policy::reference_internal)
+		.def("stop", &Comp::stop, nb::rv_policy::reference_internal)
+		.def("frame_did_finish", &Comp::frameDidFinish, nb::rv_policy::reference_internal)
+		.def("apply_value_changes", &Comp::applyValueChanges, nb::rv_policy::reference_internal)
+		.def("call_on_frame_callback", &Comp::callOnFrameStartCallback, nb::rv_policy::reference_internal)
 		.def("start_next_frame", &Comp::startNextFrame, nb::rv_policy::reference_internal)
-		.def("start", &Comp::runUpdateLoop, "update_starts_next_frame"_a = false, nb::rv_policy::reference_internal)
-		.def("stop", &Comp::stopUpdateLoop, nb::rv_policy::reference_internal)
-		.def("stop_free_running", &Comp::stopFreeRunning, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_tops", &Comp::inputTopLinks, nb::rv_policy::reference_internal)
 		.def_prop_ro("out_tops", &Comp::outputTopLinks, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_chops", &Comp::inChopLinks, nb::rv_policy::reference_internal)
