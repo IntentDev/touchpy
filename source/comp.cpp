@@ -254,20 +254,16 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 	}
 	else
 	{
-		if(result != TEResultCancelled)
-		{
-			std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result) 
-				<< ", start_time_value: " << start_time_value << ", start_time_scale : " << start_time_scale 
-				<< ", end_time_value: " << end_time_value << ", end_time_scale: " << end_time_scale << std::endl;
+		std::cout << "onEventFrameDidFinish() result: " << TEResultGetDescription(result) << std::endl;
 
-			comp->setInFrame(true);
-			TEResult result = TEInstanceStartFrameAtTime(comp->instance_, 0, 0, false);
-			if (result != TEResultSuccess)
-			{
-				std::cout << "onFrameDidFinish TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
-				comp->setInFrame(false);
-			}
-		}
+		//if(result != TEResultCancelled)
+		//{
+		//	std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result) 
+		//		<< ", start_time_value: " << start_time_value << ", start_time_scale : " << start_time_scale 
+		//		<< ", end_time_value: " << end_time_value << ", end_time_scale: " << end_time_scale << std::endl;
+
+		//	startNextFrame(prevTimeValue_, prevTimeScale_);
+		//}
 	}
 }
 
@@ -579,10 +575,13 @@ Comp::frameDidFinish()
 	return !inFrame;
 }
 
-bool Comp::startNextFrame()
+bool Comp::startNextFrame(int64_t timeValue, int32_t timeScale)
 {
+	prevTimeValue_ = timeValue;
+	prevTimeScale_ = timeScale;
+
 	setInFrame(true);
-	TEResult result = TEInstanceStartFrameAtTime(instance_, 0.0, 0.0, false);
+	TEResult result = TEInstanceStartFrameAtTime(instance_, timeValue, timeScale, false);
 	if (result != TEResultSuccess)
 	{
 		std::cout << "update() TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
@@ -590,7 +589,6 @@ bool Comp::startNextFrame()
 		return false;
 	}
 
-	++frameCount_;
 	return true;
 }
 
@@ -772,11 +770,12 @@ Comp::applyLayoutChange()
 		}
 	}
 
-	setInFrame(true);
-	TEResult result = TEInstanceStartFrameAtTime(instance_, 0, 0, false);
-	if (result != TEResultSuccess)
-	{
-		std::cout << "Layout Change TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
-		setInFrame(false);
-	}
+	startNextFrame(prevTimeValue_, prevTimeScale_);
+	//setInFrame(true);
+	//TEResult result = TEInstanceStartFrameAtTime(instance_, 0, 0, false);
+	//if (result != TEResultSuccess)
+	//{
+	//	std::cout << "Layout Change TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
+	//	setInFrame(false);
+	//}
 }
