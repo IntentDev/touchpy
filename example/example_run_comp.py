@@ -22,7 +22,7 @@ class ExampleRunComp:
 
 		# optional used to quit if comp.start() is called
 		if (keyboard.is_pressed('q')):
-			comp.stop()
+			comp.stop() # stop running the comp
 			return
 
 		# copy out_chop to in_chop with channel names. Only NumPy arrays are supported for now.
@@ -143,43 +143,23 @@ class ExampleRunComp:
 			comp.in_tops[2].from_tensor(tensor2)
 			pass
 
-		# comp.start_next_frame() is only needed if comp.start(start_next_frame=False)
-		# or comp.update(call_start_next_frame=False), they are both False by default
-		#
-		# this allows the user to control when the next frame starts and so they can do work on non-comp members
-		# if comp.start(True) or comp.update(True) is called, start_next_frame() will be called automatically
-		# and shouldn't be called here
-		if comp.start_next_frame():
-			# do work on non-comp members for the next frame here
-			pass
-		else:
-			# we have a problem with TouchEngine starting the next frame.
-			# Currently the error will be printed in the console but start_next_frame()
-			# will need to be updated to return an enum with the result for error handling
-			# in the future
-			pass
+		# only call if comp was created with RunMode.InternalTimeSemiAuto
+		comp.start_next_frame()
+	
+	
 
 		this.frame += 1
 
 	def runComp(self, tox_path):
 		# create a comp object and specify a path to a tox file
-		comp = tp.Comp(tox_path)
+		# comp = tp.Comp(tox_path)
+		comp = tp.Comp(tox_path, run_mode=tp.RunMode.InternalTimeSemiAuto)
 
-		# set the on_frame callback
-		# first are is static method (or free function) and second is the object to be passed to the callback
-		# in this case, self is passed to the callback so we can access the class members directly
 		comp.set_on_frame_callback(self.on_frame, self)
 
-	
-		# this runs a loop that calls update() internally
-		comp.start() # need to manually call start_next_frame() in on_frame callback to start next frame
-		# comp.start(True) # update function starts next frame automatically
+		comp.start() # start the comp, blocks with RunMode.InternalTimeAuto and RunMode.InternalTimeSemiAuto
 
-		# run the loop in Python anc call update manually
-		# while not (keyboard.is_pressed('q')):
-		# while self.running:
-		#	# comp.update(True) # update function starts next frame
-		# 	comp.update() #  need to manually call start_next_frame() in on_frame callback to start next frame
+		comp.unload() # should be called to properly unload the comp (especially if Python exits immediately after this)
 		pass
 
 # create an instance of a class that runs the comp

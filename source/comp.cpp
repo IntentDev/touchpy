@@ -10,12 +10,10 @@ Comp::Comp()
 	initComp();
 }
 
-
-Comp::Comp(const std::string& filePath, bool freeRunning)
-	: filePath_(filePath), freeRunning_(freeRunning)
-{	
+Comp::Comp(const std::string& filePath, RunMode runMode, int64_t fps)
+{
 	initComp();
-	load();
+	loadTox(filePath, runMode, fps);
 }
 
 void
@@ -23,16 +21,14 @@ Comp::initComp()
 {
 	createRenderer();
 	cudaInit();
-	lastFrameTime_ = std::chrono::high_resolution_clock::now();
-
-	// print thread id
-	// std::cout << "Comp thread id: " << std::this_thread::get_id() << std::endl;
-
+	initInstance();
 }
 
 Comp::~Comp()
 {
-	unload();
+	// Calling unload here can cause python to deadlock if it doesn't finish before python is closed... 
+	// call unload() before destruction, or not at all but that will cause memory leaks if the object is the global scope
+	// unload();
 
 	CUDA_CHECK(cudaStreamDestroy(cudaStream_));
 
@@ -115,20 +111,30 @@ Comp::setCudaDevice()
 }
 
 bool 
-Comp::load()
+Comp::initInstance()
 {
-	std::cout << "Loading tox: \t" << std::string(filePath_.begin(), filePath_.end()) << std::endl;
-
 	TE_CHECK(TEInstanceCreate(eventCallback, linkEventCallback, this, instance_.take()));
 	std::cout << "\t\tInstance created!" << std::endl;
 
 	TE_CHECK(TEInstanceAssociateGraphicsContext(instance_, renderer_->teContext()));
 	std::cout << "\t\tInstance associated with Graphics Context!" << std::endl;
 
-	TE_CHECK(TEInstanceConfigure(instance_, filePath_.c_str(), TETimeInternal));
-	std::cout << "\t\tInstance configured!" << std::endl;
+	return true;
+}
 
-	TE_CHECK(TEInstanceSetFrameRate(instance_, framesPerSecond_, 1));
+bool Comp::loadTox(const std::string& filePath, RunMode runMode, int64_t fps)
+{
+	runMode_ = runMode;
+	TE_CHECK(TEInstanceSetFrameRate(instance_, fps, 1));
+
+	filePath_ = filePath;
+	std::cout << "Loading tox: \t" << std::string(filePath_.begin(), filePath_.end()) << std::endl;
+
+	auto timeMode = TETimeInternal;
+	if (runMode_ == RunMode::ExternalTimeManual) timeMode = TETimeExternal;
+
+	TE_CHECK(TEInstanceConfigure(instance_, filePath_.c_str(), timeMode));
+	std::cout << "\t\tInstance configured!" << std::endl;
 
 	std::unique_lock<std::mutex> lock(mutex_);
 	TE_CHECK(TEInstanceLoad(instance_));
@@ -140,27 +146,12 @@ Comp::load()
 	return ssReady_;
 }
 
-bool
-Comp::loadTox(const std::string& filePath)
-{
-	filePath_ = filePath;
-	unloadTox();
-	return load();
-}
-
-bool
-Comp::unloadTox()
-{
-	// need to implement this
-	return true;
-}
-
 void 
 Comp::unload()
 {
 	clearOnFrameStartCallback();
 
-	if (freeRunning_) stopFreeRunning();
+	if (asyncRunning_.load()) stopAsync();
 	else if (updateLoopRunning_) stopUpdateLoop();
 
 	std::unique_lock<std::mutex> lock(mutex_);
@@ -233,12 +224,6 @@ Comp::onEventInstanceReady(TEResult result, Comp* comp)
 	comp->cv_.notify_one(); // notify load() that instance is ready
 
 	std::cout << "\t\tInstance Ready: " << TEResultGetDescription(result) << std::endl;
-
-	TE_CHECK(TEInstanceResume(instance_));
-	if (comp->freeRunning_)
-	{
-		comp->startFreeRunning();
-	}
 }
 
 void 
@@ -284,10 +269,6 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 			}
 		}
 	}
-	//if (comp->freeRunning_)
-	//{
-	//	TEResult result = TEInstanceStartFrameAtTime(instance_, 0, 0, false);
-	//}
 }
 
 void 
@@ -468,12 +449,57 @@ void Comp::clearOnFrameStartCallback()
 	onFrameStartCallbackUserData_ = nullptr;
 }
 
-void Comp::runUpdateLoop(bool updateStartsNextFrame)
+void Comp::start()
+{
+	TE_CHECK(TEInstanceResume(instance_));
+
+	switch (runMode_)
+	{
+	case RunMode::InternalTimeAuto:
+		runUpdateLoop();
+		break;
+
+	case RunMode::InternalTimeSemiAuto:
+		runUpdateLoop(false);
+		break;
+
+	case RunMode::InternalTimeAsync:
+		startAsync();
+		break;
+
+	default:
+		break;
+	}
+}
+
+void Comp::stop()
+{
+	TE_CHECK(TEInstanceSuspend(instance_));
+
+	switch (runMode_)
+	{
+	case RunMode::InternalTimeAuto:
+	case RunMode::InternalTimeSemiAuto:
+		stopUpdateLoop();
+		break;
+
+	case RunMode::InternalTimeAsync:
+		stopAsync();
+		break;
+
+	default:
+		break;
+	}
+}
+
+void Comp::runUpdateLoop(bool autoStartNextFrame)
 {
 	updateLoopRunning_ = true;
 	while (updateLoopRunning_)
 	{
-		update(updateStartsNextFrame);
+		update(autoStartNextFrame);
+		update(autoStartNextFrame);
+		update(autoStartNextFrame);
 	}
 }
 
@@ -482,29 +508,29 @@ void Comp::stopUpdateLoop()
 	updateLoopRunning_ = false;
 }
 
-void Comp::startFreeRunning()
+void Comp::startAsync()
 {
 	usingSwapBuffer_ = true;
-	frRunning_ = true;
-	frThread_ = std::thread(&Comp::frUpdateLoop, this);
-
+	asyncRunning_ = true;
+	asyncThread_ = std::thread(&Comp::asyncUpdateLoop, this);
 }
 
-
-void Comp::stopFreeRunning()
+void Comp::stopAsync()
 {
-	frRunning_.store(false);
-	if (frThread_.joinable())
-		frThread_.join();
-	freeRunning_ = false;
+
+	asyncRunning_.store(false);
+	if (asyncThread_.joinable())
+		asyncThread_.join();
+
+	usingSwapBuffer_ = false;
 }
 
 //extern void
 //safeCallPythonCallback(Comp* comp, std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData);
 
-void Comp::frUpdateLoop()
+void Comp::asyncUpdateLoop()
 {
-	while (frRunning_.load())
+	while (asyncRunning_.load())
 	{
 		bool ready, loaded, linksLayoutChanged, inFrame;
 		getState(ready, loaded, linksLayoutChanged, inFrame);
@@ -514,69 +540,43 @@ void Comp::frUpdateLoop()
 		if (linksLayoutChanged)
 		{
 			applyLayoutChange();
-			ready_ = ready;
 			continue;
 		}
 		
 		if (!inFrame)
 		{
-			changedOutputTextures_.clear();
-			changedOutputFloatBuffers_.clear();
-			changedOutputStringData_.clear();
-
-			{
-				std::lock_guard<std::mutex> guard(mutex_);
-				std::swap(ssPendingOutputTextures_, changedOutputTextures_);
-				std::swap(ssPendingOutputFloatBuffers, changedOutputFloatBuffers_);
-				std::swap(ssPendingOutputStringData, changedOutputStringData_);
-			}
-
 			applyValueChanges();
-
-			if (onFrameStartCallback_)
-				onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
-
+			callOnFrameStartCallback();
 			startNextFrame();
 		}
 	}
 }
 
 void
-Comp::update(bool callStartNextFrame)
+Comp::update(bool autoStartNextFrame)
+{
+	if (frameDidFinish())
+	{
+		applyValueChanges();
+		callOnFrameStartCallback();
+		if (autoStartNextFrame) startNextFrame();
+	}
+}
+
+bool 
+Comp::frameDidFinish()
 {
 	bool ready, loaded, linksLayoutChanged, inFrame;
 	getState(ready, loaded, linksLayoutChanged, inFrame);
 
-	if (!loaded || !ready) return;
+	if (!loaded || !ready) return false;
 
 	if (linksLayoutChanged)
 	{
 		applyLayoutChange();
-		ready_ = ready;
-		return;
+		return false;
 	}
-
-	if (!inFrame)
-	{
-		changedOutputTextures_.clear();
-		changedOutputFloatBuffers_.clear();
-		changedOutputStringData_.clear();
-
-		{
-			std::lock_guard<std::mutex> guard(mutex_);
-			std::swap(ssPendingOutputTextures_, changedOutputTextures_);
-			std::swap(ssPendingOutputFloatBuffers, changedOutputFloatBuffers_);
-			std::swap(ssPendingOutputStringData, changedOutputStringData_);
-		}
-
-		applyValueChanges();
-
-		if (onFrameStartCallback_)
-			onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
-
-		if (callStartNextFrame)
-			startNextFrame();
-	}
+	return !inFrame;
 }
 
 bool Comp::startNextFrame()
@@ -592,6 +592,91 @@ bool Comp::startNextFrame()
 
 	++frameCount_;
 	return true;
+}
+
+void Comp::applyValueChanges()
+{
+	changedOutputTextures_.clear();
+	changedOutputFloatBuffers_.clear();
+	changedOutputStringData_.clear();
+
+	{
+		std::lock_guard<std::mutex> guard(mutex_);
+		std::swap(ssPendingOutputTextures_, changedOutputTextures_);
+		std::swap(ssPendingOutputFloatBuffers, changedOutputFloatBuffers_);
+		std::swap(ssPendingOutputStringData, changedOutputStringData_);
+	}
+
+	applyOutputTextureChange();
+	applyOutputFloatBufferChange();
+	applyOutputStringDataChange();
+}
+
+void Comp::callOnFrameStartCallback()
+{
+	if (onFrameStartCallback_)
+		onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
+}
+
+void
+Comp::applyOutputTextureChange()
+{
+	for (const auto& identifier : changedOutputTextures_)
+	{
+		auto& textureLink = *outTopLinks_->getLinkByIdentifier(identifier);
+		//textureLink.onOutputTextureChange(cudaStream_);
+		textureLink.onOutputTextureChange(nullptr);
+	}
+}
+
+void
+Comp::applyOutputFloatBufferChange()
+{
+	if (!usingSwapBuffer_)
+	{
+		for (const auto& identifier : changedOutputFloatBuffers_)
+		{
+			auto& chopLink = *outChopLinks_->getLinkByIdentifier(identifier);
+			chopLink.resetUpdated();
+		}
+	}
+	else
+	{
+		for (const auto& identifier : changedOutputFloatBuffers_)
+		{
+			auto& chopLink = *outChopLinks_->getLinkByIdentifier(identifier);
+			if (chopLink.updated())
+			{
+				chopLink.moveBuffer();
+				chopLink.resetUpdated();
+			}
+		}
+	}
+}
+
+void
+Comp::applyOutputStringDataChange()
+{
+	if (!usingSwapBuffer_)
+	{
+		for (const auto& identifier : changedOutputStringData_)
+		{
+			auto& datLink = *outDatLinks_->getLinkByIdentifier(identifier);
+			datLink.resetUpdated();
+		}
+	}
+	else
+	{
+		for (const auto& identifier : changedOutputStringData_)
+		{
+			auto& datLink = *outDatLinks_->getLinkByIdentifier(identifier);
+			if (datLink.updated())
+			{
+				datLink.moveBuffer();
+				datLink.resetUpdated();
+			}
+		}
+	}
 }
 
 void 
@@ -695,72 +780,3 @@ Comp::applyLayoutChange()
 		setInFrame(false);
 	}
 }
-
-void Comp::applyValueChanges()
-{
-	applyOutputTextureChange();
-	applyOutputFloatBufferChange();
-	applyOutputStringDataChange(); 
-}
-
-void 
-Comp::applyOutputTextureChange()
-{
-	for (const auto& identifier : changedOutputTextures_)
-	{
-		auto& textureLink = *outTopLinks_->getLinkByIdentifier(identifier);
-		//textureLink.onOutputTextureChange(cudaStream_);
-		textureLink.onOutputTextureChange(nullptr);
-	}
-}
-
-void 
-Comp::applyOutputFloatBufferChange()
-{
-	if (!usingSwapBuffer_)
-	{
-		for (const auto& identifier : changedOutputFloatBuffers_)
-		{
-			auto& chopLink = *outChopLinks_->getLinkByIdentifier(identifier);
-			chopLink.resetUpdated();
-		}
-	}
-	else
-	{
-		for (const auto& identifier : changedOutputFloatBuffers_)
-		{
-			auto& chopLink = *outChopLinks_->getLinkByIdentifier(identifier);
-			if (chopLink.updated())
-			{
-				chopLink.moveBuffer();
-				chopLink.resetUpdated();
-			}
-		}
-	}
-}
-
-void 
-Comp::applyOutputStringDataChange()
-{
-	if (!usingSwapBuffer_)
-	{
-		for (const auto& identifier : changedOutputStringData_)
-		{
-			auto& datLink = *outDatLinks_->getLinkByIdentifier(identifier);
-			datLink.resetUpdated();
-		}
-	}
-	else
-	{
-		for (const auto& identifier : changedOutputStringData_)
-		{
-			auto& datLink = *outDatLinks_->getLinkByIdentifier(identifier);
-			if (datLink.updated())
-			{
-				datLink.moveBuffer();
-				datLink.resetUpdated();
-			}
-		}
-	}
-}
-

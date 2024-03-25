@@ -26,7 +26,7 @@ comp.set_on_frame_callback(on_frame, user_data)
 
 i = 0
 
-while i < 100:
+while i < 300:
 	comp.update()
 	i += 1
 
