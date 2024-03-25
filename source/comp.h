@@ -52,15 +52,15 @@ public:
 	bool frameDidFinish();
 	void applyValueChanges();
 	void callOnFrameStartCallback();
-	bool startNextFrame();
+	bool startNextFrame(int64_t timeValue = 0, int32_t timeScale = 0);
 
-	InTopLinks& inputTopLinks() { return *inTopLinks_; }
-	OutTopLinks& outputTopLinks() { return *outTopLinks_; }
-	InChopLinks& inChopLinks() { return *inChopLinks_; }
-	OutChopLinks& outChopLinks() { return *outChopLinks_; }
-	InDatLinks& inDatLinks() { return *inDatLinks_; }
-	OutDatLinks& outDatLinks() { return *outDatLinks_; }
-	ParLinkCollection& parLinks() { return *parLinks_; }
+	InTopLinks&        inputTopLinks()  { return *inTopLinks_; }
+	OutTopLinks&       outputTopLinks() { return *outTopLinks_; }
+	InChopLinks&       inChopLinks()    { return *inChopLinks_; }
+	OutChopLinks&      outChopLinks()   { return *outChopLinks_; }
+	InDatLinks&        inDatLinks()     { return *inDatLinks_; }
+	OutDatLinks&       outDatLinks()    { return *outDatLinks_; }
+	ParLinkCollection& parLinks()       { return *parLinks_; }
 
 	// for internal use only, not for python bindings
 	//-----------------------------------------------------------------------------------------------------------------
@@ -89,7 +89,7 @@ private:
 	//-----------------------------------------------------------------------------------------------------------------
 	std::atomic<bool>					  asyncRunning_ { false };
 	std::thread							  asyncThread_;
-	bool								  usingSwapBuffer_{ false };
+	bool								  usingSwapBuffer_{ false }; // could remove this and use asyncRunning_
 	void								  asyncUpdateLoop();
 	void								  startAsync();
 	void								  stopAsync();
@@ -100,6 +100,8 @@ private:
 	std::string                        filePath_;
 	RunMode                            runMode_            { RunMode::InternalTimeAuto };
 	TouchObject<TEInstance>            instance_           { nullptr };
+	int64_t 						   prevTimeValue_          { 0 };
+	int32_t                            prevTimeScale_          { 0 };
 
 	std::unique_ptr<Renderer>          renderer_;
 	VkDevice                           device_             { VK_NULL_HANDLE };
@@ -126,10 +128,10 @@ private:
 	std::unique_ptr<ParLinkCollection> parLinks_;
 
 	
-	bool							   updateLoopRunning_	{ false };
-	uint64_t 						   frameCount_          { 0 };
-	std::shared_ptr<void>              onFrameStartCallbackUserData_ { nullptr };
-	std::function<void(Comp&, std::shared_ptr<void>)>	   onFrameStartCallback_ { nullptr };
+	bool											  updateLoopRunning_	{ false };
+	uint64_t 										  frameCount_          { 0 };
+	std::shared_ptr<void>							  onFrameStartCallbackUserData_ { nullptr };
+	std::function<void(Comp&, std::shared_ptr<void>)> onFrameStartCallback_ { nullptr };
 
 	void initComp();
 	bool initInstance();
@@ -144,8 +146,6 @@ private:
 	void createRenderer();
 	void cudaInit();
 	void setCudaDevice();
-
-
 
 	// TouchEngine thread only
 	//-----------------------------------------------------------------------------------------------------------------
