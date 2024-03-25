@@ -19,31 +19,40 @@
 #include <atomic>
 
 
+enum class RunMode
+{
+	InternalTimeAuto,
+	InternalTimeSemiAuto,
+	InternalTimeManual,
+	ExternalTimeManual,
+	InternalTimeAsync
+};
+
 class Comp
 {
 public:
 	Comp();
-	Comp(const std::string& filePath, bool freeRunning = false);
+	Comp(const std::string& filePath, RunMode runMode = RunMode::InternalTimeAuto, int64_t fps = 60);
+
 	~Comp();
 
-	bool loadTox(const std::string& filePath);
-	bool unloadTox();
+	bool loadTox(const std::string& filePath, RunMode runMode = RunMode::InternalTimeAuto, int64_t fps = 60);
 	void unload();
 	bool loaded() const; 
-	bool ready() const { return ready_; }
-	void update(bool callStartNextFrame = false);
-	bool startNextFrame();
+
 	void setOnFrameStartCallback(
-		std::function<void(Comp&, std::shared_ptr<void>)> callback, 
+		std::function<void(Comp&, std::shared_ptr<void>)> callback,
 		std::shared_ptr<void> userData
 	);
 	void clearOnFrameStartCallback();
 
+	void start();
+	void stop();
 
-	void runUpdateLoop(bool updateStartsNextFrame = false);
-	void stopUpdateLoop();
-	void stopFreeRunning();
-	bool freeRunning() const { return freeRunning_; }
+	bool frameDidFinish();
+	void applyValueChanges();
+	void callOnFrameStartCallback();
+	bool startNextFrame();
 
 	InTopLinks& inputTopLinks() { return *inTopLinks_; }
 	OutTopLinks& outputTopLinks() { return *outTopLinks_; }
@@ -53,45 +62,44 @@ public:
 	OutDatLinks& outDatLinks() { return *outDatLinks_; }
 	ParLinkCollection& parLinks() { return *parLinks_; }
 
+	// for internal use only, not for python bindings
+	//-----------------------------------------------------------------------------------------------------------------
+	bool freeRunning() const { return asyncRunning_.load(); }
+
 private:
 
 	// shared state between the main or free running thread and the TouchEngine thread
 	//-----------------------------------------------------------------------------------------------------------------
 
-	mutable std::mutex                      mutex_;
-	std::condition_variable 			    cv_;
-	bool                                    ssPendingLayoutChange_ { false };
-	bool                                    ssLoaded_              { false };
-	bool                                    ssUnloading_            { false };
-	bool                                    ssReady_			   { false };
-	bool                                    ssInFrame_             { false };
-	std::vector<std::string>                ssPendingOutputTextures_;
-	std::vector<std::string>				ssPendingOutputFloatBuffers;
-	std::vector<std::string>                ssPendingOutputStringData;
+	mutable                  std::mutex mutex_;
+	std::condition_variable  cv_;
+	bool                     ssPendingLayoutChange_      { false };
+	bool                     ssLoaded_                   { false };
+	bool                     ssUnloading_                { false };
+	bool                     ssReady_                    { false };
+	bool                     ssInFrame_                  { false };
+	std::vector<std::string> ssPendingOutputTextures_;
+	std::vector<std::string> ssPendingOutputFloatBuffers;
+	std::vector<std::string> ssPendingOutputStringData;
 
 	void getState(bool& configured, bool& loaded, bool& linksChanged, bool& inFrame);
 	void setInFrame(bool inFrame);
 
 	// free running 
 	//-----------------------------------------------------------------------------------------------------------------
-	bool 								  freeRunning_ { false };
-	std::atomic<bool>					  frRunning_ { false };
-	std::thread							  frThread_;
-
-	void								  frUpdateLoop();
-	void								  startFreeRunning();
-	
+	std::atomic<bool>					  asyncRunning_ { false };
+	std::thread							  asyncThread_;
+	bool								  usingSwapBuffer_{ false };
+	void								  asyncUpdateLoop();
+	void								  startAsync();
+	void								  stopAsync();
 
 	// main thread only
 	//-----------------------------------------------------------------------------------------------------------------
 
 	std::string                        filePath_;
-	size_t                             buffersPerInputLink { 2 };
+	RunMode                            runMode_            { RunMode::InternalTimeAuto };
 	TouchObject<TEInstance>            instance_           { nullptr };
-	bool                               ready_              { false };
-	double                             inputSampleRate_    { 60.0 };
-	int32_t                            inputChannelCount_  { 0 };
-	int64_t                            framesPerSecond_    { 60 };
 
 	std::unique_ptr<Renderer>          renderer_;
 	VkDevice                           device_             { VK_NULL_HANDLE };
@@ -117,19 +125,18 @@ private:
 	std::unique_ptr<OutDatLinks>       outDatLinks_;
 	std::unique_ptr<ParLinkCollection> parLinks_;
 
-	bool                               usingSwapBuffer_		{ false };
+	
 	bool							   updateLoopRunning_	{ false };
 	uint64_t 						   frameCount_          { 0 };
 	std::shared_ptr<void>              onFrameStartCallbackUserData_ { nullptr };
 	std::function<void(Comp&, std::shared_ptr<void>)>	   onFrameStartCallback_ { nullptr };
 
-	std::chrono::high_resolution_clock::time_point lastFrameTime_{};
 	void initComp();
-	bool load();
-
-
+	bool initInstance();
+	void runUpdateLoop(bool autoStartNextFrame = true);
+	void stopUpdateLoop();
+	void update(bool autoStartNextFrame = true);
 	void applyLayoutChange();
-	void applyValueChanges();
 	void applyOutputTextureChange();
 	void applyOutputFloatBufferChange();
 	void applyOutputStringDataChange();
