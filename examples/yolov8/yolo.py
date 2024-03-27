@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from pathlib import Path
 import sys
+import cv2
 
 from ultralytics import YOLO
 
@@ -18,7 +19,7 @@ class ExampleRunComp:
 	def __init__(self):
 		self.running = True # used to gracefully exit the loop
 		self.frame = 0
-		self.model = YOLO("models/yolov8m-pose.pt")
+		self.model = YOLO("models/yolov8s-pose.pt")
 		
 
 
@@ -31,33 +32,43 @@ class ExampleRunComp:
 			return
 		if (this.frame == 1):
 			print("tox started")
-		tensor = comp.out_tops[0].as_tensor()
 		
-		tensor.half()
+		tensor = comp.out_tops[0].as_tensor()
 
-		# convert an rgba tensor to a rgb tensor
+		# convert an RGBA tensor to a RGB tensor
 		if (tensor.shape[0] == 4):
 			tensor = tensor[:3]	
 
-
-
-		# flip a tensor image upside down
-		tensor = torch.flip(tensor, [1])
+		# convert RGB tensor to BGR and flip it upside down (as it is expecting OpenCV format)
+		tensor = torch.flip(tensor, [0,1])
 			
-		
-		
+			
 		results = this.model(tensor.unsqueeze(0), show=True, stream=True, device=0)
 		for result in results:
-			print(result.keypoints)
-			#annotatedArray = r.plot()
-			#comp.in_tops[0].from_tensor(torch.from_numpy(annotatedArray))
-			#comp.in_tops[0].from_tensor(tensorOrg)
+			
+			#print(result.keypoints, result.keypoints.type())
+			
+			
+			annotatedArray = result.plot().images
+			
+			#convert from BGR to RGB and flip vertically (to match TouchDesigner format)
+			annotatedArray = cv2.cvtColor(annotatedArray, cv2.COLOR_BGR2RGB)[...,::-1,:]
+			
+			#copy to GPU
+			tensor = torch.from_numpy(annotatedArray).float().cuda()
+			
+			# convert tensor from HWC to CHW
+			out = torch.permute(tensor, (2,0,1))
+
+			#convert tensor color from 0-255 to 0-1 range
+			out = out / 255.0
+			
+			comp.in_tops[0].from_tensor(out)
+			
 				
 		this.frame += 1
 
 	def runComp(self, tox_path):
-		# create a comp object and specify a path to a tox file
-		
 		comp = tp.Comp(tox_path)
 
 		comp.set_on_frame_callback(self.on_frame, self)
