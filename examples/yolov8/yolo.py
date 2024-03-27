@@ -22,8 +22,6 @@ class ExampleRunComp:
 		self.model = YOLO("models/yolov8s-pose.pt")
 		self.inputBuffer = None
 		self.outBuffer = None
-		
-
 
 	@staticmethod
 	def on_frame(comp, this):
@@ -44,16 +42,14 @@ class ExampleRunComp:
 		# convert RGB tensor to BGR and flip it upside down (as it is expecting OpenCV format)
 		this.inputBuffer = torch.flip(this.inputBuffer, [0,1])
 			
-
-
+		#inference
 		results = this.model(this.inputBuffer.unsqueeze(0),stream=True, device=0)
 		result = next(results)
 		
 		fps = 1000 / ( result.speed["preprocess"]+result.speed["inference"]+result.speed["postprocess"])
-			
 		print(f"{fps} fps")
 		
-
+		#plot opencv annotations in a numpy array
 		annotatedArray = result.plot()
 			
 		#convert from BGR to RGB and flip vertically (to match TouchDesigner format)
@@ -68,27 +64,16 @@ class ExampleRunComp:
 		#convert tensor color from 0-255 to 0-1 range
 		this.outBuffer = this.outBuffer / 255.0
 		this.outBuffer = torch.flip(this.outBuffer, [0,1])	
-		print("buffer shape: ", this.outBuffer.shape, "out dtype: ", this.outBuffer.dtype, 
-				"buffer device: ", this.outBuffer.device, "buffer layout: ", this.outBuffer.layout, 
-				"buffer strides: ", this.outBuffer.stride(), "buffer is_contiguous: ", this.outBuffer.is_contiguous())	
-		
-		
-		
+				
+		############################
 		comp.start_next_frame()	
 		
 		comp.in_tops[0].from_tensor(this.outBuffer)
-
 		this.frame += 1
 
-
-		
-
 	def runComp(self, tox_path):
-		#comp = tp.Comp(tox_path)
 		comp = tp.Comp(tox_path, run_mode=tp.RunMode.InternalTimeSemiAuto)
-
 		comp.set_on_frame_callback(self.on_frame, self)
-
 		comp.start()
 		comp.unload()
 		pass
