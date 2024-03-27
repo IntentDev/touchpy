@@ -11,31 +11,39 @@
 
 namespace nb = nanobind;
 using namespace nb::literals;
+using namespace std;
 
 void initParLinkBindings(nb::module_& m)
 {
 	nb::class_<Int2> int2(m, "Int2");
-	int2.def(nb::init<int32_t, int32_t>()).def_rw("x", &Int2::x).def_rw("y", &Int2::y);
+	int2.def(nb::init<int32_t, int32_t>()).def_rw("x", &Int2::x).def_rw("y", &Int2::y)
+		.def("__repr__", [](Int2& self) { return "(" + to_string(self.x) + ", " + to_string(self.y) + ")"; });
 
 	nb::class_<Int3> int3(m, "Int3");
-	int3.def(nb::init<int32_t, int32_t>()).def_rw("x", &Int3::x).def_rw("y", &Int3::y).def_rw("z", &Int3::z);
+	int3.def(nb::init<int32_t, int32_t>()).def_rw("x", &Int3::x).def_rw("y", &Int3::y).def_rw("z", &Int3::z)
+		.def("__repr__", [](Int3& self) { return "(" + to_string(self.x) + ", " + to_string(self.y) + ", " + to_string(self.z) + ")"; });
 
 	nb::class_<Int4> int4(m, "Int4");
-	int4.def(nb::init<int32_t, int32_t>()).def_rw("x", &Int4::x).def_rw("y", &Int4::y).def_rw("z", &Int4::z).def_rw("w", &Int4::w);
+	int4.def(nb::init<int32_t, int32_t>()).def_rw("x", &Int4::x).def_rw("y", &Int4::y).def_rw("z", &Int4::z).def_rw("w", &Int4::w)
+		.def("__repr__", [](Int4& self) { return "(" + to_string(self.x) + ", " + to_string(self.y) + ", " + to_string(self.z) + ", " + to_string(self.w) + ")"; });
 
 	nb::class_<Double2> double2(m, "Float2");
-	double2.def(nb::init<double, double>()).def_rw("x", &Double2::x).def_rw("y", &Double2::y);
+	double2.def(nb::init<double, double>()).def_rw("x", &Double2::x).def_rw("y", &Double2::y)
+		.def("__repr__", [](Double2& self) { return "(" + to_string(self.x) + ", " + to_string(self.y) + ")"; });
 
 	nb::class_<Double3> double3(m, "Float3");
-	double3.def(nb::init<double, double, double>()).def_rw("x", &Double3::x).def_rw("y", &Double3::y).def_rw("z", &Double3::z);
+	double3.def(nb::init<double, double, double>()).def_rw("x", &Double3::x).def_rw("y", &Double3::y).def_rw("z", &Double3::z)
+		.def("__repr__", [](Double3& self) { return "(" + to_string(self.x) + ", " + to_string(self.y) + ", " + to_string(self.z) + ")"; });
 
 	nb::class_<Double4> double4(m, "Float4");
 	double4.def(nb::init<double, double, double, double>())
-		.def_rw("x", &Double4::x).def_rw("y", &Double4::y).def_rw("z", &Double4::z).def_rw("w", &Double4::w);
+		.def_rw("x", &Double4::x).def_rw("y", &Double4::y).def_rw("z", &Double4::z).def_rw("w", &Double4::w)
+		.def("__repr__", [](Double4& self) { return "(" + to_string(self.x) + ", " + to_string(self.y) + ", " + to_string(self.z) + ", " + to_string(self.w) + ")"; });
 
 	nb::class_<Color> color(m, "Color");
 	color.def(nb::init<double, double, double, double>(), "r"_a = 1.0, "g"_a = 1.0, "b"_a = 1.0, "a"_a = 1.0)
-		.def_rw("r", &Color::r).def_rw("g", &Color::g).def_rw("b", &Color::b).def_rw("a", &Color::a);
+		.def_rw("r", &Color::r).def_rw("g", &Color::g).def_rw("b", &Color::b).def_rw("a", &Color::a)
+		.def("__repr__", [](Color& self) { return "(" + to_string(self.r) + ", " + to_string(self.g) + ", " + to_string(self.b) + ", " + to_string(self.a) + ")"; });
 
 	nb::class_ <ParLink> parLink(m, "ParLink");
 	parLink.doc() = "A parameter in a TouchDesigner component";

@@ -10,10 +10,10 @@ Comp::Comp()
 	initComp();
 }
 
-Comp::Comp(const std::string& filePath, RunMode runMode, int64_t fps)
+Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps)
 {
 	initComp();
-	loadTox(filePath, runMode, fps);
+	loadTox(filePath, compFlags, fps);
 }
 
 void
@@ -122,16 +122,16 @@ Comp::initInstance()
 	return true;
 }
 
-bool Comp::loadTox(const std::string& filePath, RunMode runMode, int64_t fps)
+bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps)
 {
-	runMode_ = runMode;
+	compFlags_ = compFlags;
 	TE_CHECK(TEInstanceSetFrameRate(instance_, fps, 1));
 
 	filePath_ = filePath;
 	std::cout << "Loading tox: \t" << std::string(filePath_.begin(), filePath_.end()) << std::endl;
 
 	auto timeMode = TETimeInternal;
-	if (runMode_ == RunMode::ExternalTimeManual) timeMode = TETimeExternal;
+	if (compFlags_ == CompFlagBits::ExternalTime) timeMode = TETimeExternal;
 
 	TE_CHECK(TEInstanceConfigure(instance_, filePath_.c_str(), timeMode));
 	std::cout << "\t\tInstance configured!" << std::endl;
@@ -254,16 +254,17 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 	}
 	else
 	{
-		std::cout << "onEventFrameDidFinish() result: " << TEResultGetDescription(result) << std::endl;
+		if(result != TEResultCancelled)
+		{
+			// need go through all possible results and handle them accordingly... 
 
-		//if(result != TEResultCancelled)
-		//{
-		//	std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result) 
-		//		<< ", start_time_value: " << start_time_value << ", start_time_scale : " << start_time_scale 
-		//		<< ", end_time_value: " << end_time_value << ", end_time_scale: " << end_time_scale << std::endl;
+			//std::string error = TEResultGetDescription(result);
+			//error = "Frame did not finish successfully: " + error;
+			//throw std::runtime_error("Frame did not finish successfully");
 
-		//	startNextFrame(prevTimeValue_, prevTimeScale_);
-		//}
+			std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result);
+			startNextFrame(prevTimeValue_, prevTimeScale_);
+		}
 	}
 }
 
@@ -449,17 +450,17 @@ void Comp::start()
 {
 	TE_CHECK(TEInstanceResume(instance_));
 
-	switch (runMode_)
+	switch (compFlags_)
 	{
-	case RunMode::InternalTimeAuto:
+	case CompFlagBits::InternalTimeAuto:
 		runUpdateLoop();
 		break;
 
-	case RunMode::InternalTimeSemiAuto:
+	case CompFlagBits::InternalTimeSemiAuto:
 		runUpdateLoop(false);
 		break;
 
-	case RunMode::InternalTimeAsync:
+	case CompFlagBits::InternalTimeAsync:
 		startAsync();
 		break;
 
@@ -472,14 +473,14 @@ void Comp::stop()
 {
 	TE_CHECK(TEInstanceSuspend(instance_));
 
-	switch (runMode_)
+	switch (compFlags_)
 	{
-	case RunMode::InternalTimeAuto:
-	case RunMode::InternalTimeSemiAuto:
+	case CompFlagBits::InternalTimeAuto:
+	case CompFlagBits::InternalTimeSemiAuto:
 		stopUpdateLoop();
 		break;
 
-	case RunMode::InternalTimeAsync:
+	case CompFlagBits::InternalTimeAsync:
 		stopAsync();
 		break;
 
