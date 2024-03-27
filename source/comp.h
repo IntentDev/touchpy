@@ -10,6 +10,8 @@
 #include "datlink.h"
 #include "parlink.h"
 
+#include "compflags.h"
+
 #include <string>
 #include <mutex>
 #include <memory>
@@ -19,24 +21,15 @@
 #include <atomic>
 
 
-enum class RunMode
-{
-	InternalTimeAuto,
-	InternalTimeSemiAuto,
-	InternalTimeManual,
-	ExternalTimeManual,
-	InternalTimeAsync
-};
-
 class Comp
 {
 public:
 	Comp();
-	Comp(const std::string& filePath, RunMode runMode = RunMode::InternalTimeAuto, int64_t fps = 60);
+	Comp(const std::string& filePath, CompFlags runMode = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
 
 	~Comp();
 
-	bool loadTox(const std::string& filePath, RunMode runMode = RunMode::InternalTimeAuto, int64_t fps = 60);
+	bool loadTox(const std::string& filePath, CompFlags runMode = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
 	void unload();
 	bool loaded() const; 
 
@@ -98,7 +91,7 @@ private:
 	//-----------------------------------------------------------------------------------------------------------------
 
 	std::string                        filePath_;
-	RunMode                            runMode_            { RunMode::InternalTimeAuto };
+	CompFlags                          compFlags_          { CompFlagBits::InternalTimeAuto };
 	TouchObject<TEInstance>            instance_           { nullptr };
 	int64_t 						   prevTimeValue_          { 0 };
 	int32_t                            prevTimeScale_          { 0 };
