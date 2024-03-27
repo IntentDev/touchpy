@@ -26,28 +26,34 @@ class ExampleRunComp:
 	@staticmethod
 	def on_frame(comp, this):
 
-		# optional used to quit if comp.start() is called
 		if (keyboard.is_pressed('q')):
 			comp.stop() # stop running the comp
 			return
-		if (this.frame == 1):
-			print("tox started")
 		
+		#read Out TOP from the tox we loaded
 		this.inputBuffer = comp.out_tops[0].as_tensor()
 
 		# convert RGBA tensor to a RGB tensor
 		if (this.inputBuffer.shape[0] == 4):
 			this.inputBuffer = this.inputBuffer[:3]	
 
-		# convert RGB tensor to BGR and flip it upside down (as it is expecting OpenCV format)
+		# convert RGB tensor to BGR and flip it upside down (as Yolo is expecting OpenCV format)
 		this.inputBuffer = torch.flip(this.inputBuffer, [0,1])
 			
 		#inference
 		results = this.model(this.inputBuffer.unsqueeze(0),stream=True, device=0)
 		result = next(results)
-		
+
+		#write pose points to input CHOP
+		keypoints = result.keypoints.data.cpu().numpy()
+		keypoints = keypoints.astype(np.float32)
+		#reshape keypoints to 3 channels with 17 samples]
+		keypoints = keypoints.reshape(3,-1)
+
+		comp.in_chops[0].from_numpy(keypoints)
+
 		fps = 1000 / ( result.speed["preprocess"]+result.speed["inference"]+result.speed["postprocess"])
-		print(f"{fps} fps")
+		print(f"{fps} maxfps")
 		
 		#plot opencv annotations in a numpy array
 		annotatedArray = result.plot()
@@ -63,12 +69,13 @@ class ExampleRunComp:
 
 		#convert tensor color from 0-255 to 0-1 range
 		this.outBuffer = this.outBuffer / 255.0
-		this.outBuffer = torch.flip(this.outBuffer, [0,1])	
+		this.outBuffer = torch.flip(this.outBuffer, [1])	
 				
-		############################
+		######### Copy on next frame (Fast) ###################
 		comp.start_next_frame()	
 		
 		comp.in_tops[0].from_tensor(this.outBuffer)
+		comp.in_chops[0].from_numpy(keypoints)
 		this.frame += 1
 
 	def runComp(self, tox_path):
