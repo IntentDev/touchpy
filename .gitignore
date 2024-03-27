@@ -33,7 +33,7 @@
 
 /out
 /.vs
-*/Backup
+*Backup
 *.dmp
 __pycache__
 CMakeUserPresets.json
