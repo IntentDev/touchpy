@@ -20,6 +20,8 @@ class ExampleRunComp:
 		self.running = True # used to gracefully exit the loop
 		self.frame = 0
 		self.model = YOLO("models/yolov8s-pose.pt")
+		self.inputBuffer = None
+		self.outBuffer = None
 		
 
 
@@ -33,43 +35,57 @@ class ExampleRunComp:
 		if (this.frame == 1):
 			print("tox started")
 		
-		tensor = comp.out_tops[0].as_tensor()
+		this.inputBuffer = comp.out_tops[0].as_tensor()
 
-		# convert an RGBA tensor to a RGB tensor
-		if (tensor.shape[0] == 4):
-			tensor = tensor[:3]	
+		# convert RGBA tensor to a RGB tensor
+		if (this.inputBuffer.shape[0] == 4):
+			this.inputBuffer = this.inputBuffer[:3]	
 
 		# convert RGB tensor to BGR and flip it upside down (as it is expecting OpenCV format)
-		tensor = torch.flip(tensor, [0,1])
+		this.inputBuffer = torch.flip(this.inputBuffer, [0,1])
 			
-			
-		results = this.model(tensor.unsqueeze(0), show=True, stream=True, device=0)
-		for result in results:
-			
-			#print(result.keypoints, result.keypoints.type())
-			
-			
-			annotatedArray = result.plot().images
-			
-			#convert from BGR to RGB and flip vertically (to match TouchDesigner format)
-			annotatedArray = cv2.cvtColor(annotatedArray, cv2.COLOR_BGR2RGB)[...,::-1,:]
-			
-			#copy to GPU
-			tensor = torch.from_numpy(annotatedArray).float().cuda()
-			
-			# convert tensor from HWC to CHW
-			out = torch.permute(tensor, (2,0,1))
 
-			#convert tensor color from 0-255 to 0-1 range
-			out = out / 255.0
+
+		results = this.model(this.inputBuffer.unsqueeze(0),stream=True, device=0)
+		result = next(results)
+		
+		fps = 1000 / ( result.speed["preprocess"]+result.speed["inference"]+result.speed["postprocess"])
 			
-			comp.in_tops[0].from_tensor(out)
+		print(f"{fps} fps")
+		
+
+		annotatedArray = result.plot()
 			
-				
+		#convert from BGR to RGB and flip vertically (to match TouchDesigner format)
+		annotatedArray = cv2.cvtColor(annotatedArray, cv2.COLOR_BGR2RGB)
+
+		#copy to GPU
+		this.outBuffer = torch.from_numpy(annotatedArray).float().cuda()
+			
+		# convert tensor from HWC to CHW
+		this.outBuffer = torch.permute(this.outBuffer, (2,0,1))
+
+		#convert tensor color from 0-255 to 0-1 range
+		this.outBuffer = this.outBuffer / 255.0
+		this.outBuffer = torch.flip(this.outBuffer, [0,1])	
+		print("buffer shape: ", this.outBuffer.shape, "out dtype: ", this.outBuffer.dtype, 
+				"buffer device: ", this.outBuffer.device, "buffer layout: ", this.outBuffer.layout, 
+				"buffer strides: ", this.outBuffer.stride(), "buffer is_contiguous: ", this.outBuffer.is_contiguous())	
+		
+		
+		
+		comp.start_next_frame()	
+		
+		comp.in_tops[0].from_tensor(this.outBuffer)
+
 		this.frame += 1
 
+
+		
+
 	def runComp(self, tox_path):
-		comp = tp.Comp(tox_path)
+		#comp = tp.Comp(tox_path)
+		comp = tp.Comp(tox_path, run_mode=tp.RunMode.InternalTimeSemiAuto)
 
 		comp.set_on_frame_callback(self.on_frame, self)
 
