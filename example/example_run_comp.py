@@ -153,7 +153,7 @@ class ExampleRunComp:
 	def runComp(self, tox_path):
 		# create a comp object and specify a path to a tox file
 		# comp = tp.Comp(tox_path)
-		comp = tp.Comp(tox_path, run_mode=tp.CompFlagBits.InternalTimeAuto)
+		comp = tp.Comp(tox_path, run_mode=tp.CompFlags.InternalTimeAuto)
 
 		comp.set_on_frame_callback(self.on_frame, self)
 

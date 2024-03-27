@@ -610,6 +610,9 @@ private:
 		case TELinkIntentPositionXYZW:
 			switch (count)
 			{
+			case 2:
+				pars[name] = std::make_unique<Double2ParLink>(instance_, linkInfo);
+				break;
 			case 3:
 				pars[name] = std::make_unique<Double3ParLink>(instance_, linkInfo);
 				break;

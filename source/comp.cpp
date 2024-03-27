@@ -256,15 +256,14 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 	{
 		if(result != TEResultCancelled)
 		{
-			std::string error = TEResultGetDescription(result);
-			error = "Frame did not finish successfully: " + error;
-			throw std::runtime_error("Frame did not finish successfully");
+			// need go through all possible results and handle them accordingly... 
 
-		//	std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result) 
-		//		<< ", start_time_value: " << start_time_value << ", start_time_scale : " << start_time_scale 
-		//		<< ", end_time_value: " << end_time_value << ", end_time_scale: " << end_time_scale << std::endl;
+			//std::string error = TEResultGetDescription(result);
+			//error = "Frame did not finish successfully: " + error;
+			//throw std::runtime_error("Frame did not finish successfully");
 
-		//	startNextFrame(prevTimeValue_, prevTimeScale_);
+			std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result);
+			startNextFrame(prevTimeValue_, prevTimeScale_);
 		}
 	}
 }

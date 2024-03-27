@@ -29,12 +29,6 @@ void initCompBindings(nb::module_& m)
 		.value("InternalTimeAsync", CompFlagBits::InternalTimeAsync)
 		;
 
-	//nb::class_<CompFlags> compFlags(m, "CompFlags");
-	//compFlags.def(nb::init<>())
-	//	.def(nb::init<CompFlags>(), "flags"_a)
-	//	.def(nb::init<CompFlags::IntType>(), "flags"_a);
-
-
 	nb::class_<Comp> comp(m, "Comp");
 	comp.doc() = "A TouchDesigner component loaded in a TouchEngine instance.";
 	comp.def(nb::init<>())
