@@ -143,18 +143,14 @@ class ExampleRunComp:
 			comp.in_tops[2].from_tensor(tensor2)
 			pass
 
-		# only call if comp was created with CompFlags.InternalTimeSemiAuto
-		# comp.start_next_frame()
+		comp.start_next_frame()
 	
-	
-
 		this.frame += 1
 
 	def runComp(self, tox_path):
 		# create a comp object and specify a path to a tox file
 		# comp = tp.Comp(tox_path)
 		comp = tp.Comp(tox_path, run_mode=tp.CompFlags.InternalTimeAuto)
-		# comp = tp.Comp(tox_path, run_mode=tp.CompFlags.InternalTimeSemiAuto)
 
 		comp.set_on_frame_callback(self.on_frame, self)
 
