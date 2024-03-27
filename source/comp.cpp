@@ -188,7 +188,7 @@ Comp::eventCallback(TEInstance* instance,
 	int32_t end_time_scale,
 	void* info)
 {
-	//std::cout << "eventCallback thread id: " << std::this_thread::get_id() << std::endl;
+	std::cout << "eventCallback: " << teutils::eventToString(event) << " result: " << TEResultGetDescription(result) << std::endl;
 	Comp* comp = static_cast<Comp*>(info);
 
 	switch (event)
@@ -449,6 +449,7 @@ void Comp::clearOnFrameStartCallback()
 void Comp::start()
 {
 	TE_CHECK(TEInstanceResume(instance_));
+	instanceRunning_ = true;
 
 	switch (compFlags_)
 	{
@@ -472,6 +473,8 @@ void Comp::start()
 void Comp::stop()
 {
 	TE_CHECK(TEInstanceSuspend(instance_));
+	instanceRunning_ = false;
+
 
 	switch (compFlags_)
 	{
@@ -494,8 +497,6 @@ void Comp::runUpdateLoop(bool autoStartNextFrame)
 	updateLoopRunning_ = true;
 	while (updateLoopRunning_)
 	{
-		update(autoStartNextFrame);
-		update(autoStartNextFrame);
 		update(autoStartNextFrame);
 	}
 }
@@ -581,16 +582,19 @@ bool Comp::startNextFrame(int64_t timeValue, int32_t timeScale)
 	prevTimeValue_ = timeValue;
 	prevTimeScale_ = timeScale;
 
-	setInFrame(true);
-	TEResult result = TEInstanceStartFrameAtTime(instance_, timeValue, timeScale, false);
-	if (result != TEResultSuccess)
-	{
-		std::cout << "update() TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
-		setInFrame(false);
-		return false;
-	}
-
-	return true;
+	//if (instanceRunning_)
+	//{
+		setInFrame(true);
+		TEResult result = TEInstanceStartFrameAtTime(instance_, timeValue, timeScale, false);
+		if (result != TEResultSuccess)
+		{
+			std::cout << "TEInstanceStartFrameAtTime: " << timeValue << ", " << timeScale << " " << TEResultGetDescription(result) << std::endl;
+			setInFrame(false);
+			return false;
+		}
+		return true;
+	//}
+	//return false;	
 }
 
 void Comp::applyValueChanges()
@@ -770,13 +774,5 @@ Comp::applyLayoutChange()
 			}
 		}
 	}
-
 	startNextFrame(prevTimeValue_, prevTimeScale_);
-	//setInFrame(true);
-	//TEResult result = TEInstanceStartFrameAtTime(instance_, 0, 0, false);
-	//if (result != TEResultSuccess)
-	//{
-	//	std::cout << "Layout Change TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
-	//	setInFrame(false);
-	//}
 }
