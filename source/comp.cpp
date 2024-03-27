@@ -35,7 +35,6 @@ Comp::~Comp()
 	vkDestroyFence(device_, submitFence_, nullptr);
 }
 
-
 void 
 Comp::createRenderer()
 {
@@ -52,7 +51,6 @@ Comp::createRenderer()
 	VkFenceCreateInfo fenceCreateInfo = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0 };
 	vkCreateFence(device_, &fenceCreateInfo, nullptr, &submitFence_);
 }
-
 
 void 
 Comp::cudaInit()
@@ -152,7 +150,7 @@ Comp::unload()
 	clearOnFrameStartCallback();
 
 	if (asyncRunning_.load()) stopAsync();
-	else if (updateLoopRunning_) stopUpdateLoop();
+	else if (updateLoopRunning_) stopUpdate();
 
 	std::unique_lock<std::mutex> lock(mutex_);
 	if (ssLoaded_)
@@ -188,7 +186,7 @@ Comp::eventCallback(TEInstance* instance,
 	int32_t end_time_scale,
 	void* info)
 {
-	std::cout << "eventCallback: " << teutils::eventToString(event) << " result: " << TEResultGetDescription(result) << std::endl;
+	// std::cout << "eventCallback: " << teutils::eventToString(event) << " result: " << TEResultGetDescription(result) << std::endl;
 	Comp* comp = static_cast<Comp*>(info);
 
 	switch (event)
@@ -410,7 +408,6 @@ Comp::setInFrame(bool inFrame)
 	ssInFrame_ = inFrame;
 
 	if (usingSwapBuffer_) cv_.notify_one();
-	
 }
 
 
@@ -426,10 +423,8 @@ void Comp::setOnFrameStartCallback(
 		cv_.wait(lock, [this] { return ssInFrame_; });
 	}
 
-	
 	onFrameStartCallback_ = callback;
 	onFrameStartCallbackUserData_ = userData;
-
 }
 
 void Comp::clearOnFrameStartCallback()
@@ -449,16 +444,11 @@ void Comp::clearOnFrameStartCallback()
 void Comp::start()
 {
 	TE_CHECK(TEInstanceResume(instance_));
-	instanceRunning_ = true;
 
 	switch (compFlags_)
 	{
 	case CompFlagBits::InternalTimeAuto:
-		runUpdateLoop();
-		break;
-
-	case CompFlagBits::InternalTimeSemiAuto:
-		runUpdateLoop(false);
+		update();
 		break;
 
 	case CompFlagBits::InternalTimeAsync:
@@ -472,15 +462,10 @@ void Comp::start()
 
 void Comp::stop()
 {
-	TE_CHECK(TEInstanceSuspend(instance_));
-	instanceRunning_ = false;
-
-
 	switch (compFlags_)
 	{
 	case CompFlagBits::InternalTimeAuto:
-	case CompFlagBits::InternalTimeSemiAuto:
-		stopUpdateLoop();
+		stopUpdate();
 		break;
 
 	case CompFlagBits::InternalTimeAsync:
@@ -490,18 +475,25 @@ void Comp::stop()
 	default:
 		break;
 	}
+
+	TE_CHECK(TEInstanceSuspend(instance_));
 }
 
-void Comp::runUpdateLoop(bool autoStartNextFrame)
+void Comp::update()
 {
 	updateLoopRunning_ = true;
 	while (updateLoopRunning_)
 	{
-		update(autoStartNextFrame);
+		if (frameDidFinish())
+		{
+			applyValueChanges();
+
+			if (updateLoopRunning_ && !callOnFrameStartCallback()) startNextFrame();
+		}
 	}
 }
 
-void Comp::stopUpdateLoop()
+void Comp::stopUpdate()
 {
 	updateLoopRunning_ = false;
 }
@@ -510,12 +502,11 @@ void Comp::startAsync()
 {
 	usingSwapBuffer_ = true;
 	asyncRunning_ = true;
-	asyncThread_ = std::thread(&Comp::asyncUpdateLoop, this);
+	asyncThread_ = std::thread(&Comp::asyncUpdate, this);
 }
 
 void Comp::stopAsync()
 {
-
 	asyncRunning_.store(false);
 	if (asyncThread_.joinable())
 		asyncThread_.join();
@@ -523,12 +514,10 @@ void Comp::stopAsync()
 	usingSwapBuffer_ = false;
 }
 
-//extern void
-//safeCallPythonCallback(Comp* comp, std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData);
-
-void Comp::asyncUpdateLoop()
+void Comp::asyncUpdate()
 {
-	while (asyncRunning_.load())
+	bool running { true };
+	while (running)
 	{
 		bool ready, loaded, linksLayoutChanged, inFrame;
 		getState(ready, loaded, linksLayoutChanged, inFrame);
@@ -544,20 +533,9 @@ void Comp::asyncUpdateLoop()
 		if (!inFrame)
 		{
 			applyValueChanges();
-			callOnFrameStartCallback();
-			startNextFrame();
+			running = asyncRunning_.load();
+			if (running && !callOnFrameStartCallback()) startNextFrame();
 		}
-	}
-}
-
-void
-Comp::update(bool autoStartNextFrame)
-{
-	if (frameDidFinish())
-	{
-		applyValueChanges();
-		callOnFrameStartCallback();
-		if (autoStartNextFrame) startNextFrame();
 	}
 }
 
@@ -582,19 +560,15 @@ bool Comp::startNextFrame(int64_t timeValue, int32_t timeScale)
 	prevTimeValue_ = timeValue;
 	prevTimeScale_ = timeScale;
 
-	//if (instanceRunning_)
-	//{
-		setInFrame(true);
-		TEResult result = TEInstanceStartFrameAtTime(instance_, timeValue, timeScale, false);
-		if (result != TEResultSuccess)
-		{
-			std::cout << "TEInstanceStartFrameAtTime: " << timeValue << ", " << timeScale << " " << TEResultGetDescription(result) << std::endl;
-			setInFrame(false);
-			return false;
-		}
-		return true;
-	//}
-	//return false;	
+	setInFrame(true);
+	TEResult result = TEInstanceStartFrameAtTime(instance_, timeValue, timeScale, false);
+	if (result != TEResultSuccess)
+	{
+		std::cout << "TEInstanceStartFrameAtTime: " << timeValue << ", " << timeScale << " " << TEResultGetDescription(result) << std::endl;
+		setInFrame(false);
+		return false;
+	}
+	return true;
 }
 
 void Comp::applyValueChanges()
@@ -615,10 +589,14 @@ void Comp::applyValueChanges()
 	applyOutputStringDataChange();
 }
 
-void Comp::callOnFrameStartCallback()
+bool Comp::callOnFrameStartCallback()
 {
 	if (onFrameStartCallback_)
+	{
 		onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
+		return true;
+	}
+	return false;
 }
 
 void
@@ -626,9 +604,9 @@ Comp::applyOutputTextureChange()
 {
 	for (const auto& identifier : changedOutputTextures_)
 	{
-		auto& textureLink = *outTopLinks_->getLinkByIdentifier(identifier);
-		//textureLink.onOutputTextureChange(cudaStream_);
-		textureLink.onOutputTextureChange(nullptr);
+		auto& topLink = *outTopLinks_->getLinkByIdentifier(identifier);
+		//topLink.onOutputTextureChange(cudaStream_);
+		topLink.onOutputTextureChange(nullptr);
 	}
 }
 

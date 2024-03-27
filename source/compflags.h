@@ -9,11 +9,9 @@ enum class CompFlagBits : Type
 	InternalTime = 1 << 0,
 	ExternalTime = 1 << 1,
 	AutoUpdate = 1 << 2,
-	SemiAutoUpdate = 1 << 3,
-	AsyncUpdate = 1 << 5,
-	Realtime = 1 << 6,
+	AsyncUpdate = 1 << 3,
+	Realtime = 1 << 4,
 	InternalTimeAuto = static_cast<Type>(InternalTime) | static_cast<Type>(AutoUpdate),
-	InternalTimeSemiAuto = static_cast<Type>(InternalTime) | static_cast<Type>(SemiAutoUpdate),
 	InternalTimeAsync = static_cast<Type>(InternalTime) | static_cast<Type>(AsyncUpdate),
 };
 

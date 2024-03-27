@@ -21,11 +21,9 @@ void initCompBindings(nb::module_& m)
 		.value("InternalTime", CompFlagBits::InternalTime)
 		.value("ExternalTime", CompFlagBits::ExternalTime)
 		.value("AutoUpdate", CompFlagBits::AutoUpdate)
-		.value("SemiAutoUpdate", CompFlagBits::SemiAutoUpdate)
 		.value("AsyncUpdate", CompFlagBits::AsyncUpdate)
 		.value("Realtime", CompFlagBits::Realtime)
 		.value("InternalTimeAuto", CompFlagBits::InternalTimeAuto)
-		.value("InternalTimeSemiAuto", CompFlagBits::InternalTimeSemiAuto)
 		.value("InternalTimeAsync", CompFlagBits::InternalTimeAsync)
 		;
 

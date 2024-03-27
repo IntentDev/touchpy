@@ -44,7 +44,7 @@ public:
 
 	bool frameDidFinish();
 	void applyValueChanges();
-	void callOnFrameStartCallback();
+	bool callOnFrameStartCallback();
 	bool startNextFrame(int64_t timeValue = 0, int32_t timeScale = 0);
 
 	InTopLinks&        inputTopLinks()  { return *inTopLinks_; }
@@ -83,7 +83,7 @@ private:
 	std::atomic<bool>					  asyncRunning_ { false };
 	std::thread							  asyncThread_;
 	bool								  usingSwapBuffer_{ false }; // could remove this and use asyncRunning_
-	void								  asyncUpdateLoop();
+	void								  asyncUpdate();
 	void								  startAsync();
 	void								  stopAsync();
 
@@ -95,7 +95,6 @@ private:
 	TouchObject<TEInstance>   instance_          { nullptr };
 	int64_t                   prevTimeValue_     { 0 };
 	int32_t                   prevTimeScale_     { 0 };
-	bool                      instanceRunning_ { false };
 
 	std::unique_ptr<Renderer> renderer_;
 	VkDevice                  device_            { VK_NULL_HANDLE };
@@ -129,9 +128,8 @@ private:
 
 	void initComp();
 	bool initInstance();
-	void runUpdateLoop(bool autoStartNextFrame = true);
-	void stopUpdateLoop();
-	void update(bool autoStartNextFrame = true);
+	void update();
+	void stopUpdate();
 	void applyLayoutChange();
 	void applyOutputTextureChange();
 	void applyOutputFloatBufferChange();
