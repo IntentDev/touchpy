@@ -17,21 +17,30 @@ Returns:
 
 void initCompBindings(nb::module_& m)
 {
-	nb::enum_<RunMode>(m, "RunMode")
-		.value("InternalTimeAuto", RunMode::InternalTimeAuto)
-		.value("InternalTimeSemiAuto", RunMode::InternalTimeSemiAuto)
-		.value("InternalTimeManual", RunMode::InternalTimeManual)
-		.value("ExternalTimeManual", RunMode::ExternalTimeManual)
-		.value("InternalTimeAsync", RunMode::InternalTimeAsync)
+	nb::enum_<CompFlagBits>(m, "CompFlags")
+		.value("InternalTime", CompFlagBits::InternalTime)
+		.value("ExternalTime", CompFlagBits::ExternalTime)
+		.value("AutoUpdate", CompFlagBits::AutoUpdate)
+		.value("SemiAutoUpdate", CompFlagBits::SemiAutoUpdate)
+		.value("AsyncUpdate", CompFlagBits::AsyncUpdate)
+		.value("Realtime", CompFlagBits::Realtime)
+		.value("InternalTimeAuto", CompFlagBits::InternalTimeAuto)
+		.value("InternalTimeSemiAuto", CompFlagBits::InternalTimeSemiAuto)
+		.value("InternalTimeAsync", CompFlagBits::InternalTimeAsync)
 		;
+
+	//nb::class_<CompFlags> compFlags(m, "CompFlags");
+	//compFlags.def(nb::init<>())
+	//	.def(nb::init<CompFlags>(), "flags"_a)
+	//	.def(nb::init<CompFlags::IntType>(), "flags"_a);
 
 
 	nb::class_<Comp> comp(m, "Comp");
 	comp.doc() = "A TouchDesigner component loaded in a TouchEngine instance.";
 	comp.def(nb::init<>())
-		.def(nb::init<const std::string&, RunMode, int64_t>(),
-			"tox_path"_a, "run_mode"_a = RunMode::InternalTimeAuto, "fps"_a = 60, nb::rv_policy::automatic)
-		.def("load_tox", &Comp::loadTox, "path"_a, "run_mode"_a = RunMode::InternalTimeAuto, "fps"_a = 60
+		.def(nb::init<const std::string&, CompFlagBits, int64_t>(),
+			"tox_path"_a, "run_mode"_a = CompFlagBits::InternalTimeAuto, "fps"_a = 60, nb::rv_policy::automatic)
+		.def("load_tox", &Comp::loadTox, "path"_a, "run_mode"_a = CompFlagBits::InternalTimeAuto, "fps"_a = 60
 					, nb::rv_policy::reference_internal, load_toxDoc)
 		.def("loaded", &Comp::loaded, nb::rv_policy::reference_internal)
 		.def("unload", &Comp::unload, nb::rv_policy::reference_internal)
