@@ -92,9 +92,9 @@ class ExampleRunComp:
 		# get the parameter named Rgba and set it's values in different ways
 		# setting individual components is not ideal, but it's possible
 		# better set .val to a new tp.Color object or use .set()
-		rgba = comp.par['Rgba']
-		rgba.r = .8
-		rgba.g = rgba.g + .2
+		# rgba = comp.par['Rgba']
+		# rgba.r = .8
+		# rgba.g = rgba.g + .2
 		# comp.par['Rgba'].val = tp.Color(0.1, 0.2, 0.3, .5)
 
 		# get the parameter named Scale and set it's value
@@ -106,9 +106,9 @@ class ExampleRunComp:
 		# .set() can take a list, tuple, individual values or the correct type for the parameter
 		translate = comp.par['Translate']
 		# translate.val = tp.Float3(11.1, 22.2, 33.3)
-		translate.set(tp.Float3(11.1, 22.2, 33.1))
-		translate.set([11.1, 22.2, 33.2])
-		translate.set(11.1, 22.2, 33.5)
+		translate.set(tp.Float2(11.1, 22.2,))
+		translate.set([11.1, 22.2])
+		translate.set(11.1, 22.5)
 
 
 		# copy the cuda memory from out_top_link to in_top_link
@@ -143,7 +143,7 @@ class ExampleRunComp:
 			comp.in_tops[2].from_tensor(tensor2)
 			pass
 
-		# only call if comp was created with RunMode.InternalTimeSemiAuto
+		# only call if comp was created with CompFlags.InternalTimeSemiAuto
 		# comp.start_next_frame()
 	
 	
@@ -154,10 +154,11 @@ class ExampleRunComp:
 		# create a comp object and specify a path to a tox file
 		# comp = tp.Comp(tox_path)
 		comp = tp.Comp(tox_path, run_mode=tp.CompFlags.InternalTimeAuto)
+		# comp = tp.Comp(tox_path, run_mode=tp.CompFlags.InternalTimeSemiAuto)
 
 		comp.set_on_frame_callback(self.on_frame, self)
 
-		comp.start() # start the comp, blocks with RunMode.InternalTimeAuto and RunMode.InternalTimeSemiAuto
+		comp.start() # start the comp, blocks with CompFlags.InternalTimeAuto and CompFlags.InternalTimeSemiAuto
 
 		comp.unload() # should be called to properly unload the comp (especially if Python exits immediately after this)
 		pass

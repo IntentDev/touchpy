@@ -90,22 +90,23 @@ private:
 	// main thread only
 	//-----------------------------------------------------------------------------------------------------------------
 
-	std::string                        filePath_;
-	CompFlags                          compFlags_          { CompFlagBits::InternalTimeAuto };
-	TouchObject<TEInstance>            instance_           { nullptr };
-	int64_t 						   prevTimeValue_          { 0 };
-	int32_t                            prevTimeScale_          { 0 };
+	std::string               filePath_;
+	CompFlags                 compFlags_         { CompFlagBits::InternalTimeAuto };
+	TouchObject<TEInstance>   instance_          { nullptr };
+	int64_t                   prevTimeValue_     { 0 };
+	int32_t                   prevTimeScale_     { 0 };
+	bool                      instanceRunning_ { false };
 
-	std::unique_ptr<Renderer>          renderer_;
-	VkDevice                           device_             { VK_NULL_HANDLE };
-	VkPhysicalDevice                   physicalDevice_     { VK_NULL_HANDLE };
-	std::vector<uint32_t>              queueFamilyIndices_;
-	VkQueue                            queue_              { VK_NULL_HANDLE };
-	VkCommandBuffer                    commandBuffer_      { VK_NULL_HANDLE };
-	VkFence                            submitFence_        { VK_NULL_HANDLE };
+	std::unique_ptr<Renderer> renderer_;
+	VkDevice                  device_            { VK_NULL_HANDLE };
+	VkPhysicalDevice          physicalDevice_    { VK_NULL_HANDLE };
+	std::vector<uint32_t>     queueFamilyIndices_;
+	VkQueue                   queue_             { VK_NULL_HANDLE };
+	VkCommandBuffer           commandBuffer_     { VK_NULL_HANDLE };
+	VkFence                   submitFence_       { VK_NULL_HANDLE };
 
-	cudaStream_t                       cudaStream_         { nullptr };
-	int                                cudaDevice_         { -1 };
+	cudaStream_t              cudaStream_        { nullptr };
+	int                       cudaDevice_        { -1 };
 
 
 	std::vector<std::string>           changedOutputTextures_;
