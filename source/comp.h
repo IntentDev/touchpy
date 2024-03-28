@@ -33,18 +33,11 @@ public:
 	void unload();
 	bool loaded() const; 
 
-	void setOnFrameStartCallback(
-		std::function<void(Comp&, std::shared_ptr<void>)> callback,
-		std::shared_ptr<void> userData
-	);
-	void clearOnFrameStartCallback();
-
 	void start();
 	void stop();
 
 	bool frameDidFinish();
 	void applyValueChanges();
-	bool callOnFrameStartCallback();
 	bool startNextFrame(int64_t timeValue = 0, int32_t timeScale = 0);
 
 	InTopLinks&        inputTopLinks()  { return *inTopLinks_; }
@@ -54,6 +47,15 @@ public:
 	InDatLinks&        inDatLinks()     { return *inDatLinks_; }
 	OutDatLinks&       outDatLinks()    { return *outDatLinks_; }
 	ParLinkCollection& parLinks()       { return *parLinks_; }
+
+	void setOnFrameCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData);
+	void clearOnFrameCallback();
+	bool callOnFrameCallback();
+
+	void setOnLayoutChangeCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData);
+	void clearOnLayoutChangeCallback();
+	bool callOnLayoutChangeCallback();
+
 
 	// for internal use only, not for python bindings
 	//-----------------------------------------------------------------------------------------------------------------
@@ -83,6 +85,7 @@ private:
 	std::atomic<bool>					  asyncRunning_ { false };
 	std::thread							  asyncThread_;
 	bool								  usingSwapBuffer_{ false }; // could remove this and use asyncRunning_
+	std::condition_variable 			  asyncCV_;
 	void								  asyncUpdate();
 	void								  startAsync();
 	void								  stopAsync();
@@ -123,8 +126,10 @@ private:
 	
 	bool											  updateLoopRunning_	{ false };
 	uint64_t 										  frameCount_          { 0 };
-	std::shared_ptr<void>							  onFrameStartCallbackUserData_ { nullptr };
-	std::function<void(Comp&, std::shared_ptr<void>)> onFrameStartCallback_ { nullptr };
+	std::shared_ptr<void>							  onFrameCallbackUserData_ { nullptr };
+	std::function<void(Comp&, std::shared_ptr<void>)> onFrameCallback_ { nullptr };
+	std::shared_ptr<void>							  onLayoutChangeCallbackUserData_{ nullptr };
+	std::function<void(Comp&, std::shared_ptr<void>)> onLayoutChangeCallback_{ nullptr };
 
 	void initComp();
 	bool initInstance();

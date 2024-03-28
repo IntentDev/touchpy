@@ -147,7 +147,7 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 void 
 Comp::unload()
 {
-	clearOnFrameStartCallback();
+	clearOnFrameCallback();
 
 	if (asyncRunning_.load()) stopAsync();
 	else if (updateLoopRunning_) stopUpdate();
@@ -410,8 +410,7 @@ Comp::setInFrame(bool inFrame)
 	if (usingSwapBuffer_) cv_.notify_one();
 }
 
-
-void Comp::setOnFrameStartCallback(
+void Comp::setOnFrameCallback(
 	std::function<void(Comp&, std::shared_ptr<void>)> callback,
 	std::shared_ptr<void> userData)
 {
@@ -423,11 +422,11 @@ void Comp::setOnFrameStartCallback(
 		cv_.wait(lock, [this] { return ssInFrame_; });
 	}
 
-	onFrameStartCallback_ = callback;
-	onFrameStartCallbackUserData_ = userData;
+	onFrameCallback_ = callback;
+	onFrameCallbackUserData_ = userData;
 }
 
-void Comp::clearOnFrameStartCallback()
+void Comp::clearOnFrameCallback()
 {
 	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
 
@@ -437,8 +436,58 @@ void Comp::clearOnFrameStartCallback()
 		cv_.wait(lock, [this] { return ssInFrame_; });
 	}
 
-	onFrameStartCallback_ = nullptr;
-	onFrameStartCallbackUserData_ = nullptr;
+	onFrameCallback_ = nullptr;
+	onFrameCallbackUserData_ = nullptr;
+}
+
+bool Comp::callOnFrameCallback()
+{
+	if (onFrameCallback_)
+	{
+		onFrameCallback_(*this, onFrameCallbackUserData_);
+		return true;
+	}
+	return false;
+}
+
+void Comp::setOnLayoutChangeCallback(
+	std::function<void(Comp&, std::shared_ptr<void>)> callback,
+	std::shared_ptr<void> userData)
+{
+	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
+
+	if (usingSwapBuffer_)
+	{
+		lock.lock();
+		cv_.wait(lock, [this] { return ssInFrame_; });
+	}
+
+	onLayoutChangeCallback_ = callback;
+	onLayoutChangeCallbackUserData_ = userData;
+}
+
+void Comp::clearOnLayoutChangeCallback()
+{
+	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
+
+	if (usingSwapBuffer_)
+	{
+		lock.lock();
+		cv_.wait(lock, [this] { return ssInFrame_; });
+	}
+
+	onLayoutChangeCallback_ = nullptr;
+	onLayoutChangeCallbackUserData_ = nullptr;
+}
+
+bool Comp::callOnLayoutChangeCallback()
+{
+	if (onLayoutChangeCallback_)
+	{
+		onLayoutChangeCallback_(*this, onLayoutChangeCallbackUserData_);
+		return true;
+	}
+	return false;
 }
 
 void Comp::start()
@@ -487,8 +536,8 @@ void Comp::update()
 		if (frameDidFinish())
 		{
 			applyValueChanges();
-
-			if (updateLoopRunning_ && !callOnFrameStartCallback()) startNextFrame();
+			
+			if (!callOnFrameCallback() && updateLoopRunning_) startNextFrame(prevTimeValue_, prevTimeScale_);
 		}
 	}
 }
@@ -533,8 +582,11 @@ void Comp::asyncUpdate()
 		if (!inFrame)
 		{
 			applyValueChanges();
+
 			running = asyncRunning_.load();
-			if (running && !callOnFrameStartCallback()) startNextFrame();
+			if (!running) break;
+
+			if (!callOnFrameCallback()) startNextFrame();
 		}
 	}
 }
@@ -587,16 +639,6 @@ void Comp::applyValueChanges()
 	applyOutputTextureChange();
 	applyOutputFloatBufferChange();
 	applyOutputStringDataChange();
-}
-
-bool Comp::callOnFrameStartCallback()
-{
-	if (onFrameStartCallback_)
-	{
-		onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
-		return true;
-	}
-	return false;
 }
 
 void
@@ -752,5 +794,8 @@ Comp::applyLayoutChange()
 			}
 		}
 	}
-	startNextFrame(prevTimeValue_, prevTimeScale_);
+
+	callOnLayoutChangeCallback();
+
+	if (updateLoopRunning_ || asyncRunning_.load()) startNextFrame(prevTimeValue_, prevTimeScale_);
 }
