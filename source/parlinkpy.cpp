@@ -249,8 +249,8 @@ void initParLinkBindings(nb::module_& m)
 	nb::class_<ParLinkCollection> parLinks(m, "ParLinkCollection");
 	parLinks.doc() = "A collection of parameters in a TouchDesigner component";
 	parLinks.def(nb::init<>())
-		.def("count", &ParLinkCollection::size)
-		.def("names", &ParLinkCollection::getParNames, nb::rv_policy::reference_internal)
+		.def_prop_ro("count", [](ParLinkCollection& self) { return self.size(); })
+		.def_prop_ro("names", [](ParLinkCollection& self) { return self.getParNames(); })
 		.def("__getitem__", [](ParLinkCollection& self, const std::string& name) -> std::shared_ptr<ParLink>
 			{ return self.getParLinkByName(name); }, nb::rv_policy::reference_internal)
 		;

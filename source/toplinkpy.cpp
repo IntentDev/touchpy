@@ -1,7 +1,9 @@
 #include <nanobind/nanobind.h>
-//#include <nanobind/stl/string.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/operators.h>
+
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/vector.h>
 
 #include "toplink.h"
 
@@ -187,8 +189,8 @@ void initTopLinkBindings(nb::module_& m)
 	nb::class_<OutTopLinks> outTopLinks(m, "OutTopLinks");
 	outTopLinks.doc() = "A collection of OutTOP links in a TouchDesigner component";
 	outTopLinks.def(nb::init<>())
-		.def("num_links", &OutTopLinks::size)
-		.def("link_names", &OutTopLinks::getLinkNames)
+		.def_prop_ro("count", [](OutTopLinks& self) { return self.size(); })
+		.def_prop_ro("names", [](OutTopLinks& self) { return self.getLinkNames(); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](OutTopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](OutTopLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
@@ -238,8 +240,8 @@ void initTopLinkBindings(nb::module_& m)
 	nb::class_<InTopLinks> inTopLinks(m, "InTopLinks");
 	inTopLinks.doc() = "A collection of InTOP links in a TouchDesigner component";
 	inTopLinks.def(nb::init<>())
-		.def("num_links", &InTopLinks::size)
-		.def("link_names", &InTopLinks::getLinkNames)
+		.def_prop_ro("count", [](InTopLinks& self) { return self.size(); })
+		.def_prop_ro("names", [](InTopLinks& self) { return self.getLinkNames(); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](InTopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](InTopLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;

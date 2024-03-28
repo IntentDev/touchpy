@@ -16,6 +16,19 @@ class ExampleRunComp:
 		self.frame = 0
 		self.test_array = np.array([[1],[2],[3],[4],[5],[6],[7],[8],[9],[10]], dtype=np.float32)
 		self.test_array_chan_names = [f"chn{i}" for i in range(10)]
+	
+	@staticmethod
+	def on_layout_change(comp, info):
+		print('layout changed:')
+		print('in tops:', comp.in_tops.count, comp.in_tops.names)
+		print('out tops:', comp.out_tops.count, comp.out_tops.names)
+		print('in chops:', comp.in_chops.count, comp.in_chops.names)
+		print('out chops:', comp.out_chops.count, comp.out_chops.names)
+		print('in dats:', comp.in_dats.count, comp.in_dats.names)
+		print('out dats:', comp.out_dats.count, comp.out_dats.names)
+		print('pars:', comp.par.count, comp.par.names)
+
+
 
 	@staticmethod
 	def on_frame(comp, this):
@@ -83,12 +96,6 @@ class ExampleRunComp:
 			# print(datOut2.as_table().as_list())
 			pass
 		
-		# print out all the parameters name on the first frame
-		parNames = comp.par.names()
-		if (this.frame == 0):
-			for name in parNames:
-				print(f"{name}: {comp.par[name].val}")
-			
 		# get the parameter named Rgba and set it's values in different ways
 		# setting individual components is not ideal, but it's possible
 		# better set .val to a new tp.Color object or use .set()
@@ -150,8 +157,9 @@ class ExampleRunComp:
 	def runComp(self, tox_path):
 		# create a comp object and specify a path to a tox file
 		# comp = tp.Comp(tox_path)
-		comp = tp.Comp(tox_path, run_mode=tp.CompFlags.InternalTimeAuto)
+		comp = tp.Comp(tox_path, run_mode=tp.CompFlags.INTERNAL_TIME_AUTO)
 
+		comp.set_on_layout_change_callback(self.on_layout_change, self)
 		comp.set_on_frame_callback(self.on_frame, self)
 
 		comp.start() # start the comp, blocks with CompFlags.InternalTimeAuto and CompFlags.InternalTimeSemiAuto

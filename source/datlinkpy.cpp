@@ -97,8 +97,8 @@ void initDatLinkBindings(nb::module_& m)
 	nb::class_<OutDatLinks> outDatLinks(m, "OutDatLinks");
 	outDatLinks.doc() = "A collection of DAT links in a TouchDesigner component";
 	outDatLinks.def(nb::init<>())
-		.def("num_links", &OutDatLinks::size)
-		.def("link_names", &OutDatLinks::getLinkNames)
+		.def_prop_ro("count", [](OutDatLinks& self) { return self.size(); } )
+		.def_prop_ro("names", [](OutDatLinks& self) { return self.getLinkNames(); })
 		.def("__getitem__", [](OutDatLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](OutDatLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
@@ -119,8 +119,8 @@ void initDatLinkBindings(nb::module_& m)
 	nb::class_<InDatLinks> inDatLinks(m, "InDatLinks");
 	inDatLinks.doc() = "A collection of DAT links in a TouchDesigner component";
 	inDatLinks.def(nb::init<>())
-		.def("num_links", &InDatLinks::size)
-		.def("link_names", &InDatLinks::getLinkNames)
+		.def_prop_ro("count", [](InDatLinks& self) { return self.size(); } )
+		.def_prop_ro("names", [](InDatLinks& self) { return self.getLinkNames(); })
 		.def("__getitem__", [](InDatLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](InDatLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
