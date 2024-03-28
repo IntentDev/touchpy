@@ -33,10 +33,15 @@
 
 /out
 /.vs
-*/Backup
+*Backup
 *.dmp
 __pycache__
 CMakeUserPresets.json
 CMakePresets.json
 example/touchpy.cp311-win_amd64.pyd
 /example/__pycache__
+
+
+
+examples/yolov8/toe/yolo.*.toe
+examples/yolov8/models/
