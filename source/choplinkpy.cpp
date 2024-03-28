@@ -95,8 +95,8 @@ void initChopLinkBindings(nb::module_& m)
 	nb::class_<OutChopLinks> outChopLinks(m, "OutChopLinks");
 	outChopLinks.doc() = "A collection of CHOP links in a TouchDesigner component";
 	outChopLinks.def(nb::init<>())
-		.def("num_links", &OutChopLinks::size)
-		.def("link_names", &OutChopLinks::getLinkNames)
+		.def_prop_ro("count", [](OutChopLinks& self) { return self.size(); })
+		.def_prop_ro("names", [](OutChopLinks& self) { return self.getLinkNames(); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](OutChopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](OutChopLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
@@ -109,8 +109,8 @@ void initChopLinkBindings(nb::module_& m)
 	nb::class_<InChopLinks> inChopLinks(m, "InChopLinks");
 	inChopLinks.doc() = "A collection of CHOP links in a TouchDesigner component";
 	inChopLinks.def(nb::init<>())
-		.def("num_links", &InChopLinks::size)
-		.def("link_names", &InChopLinks::getLinkNames)
+		.def_prop_ro("count", [](InChopLinks& self) { return self.size(); })
+		.def_prop_ro("names", [](InChopLinks& self) { return self.getLinkNames(); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](InChopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](InChopLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;

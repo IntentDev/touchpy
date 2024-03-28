@@ -18,13 +18,13 @@ Returns:
 void initCompBindings(nb::module_& m)
 {
 	nb::enum_<CompFlagBits>(m, "CompFlags")
-		.value("InternalTime", CompFlagBits::InternalTime)
-		.value("ExternalTime", CompFlagBits::ExternalTime)
-		.value("AutoUpdate", CompFlagBits::AutoUpdate)
-		.value("AsyncUpdate", CompFlagBits::AsyncUpdate)
-		.value("Realtime", CompFlagBits::Realtime)
-		.value("InternalTimeAuto", CompFlagBits::InternalTimeAuto)
-		.value("InternalTimeAsync", CompFlagBits::InternalTimeAsync)
+		.value("INTERNAL_TIME", CompFlagBits::InternalTime)
+		.value("EXTERNAL_TIME", CompFlagBits::ExternalTime)
+		.value("AUTO_UPDATE", CompFlagBits::AutoUpdate)
+		.value("ASYNC_UPDATE", CompFlagBits::AsyncUpdate)
+		.value("REALTIME", CompFlagBits::Realtime)
+		.value("INTERNAL_TIME_AUTO", CompFlagBits::InternalTimeAuto)
+		.value("INTERNAL_TIME_ASYNC", CompFlagBits::InternalTimeAsync)
 		;
 
 	nb::class_<Comp> comp(m, "Comp");
@@ -40,7 +40,7 @@ void initCompBindings(nb::module_& m)
 		.def("stop", &Comp::stop, nb::rv_policy::reference_internal)
 		.def("frame_did_finish", &Comp::frameDidFinish, nb::rv_policy::reference_internal)
 		.def("apply_value_changes", &Comp::applyValueChanges, nb::rv_policy::reference_internal)
-		.def("call_on_frame_callback", &Comp::callOnFrameStartCallback, nb::rv_policy::reference_internal)
+		.def("call_on_frame_callback", &Comp::callOnFrameCallback, nb::rv_policy::reference_internal)
 		.def("start_next_frame", &Comp::startNextFrame, "time_value"_a = 0, "time_scale"_a = 0, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_tops", &Comp::inputTopLinks, nb::rv_policy::reference_internal)
 		.def_prop_ro("out_tops", &Comp::outputTopLinks, nb::rv_policy::reference_internal)
@@ -51,10 +51,11 @@ void initCompBindings(nb::module_& m)
 		.def_prop_ro("par", &Comp::parLinks, nb::rv_policy::reference_internal)
 		;
 
+	comp.def("clear_on_frame_callback", &Comp::clearOnFrameCallback, nb::rv_policy::reference_internal);
 	comp.def("set_on_frame_callback", [](Comp& self, nb::callable pythonCallback, nb::object userData)
 		{
 			auto userDataPtr = std::make_shared<nb::object>(userData);
-			self.setOnFrameStartCallback([pythonCallback](Comp& comp, std::shared_ptr<void> userData)
+			self.setOnFrameCallback([pythonCallback](Comp& comp, std::shared_ptr<void> userData)
 				{
 					auto& userDataPyObj = *std::static_pointer_cast<nb::object>(userData);
 					if (!comp.freeRunning())
@@ -72,6 +73,25 @@ void initCompBindings(nb::module_& m)
 		}
 	);
 
-	comp.def("clear_on_frame_callback", &Comp::clearOnFrameStartCallback, nb::rv_policy::reference_internal);
+	comp.def("clear_on_layout_change_callback", &Comp::clearOnLayoutChangeCallback, nb::rv_policy::reference_internal);
+	comp.def("set_on_layout_change_callback", [](Comp& self, nb::callable pythonCallback, nb::object userData)
+		{
+			auto userDataPtr = std::make_shared<nb::object>(userData);
+			self.setOnLayoutChangeCallback([pythonCallback](Comp& comp, std::shared_ptr<void> userData)
+				{
+					auto& userDataPyObj = *std::static_pointer_cast<nb::object>(userData);
+					if (!comp.freeRunning())
+					{
+						pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userDataPyObj);
+					}
 
+					else
+					{
+						nb::gil_scoped_acquire acquire;
+						pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userDataPyObj);
+					}
+				},
+				userDataPtr);
+		}
+	);
 }
