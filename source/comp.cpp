@@ -10,10 +10,10 @@ Comp::Comp()
 	initComp();
 }
 
-Comp::Comp(const std::string& filePath, RunMode runMode, int64_t fps)
+Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps)
 {
 	initComp();
-	loadTox(filePath, runMode, fps);
+	loadTox(filePath, compFlags, fps);
 }
 
 void
@@ -35,7 +35,6 @@ Comp::~Comp()
 	vkDestroyFence(device_, submitFence_, nullptr);
 }
 
-
 void 
 Comp::createRenderer()
 {
@@ -52,7 +51,6 @@ Comp::createRenderer()
 	VkFenceCreateInfo fenceCreateInfo = { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0 };
 	vkCreateFence(device_, &fenceCreateInfo, nullptr, &submitFence_);
 }
-
 
 void 
 Comp::cudaInit()
@@ -122,16 +120,16 @@ Comp::initInstance()
 	return true;
 }
 
-bool Comp::loadTox(const std::string& filePath, RunMode runMode, int64_t fps)
+bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps)
 {
-	runMode_ = runMode;
+	compFlags_ = compFlags;
 	TE_CHECK(TEInstanceSetFrameRate(instance_, fps, 1));
 
 	filePath_ = filePath;
 	std::cout << "Loading tox: \t" << std::string(filePath_.begin(), filePath_.end()) << std::endl;
 
 	auto timeMode = TETimeInternal;
-	if (runMode_ == RunMode::ExternalTimeManual) timeMode = TETimeExternal;
+	if (compFlags_ == CompFlagBits::ExternalTime) timeMode = TETimeExternal;
 
 	TE_CHECK(TEInstanceConfigure(instance_, filePath_.c_str(), timeMode));
 	std::cout << "\t\tInstance configured!" << std::endl;
@@ -152,7 +150,7 @@ Comp::unload()
 	clearOnFrameStartCallback();
 
 	if (asyncRunning_.load()) stopAsync();
-	else if (updateLoopRunning_) stopUpdateLoop();
+	else if (updateLoopRunning_) stopUpdate();
 
 	std::unique_lock<std::mutex> lock(mutex_);
 	if (ssLoaded_)
@@ -188,7 +186,7 @@ Comp::eventCallback(TEInstance* instance,
 	int32_t end_time_scale,
 	void* info)
 {
-	//std::cout << "eventCallback thread id: " << std::this_thread::get_id() << std::endl;
+	// std::cout << "eventCallback: " << teutils::eventToString(event) << " result: " << TEResultGetDescription(result) << std::endl;
 	Comp* comp = static_cast<Comp*>(info);
 
 	switch (event)
@@ -254,16 +252,17 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 	}
 	else
 	{
-		std::cout << "onEventFrameDidFinish() result: " << TEResultGetDescription(result) << std::endl;
+		if(result != TEResultCancelled)
+		{
+			// need go through all possible results and handle them accordingly... 
 
-		//if(result != TEResultCancelled)
-		//{
-		//	std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result) 
-		//		<< ", start_time_value: " << start_time_value << ", start_time_scale : " << start_time_scale 
-		//		<< ", end_time_value: " << end_time_value << ", end_time_scale: " << end_time_scale << std::endl;
+			//std::string error = TEResultGetDescription(result);
+			//error = "Frame did not finish successfully: " + error;
+			//throw std::runtime_error("Frame did not finish successfully");
 
-		//	startNextFrame(prevTimeValue_, prevTimeScale_);
-		//}
+			std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result);
+			startNextFrame(prevTimeValue_, prevTimeScale_);
+		}
 	}
 }
 
@@ -409,7 +408,6 @@ Comp::setInFrame(bool inFrame)
 	ssInFrame_ = inFrame;
 
 	if (usingSwapBuffer_) cv_.notify_one();
-	
 }
 
 
@@ -425,10 +423,8 @@ void Comp::setOnFrameStartCallback(
 		cv_.wait(lock, [this] { return ssInFrame_; });
 	}
 
-	
 	onFrameStartCallback_ = callback;
 	onFrameStartCallbackUserData_ = userData;
-
 }
 
 void Comp::clearOnFrameStartCallback()
@@ -449,17 +445,13 @@ void Comp::start()
 {
 	TE_CHECK(TEInstanceResume(instance_));
 
-	switch (runMode_)
+	switch (compFlags_)
 	{
-	case RunMode::InternalTimeAuto:
-		runUpdateLoop();
+	case CompFlagBits::InternalTimeAuto:
+		update();
 		break;
 
-	case RunMode::InternalTimeSemiAuto:
-		runUpdateLoop(false);
-		break;
-
-	case RunMode::InternalTimeAsync:
+	case CompFlagBits::InternalTimeAsync:
 		startAsync();
 		break;
 
@@ -470,36 +462,38 @@ void Comp::start()
 
 void Comp::stop()
 {
-	TE_CHECK(TEInstanceSuspend(instance_));
-
-	switch (runMode_)
+	switch (compFlags_)
 	{
-	case RunMode::InternalTimeAuto:
-	case RunMode::InternalTimeSemiAuto:
-		stopUpdateLoop();
+	case CompFlagBits::InternalTimeAuto:
+		stopUpdate();
 		break;
 
-	case RunMode::InternalTimeAsync:
+	case CompFlagBits::InternalTimeAsync:
 		stopAsync();
 		break;
 
 	default:
 		break;
 	}
+
+	TE_CHECK(TEInstanceSuspend(instance_));
 }
 
-void Comp::runUpdateLoop(bool autoStartNextFrame)
+void Comp::update()
 {
 	updateLoopRunning_ = true;
 	while (updateLoopRunning_)
 	{
-		update(autoStartNextFrame);
-		update(autoStartNextFrame);
-		update(autoStartNextFrame);
+		if (frameDidFinish())
+		{
+			applyValueChanges();
+
+			if (updateLoopRunning_ && !callOnFrameStartCallback()) startNextFrame();
+		}
 	}
 }
 
-void Comp::stopUpdateLoop()
+void Comp::stopUpdate()
 {
 	updateLoopRunning_ = false;
 }
@@ -508,12 +502,11 @@ void Comp::startAsync()
 {
 	usingSwapBuffer_ = true;
 	asyncRunning_ = true;
-	asyncThread_ = std::thread(&Comp::asyncUpdateLoop, this);
+	asyncThread_ = std::thread(&Comp::asyncUpdate, this);
 }
 
 void Comp::stopAsync()
 {
-
 	asyncRunning_.store(false);
 	if (asyncThread_.joinable())
 		asyncThread_.join();
@@ -521,12 +514,10 @@ void Comp::stopAsync()
 	usingSwapBuffer_ = false;
 }
 
-//extern void
-//safeCallPythonCallback(Comp* comp, std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData);
-
-void Comp::asyncUpdateLoop()
+void Comp::asyncUpdate()
 {
-	while (asyncRunning_.load())
+	bool running { true };
+	while (running)
 	{
 		bool ready, loaded, linksLayoutChanged, inFrame;
 		getState(ready, loaded, linksLayoutChanged, inFrame);
@@ -542,20 +533,9 @@ void Comp::asyncUpdateLoop()
 		if (!inFrame)
 		{
 			applyValueChanges();
-			callOnFrameStartCallback();
-			startNextFrame();
+			running = asyncRunning_.load();
+			if (running && !callOnFrameStartCallback()) startNextFrame();
 		}
-	}
-}
-
-void
-Comp::update(bool autoStartNextFrame)
-{
-	if (frameDidFinish())
-	{
-		applyValueChanges();
-		callOnFrameStartCallback();
-		if (autoStartNextFrame) startNextFrame();
 	}
 }
 
@@ -584,11 +564,10 @@ bool Comp::startNextFrame(int64_t timeValue, int32_t timeScale)
 	TEResult result = TEInstanceStartFrameAtTime(instance_, timeValue, timeScale, false);
 	if (result != TEResultSuccess)
 	{
-		std::cout << "update() TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
+		std::cout << "TEInstanceStartFrameAtTime: " << timeValue << ", " << timeScale << " " << TEResultGetDescription(result) << std::endl;
 		setInFrame(false);
 		return false;
 	}
-
 	return true;
 }
 
@@ -610,10 +589,14 @@ void Comp::applyValueChanges()
 	applyOutputStringDataChange();
 }
 
-void Comp::callOnFrameStartCallback()
+bool Comp::callOnFrameStartCallback()
 {
 	if (onFrameStartCallback_)
+	{
 		onFrameStartCallback_(*this, onFrameStartCallbackUserData_);
+		return true;
+	}
+	return false;
 }
 
 void
@@ -621,9 +604,9 @@ Comp::applyOutputTextureChange()
 {
 	for (const auto& identifier : changedOutputTextures_)
 	{
-		auto& textureLink = *outTopLinks_->getLinkByIdentifier(identifier);
-		//textureLink.onOutputTextureChange(cudaStream_);
-		textureLink.onOutputTextureChange(nullptr);
+		auto& topLink = *outTopLinks_->getLinkByIdentifier(identifier);
+		//topLink.onOutputTextureChange(cudaStream_);
+		topLink.onOutputTextureChange(nullptr);
 	}
 }
 
@@ -769,13 +752,5 @@ Comp::applyLayoutChange()
 			}
 		}
 	}
-
 	startNextFrame(prevTimeValue_, prevTimeScale_);
-	//setInFrame(true);
-	//TEResult result = TEInstanceStartFrameAtTime(instance_, 0, 0, false);
-	//if (result != TEResultSuccess)
-	//{
-	//	std::cout << "Layout Change TEInstanceStartFrameAtTime: " << TEResultGetDescription(result) << std::endl;
-	//	setInFrame(false);
-	//}
 }

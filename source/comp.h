@@ -10,6 +10,8 @@
 #include "datlink.h"
 #include "parlink.h"
 
+#include "compflags.h"
+
 #include <string>
 #include <mutex>
 #include <memory>
@@ -19,24 +21,15 @@
 #include <atomic>
 
 
-enum class RunMode
-{
-	InternalTimeAuto,
-	InternalTimeSemiAuto,
-	InternalTimeManual,
-	ExternalTimeManual,
-	InternalTimeAsync
-};
-
 class Comp
 {
 public:
 	Comp();
-	Comp(const std::string& filePath, RunMode runMode = RunMode::InternalTimeAuto, int64_t fps = 60);
+	Comp(const std::string& filePath, CompFlags runMode = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
 
 	~Comp();
 
-	bool loadTox(const std::string& filePath, RunMode runMode = RunMode::InternalTimeAuto, int64_t fps = 60);
+	bool loadTox(const std::string& filePath, CompFlags runMode = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
 	void unload();
 	bool loaded() const; 
 
@@ -51,7 +44,7 @@ public:
 
 	bool frameDidFinish();
 	void applyValueChanges();
-	void callOnFrameStartCallback();
+	bool callOnFrameStartCallback();
 	bool startNextFrame(int64_t timeValue = 0, int32_t timeScale = 0);
 
 	InTopLinks&        inputTopLinks()  { return *inTopLinks_; }
@@ -90,29 +83,29 @@ private:
 	std::atomic<bool>					  asyncRunning_ { false };
 	std::thread							  asyncThread_;
 	bool								  usingSwapBuffer_{ false }; // could remove this and use asyncRunning_
-	void								  asyncUpdateLoop();
+	void								  asyncUpdate();
 	void								  startAsync();
 	void								  stopAsync();
 
 	// main thread only
 	//-----------------------------------------------------------------------------------------------------------------
 
-	std::string                        filePath_;
-	RunMode                            runMode_            { RunMode::InternalTimeAuto };
-	TouchObject<TEInstance>            instance_           { nullptr };
-	int64_t 						   prevTimeValue_          { 0 };
-	int32_t                            prevTimeScale_          { 0 };
+	std::string               filePath_;
+	CompFlags                 compFlags_         { CompFlagBits::InternalTimeAuto };
+	TouchObject<TEInstance>   instance_          { nullptr };
+	int64_t                   prevTimeValue_     { 0 };
+	int32_t                   prevTimeScale_     { 0 };
 
-	std::unique_ptr<Renderer>          renderer_;
-	VkDevice                           device_             { VK_NULL_HANDLE };
-	VkPhysicalDevice                   physicalDevice_     { VK_NULL_HANDLE };
-	std::vector<uint32_t>              queueFamilyIndices_;
-	VkQueue                            queue_              { VK_NULL_HANDLE };
-	VkCommandBuffer                    commandBuffer_      { VK_NULL_HANDLE };
-	VkFence                            submitFence_        { VK_NULL_HANDLE };
+	std::unique_ptr<Renderer> renderer_;
+	VkDevice                  device_            { VK_NULL_HANDLE };
+	VkPhysicalDevice          physicalDevice_    { VK_NULL_HANDLE };
+	std::vector<uint32_t>     queueFamilyIndices_;
+	VkQueue                   queue_             { VK_NULL_HANDLE };
+	VkCommandBuffer           commandBuffer_     { VK_NULL_HANDLE };
+	VkFence                   submitFence_       { VK_NULL_HANDLE };
 
-	cudaStream_t                       cudaStream_         { nullptr };
-	int                                cudaDevice_         { -1 };
+	cudaStream_t              cudaStream_        { nullptr };
+	int                       cudaDevice_        { -1 };
 
 
 	std::vector<std::string>           changedOutputTextures_;
@@ -135,9 +128,8 @@ private:
 
 	void initComp();
 	bool initInstance();
-	void runUpdateLoop(bool autoStartNextFrame = true);
-	void stopUpdateLoop();
-	void update(bool autoStartNextFrame = true);
+	void update();
+	void stopUpdate();
 	void applyLayoutChange();
 	void applyOutputTextureChange();
 	void applyOutputFloatBufferChange();
