@@ -1,28 +1,67 @@
-
 #include "copykernels.cuh"
 
-cudaError_t
-memCopyBRGA8USurfaceToRGBA8U(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream)
+
+template<typename ColType, typename CompType, int R, int G, int B, int A> cudaError_t
+memCopySurfaceToPlanar(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream)
 {
 	dim3 blockSize(16, 16, 1);
 	dim3 gridSize(divUp(width, blockSize.x), divUp(height, blockSize.y), 1);
-	fromSurfaceBRGA8UToRGBA8U <<<gridSize, blockSize, 0, stream>>> (dst, width, height, src);
+	fromSurfaceToPlanar<ColType, CompType, R, G, B, A> <<<gridSize, blockSize, 0, stream>>> (dst, width, height, src);
 
 	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
 }
 
-cudaError_t
-memCopyBRGA8USurfaceToPlanarRGBA8U(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream)
+template cudaError_t // BGRA -> BGRA (uint8_t)
+memCopySurfaceToPlanar<uchar4, uint8_t, 0, 1, 2, 3>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
+template cudaError_t // BGRA -> RGBA (uint8_t)
+memCopySurfaceToPlanar<uchar4, uint8_t, 2, 1, 0, 3>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
+template cudaError_t // RGBA -> RGBA (float32)
+memCopySurfaceToPlanar<float4, float, 0, 1, 2, 3>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
+template cudaError_t // RGBA -> BGRA (float32)
+memCopySurfaceToPlanar<float4, float, 2, 1, 0, 3>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
+
+template<typename ColType, typename CompType, int R, int G, int B> cudaError_t
+memCopySurfaceToPlanar(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream)
 {
 	dim3 blockSize(16, 16, 1);
 	dim3 gridSize(divUp(width, blockSize.x), divUp(height, blockSize.y), 1);
-	fromSurfaceBRGA8UToPlanarRGBA8U <<<gridSize, blockSize, 0, stream>>> (dst, width, height, src);
+	fromSurfaceToPlanar<ColType, CompType, R, G, B> <<<gridSize, blockSize, 0, stream>>> (dst, width, height, src);
 
 	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
 }
+
+template cudaError_t // BGRA -> BGR (uint8_t)
+memCopySurfaceToPlanar<uchar4, uint8_t, 0, 1, 2>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
+template cudaError_t // BGRA -> RGB (uint8_t)
+memCopySurfaceToPlanar<uchar4, uint8_t, 2, 1, 0>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
+template cudaError_t // RGBA -> RGB (float32)
+memCopySurfaceToPlanar<float4, float, 0, 1, 2>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
+
+template<typename ColType, typename CompType, int R, int G> cudaError_t
+memCopySurfaceToPlanar(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream)
+{
+	dim3 blockSize(16, 16, 1);
+	dim3 gridSize(divUp(width, blockSize.x), divUp(height, blockSize.y), 1);
+	fromSurfaceToPlanar<ColType, CompType, R, G> <<<gridSize, blockSize, 0, stream>>> (dst, width, height, src);
+
+	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
+}
+
+template cudaError_t // RG -> RG (uint8_t)
+memCopySurfaceToPlanar<uchar2, uint8_t, 0, 1>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
+template cudaError_t // RG -> RG (float32)
+memCopySurfaceToPlanar<float2, float, 0, 1>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
 
 template<typename T> cudaError_t
-memCopyFromSurface(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream)
+memCopySurface(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream)
 {
 	dim3 blockSize(16, 16, 1);
 	dim3 gridSize(divUp(width, blockSize.x), divUp(height, blockSize.y), 1);
@@ -31,81 +70,86 @@ memCopyFromSurface(void* dst, int width, int height, cudaSurfaceObject_t src, cu
 	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
 }
 
-// instantiate the template for the types we need, so the compiler can generate the code.
-// must ensure that the template definitions are visible to any translation unit that instantiates those templates
-// (i.e. they must be in a header file, or included in the translation unit before the instantiation but since this is
-// cuda code, we can't include the .cu or .cuh file in the .h file)
-template cudaError_t 
-memCopyFromSurface<float4>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+template cudaError_t // RGBA -> RGBA (float32) (to interleaved)
+memCopySurface<float4>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
 
-template cudaError_t 
-memCopyFromSurface<float2>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+template cudaError_t // RG -> RG (float32) (to interleaved)
+memCopySurface<float2>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
 
-template cudaError_t 
-memCopyFromSurface<float>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+template cudaError_t // R -> R (float32)
+memCopySurface<float>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
 
-template cudaError_t 
-memCopyFromSurface<uchar4>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+template cudaError_t // BGRA -> BGRA (uint8_t) (to interleaved)
+memCopySurface<uchar4>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
+template cudaError_t // RG -> RG (uint8_t) (to interleaved)
+memCopySurface<uchar2>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
+template cudaError_t // R -> R (uint8_t)
+memCopySurface<uint8_t>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
 
 
-template<typename T, typename CompType, int numComps> cudaError_t
-memCopyFromSurfaceToPlanar(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream)
+template<typename ColType, typename CompType, int R, int G, int B, int A> cudaError_t
+memCopyToSurfaceFromPlanar(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)
 {
 	dim3 blockSize(16, 16, 1);
 	dim3 gridSize(divUp(width, blockSize.x), divUp(height, blockSize.y), 1);
-	fromSurfaceToPlanar<T, CompType, numComps> << <gridSize, blockSize, 0, stream >> > (dst, width, height, src);
+	toSurfaceFromPlanar<ColType, CompType, R, G, B, A> <<<gridSize, blockSize, 0, stream>>> (dst, width, height, src);
 
 	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
 }
 
-template cudaError_t
-memCopyFromSurfaceToPlanar<float4, float, 4>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+template cudaError_t // BGRA -> BGRA (uint8_t)
+memCopyToSurfaceFromPlanar<uchar4, uint8_t, 0, 1, 2, 3>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 
-template cudaError_t
-memCopyFromSurfaceToPlanar<float2, float, 2>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+template cudaError_t // RGBA -> BGRA (uint8_t)
+memCopyToSurfaceFromPlanar<uchar4, uint8_t, 2, 1, 0, 3>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 
-template cudaError_t
-memCopyFromSurfaceToPlanar<float, float, 1>(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+template cudaError_t // RGBA -> RGBA (float32)
+memCopyToSurfaceFromPlanar<float4, float, 0, 1, 2, 3>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 
-cudaError_t
-memCopyRGBA8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)
+template cudaError_t // BGRA -> RGBA (float32)
+memCopyToSurfaceFromPlanar<float4, float, 2, 1, 0, 3>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+
+
+template<typename ColType, typename CompType, int R, int G, int B> cudaError_t
+memCopyToSurfaceFromPlanar(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)
 {
 	dim3 blockSize(16, 16, 1);
 	dim3 gridSize(divUp(width, blockSize.x), divUp(height, blockSize.y), 1);
-	toSurfaceBRGA8UFromRGBA8U <<<gridSize, blockSize, 0, stream>>> (dst, width, height, src);
+	toSurfaceFromPlanar<ColType, CompType, R, G, B> <<<gridSize, blockSize, 0, stream>>> (dst, width, height, src);
 
 	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
 }
 
-cudaError_t
-memCopyPlanarRGBA8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)
+template cudaError_t // BGR -> BGRA (uint8_t)
+memCopyToSurfaceFromPlanar<uchar4, uint8_t, 0, 1, 2>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+
+template cudaError_t // RGB -> BGRA (uint8_t)
+memCopyToSurfaceFromPlanar<uchar4, uint8_t, 2, 1, 0>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+
+template cudaError_t // RGB -> RGBA (float32)
+memCopyToSurfaceFromPlanar<float4, float, 0, 1, 2>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+
+template cudaError_t // BGR -> RGBA (float32)
+memCopyToSurfaceFromPlanar<float4, float, 2, 1, 0>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+
+
+template<typename ColType, typename CompType, int R, int G> cudaError_t
+memCopyToSurfaceFromPlanar(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)
 {
 	dim3 blockSize(16, 16, 1);
 	dim3 gridSize(divUp(width, blockSize.x), divUp(height, blockSize.y), 1);
-	toSurfaceBRGA8UFromPlanarRGBA8U << <gridSize, blockSize, 0, stream >> > (dst, width, height, src);
+	toSurfaceFromPlanar<ColType, CompType, R, G> <<<gridSize, blockSize, 0, stream>>> (dst, width, height, src);
 
 	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
 }
 
-cudaError_t
-memCopyRGB8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)
-{
-	dim3 blockSize(16, 16, 1);
-	dim3 gridSize(divUp(width, blockSize.x), divUp(height, blockSize.y), 1);
-	toSurfaceBRGA8UFromRGB8U <<<gridSize, blockSize, 0, stream>>> (dst, width, height, src);
+template cudaError_t // RG -> RG (uint8_t)
+memCopyToSurfaceFromPlanar<uchar2, uint8_t, 0, 1>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 
-	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
-}
-
-cudaError_t
-memCopyPlanarRGB8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)
-{
-	dim3 blockSize(16, 16, 1);
-	dim3 gridSize(divUp(width, blockSize.x), divUp(height, blockSize.y), 1);
-	toSurfaceBRGA8UFromPlanarRGB8U <<<gridSize, blockSize, 0, stream>>> (dst, width, height, src);
-
-	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
-}
+template cudaError_t // RG -> RG (float32)
+memCopyToSurfaceFromPlanar<float2, float, 0, 1>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 
 template<typename T> cudaError_t
 memCopyToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)
@@ -117,48 +161,20 @@ memCopyToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src
 	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
 }
 
-// instantiate the template for the types we need, so the compiler can generate 
-// the code (needed because the template is in a .cu file)
-template cudaError_t
+template cudaError_t // RGBA -> RGBA (float32) (from interleaved)
 memCopyToSurface<float4>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 
-template cudaError_t 
+template cudaError_t // RG -> RG (float32) (from interleaved)
 memCopyToSurface<float2>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 
-template cudaError_t 
+template cudaError_t // R -> R (float32)
 memCopyToSurface<float>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 
-template cudaError_t 
+template cudaError_t // BGRA -> BGRA (uint8_t) (from interleaved)
 memCopyToSurface<uchar4>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 
-template<typename T, typename CompType> cudaError_t
-memCopyToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)
-{
-	dim3 blockSize(16, 16, 1);
-	dim3 gridSize(divUp(width, blockSize.x), divUp(height, blockSize.y), 1);
-	toSurface<T, CompType> << <gridSize, blockSize, 0, stream >> > (dst, width, height, src);
+template cudaError_t // RG -> RG (uint8_t) (from interleaved)
+memCopyToSurface<uchar2>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 
-	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
-}
-
-template cudaError_t
-memCopyToSurface<float4, float>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
-
-
-
-
-template<typename DstT, typename SrcT> cudaError_t
-memCopyToSurface2(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)
-{
-	dim3 blockSize(16, 16, 1);
-	dim3 gridSize(divUp(width, blockSize.x), divUp(height, blockSize.y), 1);
-	toSurface2<DstT, SrcT> << <gridSize, blockSize, 0, stream >> > (dst, width, height, src);
-
-	CHECK_CUDA_ERROR_AND_RETURN_STATUS(cudaDeviceSynchronize());
-}
-
-template cudaError_t 
-memCopyToSurface2<float4, float3>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
-
-template cudaError_t 
-memCopyToSurface2<uchar4, uchar3>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+template cudaError_t // R -> R (uint8_t)
+memCopyToSurface<uint8_t>(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);

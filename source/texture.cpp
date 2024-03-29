@@ -527,24 +527,25 @@ void Texture::copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream, bool 
 	switch (format_)
 	{
 		case VK_FORMAT_B8G8R8A8_UNORM:
-			CUDA_CHECK(memCopyBRGA8USurfaceToPlanarRGBA8U(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
+			//CUDA_CHECK(memCopyBRGA8USurfaceToPlanarRGBA8U(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
+			memCopySurfaceToPlanar<uchar4, uint8_t, 2, 1, 0, 3>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
 			break;
 		case VK_FORMAT_R32G32B32A32_SFLOAT:
-			memCopyFromSurfaceToPlanar<float4, float, 4>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
+			//memCopyFromSurfaceToPlanar<float4, float, 4>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
+			memCopySurfaceToPlanar<float4, float, 0, 1, 2, 3>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
 			break;
 		case VK_FORMAT_R32G32_SFLOAT:
-			memCopyFromSurfaceToPlanar<float2, float, 2>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
+			//memCopyFromSurfaceToPlanar<float2, float, 2>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
+			memCopySurfaceToPlanar<float2, float, 0, 1>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
 			break;
 		case VK_FORMAT_R32_SFLOAT:
-			memCopyFromSurfaceToPlanar<float, float, 1>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
+			//memCopyFromSurfaceToPlanar<float, float, 1>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
+			memCopySurface<float>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
 			break;
 		default:
 			return;
 	}
 
-
-
-	/*CUDA_CHECK(memCopyBRGA8USurfaceToRGBA8U(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));*/
 	cudaVkSemaphoreSignal(cudaExtSemaphore_, ++waitValue, stream);
 	waitValue_ = waitValue;
 }
@@ -568,10 +569,12 @@ void Texture::copyCudaMemToImage(void* memory,
 			switch (cudaMemory_.desc.shape[0])
 			{
 				case 3:
-					CUDA_CHECK(memCopyPlanarRGB8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
+					//CUDA_CHECK(memCopyPlanarRGB8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
+					memCopyToSurfaceFromPlanar<uchar4, uint8_t, 2, 1, 0>(cudaSurface_, extent_.width, extent_.height, memory, stream);
 					break;
 				case 4:
-					CUDA_CHECK(memCopyPlanarRGBA8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
+					//CUDA_CHECK(memCopyPlanarRGBA8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
+					memCopyToSurfaceFromPlanar<uchar4, uint8_t, 2, 1, 0, 3>(cudaSurface_, extent_.width, extent_.height, memory, stream);
 					break;
 				default:
 					return;
@@ -582,25 +585,28 @@ void Texture::copyCudaMemToImage(void* memory,
 			switch (cudaMemory_.desc.shape[0])
 			{
 				case 3:
-					memCopyToSurface2<float4, float3>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+					//memCopyToSurface2<float4, float3>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+					memCopyToSurfaceFromPlanar<float4, float, 0, 1, 2>(cudaSurface_, extent_.width, extent_.height, memory, stream);
 					break;
 				case 4:
-					memCopyToSurface<float4, float>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+					//memCopyToSurface<float4, float>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+					memCopyToSurfaceFromPlanar<float4, float, 0, 1, 2, 3>(cudaSurface_, extent_.width, extent_.height, memory, stream);
 					break;
 				default:
 					return;
 			}
 			break;
 		case VK_FORMAT_R32G32_SFLOAT:
-			CUDA_CHECK(memCopyToSurface<float2>(cudaSurface_, extent_.width, extent_.height, memory, stream));
+			//CUDA_CHECK(memCopyToSurface<float2>(cudaSurface_, extent_.width, extent_.height, memory, stream));
+			memCopyToSurfaceFromPlanar<float2, float, 0, 1>(cudaSurface_, extent_.width, extent_.height, memory, stream);
 			break;
 		case VK_FORMAT_R32_SFLOAT:
-			CUDA_CHECK(memCopyToSurface<float>(cudaSurface_, extent_.width, extent_.height, memory, stream));
+			//CUDA_CHECK(memCopyToSurface<float>(cudaSurface_, extent_.width, extent_.height, memory, stream));
+			memCopyToSurface<float>(cudaSurface_, extent_.width, extent_.height, memory, stream);
 			break;
 		default:
 			return;
 	}
-
 
 	/*CUDA_CHECK(memCopyRGBA8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));*/
 	cudaVkSemaphoreSignal(signalSemaphore, signalValue, stream);
