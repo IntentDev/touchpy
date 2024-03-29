@@ -45,7 +45,7 @@ fromSurfaceBRGA8UToRGBA8U(void* dst, int width, int height, cudaSurfaceObject_t 
 __global__ void
 fromSurfaceBRGA8UToPlanarRGBA8U(void* dst, int width, int height, cudaSurfaceObject_t src)
 {
-		unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
 	if (x >= width || y >= height)

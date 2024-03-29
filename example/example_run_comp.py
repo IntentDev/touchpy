@@ -106,16 +106,16 @@ class ExampleRunComp:
 
 		# get the parameter named Scale and set it's value
 		scale = comp.par['Scale']
-		scale.val = 0.0 + this.frame * 0.01
+		# scale.val = 1.0 #+ this.frame * 0.01
 		# print(scale.val)
 
 		# get the parameter named Translate and set it's value
 		# .set() can take a list, tuple, individual values or the correct type for the parameter
 		translate = comp.par['Translate']
-		# translate.val = tp.Float3(11.1, 22.2, 33.3)
-		translate.set(tp.Float2(11.1, 22.2,))
-		translate.set([11.1, 22.2])
-		translate.set(11.1, 22.5)
+		# translate.val = tp.Float2(11.1, 22.2)
+		# translate.set(tp.Float2(11.1, 22.2))
+		# translate.set([11.1, 22.2])
+		# translate.set(11.1, 22.5)
 
 
 		# copy the cuda memory from out_top_link to in_top_link

@@ -157,6 +157,8 @@ private:
 	void cudaVkSemaphoreWait(cudaExternalSemaphore_t semaphore, uint64_t waitValue, cudaStream_t stream);
 	void cudaVkSemaphoreSignal(cudaExternalSemaphore_t semaphore, uint64_t signalValue, cudaStream_t stream);
 
+	void setCudaMemoryDesc();
+
 
 };
 
