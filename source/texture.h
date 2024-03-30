@@ -19,6 +19,7 @@ public:
 		VkDevice device, 
 		TEInstance* teInstance, 
 		TEVulkanTexture* teTexture,
+		CudaFlags cudaFlags = CudaFlagBits::None,
 		bool requiresCudaMemLock = false
 	);
 
@@ -81,7 +82,7 @@ public:
 	const CUDAMemory& cudaMemory() const;
 	void setRequiresCudaMemLock(bool requiresLock) { requiresCudaMemLock_ = requiresLock; }
 	void setCudaMemoryDesc(CUDAMemoryDesc desc) { cudaMemory_.desc = desc; }
-
+	void configureCudaMemory(CudaFlags flags = CudaFlagBits::None);
 
 	void transferToInputLink(
 		TouchObject<TEInstance> teInstance, 
@@ -152,7 +153,7 @@ private:
 	std::function<void(void*, int, int, cudaSurfaceObject_t, cudaStream_t)> copySurfaceFunc_ { nullptr };
 	//std::function<void(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)> copyToSurfaceFunc_ { nullptr };
 
-	void setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory);
+	void setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory, CudaFlags flags = CudaFlagBits::None);
 	void cudaImportTimelineSemaphore(HANDLE semaphoreHandle);
 	void cudaImportSemaphore(HANDLE semaphoreHandle);
 	void cudaImportImageMemory(HANDLE imageHandle);
@@ -161,7 +162,7 @@ private:
 	void cudaVkSemaphoreSignal(cudaExternalSemaphore_t semaphore, uint64_t signalValue, cudaStream_t stream);
 
 	void setCudaCopySurfaceFunc(CudaFlags flags);
-	void configureCudaMemory(CudaFlags flags = CudaFlagBits::None);
+
 
 
 

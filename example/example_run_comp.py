@@ -27,6 +27,7 @@ class ExampleRunComp:
 		print('in dats:', comp.in_dats.count, comp.in_dats.names)
 		print('out dats:', comp.out_dats.count, comp.out_dats.names)
 		print('pars:', comp.par.count, comp.par.names)
+		comp.out_tops[1].set_cuda_flags(tp.CudaFlags.BGRA)
 
 
 
@@ -128,7 +129,6 @@ class ExampleRunComp:
 
 		with torch.no_grad():
 			# tensor = comp.out_tops[0].as_tensor() # get the first top as a tensor
-			# tensor = comp.out_tops[0].as_tensor(tp.ComponentMask.RGB) # get just the first 3 channels
 			# tensor2 = tensor * 2 # do some work on the tensor
 			# comp.in_tops[0].from_tensor(tensor2)
 
@@ -157,7 +157,8 @@ class ExampleRunComp:
 	def runComp(self, tox_path):
 		# create a comp object and specify a path to a tox file
 		# comp = tp.Comp(tox_path)
-		comp = tp.Comp(tox_path, run_mode=tp.CompFlags.INTERNAL_TIME_AUTO)
+		# comp = tp.Comp(tox_path, run_mode=tp.CompFlags.INTERNAL_TIME_AUTO)
+		comp = tp.Comp(tox_path, run_mode=tp.CompFlags.INTERNAL_TIME | tp.CompFlags.AUTO_UPDATE)
 
 		comp.set_on_layout_change_callback(self.on_layout_change, self)
 		comp.set_on_frame_callback(self.on_frame, self)

@@ -5,7 +5,6 @@
 #include <memory>
 #include <array>
 #include <string>
-#include "componentmask.h"
 #include "cudaflags.h"
 
 enum class CUDADataType : uint8_t
@@ -21,7 +20,7 @@ struct CUDAMemoryDesc
 {
 	std::array<uint32_t, 3> shape         { 0, 0, 0 }; // numComponents, height, width
 	size_t                  componentSize { 1 };
-	ComponentMask			componentMask { ComponentMask::RGBA };
+	CudaFlags				flags         { CudaFlagBits::None };
 	CUDADataType            dataType      { CUDADataType::Undefined };
 	std::array<uint32_t, 3> strides       { 0, 0, 0 }; // in elements (not bytes)
 };

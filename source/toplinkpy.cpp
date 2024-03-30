@@ -72,7 +72,7 @@ nb::dlpack::dtype dtypeFromCUDADataType(CUDADataType type)
 }
 
 template<typename ...Args>
-nb::ndarray<Args...> arrayFromCudaMem(OutTopLink& outTopLink, ComponentMask componentMask = ComponentMask::RGBA)
+nb::ndarray<Args...> arrayFromCudaMem(OutTopLink& outTopLink)
 {
 	const auto& cudaMem = outTopLink.cudaMemory();
 	auto compSize = static_cast<int64_t>(cudaMem.desc.componentSize);
@@ -88,6 +88,7 @@ nb::ndarray<Args...> arrayFromCudaMem(OutTopLink& outTopLink, ComponentMask comp
 	);
 }
 
+// need pass flags here and use in texture copy
 template<typename T>
 void copyArrayToCudaMemory(InTopLink& inTopLink, T array)
 {
@@ -123,16 +124,16 @@ using arrayShape1 = nb::shape<1, nb::any, nb::any>;
 
 void initTopLinkBindings(nb::module_& m)
 {
-
-	nb::enum_<ComponentMask>(m, "ComponentMask")
-		.value("None", ComponentMask::None)
-		.value("R", ComponentMask::R)
-		.value("G", ComponentMask::G)
-		.value("B", ComponentMask::B)
-		.value("A", ComponentMask::A)
-		.value("RG", ComponentMask::RG)
-		.value("RGB", ComponentMask::RGB)
-		.value("RGBA", ComponentMask::RGBA)
+	nb::enum_<CudaFlagBits>(m, "CudaFlags")
+		.value("NONE", CudaFlagBits::None)
+		.value("RGBA", CudaFlagBits::RGBA)
+		.value("RGB", CudaFlagBits::RGB)
+		.value("RG", CudaFlagBits::RG)
+		.value("R", CudaFlagBits::R)
+		.value("BGRA", CudaFlagBits::BGRA)
+		.value("BGR", CudaFlagBits::BGR)
+		.value("CHW", CudaFlagBits::CHW)
+		.value("HWC", CudaFlagBits::HWC)
 		.def(nb::self | nb::self)
 		.def(nb::self & nb::self)
 		.def(nb::self ^ nb::self)
@@ -140,10 +141,10 @@ void initTopLinkBindings(nb::module_& m)
 		.def(nb::self |= nb::self)
 		.def(nb::self &= nb::self)
 		.def(nb::self ^= nb::self)
-		.def(!nb::self)
 		.def(nb::self == nb::self)
 		.def(nb::self != nb::self)
 		;
+
 
 	nb::enum_<CUDADataType>(m, "CUDADataType")
 		.value("UInt8", CUDADataType::UInt8)
@@ -154,9 +155,6 @@ void initTopLinkBindings(nb::module_& m)
 
 	nb::class_<CUDAMemoryDesc> cudaMemoryDesc(m, "CudaMemoryDesc");
 	cudaMemoryDesc.def(nb::init<>())
-		//.def_rw("width", &CUDAMemoryShape::width)
-		//.def_rw("height", &CUDAMemoryShape::height)
-		//.def_rw("num_components", &CUDAMemoryShape::numComponents)
 		.def_rw("shape", &CUDAMemoryDesc::shape)
 		.def_rw("component_size", &CUDAMemoryDesc::componentSize)
 		.def_rw("data_type", &CUDAMemoryDesc::dataType)
@@ -182,8 +180,9 @@ void initTopLinkBindings(nb::module_& m)
 	outTopLink.doc() = "An OutTOP in a TouchDesigner component";
 	outTopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("cuda_memory", &OutTopLink::cudaMemory)
-		.def("as_dlpack", &arrayFromCudaMem<>, "componentMask"_a = ComponentMask::RGBA, nb::rv_policy::reference_internal)
-		.def("as_tensor", &arrayFromCudaMem<nb::pytorch>, "componentMask"_a = ComponentMask::RGBA, nb::rv_policy::reference_internal)
+		.def("set_cuda_flags", [](OutTopLink& self, CudaFlagBits flags) { self.setCudaFlags(flags); })
+		.def("as_dlpack", &arrayFromCudaMem<>, nb::rv_policy::reference_internal)
+		.def("as_tensor", &arrayFromCudaMem<nb::pytorch>, nb::rv_policy::reference_internal)
 		;
 
 	nb::class_<OutTopLinks> outTopLinks(m, "OutTopLinks");

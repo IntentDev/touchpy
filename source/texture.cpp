@@ -7,7 +7,13 @@
 
 #include "cudamemory.h"
 
-Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* teInstance, TEVulkanTexture* texture, bool requiresCudaMemLock)
+Texture::Texture(
+	VkPhysicalDevice physicalDevice_, 
+	VkDevice device, 
+	TEInstance* teInstance, 
+	TEVulkanTexture* texture, 
+	CudaFlags cudaFlags,
+	bool requiresCudaMemLock)
 	:	physicalDevice_(physicalDevice_),
 		device_(device),
 		flipped_(TETextureGetOrigin(texture) == TETextureOriginBottomLeft),
@@ -119,7 +125,7 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 
 	importSemaphore(teInstance, texture);
 
-	setupCudaResources(textureHandle_, semaphoreHandle_, true);
+	setupCudaResources(textureHandle_, semaphoreHandle_, true, cudaFlags);
 }
 
 Texture::Texture(
@@ -302,7 +308,6 @@ Texture::~Texture()
 
 void Texture::importSemaphore(TEInstance* teInstance, TETexture* teTexture)
 {
-
 	TouchObject<TESemaphore> teSemaphore;
 	uint64_t waitValue = 0;
 	TEResult result = TEInstanceGetTextureTransfer(teInstance, teTexture, teSemaphore.take(), &waitValue);
@@ -604,7 +609,7 @@ void Texture::transferToInputLink(TouchObject<TEInstance> teInstance, TouchObjec
 }
 
 
-void Texture::setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory)
+void Texture::setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory, CudaFlags flags)
 {
 	cudaImportTimelineSemaphore(semaphoreHandle_);
 	cudaImportImageMemory(textureHandle_);
@@ -615,7 +620,7 @@ void Texture::setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, boo
 	if (allocateMemory)
 	{
 		//cudaAllocateMemory(numComponents_);
-		configureCudaMemory();
+		configureCudaMemory(flags);
 	}
 }
 
@@ -775,6 +780,7 @@ void Texture::configureCudaMemory(CudaFlags flags)
 	}
 
 	cudaMemory_.desc.componentSize = componentSize_;
+	cudaMemory_.desc.flags = flags; // TODO: need to set this base on the format if it's not set... 
 	cudaMemory_.desc.dataType = cudaDataTypeFromVkFormat(format_);
 
 	// Planar memory layout

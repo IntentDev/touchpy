@@ -31,7 +31,7 @@ OutTopLink::addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTexture
 	if (scope_ != Link::Scope::Output)
 		return;
 
-	textures_.push_back(std::make_unique<Texture>(physicalDevice_, device_, teInstance, teTexture, requiresCudaMemLock_));
+	textures_.push_back(std::make_unique<Texture>(physicalDevice_, device_, teInstance, teTexture, cudaFlags_, requiresCudaMemLock_));
 	auto& texture = textures_.back();
 	handleMap_[texture->textureHandle()] = texture.get();
 }
@@ -92,6 +92,13 @@ OutTopLink::setRequiresCudaMemLock(bool requiresCudaMemLock)
 
 	for (auto& tex : textures_)
 		tex->setRequiresCudaMemLock(requiresCudaMemLock_);
+}
+
+void OutTopLink::setCudaFlags(CudaFlags flags)
+{
+	cudaFlags_ = flags;
+	for (auto& tex : textures_)
+		tex->configureCudaMemory(cudaFlags_);
 }
 
 void 
