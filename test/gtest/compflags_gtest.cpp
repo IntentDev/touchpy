@@ -15,7 +15,6 @@ private:
 	CompFlags flags_;
 };
 
-
 TEST(CompFlagsTest, test1)
 {
 	CompFlags flags { CompFlagBits::InternalTime, CompFlagBits::ExternalTime };
@@ -44,4 +43,13 @@ TEST(CompFlagsTest, test4)
 	Comp comp2 { CompFlagBits::InternalTime | CompFlagBits::Realtime };
 	EXPECT_EQ(comp2.flags(), CompFlagBits::InternalTime | CompFlagBits::Realtime);
 	
+}
+
+TEST(CompFlagsTest, testBool)
+{
+	CompFlags a = CompFlagBits::InternalTime | CompFlagBits::AutoUpdate;
+
+	EXPECT_TRUE(a & CompFlagBits::AutoUpdate);
+	EXPECT_FALSE(a & CompFlagBits::ExternalTime);
+
 }

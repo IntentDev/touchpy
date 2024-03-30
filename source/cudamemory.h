@@ -6,6 +6,7 @@
 #include <array>
 #include <string>
 #include "componentmask.h"
+#include "cudaflags.h"
 
 enum class CUDADataType : uint8_t
 {
@@ -36,6 +37,7 @@ struct CUDAMemory
 VkFormat vkFormatFromCUDAMemoryDesc(CUDAMemoryDesc desc);
 CUDADataType cudaDataTypeFromVkFormat(VkFormat format);
 uint8_t numCompsFromVkFormat(VkFormat format);
+uint8_t numCompsFromCudaFlags(CudaFlags flags);
 size_t componentSizeFromVkFormat(VkFormat format);
 std::string cudaDataTypeToString(CUDADataType type);
 cudaChannelFormatDesc cudaChannelFormatDescFromVkFormat(VkFormat vkFormat);

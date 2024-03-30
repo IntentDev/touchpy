@@ -7,6 +7,7 @@
 #include <TouchEngine/TouchEngine.h>
 #include <vector>
 #include <mutex>
+#include <functional>
 
 class Texture
 {
@@ -148,16 +149,20 @@ private:
 	bool                 requiresCudaMemLock_ { false };
 	mutable              std::mutex mutex_;
 
+	std::function<void(void*, int, int, cudaSurfaceObject_t, cudaStream_t)> copySurfaceFunc_ { nullptr };
+	//std::function<void(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)> copyToSurfaceFunc_ { nullptr };
+
 	void setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory);
 	void cudaImportTimelineSemaphore(HANDLE semaphoreHandle);
 	void cudaImportSemaphore(HANDLE semaphoreHandle);
 	void cudaImportImageMemory(HANDLE imageHandle);
-	void cudaAllocateMemory();
 
 	void cudaVkSemaphoreWait(cudaExternalSemaphore_t semaphore, uint64_t waitValue, cudaStream_t stream);
 	void cudaVkSemaphoreSignal(cudaExternalSemaphore_t semaphore, uint64_t signalValue, cudaStream_t stream);
 
-	void setCudaMemoryDesc();
+	void setCudaCopySurfaceFunc(CudaFlags flags);
+	void configureCudaMemory(CudaFlags flags = CudaFlagBits::None);
+
 
 
 };
@@ -175,48 +180,13 @@ template<typename T> cudaError_t
 memCopySurface(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
 
 template<typename ColType, typename CompType, int R, int G, int B, int A> cudaError_t
-memCopyToSurfaceFromPlanar(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+memCopyPlanarToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 
 template<typename ColType, typename CompType, int R, int G, int B> cudaError_t
-memCopyToSurfaceFromPlanar(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+memCopyPlanarToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 
 template<typename ColType, typename CompType, int R, int G> cudaError_t
-memCopyToSurfaceFromPlanar(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+memCopyPlanarToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 
 template<typename T> cudaError_t
 memCopyToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
-
-
-//cudaError_t
-//memCopyBRGA8USurfaceToRGBA8U(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
-//
-//cudaError_t
-//memCopyBRGA8USurfaceToPlanarRGBA8U(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
-//
-//template<typename T> cudaError_t
-//memCopyFromSurface(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
-//
-//template<typename T, typename CompType, int numComps> cudaError_t
-//memCopyFromSurfaceToPlanar(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
-//
-//
-//cudaError_t
-//memCopyRGBA8UToBGRA8USurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);
-//
-//cudaError_t
-//memCopyPlanarRGBA8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
-//
-//cudaError_t
-//memCopyRGB8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
-//
-//cudaError_t
-//memCopyPlanarRGB8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
-//
-//template<typename T> cudaError_t
-//memCopyToSurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);
-//
-//template<typename T, typename CompType> cudaError_t
-//memCopyToSurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);
-//
-//template<typename DstT, typename SrcT> cudaError_t
-//memCopyToSurface2(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);

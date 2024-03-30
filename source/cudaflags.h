@@ -6,6 +6,7 @@ using Type = uint32_t;
 
 enum class CudaFlagBits : Type
 {
+	None = 0,
 	RGBA = 1 << 0,
 	RGB = 1 << 1,
 	RG = 1 << 2,
@@ -13,15 +14,10 @@ enum class CudaFlagBits : Type
 	BGRA = 1 << 4,
 	BGR = 1 << 5,
 	CHW = 1 << 6,
-	BCHW = 1 << 7,
-	HWC = 1 << 8,
-	Flipped = 1 << 9,
-	Interleaved = 1 << 10,
-	Planar = 1 << 11,
-	Linear = 1 << 12,
-	Normalized = 1 << 13,
-	UInt8 = 1 << 14,
-	Float = 1 << 15,
+	HWC = 1 << 7,
+	//Interleaved = 1 << 8, 
+	//Planar = 1 << 9, // currently always planar
+	//Flipped = 1 << 10, // currently always vertically flipped
 };
 
 using CudaFlags = Flags<CudaFlagBits>;

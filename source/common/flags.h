@@ -20,6 +20,7 @@ public:
 	//constexpr operator IntType() const { return value; }
 	IntType operator()() const { return value; }
 	constexpr operator FlagsBit() const { return static_cast<FlagsBit>(value); }
+	constexpr explicit operator bool() const { return value != 0; }
 
 
 	constexpr Flags operator|(FlagsBit rhs) const { return Flags(value | static_cast<IntType>(rhs)); }

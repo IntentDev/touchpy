@@ -73,6 +73,15 @@ uint8_t numCompsFromVkFormat(VkFormat format)
 	return 0;
 }
 
+uint8_t numCompsFromCudaFlags(CudaFlags flags)
+{
+	if		(flags & CudaFlagBits::BGRA || flags & CudaFlagBits::RGBA) return 4;
+	else if (flags & CudaFlagBits::BGR || flags & CudaFlagBits::RGB) return 3;
+	else if (flags & CudaFlagBits::RG) return 2;
+	else if (flags & CudaFlagBits::R) return 1;
+	return 0;
+}
+
 size_t componentSizeFromVkFormat(VkFormat format)
 {
 	switch (format)

@@ -132,7 +132,7 @@ fromSurface(void* dst, int width, int height, cudaSurfaceObject_t src)
 // RGBA -> RGBA (float32)
 // BGRA -> RGBA (float32)
 template<typename ColType, typename CompType, int R, int G, int B, int A> __global__ void
-toSurfaceFromPlanar(cudaSurfaceObject_t dst, int width, int height, const void* src) {
+planarToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src) {
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -163,7 +163,7 @@ toSurfaceFromPlanar(cudaSurfaceObject_t dst, int width, int height, const void* 
 // RGB -> RGBA (float32)
 // BGR -> RGBA (float32)
 template<typename ColType, typename CompType, int R, int G, int B> __global__ void
-toSurfaceFromPlanar(cudaSurfaceObject_t dst, int width, int height, const void* src) {
+planarToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src) {
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -190,7 +190,7 @@ toSurfaceFromPlanar(cudaSurfaceObject_t dst, int width, int height, const void* 
 
 // RG -> RG (uint8_t, float32)
 template<typename ColType, typename CompType, int R, int G> __global__ void
-toSurfaceFromPlanar(cudaSurfaceObject_t dst, int width, int height, const void* src) {
+planarToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src) {
 	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -228,30 +228,4 @@ toSurface(cudaSurfaceObject_t dst, int width, int height, const void* src)
     T color = *(T*)((T*)src + x + (height - y - 1) * width);
     surf2Dwrite(color, dst, x * sizeof(T), y, cudaBoundaryModeZero);
 }
-
-
-//template<typename SrcFormat, typename DstFormat, typename Type>
-//class ColorConverter
-//{
-//public:
-//	__device__ static void convert(Type* dst, const Type* src)
-//	{
-//		// Default implementation
-//		*dst = *src;
-//	}
-//};
-//
-//
-//// Efficient conversion from RGBA to BGRA... 
-//template<>
-//class ColorConverter<RGBA, BGRA, UChar4>
-//{
-//public:
-//	__device__ static void convert(const uint32_t* src, uint32_t* dst)
-//	{
-//		*dst = ((*src & 0xFF00FF00) | ((*src & 0x00FF0000) >> 16) | ((*src & 0x000000FF) << 16));
-//	}
-//}
-
-
 
