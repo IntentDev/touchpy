@@ -19,7 +19,7 @@ class ExampleRunComp:
 	def __init__(self):
 		self.running = True # used to gracefully exit the loop
 		self.frame = 0
-		self.model = YOLO("models/yolov8s-pose.pt")
+		self.model = YOLO("models/yolov8s-pose.pt", verbose=False)
 		self.inputBuffer = None
 		self.outBuffer = None
 
@@ -59,20 +59,7 @@ class ExampleRunComp:
 		annotatedArray = result.plot()
 			
 		this.outBuffer = torch.from_numpy(annotatedArray).cuda()
-	
-		print("outBuffer shape: ", this.outBuffer.shape, "outBuffer dtype: ", this.outBuffer.dtype, 
-		"outBuffer device: ", this.outBuffer.device, "outBuffer layout: ", this.outBuffer.layout, 
-		"outBuffer strides: ", this.outBuffer.stride(), "outBuffer is_contiguous: ", this.outBuffer.is_contiguous())
-			
-		# convert tensor from HWC to CHW
-		# this.outBuffer = torch.permute(this.outBuffer, (2,0,1)).contiguous()
 
-		# print("outBuffer shape: ", this.outBuffer.shape, "outBuffer dtype: ", this.outBuffer.dtype, 
-		# "outBuffer device: ", this.outBuffer.device, "outBuffer layout: ", this.outBuffer.layout, 
-		# "outBuffer strides: ", this.outBuffer.stride(), "outBuffer is_contiguous: ", this.outBuffer.is_contiguous())
-
-		# comp.in_tops[0].from_tensor(this.outBuffer)
-		# comp.in_tops[0].from_tensor(this.outBuffer, flags=tp.CudaFlags.BGR)
 		comp.in_tops[0].from_tensor(this.outBuffer, flags=tp.CudaFlags.BGR | tp.CudaFlags.HWC)
 
 		comp.in_chops[0].from_numpy(keypoints)

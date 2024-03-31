@@ -179,6 +179,12 @@ memCopySurfaceToPlanar(void* dst, int width, int height, cudaSurfaceObject_t src
 template<typename ColType, typename CompType, int R, int G> cudaError_t
 memCopySurfaceToPlanar(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
 
+template<typename ColType, typename CompType, int R, int G, int B, int A> cudaError_t
+memCopySurface(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
+template<typename ColType, typename CompType, int R, int G, int B> cudaError_t
+memCopySurface(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+
 template<typename T> cudaError_t
 memCopySurface(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
 

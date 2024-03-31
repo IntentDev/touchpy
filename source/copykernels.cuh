@@ -39,13 +39,13 @@ fromSurfaceToPlanar(void* dst, int width, int height, cudaSurfaceObject_t src) {
     surf2Dread(&color, src, x * sizeof(ColType), y, cudaBoundaryModeZero);
 
     size_t stride = width * height;
-    CompType* compDst = static_cast<CompType*>(dst);
+    CompType* dstPtr = static_cast<CompType*>(dst);
     size_t idx = x + (height - y - 1) * width;
 
-    compDst[idx + R * stride] = color.x;
-    compDst[idx + G * stride] = color.y;
-    compDst[idx + B * stride] = color.z;
-    compDst[idx + A * stride] = color.w;
+    dstPtr[idx + R * stride] = color.x;
+    dstPtr[idx + G * stride] = color.y;
+    dstPtr[idx + B * stride] = color.z;
+    dstPtr[idx + A * stride] = color.w;
 }
 
 // BGRA -> BGR (uint8_t)
@@ -64,12 +64,12 @@ fromSurfaceToPlanar(void* dst, int width, int height, cudaSurfaceObject_t src) {
     surf2Dread(&color, src, x * sizeof(ColType), y, cudaBoundaryModeZero);
 
     size_t stride = width * height;
-    CompType* compDst = static_cast<CompType*>(dst);
+    CompType* dstPtr = static_cast<CompType*>(dst);
     size_t idx = x + (height - y - 1) * width;
 
-    compDst[idx + R * stride] = color.x;
-    compDst[idx + G * stride] = color.y;
-    compDst[idx + B * stride] = color.z;
+    dstPtr[idx + R * stride] = color.x;
+    dstPtr[idx + G * stride] = color.y;
+    dstPtr[idx + B * stride] = color.z;
 }
 
 // RG -> RG (uint8_t, float32)
@@ -85,12 +85,54 @@ fromSurfaceToPlanar(void* dst, int width, int height, cudaSurfaceObject_t src) {
     surf2Dread(&color, src, x * sizeof(ColType), y, cudaBoundaryModeZero);
 
     size_t stride = width * height;
-    CompType* compDst = static_cast<CompType*>(dst);
+    CompType* dstPtr = static_cast<CompType*>(dst);
     size_t idx = x + (height - y - 1) * width;
 
-    compDst[idx + R * stride] = color.x;
-    compDst[idx + G * stride] = color.y;
+    dstPtr[idx + R * stride] = color.x;
+    dstPtr[idx + G * stride] = color.y;
 }
+
+// BGRA -> RGBA (uint8_t) to interleaved
+// RGBA -> BGRA (float32) to interleaved
+template<typename ColType, typename CompType, int R, int G, int B, int A> __global__ void
+fromSurface(void* dst, int width, int height, cudaSurfaceObject_t src) {
+	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (x >= width || y >= height)
+		return;
+
+	ColType color;
+	surf2Dread(&color, src, x * sizeof(ColType), y, cudaBoundaryModeZero);
+	CompType* dstPtr = static_cast<CompType*>(dst) + (x + (height - y - 1) * width) * 4;
+
+	dstPtr[R] = color.x;
+	dstPtr[G] = color.y;
+	dstPtr[B] = color.z;
+	dstPtr[A] = color.w;
+}
+
+// BGRA -> BGR (uint8_t) to interleaved
+// BGRA -> RGB (uint8_t) to interleaved
+// RGBA -> RGB (float32) to interleaved
+// RGBA -> BGR (float32) to interleaved
+template<typename ColType, typename CompType, int R, int G, int B> __global__ void
+fromSurface(void* dst, int width, int height, cudaSurfaceObject_t src) {
+	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (x >= width || y >= height)
+		return;
+
+	ColType color;
+	surf2Dread(&color, src, x * sizeof(ColType), y, cudaBoundaryModeZero);
+	CompType* dstPtr = static_cast<CompType*>(dst) + (x + (height - y - 1) * width) * 3;
+
+	dstPtr[R] = color.x;
+	dstPtr[G] = color.y;
+	dstPtr[B] = color.z;
+}
+
 
 // BGRA -> BRGA interleaved
 // RGBA -> RGBA interleaved
@@ -125,14 +167,14 @@ planarToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src)
 		return;
 
 	size_t stride = width * height;
-	const CompType* compSrc = static_cast<const CompType*>(src);
+	const CompType* srcPtr = static_cast<const CompType*>(src);
 	size_t idx = x + (height - y - 1) * width;
 
     ColType color;
-	color.x = compSrc[idx + R * stride];
-	color.y = compSrc[idx + G * stride];
-	color.z = compSrc[idx + B * stride];
-	color.w = compSrc[idx + A * stride];
+	color.x = srcPtr[idx + R * stride];
+	color.y = srcPtr[idx + G * stride];
+	color.z = srcPtr[idx + B * stride];
+	color.w = srcPtr[idx + A * stride];
 
 	surf2Dwrite(color, dst, x * sizeof(ColType), y);
 }
@@ -150,13 +192,13 @@ planarToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src)
 		return;
 
 	size_t stride = width * height;
-	const CompType* compSrc = static_cast<const CompType*>(src);
+	const CompType* srcPtr = static_cast<const CompType*>(src);
 	size_t idx = x + (height - y - 1) * width;
 
     ColType color;
-    color.x = compSrc[idx + R * stride];
-    color.y = compSrc[idx + G * stride];
-    color.z = compSrc[idx + B * stride];
+    color.x = srcPtr[idx + R * stride];
+    color.y = srcPtr[idx + G * stride];
+    color.z = srcPtr[idx + B * stride];
     color.w = 0;
 
 	surf2Dwrite(color, dst, x * sizeof(ColType), y);
@@ -172,12 +214,12 @@ planarToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src)
 		return;
 
 	size_t stride = width * height;
-	const CompType* compSrc = static_cast<const CompType*>(src);
+	const CompType* srcPtr = static_cast<const CompType*>(src);
 	size_t idx = x + (height - y - 1) * width;
 
     ColType color;
-    color.x = compSrc[idx + R * stride];
-    color.y = compSrc[idx + G * stride];
+    color.x = srcPtr[idx + R * stride];
+    color.y = srcPtr[idx + G * stride];
 
 	surf2Dwrite(color, dst, x * sizeof(ColType), y);
 }
@@ -192,14 +234,14 @@ toSurface(cudaSurfaceObject_t dst, int width, int height, const void* src) {
     if (x >= width || y >= height)
         return;
 
-    const CompType* compSrc = static_cast<const CompType*>(src);
+    const CompType* srcPtr = static_cast<const CompType*>(src);
     size_t idx = (x + (height - y - 1) * width) * 4;
 
     ColType color;
-    color.x = compSrc[idx + R];
-    color.y = compSrc[idx + G];
-    color.z = compSrc[idx + B];
-    color.w = compSrc[idx + A];
+    color.x = srcPtr[idx + R];
+    color.y = srcPtr[idx + G];
+    color.z = srcPtr[idx + B];
+    color.w = srcPtr[idx + A];
 
     surf2Dwrite(color, dst, x * sizeof(ColType), y);
 }
@@ -216,13 +258,13 @@ toSurface(cudaSurfaceObject_t dst, int width, int height, const void* src) {
 	if (x >= width || y >= height)
 		return;
 
-	const CompType* compSrc = static_cast<const CompType*>(src);
+	const CompType* srcPtr = static_cast<const CompType*>(src);
 	size_t idx = (x + (height - y - 1) * width) * 3;
 
     ColType color;
-    color.x = compSrc[idx + R];
-    color.y = compSrc[idx + G];
-    color.z = compSrc[idx + B];
+    color.x = srcPtr[idx + R];
+    color.y = srcPtr[idx + G];
+    color.z = srcPtr[idx + B];
     color.w = 0;
 
 	surf2Dwrite(color, dst, x * sizeof(ColType), y);

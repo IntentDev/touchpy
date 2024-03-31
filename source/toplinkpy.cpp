@@ -255,10 +255,15 @@ void initTopLinkBindings(nb::module_& m)
 
 		;
 
-	inTopLink.def("copy_cuda_memory", [](InTopLink& self, const CUDAMemory& memory, CudaFlagBits flags)
+	inTopLink.def("copy_cuda_memory", [](InTopLink& self, const CUDAMemory& memory)
 		{
 			self.copyCudaMemory(memory, nullptr);
-		}, "cuda_mem"_a, "flags"_a = CudaFlagBits::None);
+		}, "cuda_mem"_a);
+	 
+	//inTopLink.def("copy_cuda_memory", [](InTopLink& self, const CUDAMemory& memory, CudaFlagBits flags)
+	//	{
+	//		self.copyCudaMemory(memory, nullptr);
+	//	}, "cuda_mem"_a, "flags"_a = CudaFlagBits::None);
 
 	nb::class_<InTopLinks> inTopLinks(m, "InTopLinks");
 	inTopLinks.doc() = "A collection of InTOP links in a TouchDesigner component";
