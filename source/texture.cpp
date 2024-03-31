@@ -7,7 +7,13 @@
 
 #include "cudamemory.h"
 
-Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* teInstance, TEVulkanTexture* texture, bool requiresCudaMemLock)
+Texture::Texture(
+	VkPhysicalDevice physicalDevice_, 
+	VkDevice device, 
+	TEInstance* teInstance, 
+	TEVulkanTexture* texture, 
+	CudaFlags cudaFlags,
+	bool requiresCudaMemLock)
 	:	physicalDevice_(physicalDevice_),
 		device_(device),
 		flipped_(TETextureGetOrigin(texture) == TETextureOriginBottomLeft),
@@ -119,19 +125,21 @@ Texture::Texture(VkPhysicalDevice physicalDevice_, VkDevice device, TEInstance* 
 
 	importSemaphore(teInstance, texture);
 
-	setupCudaResources(textureHandle_, semaphoreHandle_, true);
+	setupCudaResources(textureHandle_, semaphoreHandle_, true, cudaFlags);
 }
 
 Texture::Texture(
 	VkPhysicalDevice physicalDevice,
 	VkDevice device,
 	VkExtent2D extent,
-	VkFormat format
+	VkFormat format, 
+	CUDAMemoryDesc cudaMemDesc
 )
 	:	physicalDevice_(physicalDevice),
 		device_(device),
 		extent_(extent),
 		format_(format)
+
 
 {
 	numComponents_ = numCompsFromVkFormat(format_);
@@ -255,7 +263,9 @@ Texture::Texture(
 	ownsSemaphore_ = true;
 	ownsImage_ = true;
 
+	cudaMemory_.desc = cudaMemDesc;
 	setupCudaResources(textureHandle_, semaphoreHandle_, false);
+	setCudaCopyToSurfaceFunc();
 
 	std::cout	<< "Texture Created (to TE), width: " << extent_.width 
 				<< " height: " << extent_.height << std::endl;
@@ -275,12 +285,7 @@ Texture::~Texture()
 		CUDA_CHECK(cudaDestroyExternalMemory(cudaExtImageMemory_));
 	if (cudaExtSemaphore_)
 		CUDA_CHECK(cudaDestroyExternalSemaphore(cudaExtSemaphore_));
-	//if (cudaExtCudaUpdateVkSemaphore_)
-	//	CUDA_CHECK(cudaDestroyExternalSemaphore(cudaExtCudaUpdateVkSemaphore_));
-
-	//if (cudaCudaUpdateVkSemaphore_ != VK_NULL_HANDLE)
-	//	vkDestroySemaphore(device_, cudaCudaUpdateVkSemaphore_, nullptr);
-
+	
 	if (ownsImage_)
 		CloseHandle(textureHandle_);
 
@@ -302,7 +307,6 @@ Texture::~Texture()
 
 void Texture::importSemaphore(TEInstance* teInstance, TETexture* teTexture)
 {
-
 	TouchObject<TESemaphore> teSemaphore;
 	uint64_t waitValue = 0;
 	TEResult result = TEInstanceGetTextureTransfer(teInstance, teTexture, teSemaphore.take(), &waitValue);
@@ -522,89 +526,89 @@ HANDLE Texture::getVkMemoryHandle(VkExternalMemoryHandleTypeFlagBitsKHR external
 
 void Texture::copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream, bool signal)
 {
-	// TODO: change the sequence of calls so the switch is before the wait
-	cudaVkSemaphoreWait(cudaExtSemaphore_, waitValue, stream);
-	switch (format_)
-	{
-		case VK_FORMAT_B8G8R8A8_UNORM:
-			CUDA_CHECK(memCopyBRGA8USurfaceToPlanarRGBA8U(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
-			break;
-		case VK_FORMAT_R32G32B32A32_SFLOAT:
-			memCopyFromSurfaceToPlanar<float4, float, 4>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
-			break;
-		case VK_FORMAT_R32G32_SFLOAT:
-			memCopyFromSurfaceToPlanar<float2, float, 2>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
-			break;
-		case VK_FORMAT_R32_SFLOAT:
-			memCopyFromSurfaceToPlanar<float, float, 1>(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
-			break;
-		default:
-			return;
+	if (copySurfaceFunc_)
+	{ 
+		// TODO: change the sequence of calls so the switch is before the wait
+		cudaVkSemaphoreWait(cudaExtSemaphore_, waitValue, stream);
+		copySurfaceFunc_(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
+		cudaVkSemaphoreSignal(cudaExtSemaphore_, ++waitValue, stream);
+		waitValue_ = waitValue;
 	}
-
-
-
-	/*CUDA_CHECK(memCopyBRGA8USurfaceToRGBA8U(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));*/
-	cudaVkSemaphoreSignal(cudaExtSemaphore_, ++waitValue, stream);
-	waitValue_ = waitValue;
 }
 
-void Texture::copyCudaMemToImage(void* memory,
+bool Texture::copyCudaMemToImage(void* memory,
 	cudaExternalSemaphore_t waitSemaphore,
 	cudaExternalSemaphore_t signalSemaphore,
 	uint64_t waitValue, 
 	uint64_t signalValue,
 	cudaStream_t stream)
 {	
-	if (waitSemaphore)
-		cudaVkSemaphoreWait(waitSemaphore, waitValue, stream);
-
-	// TODO: change the sequence of calls so the switch is before the wait
-	// format_ has already been set by the function that called this one, the switch should be in that function
-	switch (format_)
+	if (copyToSurfaceFunc_)
 	{
-		case VK_FORMAT_B8G8R8A8_UNORM:
-			//switch (cudaMemory_.shape.numComponents)
-			switch (cudaMemory_.desc.shape[0])
-			{
-				case 3:
-					CUDA_CHECK(memCopyPlanarRGB8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
-					break;
-				case 4:
-					CUDA_CHECK(memCopyPlanarRGBA8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));
-					break;
-				default:
-					return;
-			}
-			break;
-		case VK_FORMAT_R32G32B32A32_SFLOAT:
-			//switch (cudaMemory_.shape.numComponents)
-			switch (cudaMemory_.desc.shape[0])
-			{
-				case 3:
-					memCopyToSurface2<float4, float3>(cudaSurface_, extent_.width, extent_.height, memory, stream);
-					break;
-				case 4:
-					memCopyToSurface<float4, float>(cudaSurface_, extent_.width, extent_.height, memory, stream);
-					break;
-				default:
-					return;
-			}
-			break;
-		case VK_FORMAT_R32G32_SFLOAT:
-			CUDA_CHECK(memCopyToSurface<float2>(cudaSurface_, extent_.width, extent_.height, memory, stream));
-			break;
-		case VK_FORMAT_R32_SFLOAT:
-			CUDA_CHECK(memCopyToSurface<float>(cudaSurface_, extent_.width, extent_.height, memory, stream));
-			break;
-		default:
-			return;
+		if (waitSemaphore)
+			cudaVkSemaphoreWait(waitSemaphore, waitValue, stream);
+
+		copyToSurfaceFunc_(cudaSurface_, extent_.width, extent_.height, memory, stream);
+
+		// need to create fast lookup based on number of components, format, channel order 
+
+
+
+		// TODO: change the sequence of calls so the switch is before the wait
+		// format_ has already been set by the function that called this one, the switch should be in that function
+		//switch (format_)
+		//{
+		//	case VK_FORMAT_B8G8R8A8_UNORM:
+		//		switch (cudaMemory_.desc.shape[0])
+		//		{
+		//			case 3:
+		//				memCopyPlanarToSurface<uchar4, uint8_t, 2, 1, 0>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+		//				break;
+		//			case 4:
+		//				memCopyPlanarToSurface<uchar4, uint8_t, 2, 1, 0, 3>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+		//				break;
+		//			default:
+		//				return;
+		//		}
+		//		break;
+		//	case VK_FORMAT_R32G32B32A32_SFLOAT:
+		//		switch (cudaMemory_.desc.shape[0])
+		//		{
+		//			case 3:
+		//				memCopyPlanarToSurface<float4, float, 0, 1, 2>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+		//				break;
+		//			case 4:
+		//				memCopyPlanarToSurface<float4, float, 0, 1, 2, 3>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+		//				break;
+		//			default:
+		//				return;
+		//		}
+		//		break;
+		//	case VK_FORMAT_R32G32_SFLOAT:
+		//		memCopyPlanarToSurface<float2, float, 0, 1>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+		//		break;
+		//	case VK_FORMAT_R32_SFLOAT:
+		//		memCopyToSurface<float>(cudaSurface_, extent_.width, extent_.height, memory, stream);
+		//		break;
+		//	default:
+		//		return;
+		//}
+		cudaVkSemaphoreSignal(signalSemaphore, signalValue, stream);
+		return true;
 	}
+	return false;
+}
 
+void Texture::transferToInputLink(TouchObject<TEInstance> teInstance, TouchObject<TEGraphicsContext> context, const char* identifier)
+{
+	TouchObject<TETexture> texture;
+	texture.set(teVkTexture_);
+	TEResult result = TEInstanceLinkSetTextureValue(teInstance, identifier, texture, context);
+	if (result == TEResultSuccess)
+		result = TEInstanceAddTextureTransfer(teInstance, texture, teVkSemaphore_, signalValue_);
 
-	/*CUDA_CHECK(memCopyRGBA8UToBGRA8USurface(cudaSurface_, extent_.width, extent_.height, memory, stream));*/
-	cudaVkSemaphoreSignal(signalSemaphore, signalValue, stream);
-
+	if (result != TEResultSuccess)
+		std::cout << "transferToInputLink: " << identifier << ", " << TEResultGetDescription(result) << std::endl;
 }
 
 const CUDAMemory& 
@@ -616,20 +620,7 @@ Texture::cudaMemory() const
 	return cudaMemory_; 
 }
 
-void Texture::transferToInputLink(TouchObject<TEInstance> teInstance, TouchObject<TEGraphicsContext> context, const char* identifier)
-{
-	TouchObject<TETexture> texture;
-	texture.set(teVkTexture_);
-	TEResult result = TEInstanceLinkSetTextureValue( teInstance, identifier, texture, context);
-	if (result == TEResultSuccess)
-		result = TEInstanceAddTextureTransfer(teInstance, texture, teVkSemaphore_, signalValue_);
-		
-	if (result != TEResultSuccess)
-		std::cout << "transferToInputLink: " << identifier << ", " << TEResultGetDescription(result) << std::endl;
-}
-
-
-void Texture::setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory)
+void Texture::setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory, CudaFlags flags)
 {
 	cudaImportTimelineSemaphore(semaphoreHandle_);
 	cudaImportImageMemory(textureHandle_);
@@ -639,7 +630,8 @@ void Texture::setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, boo
 	// which is the size of the memory requirements for the VkImage
 	if (allocateMemory)
 	{
-		cudaAllocateMemory();
+		//cudaAllocateMemory(numComponents_);
+		configureCudaMemory(flags);
 	}
 }
 
@@ -706,34 +698,6 @@ void Texture::cudaImportImageMemory(HANDLE imageHandle)
 	CUDA_CHECK(cudaCreateSurfaceObject(&cudaSurface_, &resDesc));
 }
 
-void Texture::cudaAllocateMemory()
-{
-	auto pixelSize = numComponents_ * componentSize_;
-	cudaBufferSize_ = extent_.width * extent_.height * pixelSize;
-
-	CUDA_CHECK(cudaMalloc((void**)&cudaBuffer_, cudaBufferSize_));
-
-	{
-		std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
-		if (requiresCudaMemLock_) lock.lock();
-
-		cudaMemory_.desc.shape[0] = numComponents_;
-		cudaMemory_.desc.shape[1] = extent_.height;
-		cudaMemory_.desc.shape[2] = extent_.width;
-		cudaMemory_.desc.componentSize = componentSize_;
-		cudaMemory_.desc.dataType = cudaDataTypeFromVkFormat(format_);
-
-		// Planar memory layout
-		cudaMemory_.desc.strides[0] = extent_.width * extent_.height; // component stride // num elements to next component
-		cudaMemory_.desc.strides[1] = extent_.width; // row stride // num elements to row
-		cudaMemory_.desc.strides[2] = 1; // column stride // num elements to column
-
-		cudaMemory_.ptr = cudaBuffer_;
-		cudaMemory_.size = cudaBufferSize_;
-	}
-
-}
-
 void Texture::cudaVkSemaphoreWait(cudaExternalSemaphore_t semaphore, uint64_t waitValue, cudaStream_t stream) {
 	cudaExternalSemaphoreWaitParams extSemaphoreWaitParams;
 	std::memset(&extSemaphoreWaitParams, 0, sizeof(extSemaphoreWaitParams));
@@ -754,4 +718,196 @@ void Texture::cudaVkSemaphoreSignal(cudaExternalSemaphore_t semaphore, uint64_t 
 		&semaphore, &extSemaphoreSignalParams, 1, stream));
 }
 
+void Texture::setCudaCopySurfaceFunc(CudaFlags flags)
+{
+	// TODO: add support for HWC shape (interleaved)
+	switch (format_)
+	{
+	case VK_FORMAT_B8G8R8A8_UNORM:
+	{
+		if		(flags & CudaFlagBits::BGRA) copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<uchar4, uint8_t, 0, 1, 2, 3>(dst, width, height, src, stream); };
+		else if (flags & CudaFlagBits::BGR)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<uchar4, uint8_t, 0, 1, 2>(dst, width, height, src, stream); };
+		else if (flags & CudaFlagBits::RGBA) copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
+		else if (flags & CudaFlagBits::RGB)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
+		else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
+		return;
+	}
+	case VK_FORMAT_R32G32B32A32_SFLOAT:
+	{
+		if		(flags & CudaFlagBits::RGBA) copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<float4, float, 0, 1, 2, 3>(dst, width, height, src, stream); };
+		else if (flags & CudaFlagBits::RGB)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<float4, float, 0, 1, 2>(dst, width, height, src, stream); };
+		else if (flags & CudaFlagBits::BGRA) copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<float4, float, 2, 1, 0, 3>(dst, width, height, src, stream); };
+		else if (flags & CudaFlagBits::BGR)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<float4, float, 2, 1, 0>(dst, width, height, src, stream); };
+		else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<float4, float, 0, 1, 2, 3>(dst, width, height, src, stream); };
+		return;
+	}
+	case VK_FORMAT_R32G32_SFLOAT:
+	{
+		copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<float2, float, 0, 1>(dst, width, height, src, stream); };
+		return;
+	}
+	case VK_FORMAT_R32_SFLOAT:
+	{
+		copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurface<float>(dst, width, height, src, stream); };
+		return;
+	}
 
+	default:
+		copySurfaceFunc_ = nullptr;
+		return;
+	}
+}
+
+void Texture::setCudaCopyToSurfaceFunc()
+{
+	std::cout << "Setting CopyToSurfaceFunc" << std::endl;
+	auto flags = cudaMemory_.desc.flags;
+	if (!(flags & CudaFlagBits::CHW || flags & CudaFlagBits::HWC)) flags |= CudaFlagBits::CHW;
+
+	if (flags & CudaFlagBits::CHW)
+	{
+		uint32_t numComponents = cudaMemory_.desc.shape[0];
+
+		switch (format_)
+		{
+		case VK_FORMAT_B8G8R8A8_UNORM: // default is RGBA
+		{
+			if (flags & CudaFlagBits::BGRA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<uchar4, uint8_t, 0, 1, 2, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<uchar4, uint8_t, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGBA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
+			else
+			{
+				if (numComponents == 4)			 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
+				else if (numComponents == 3)	 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
+			}
+			return;
+		}
+		case VK_FORMAT_R32G32B32A32_SFLOAT: // default is RGBA
+		{
+			if (flags & CudaFlagBits::RGBA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<float4, float, 0, 1, 2, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<float4, float, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGRA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<float4, float, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<float4, float, 2, 1, 0>(dst, width, height, src, stream); };
+			else
+			{
+				if (numComponents == 4)			 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<float4, float, 0, 1, 2, 3>(dst, width, height, src, stream); };
+				else if (numComponents == 3)	 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<float4, float, 0, 1, 2>(dst, width, height, src, stream); };
+			}
+
+			return;
+		}
+		case VK_FORMAT_R32G32_SFLOAT:
+		{
+			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<float2, float, 0, 1>(dst, width, height, src, stream); };
+			return;
+		}
+		case VK_FORMAT_R32_SFLOAT:
+		{
+			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float>(dst, width, height, src, stream); };
+			return;
+		}
+		default:
+			copyToSurfaceFunc_ = nullptr;
+			return;
+		}
+	}
+	else // HWC - interleaved functions
+	{
+		uint32_t numComponents = cudaMemory_.desc.shape[2];
+
+		//std::cout << "Copying HWC to Surface, numComponents: " << numComponents << ", format: " << string_VkFormat(format_) << std::endl;
+
+		switch(format_)
+		{
+		case VK_FORMAT_B8G8R8A8_UNORM: // default is RGBA
+		{
+			if		(flags & CudaFlagBits::BGRA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<uchar4>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<uchar4, uint8_t, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGBA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
+			else
+			{
+				if (numComponents == 4)			 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
+				else if (numComponents == 3)	 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
+			}
+			return;
+		}
+		case VK_FORMAT_R32G32B32A32_SFLOAT: // default is RGBA
+		{
+			if		(flags & CudaFlagBits::RGBA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float4>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float4, float, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGRA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float4, float, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float4, float, 2, 1, 0>(dst, width, height, src, stream); };
+			else								 
+			{
+				if (numComponents == 4)			 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float4>(dst, width, height, src, stream); };
+				else if (numComponents == 3)	 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float4, float, 2, 1, 0>(dst, width, height, src, stream); };
+			}
+			return;
+		}
+		case VK_FORMAT_R32G32_SFLOAT:
+		{
+			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float2>(dst, width, height, src, stream); };
+			return;
+		}
+		case VK_FORMAT_R32_SFLOAT:
+		{
+			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float>(dst, width, height, src, stream); };
+			return;
+		}
+		default:
+			copyToSurfaceFunc_ = nullptr;
+			return;
+		}
+		
+	}
+
+}
+
+void Texture::configureCudaMemory(CudaFlags flags)
+{
+	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
+	if (requiresCudaMemLock_) lock.lock();
+
+	setCudaCopySurfaceFunc(flags);
+	cudaDeviceSynchronize();
+
+	auto numComponents = numComponents_;
+	if ((flags & CudaFlagBits::BGR || flags & CudaFlagBits::RGB) &&
+		(format_ == VK_FORMAT_B8G8R8A8_UNORM || format_ == VK_FORMAT_R32G32B32A32_SFLOAT))
+	{
+		numComponents = 3;
+	}
+
+	cudaBufferSize_ = extent_.width * extent_.height * numComponents * componentSize_;
+
+	if (cudaBuffer_) CUDA_CHECK(cudaFree(cudaBuffer_));
+	CUDA_CHECK(cudaMalloc((void**)&cudaBuffer_, cudaBufferSize_));
+
+	if (flags & CudaFlagBits::HWC)
+	{
+		cudaMemory_.desc.shape[0] = extent_.height;
+		cudaMemory_.desc.shape[1] = extent_.width;
+		cudaMemory_.desc.shape[2] = numComponents;
+	}
+	else // CHW
+	{
+		cudaMemory_.desc.shape[0] = numComponents;
+		cudaMemory_.desc.shape[1] = extent_.height;
+		cudaMemory_.desc.shape[2] = extent_.width;
+	}
+
+	cudaMemory_.desc.componentSize = componentSize_;
+	cudaMemory_.desc.flags = flags; // TODO: need to set this base on the format if it's not set... 
+	cudaMemory_.desc.dataType = cudaDataTypeFromVkFormat(format_);
+
+	// Planar memory layout
+	cudaMemory_.desc.strides[0] = extent_.width * extent_.height; // component stride // num elements to next component
+	cudaMemory_.desc.strides[1] = extent_.width; // row stride // num elements to row
+	cudaMemory_.desc.strides[2] = 1; // column stride // num elements to column
+
+	cudaMemory_.ptr = cudaBuffer_;
+	cudaMemory_.size = cudaBufferSize_;
+
+}

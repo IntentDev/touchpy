@@ -25,11 +25,11 @@ class Comp
 {
 public:
 	Comp();
-	Comp(const std::string& filePath, CompFlags runMode = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
+	Comp(const std::string& filePath, CompFlags compFlags = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
 
 	~Comp();
 
-	bool loadTox(const std::string& filePath, CompFlags runMode = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
+	bool loadTox(const std::string& filePath, CompFlags compFlags = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
 	void unload();
 	bool loaded() const; 
 

@@ -155,9 +155,13 @@ Comp::unload()
 	std::unique_lock<std::mutex> lock(mutex_);
 	if (ssLoaded_)
 	{
-
 		std::cout << "Unloading TouchEngine instance..." << std::endl;
+
 		ssUnloading_ = true;
+		onFrameCallbackUserData_ = nullptr;
+		onFrameCallback_ = nullptr;
+		onLayoutChangeCallbackUserData_ = nullptr;
+		onLayoutChangeCallback_ = nullptr;
 
 		lock.unlock();
 		TE_CHECK(TEInstanceUnload(instance_));
