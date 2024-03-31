@@ -31,7 +31,7 @@ OutTopLink::addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTexture
 	if (scope_ != Link::Scope::Output)
 		return;
 
-	textures_.push_back(std::make_unique<Texture>(physicalDevice_, device_, teInstance, teTexture, requiresCudaMemLock_));
+	textures_.push_back(std::make_unique<Texture>(physicalDevice_, device_, teInstance, teTexture, cudaFlags_, requiresCudaMemLock_));
 	auto& texture = textures_.back();
 	handleMap_[texture->textureHandle()] = texture.get();
 }
@@ -94,90 +94,25 @@ OutTopLink::setRequiresCudaMemLock(bool requiresCudaMemLock)
 		tex->setRequiresCudaMemLock(requiresCudaMemLock_);
 }
 
+void OutTopLink::setCudaFlags(CudaFlags flags)
+{
+	cudaFlags_ = flags;
+	for (auto& tex : textures_)
+		tex->configureCudaMemory(cudaFlags_);
+}
+
 void 
-InTopLink::setInputTexture(VkExtent2D extent, VkFormat format)
+InTopLink::setInputTexture(VkExtent2D extent, VkFormat format, CUDAMemoryDesc cudaMemDesc)
 {
-	if (scope_ != Link::Scope::Input)
-		return;
-
-	// using just the first texture in the vector for now
 	textures_.resize(1);
-	textures_[0] = std::make_unique<Texture>(physicalDevice_, device_, extent, format);
+	textures_[0] = std::make_unique<Texture>(physicalDevice_, device_, extent, format, cudaMemDesc);
 	handleMap_[textures_[0]->textureHandle()] = textures_[0].get();
-}
-
-void
-InTopLink::copyCudaMemoryToInputTexture(
-	void* memory,
-	VkFormat format,
-	VkExtent2D extent,
-	cudaExternalSemaphore_t waitSemaphore, 
-	uint64_t waitValue, 
-	cudaStream_t stream)
-{
-	if (scope_ != Link::Scope::Input)
-		return;
-
-	if (textures_.size() == 0)
-		setInputTexture(extent, format);
-	else if (textures_[0]->format() != format || textures_[0]->width() != extent.width || textures_[0]->height() != extent.height)
-	{
-		textures_[0].reset();
-		setInputTexture(extent, format);
-	}
-
-	uint64_t signalValue;
-	VK_CHECK(vkGetSemaphoreCounterValue(device_, textures_[0]->semaphore(), &signalValue));
-	textures_[0]->setSignalValue(++signalValue);
-
-	textures_[0]->copyCudaMemToImage(
-		memory,
-		waitSemaphore,
-		textures_[0]->cudaExtSemaphore(),
-		waitValue,
-		signalValue,
-		stream);
-}
-
-void
-InTopLink::copyCudaMemoryToInputTexture(CUDAMemory memory, cudaStream_t stream)
-{
-	if (scope_ != Link::Scope::Input)
-		return;
-
-	
-	//VkExtent2D extent { memory.shape.width, memory.shape.height };
-	VkExtent2D extent{ memory.desc.shape[2], memory.desc.shape[1]};
-	VkFormat format = vkFormatFromCUDAMemoryDesc(memory.desc);
-
-
-	if (textures_.size() == 0)
-		setInputTexture(extent, format);
-	else if (textures_[0]->format() != format || textures_[0]->width() != extent.width || textures_[0]->height() != extent.height)
-	{
-		textures_[0].reset();
-		setInputTexture(extent, format);
-	}
-
-	uint64_t signalValue;
-	VK_CHECK(vkGetSemaphoreCounterValue(device_, textures_[0]->semaphore(), &signalValue));
-	textures_[0]->setSignalValue(++signalValue);
-
-	textures_[0]->setCudaMemoryDesc(memory.desc);
-	textures_[0]->copyCudaMemToImage(
-		memory.ptr,
-		nullptr,
-		textures_[0]->cudaExtSemaphore(),
-		0,
-		signalValue,
-		stream);
 }
 
 void
 InTopLink::transferTextureToInputLink()
 {
-	if (textures_.size() == 0 || scope_ != Link::Scope::Input)
-		return;
+	if (textures_.size() == 0) return;
 
 	TouchObject<TETexture> teTexture;
 	teTexture.set(textures_[0]->teVkTexture());
@@ -190,8 +125,68 @@ InTopLink::transferTextureToInputLink()
 }
 
 void
-InTopLink::copyCudaMemory(const CUDAMemory& cudaMemory, cudaStream_t stream)
+InTopLink::copyCudaMemory(const CUDAMemory& cudaMem, cudaStream_t stream)
 {
-	copyCudaMemoryToInputTexture(cudaMemory, stream);
-	transferTextureToInputLink();
+	if (textures_.size() == 0)
+	{
+		VkExtent2D extent;
+		if (cudaMem.desc.flags & CudaFlagBits::HWC) extent = { cudaMem.desc.shape[1], cudaMem.desc.shape[0] };
+		else extent = { cudaMem.desc.shape[2], cudaMem.desc.shape[1] };
+
+		VkFormat format = vkFormatFromCUDAMemoryDesc(cudaMem.desc);
+		setInputTexture(extent, format, cudaMem.desc);
+	}
+
+	else if (cudaMem.desc != textures_[0]->cudaMemory().desc)
+	{
+		textures_[0].reset();
+		VkExtent2D extent;
+		if (cudaMem.desc.flags & CudaFlagBits::HWC) extent = { cudaMem.desc.shape[1], cudaMem.desc.shape[0] };
+		else extent = { cudaMem.desc.shape[2], cudaMem.desc.shape[1] };
+		VkFormat format = vkFormatFromCUDAMemoryDesc(cudaMem.desc);
+		setInputTexture(extent, format, cudaMem.desc);
+	}
+
+	uint64_t signalValue;
+	VK_CHECK(vkGetSemaphoreCounterValue(device_, textures_[0]->semaphore(), &signalValue));
+	textures_[0]->setSignalValue(++signalValue);
+
+	auto copied = textures_[0]->copyCudaMemToImage(cudaMem.ptr, nullptr, textures_[0]->cudaExtSemaphore(), 0, signalValue, stream);
+
+	if (copied) transferTextureToInputLink();
+	else std::cout << "copyCudaMemory: " << name_ << ", failed to copy memory" << std::endl;
 }
+
+//void
+//InTopLink::copyExternalCudaMemory(
+//	void* memory,
+//	VkFormat format,
+//	VkExtent2D extent,
+//	cudaExternalSemaphore_t waitSemaphore, 
+//	uint64_t waitValue, 
+//	cudaStream_t stream, 
+//	CudaFlags flags)
+//{
+//	if (scope_ != Link::Scope::Input)
+//		return;
+//
+//	if (textures_.size() == 0) setInputTexture(extent, format);
+//
+//	else if (textures_[0]->format() != format || textures_[0]->width() != extent.width || textures_[0]->height() != extent.height)
+//	{
+//		textures_[0].reset();
+//		setInputTexture(extent, format);
+//	}
+//
+//	uint64_t signalValue;
+//	VK_CHECK(vkGetSemaphoreCounterValue(device_, textures_[0]->semaphore(), &signalValue));
+//	textures_[0]->setSignalValue(++signalValue);
+//
+//	textures_[0]->copyCudaMemToImage(
+//		memory,
+//		waitSemaphore,
+//		textures_[0]->cudaExtSemaphore(),
+//		waitValue,
+//		signalValue,
+//		stream);
+//}

@@ -1,5 +1,6 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/operators.h>
 
 #include "comp.h"
 
@@ -25,6 +26,15 @@ void initCompBindings(nb::module_& m)
 		.value("REALTIME", CompFlagBits::Realtime)
 		.value("INTERNAL_TIME_AUTO", CompFlagBits::InternalTimeAuto)
 		.value("INTERNAL_TIME_ASYNC", CompFlagBits::InternalTimeAsync)
+		.def(nb::self | nb::self)
+		.def(nb::self & nb::self)
+		.def(nb::self ^ nb::self)
+		.def(~nb::self)
+		.def(nb::self |= nb::self)
+		.def(nb::self &= nb::self)
+		.def(nb::self ^= nb::self)
+		.def(nb::self == nb::self)
+		.def(nb::self != nb::self)
 		;
 
 	nb::class_<Comp> comp(m, "Comp");

@@ -24,6 +24,10 @@ class ExampleRunComp:
 		self.outBuffer = None
 
 	@staticmethod
+	def on_layout_change(comp, info):
+		comp.out_tops[0].set_cuda_flags(tp.CudaFlags.BGR)
+
+	@staticmethod
 	def on_frame(comp, this):
 
 		if (keyboard.is_pressed('q')):
@@ -33,13 +37,9 @@ class ExampleRunComp:
 		#read Out TOP from the tox we loaded
 		this.inputBuffer = comp.out_tops[0].as_tensor()
 
-		# convert RGBA tensor to a RGB tensor
-		if (this.inputBuffer.shape[0] == 4):
-			this.inputBuffer = this.inputBuffer[:3]	
-
-		# convert RGB tensor to BGR and flip it upside down (as Yolo is expecting OpenCV format)
-		this.inputBuffer = torch.flip(this.inputBuffer, [0,1])
-			
+		######### Process and Copy for next frame (Fast) ###################
+		comp.start_next_frame()	
+		
 		#inference
 		results = this.model(this.inputBuffer.unsqueeze(0),stream=True, device=0)
 		result = next(results)
@@ -53,33 +53,34 @@ class ExampleRunComp:
 		comp.in_chops[0].from_numpy(keypoints)
 
 		fps = 1000 / ( result.speed["preprocess"]+result.speed["inference"]+result.speed["postprocess"])
-		print(f"{fps} maxfps")
+		# print(f"{fps} maxfps")
 		
 		#plot opencv annotations in a numpy array
 		annotatedArray = result.plot()
 			
-		#convert from BGR to RGB and flip vertically (to match TouchDesigner format)
-		annotatedArray = cv2.cvtColor(annotatedArray, cv2.COLOR_BGR2RGB)
-
-		#copy to GPU
-		this.outBuffer = torch.from_numpy(annotatedArray).float().cuda()
+		this.outBuffer = torch.from_numpy(annotatedArray).cuda()
+	
+		print("outBuffer shape: ", this.outBuffer.shape, "outBuffer dtype: ", this.outBuffer.dtype, 
+		"outBuffer device: ", this.outBuffer.device, "outBuffer layout: ", this.outBuffer.layout, 
+		"outBuffer strides: ", this.outBuffer.stride(), "outBuffer is_contiguous: ", this.outBuffer.is_contiguous())
 			
 		# convert tensor from HWC to CHW
-		this.outBuffer = torch.permute(this.outBuffer, (2,0,1))
+		# this.outBuffer = torch.permute(this.outBuffer, (2,0,1)).contiguous()
 
-		#convert tensor color from 0-255 to 0-1 range
-		this.outBuffer = this.outBuffer / 255.0
-		this.outBuffer = torch.flip(this.outBuffer, [1])	
-				
-		######### Copy on next frame (Fast) ###################
-		comp.start_next_frame()	
-		
-		comp.in_tops[0].from_tensor(this.outBuffer)
+		# print("outBuffer shape: ", this.outBuffer.shape, "outBuffer dtype: ", this.outBuffer.dtype, 
+		# "outBuffer device: ", this.outBuffer.device, "outBuffer layout: ", this.outBuffer.layout, 
+		# "outBuffer strides: ", this.outBuffer.stride(), "outBuffer is_contiguous: ", this.outBuffer.is_contiguous())
+
+		# comp.in_tops[0].from_tensor(this.outBuffer)
+		# comp.in_tops[0].from_tensor(this.outBuffer, flags=tp.CudaFlags.BGR)
+		comp.in_tops[0].from_tensor(this.outBuffer, flags=tp.CudaFlags.BGR | tp.CudaFlags.HWC)
+
 		comp.in_chops[0].from_numpy(keypoints)
 		this.frame += 1
 
 	def runComp(self, tox_path):
-		comp = tp.Comp(tox_path, run_mode=tp.RunMode.InternalTimeSemiAuto)
+		comp = tp.Comp(tox_path, run_mode=tp.CompFlags.INTERNAL_TIME_AUTO)
+		comp.set_on_layout_change_callback(self.on_layout_change, self)
 		comp.set_on_frame_callback(self.on_frame, self)
 		comp.start()
 		comp.unload()

@@ -7,6 +7,7 @@
 #include <TouchEngine/TouchEngine.h>
 #include <vector>
 #include <mutex>
+#include <functional>
 
 class Texture
 {
@@ -18,6 +19,7 @@ public:
 		VkDevice device, 
 		TEInstance* teInstance, 
 		TEVulkanTexture* teTexture,
+		CudaFlags cudaFlags = CudaFlagBits::None,
 		bool requiresCudaMemLock = false
 	);
 
@@ -25,7 +27,8 @@ public:
 		VkPhysicalDevice physicalDevice_, 
 		VkDevice device, 
 		VkExtent2D extent, 
-		VkFormat format
+		VkFormat format,
+		CUDAMemoryDesc cudaMemDesc
 	);
 
 	~Texture();
@@ -66,7 +69,7 @@ public:
 
 	void copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream, bool signal = false);
 
-	void copyCudaMemToImage(
+	bool copyCudaMemToImage(
 		void* memory,
 		cudaExternalSemaphore_t waitSemaphore, 
 		cudaExternalSemaphore_t signalSemaphore,
@@ -75,17 +78,20 @@ public:
 		cudaStream_t stream
 	);
 
+	void transferToInputLink(
+		TouchObject<TEInstance> teInstance,
+		TouchObject<TEGraphicsContext> context,
+		const char* identifier);
+
 	void* cudaBuffer() const { return cudaBuffer_; }
 	size_t cudaBufferSize() const { return cudaBufferSize_; }
 	const CUDAMemory& cudaMemory() const;
 	void setRequiresCudaMemLock(bool requiresLock) { requiresCudaMemLock_ = requiresLock; }
 	void setCudaMemoryDesc(CUDAMemoryDesc desc) { cudaMemory_.desc = desc; }
+	void configureCudaMemory(CudaFlags flags = CudaFlagBits::None);
 
 
-	void transferToInputLink(
-		TouchObject<TEInstance> teInstance, 
-		TouchObject<TEGraphicsContext> context,
-		const char* identifier);
+
 
 private:
 	VkDevice                              device_              { VK_NULL_HANDLE };
@@ -134,9 +140,6 @@ private:
 
 	cudaExternalSemaphore_t cudaExtSemaphore_ { nullptr };
 
-	//VkSemaphore             cudaCudaUpdateVkSemaphore_    { VK_NULL_HANDLE };
-	//cudaExternalSemaphore_t cudaExtCudaUpdateVkSemaphore_ { nullptr };
-
 	cudaExternalMemory_t cudaExtImageMemory_  { nullptr };
 	cudaSurfaceObject_t  cudaSurface_         { 0 };
 	cudaMipmappedArray_t cudaMipmappedArray_  { nullptr };
@@ -148,49 +151,51 @@ private:
 	bool                 requiresCudaMemLock_ { false };
 	mutable              std::mutex mutex_;
 
-	void setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory);
+	std::function<void(void*, int, int, cudaSurfaceObject_t, cudaStream_t)> copySurfaceFunc_ { nullptr };
+	std::function<void(cudaSurfaceObject_t, int, int, const void*, cudaStream_t)> copyToSurfaceFunc_ { nullptr };
+
+	void setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory, CudaFlags flags = CudaFlagBits::None);
 	void cudaImportTimelineSemaphore(HANDLE semaphoreHandle);
 	void cudaImportSemaphore(HANDLE semaphoreHandle);
 	void cudaImportImageMemory(HANDLE imageHandle);
-	void cudaAllocateMemory();
 
 	void cudaVkSemaphoreWait(cudaExternalSemaphore_t semaphore, uint64_t waitValue, cudaStream_t stream);
 	void cudaVkSemaphoreSignal(cudaExternalSemaphore_t semaphore, uint64_t signalValue, cudaStream_t stream);
 
+	void setCudaCopySurfaceFunc(CudaFlags flags);
+	void setCudaCopyToSurfaceFunc();
+
+
+
 
 };
 
+template<typename ColType, typename CompType, int R, int G, int B, int A> cudaError_t
+memCopySurfaceToPlanar(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
 
-cudaError_t
-memCopyBRGA8USurfaceToRGBA8U(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
+template<typename ColType, typename CompType, int R, int G, int B> cudaError_t
+memCopySurfaceToPlanar(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
 
-cudaError_t
-memCopyBRGA8USurfaceToPlanarRGBA8U(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
-
-template<typename T> cudaError_t
-memCopyFromSurface(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
-
-template<typename T, typename CompType, int numComps> cudaError_t
-memCopyFromSurfaceToPlanar(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
-
-
-cudaError_t
-memCopyRGBA8UToBGRA8USurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);
-
-cudaError_t
-memCopyPlanarRGBA8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
-
-cudaError_t
-memCopyRGB8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
-
-cudaError_t
-memCopyPlanarRGB8UToBGRA8USurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+template<typename ColType, typename CompType, int R, int G> cudaError_t
+memCopySurfaceToPlanar(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
 
 template<typename T> cudaError_t
-memCopyToSurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);
+memCopySurface(void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream);
 
-template<typename T, typename CompType> cudaError_t
-memCopyToSurface(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);
+template<typename ColType, typename CompType, int R, int G, int B, int A> cudaError_t
+memCopyPlanarToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 
-template<typename DstT, typename SrcT> cudaError_t
-memCopyToSurface2(cudaSurfaceObject_t output, int width, int height, const void* src, cudaStream_t stream);
+template<typename ColType, typename CompType, int R, int G, int B> cudaError_t
+memCopyPlanarToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+
+template<typename ColType, typename CompType, int R, int G> cudaError_t
+memCopyPlanarToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+
+template<typename ColType, typename CompType, int R, int G, int B, int A> cudaError_t
+memCopyToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+
+template<typename ColType, typename CompType, int R, int G, int B> cudaError_t
+memCopyToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+
+template<typename T> cudaError_t
+memCopyToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);

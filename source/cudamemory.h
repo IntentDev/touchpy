@@ -5,7 +5,7 @@
 #include <memory>
 #include <array>
 #include <string>
-#include "componentmask.h"
+#include "cudaflags.h"
 
 enum class CUDADataType : uint8_t
 {
@@ -20,9 +20,23 @@ struct CUDAMemoryDesc
 {
 	std::array<uint32_t, 3> shape         { 0, 0, 0 }; // numComponents, height, width
 	size_t                  componentSize { 1 };
-	ComponentMask			componentMask { ComponentMask::RGBA };
+	CudaFlags				flags         { CudaFlagBits::None };
 	CUDADataType            dataType      { CUDADataType::Undefined };
 	std::array<uint32_t, 3> strides       { 0, 0, 0 }; // in elements (not bytes)
+
+	bool operator==(const CUDAMemoryDesc& other) const
+	{
+		return shape == other.shape && 
+			componentSize == other.componentSize && 
+			flags == other.flags && 
+			dataType == other.dataType && 
+			strides == other.strides;
+	}
+
+	bool operator!=(const CUDAMemoryDesc& other) const
+	{
+		return !(*this == other);
+	}
 };
 
 struct CUDAMemory
@@ -36,6 +50,10 @@ struct CUDAMemory
 VkFormat vkFormatFromCUDAMemoryDesc(CUDAMemoryDesc desc);
 CUDADataType cudaDataTypeFromVkFormat(VkFormat format);
 uint8_t numCompsFromVkFormat(VkFormat format);
+uint8_t numCompsFromCudaFlags(CudaFlags flags);
+CudaFlags cudaFlagsFromVkFormat(VkFormat format);
 size_t componentSizeFromVkFormat(VkFormat format);
 std::string cudaDataTypeToString(CUDADataType type);
 cudaChannelFormatDesc cudaChannelFormatDescFromVkFormat(VkFormat vkFormat);
+
+void printCudaFlags(CudaFlags flags);
