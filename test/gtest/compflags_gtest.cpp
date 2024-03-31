@@ -53,3 +53,14 @@ TEST(CompFlagsTest, testBool)
 	EXPECT_FALSE(a & CompFlagBits::ExternalTime);
 
 }
+
+TEST(CompFlagsTest, testEquality)
+{
+	CompFlags a = CompFlagBits::InternalTime | CompFlagBits::AutoUpdate;
+	CompFlags b = CompFlagBits::InternalTime | CompFlagBits::AutoUpdate;
+	CompFlags c = CompFlagBits::InternalTime | CompFlagBits::Realtime;
+
+	EXPECT_TRUE(a == b);
+	EXPECT_FALSE(a == c);
+
+}

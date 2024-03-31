@@ -27,7 +27,8 @@ public:
 		VkPhysicalDevice physicalDevice_, 
 		VkDevice device, 
 		VkExtent2D extent, 
-		VkFormat format
+		VkFormat format,
+		CUDAMemoryDesc cudaMemDesc
 	);
 
 	~Texture();
@@ -68,7 +69,7 @@ public:
 
 	void copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream, bool signal = false);
 
-	void copyCudaMemToImage(
+	bool copyCudaMemToImage(
 		void* memory,
 		cudaExternalSemaphore_t waitSemaphore, 
 		cudaExternalSemaphore_t signalSemaphore,
@@ -77,6 +78,11 @@ public:
 		cudaStream_t stream
 	);
 
+	void transferToInputLink(
+		TouchObject<TEInstance> teInstance,
+		TouchObject<TEGraphicsContext> context,
+		const char* identifier);
+
 	void* cudaBuffer() const { return cudaBuffer_; }
 	size_t cudaBufferSize() const { return cudaBufferSize_; }
 	const CUDAMemory& cudaMemory() const;
@@ -84,10 +90,8 @@ public:
 	void setCudaMemoryDesc(CUDAMemoryDesc desc) { cudaMemory_.desc = desc; }
 	void configureCudaMemory(CudaFlags flags = CudaFlagBits::None);
 
-	void transferToInputLink(
-		TouchObject<TEInstance> teInstance, 
-		TouchObject<TEGraphicsContext> context,
-		const char* identifier);
+
+
 
 private:
 	VkDevice                              device_              { VK_NULL_HANDLE };
@@ -136,9 +140,6 @@ private:
 
 	cudaExternalSemaphore_t cudaExtSemaphore_ { nullptr };
 
-	//VkSemaphore             cudaCudaUpdateVkSemaphore_    { VK_NULL_HANDLE };
-	//cudaExternalSemaphore_t cudaExtCudaUpdateVkSemaphore_ { nullptr };
-
 	cudaExternalMemory_t cudaExtImageMemory_  { nullptr };
 	cudaSurfaceObject_t  cudaSurface_         { 0 };
 	cudaMipmappedArray_t cudaMipmappedArray_  { nullptr };
@@ -151,7 +152,7 @@ private:
 	mutable              std::mutex mutex_;
 
 	std::function<void(void*, int, int, cudaSurfaceObject_t, cudaStream_t)> copySurfaceFunc_ { nullptr };
-	//std::function<void(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream)> copyToSurfaceFunc_ { nullptr };
+	std::function<void(cudaSurfaceObject_t, int, int, const void*, cudaStream_t)> copyToSurfaceFunc_ { nullptr };
 
 	void setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory, CudaFlags flags = CudaFlagBits::None);
 	void cudaImportTimelineSemaphore(HANDLE semaphoreHandle);
@@ -162,6 +163,7 @@ private:
 	void cudaVkSemaphoreSignal(cudaExternalSemaphore_t semaphore, uint64_t signalValue, cudaStream_t stream);
 
 	void setCudaCopySurfaceFunc(CudaFlags flags);
+	void setCudaCopyToSurfaceFunc();
 
 
 
@@ -188,6 +190,12 @@ memCopyPlanarToSurface(cudaSurfaceObject_t dst, int width, int height, const voi
 
 template<typename ColType, typename CompType, int R, int G> cudaError_t
 memCopyPlanarToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+
+template<typename ColType, typename CompType, int R, int G, int B, int A> cudaError_t
+memCopyToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
+
+template<typename ColType, typename CompType, int R, int G, int B> cudaError_t
+memCopyToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);
 
 template<typename T> cudaError_t
 memCopyToSurface(cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <common/flags.h>
+#include <iostream>
 
 using Type = uint32_t;
 

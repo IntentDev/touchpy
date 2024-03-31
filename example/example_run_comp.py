@@ -125,7 +125,7 @@ class ExampleRunComp:
 
 		# copy the cuda memory from out_top_link to in_top_link
 		cudamem = comp.out_tops[1].cuda_memory()
-		comp.in_tops[1].copy_cuda_memory(cudamem)
+		comp.in_tops[1].copy_cuda_memory(cudamem, flags = tp.CudaFlags.BGRA)
 
 		with torch.no_grad():
 			# tensor = comp.out_tops[0].as_tensor() # get the first top as a tensor

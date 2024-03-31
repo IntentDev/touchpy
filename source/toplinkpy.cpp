@@ -90,7 +90,7 @@ nb::ndarray<Args...> arrayFromCudaMem(OutTopLink& outTopLink)
 
 // need pass flags here and use in texture copy
 template<typename T>
-void copyArrayToCudaMemory(InTopLink& inTopLink, T array)
+void copyArrayToCudaMemory(InTopLink& inTopLink, T array, CudaFlags flags)
 {
 	if (array.is_valid())
 	{
@@ -110,6 +110,7 @@ void copyArrayToCudaMemory(InTopLink& inTopLink, T array)
 
 		desc.componentSize = array.itemsize();
 		desc.dataType = cudaDataTypeFromDtype(array.dtype());
+		desc.flags = flags;
 		cudaMemory.desc = desc;
 
 		inTopLink.copyCudaMemory(cudaMemory, nullptr);
@@ -117,10 +118,15 @@ void copyArrayToCudaMemory(InTopLink& inTopLink, T array)
 }
 
 
-using arrayShape4 = nb::shape<4, nb::any, nb::any>;
-using arrayShape3 = nb::shape<3, nb::any, nb::any>;
-using arrayShape2 = nb::shape<2, nb::any, nb::any>;
-using arrayShape1 = nb::shape<1, nb::any, nb::any>;
+using arrayShapeCHW4 = nb::shape<4, nb::any, nb::any>;
+using arrayShapeCHW3 = nb::shape<3, nb::any, nb::any>;
+using arrayShapeCHW2 = nb::shape<2, nb::any, nb::any>;
+using arrayShapeCHW1 = nb::shape<1, nb::any, nb::any>;
+
+using arrayShapeHWC4 = nb::shape<nb::any, nb::any, 4>;
+using arrayShapeHWC3 = nb::shape<nb::any, nb::any, 3>;
+using arrayShapeHWC2 = nb::shape<nb::any, nb::any, 2>;
+using arrayShapeHWC1 = nb::shape<nb::any, nb::any, 1>;
 
 void initTopLinkBindings(nb::module_& m)
 {
@@ -198,43 +204,61 @@ void initTopLinkBindings(nb::module_& m)
 	inTopLink.doc() = "An InTOP in a TouchDesigner component";
 	inTopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
 
-	inTopLink
-		.def("from_dlpack",
-			[](InTopLink& self, nb::ndarray<arrayShape4, nb::device::cuda> array)
-			{ copyArrayToCudaMemory<nb::ndarray<arrayShape4, nb::device::cuda>>(self, array); })
-		.def("from_dlpack",
-			[](InTopLink& self, nb::ndarray<arrayShape3, nb::device::cuda> array)
-			{ copyArrayToCudaMemory<nb::ndarray<arrayShape3, nb::device::cuda>>(self, array); })
-		.def("from_dlpack",
-			[](InTopLink& self, nb::ndarray<arrayShape2, nb::device::cuda> array)
-			{ copyArrayToCudaMemory<nb::ndarray<arrayShape2, nb::device::cuda>>(self, array); })
-		.def("from_dlpack",
-			[](InTopLink& self, nb::ndarray<arrayShape1, nb::device::cuda> array)
-			{ copyArrayToCudaMemory<nb::ndarray<arrayShape1, nb::device::cuda>>(self, array); })
-		;
+	//inTopLink
+	//	.def("from_dlpack",
+	//		[](InTopLink& self, nb::ndarray<arrayShape4, nb::device::cuda> array)
+	//		{ copyArrayToCudaMemory<nb::ndarray<arrayShape4, nb::device::cuda>>(self, array); })
+	//	.def("from_dlpack",
+	//		[](InTopLink& self, nb::ndarray<arrayShape3, nb::device::cuda> array)
+	//		{ copyArrayToCudaMemory<nb::ndarray<arrayShape3, nb::device::cuda>>(self, array); })
+	//	.def("from_dlpack",
+	//		[](InTopLink& self, nb::ndarray<arrayShape2, nb::device::cuda> array)
+	//		{ copyArrayToCudaMemory<nb::ndarray<arrayShape2, nb::device::cuda>>(self, array); })
+	//	.def("from_dlpack",
+	//		[](InTopLink& self, nb::ndarray<arrayShape1, nb::device::cuda> array)
+	//		{ copyArrayToCudaMemory<nb::ndarray<arrayShape1, nb::device::cuda>>(self, array); })
+	//	;
 
 	inTopLink
 		.def("from_tensor",
-			[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShape4, nb::device::cuda> array)
-			{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShape4, nb::device::cuda>>(self, array); })
+			[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShapeCHW4, nb::device::cuda> array, CudaFlagBits flags)
+			{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShapeCHW4, nb::device::cuda>>(self, array, flags); },
+			"array"_a, "flags"_a = CudaFlagBits::None)
 		.def("from_tensor",
-			[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShape4, nb::device::cuda> array)
-			{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShape4, nb::device::cuda>>(self, array); })
+			[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShapeCHW3, nb::device::cuda> array, CudaFlagBits flags)
+			{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShapeCHW3, nb::device::cuda>>(self, array, flags); },
+			"array"_a, "flags"_a = CudaFlagBits::None)
 		.def("from_tensor",
-			[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShape3, nb::device::cuda> array)
-			{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShape3, nb::device::cuda>>(self, array); })
+			[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShapeCHW2, nb::device::cuda> array, CudaFlagBits flags)
+			{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShapeCHW2, nb::device::cuda>>(self, array, flags); },
+			"array"_a, "flags"_a = CudaFlagBits::None)
 		.def("from_tensor",
-			[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShape2, nb::device::cuda> array)
-			{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShape2, nb::device::cuda>>(self, array); })
+			[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShapeCHW1, nb::device::cuda> array, CudaFlagBits flags)
+			{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShapeCHW1, nb::device::cuda>>(self, array, flags); },
+			"array"_a, "flags"_a = CudaFlagBits::None)
 		.def("from_tensor",
-			[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShape1, nb::device::cuda> array)
-			{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShape1, nb::device::cuda>>(self, array); })
+			[](InTopLink& self, nb::ndarray < nb::pytorch, arrayShapeHWC4, nb::device::cuda> array, CudaFlagBits flags)
+			{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShapeHWC4, nb::device::cuda>>(self, array, flags); },
+			"array"_a, "flags"_a = CudaFlagBits::None)
+		.def("from_tensor",
+			[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShapeHWC3, nb::device::cuda> array, CudaFlagBits flags)
+			{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShapeHWC3, nb::device::cuda>>(self, array, flags); },
+			"array"_a, "flags"_a = CudaFlagBits::None)
+		.def("from_tensor",
+			[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShapeHWC2, nb::device::cuda> array, CudaFlagBits flags)
+			{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShapeHWC2, nb::device::cuda>>(self, array, flags); },
+			"array"_a, "flags"_a = CudaFlagBits::None)
+		.def("from_tensor",
+			[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShapeHWC1, nb::device::cuda> array, CudaFlagBits flags)
+			{ copyArrayToCudaMemory<nb::ndarray<nb::pytorch, arrayShapeHWC1, nb::device::cuda>>(self, array, flags); },
+			"array"_a, "flags"_a = CudaFlagBits::None)
+
 		;
 
-	inTopLink.def("copy_cuda_memory", [](InTopLink& self, const CUDAMemory& memory)
+	inTopLink.def("copy_cuda_memory", [](InTopLink& self, const CUDAMemory& memory, CudaFlagBits flags)
 		{
 			self.copyCudaMemory(memory, nullptr);
-		});
+		}, "cuda_mem"_a, "flags"_a = CudaFlagBits::None);
 
 	nb::class_<InTopLinks> inTopLinks(m, "InTopLinks");
 	inTopLinks.doc() = "A collection of InTOP links in a TouchDesigner component";

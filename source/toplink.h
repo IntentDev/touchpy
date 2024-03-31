@@ -53,24 +53,21 @@ public:
 
 	~InTopLink() { }
 
-	void setInputTexture(VkExtent2D extent, VkFormat format);
+	void copyCudaMemory(const CUDAMemory& cudaMem, cudaStream_t stream);
 
-	//template <typename T> make template...
-	void copyCudaMemoryToInputTexture(
-		void* memory,
-		VkFormat format,
-		VkExtent2D extent,
-		cudaExternalSemaphore_t waitSemaphore,
-		uint64_t waitValue,
-		cudaStream_t stream);
+	// not used at this moment, is useful if we want to copy external memory (outLink) to input texture
+	//void copyExternalCudaMemory(
+	//	void* memory,
+	//	VkFormat format,
+	//	VkExtent2D extent,
+	//	cudaExternalSemaphore_t waitSemaphore,
+	//	uint64_t waitValue,
+	//	cudaStream_t stream,
+	//	CudaFlags flags);
 
-	void copyCudaMemoryToInputTexture(CUDAMemory memory, cudaStream_t stream);
-
+private:
+	void setInputTexture(VkExtent2D extent, VkFormat format, CUDAMemoryDesc cudaMemDesc);
 	void transferTextureToInputLink();
-
-	//void copyCudaMemory(void* memory, uint32_t width, uint32_t height, uint32_t numComponents, cudaStream_t stream);
-	void copyCudaMemory(const CUDAMemory& cudaMemory, cudaStream_t stream);
-
 };
 
 class InTopLinks : public Links<InTopLinks, InTopLink>
