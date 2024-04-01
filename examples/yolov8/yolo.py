@@ -19,7 +19,7 @@ class ExampleRunComp:
 	def __init__(self):
 		self.running = True # used to gracefully exit the loop
 		self.frame = 0
-		self.model = YOLO("models/yolov8s-pose.pt", verbose=False)
+		self.model = YOLO("models/yolov8n-pose.engine", verbose=False)
 		self.inputBuffer = None
 		self.outBuffer = None
 
@@ -52,21 +52,19 @@ class ExampleRunComp:
 
 		comp.in_chops[0].from_numpy(keypoints)
 
-		fps = 1000 / ( result.speed["preprocess"]+result.speed["inference"]+result.speed["postprocess"])
+		# fps = 1000 / ( result.speed["preprocess"]+result.speed["inference"]+result.speed["postprocess"])
 		# print(f"{fps} maxfps")
 		
 		#plot opencv annotations in a numpy array
 		annotatedArray = result.plot()
 			
 		this.outBuffer = torch.from_numpy(annotatedArray).cuda()
-
-		comp.in_tops[0].from_tensor(this.outBuffer, flags=tp.CudaFlags.BGR | tp.CudaFlags.HWC)
-
+		comp.in_tops[0].from_tensor(this.outBuffer, flags=tp.CudaFlags.BGR)
 		comp.in_chops[0].from_numpy(keypoints)
 		this.frame += 1
 
 	def runComp(self, tox_path):
-		comp = tp.Comp(tox_path, run_mode=tp.CompFlags.INTERNAL_TIME_AUTO)
+		comp = tp.Comp(tox_path, flags=tp.CompFlags.INTERNAL_TIME_AUTO)
 		comp.set_on_layout_change_callback(self.on_layout_change, self)
 		comp.set_on_frame_callback(self.on_frame, self)
 		comp.start()

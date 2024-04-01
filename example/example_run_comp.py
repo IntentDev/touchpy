@@ -157,8 +157,8 @@ class ExampleRunComp:
 	def runComp(self, tox_path):
 		# create a comp object and specify a path to a tox file
 		# comp = tp.Comp(tox_path)
-		# comp = tp.Comp(tox_path, run_mode=tp.CompFlags.INTERNAL_TIME_AUTO)
-		comp = tp.Comp(tox_path, run_mode=tp.CompFlags.INTERNAL_TIME | tp.CompFlags.AUTO_UPDATE)
+		# comp = tp.Comp(tox_path, flags=tp.CompFlags.INTERNAL_TIME_AUTO)
+		comp = tp.Comp(tox_path, flags=tp.CompFlags.INTERNAL_TIME | tp.CompFlags.AUTO_UPDATE)
 
 		comp.set_on_layout_change_callback(self.on_layout_change, self)
 		comp.set_on_frame_callback(self.on_frame, self)
