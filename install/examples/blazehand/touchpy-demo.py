@@ -54,7 +54,6 @@ class ExampleRunComp:
 		
 		#read Out TOP from the tox we loaded
 		this.inputBuffer = comp.out_tops[0].as_tensor()
-		this.inputBuffer = this.inputBuffer.clone()
 		
 		######### Process and Copy for next frame (Fast) ###################
 		comp.start_next_frame()	
