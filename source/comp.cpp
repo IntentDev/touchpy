@@ -30,7 +30,7 @@ Comp::~Comp()
 	// call unload() before destruction, or not at all but that will cause memory leaks if the object is the global scope
 	// unload();
 
-	CUDA_CHECK(cudaStreamDestroy(cudaStream_));
+	if (cudaStream_ && compFlags_ & CompFlagBits::CudaStreamInternal) CUDA_CHECK(cudaStreamDestroy(cudaStream_));
 
 	vkDestroyFence(device_, submitFence_, nullptr);
 }
@@ -56,7 +56,7 @@ void
 Comp::cudaInit()
 {
 	setCudaDevice();
-	CUDA_CHECK(cudaStreamCreate(&cudaStream_));
+	if (compFlags_ & CompFlagBits::CudaStreamInternal) CUDA_CHECK(cudaStreamCreate(&cudaStream_));
 }
 
 void 
@@ -120,6 +120,11 @@ Comp::initInstance()
 	return true;
 }
 
+bool Comp::loadTox(const std::string& filePath, int64_t fps)
+{
+	return loadTox(filePath, compFlags_, fps);
+}
+
 bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps)
 {
 	compFlags_ = compFlags;
@@ -147,10 +152,9 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 void 
 Comp::unload()
 {
-	clearOnFrameCallback();
-
 	if (asyncRunning_.load()) stopAsync();
 	else if (updateLoopRunning_) stopUpdate();
+
 
 	std::unique_lock<std::mutex> lock(mutex_);
 	if (ssLoaded_)
@@ -162,6 +166,9 @@ Comp::unload()
 		onFrameCallback_ = nullptr;
 		onLayoutChangeCallbackUserData_ = nullptr;
 		onLayoutChangeCallback_ = nullptr;
+
+		cudaStreamSynchronize(cudaStream_);
+
 
 		lock.unlock();
 		TE_CHECK(TEInstanceUnload(instance_));
@@ -651,8 +658,8 @@ Comp::applyOutputTextureChange()
 	for (const auto& identifier : changedOutputTextures_)
 	{
 		auto& topLink = *outTopLinks_->getLinkByIdentifier(identifier);
-		//topLink.onOutputTextureChange(cudaStream_);
-		topLink.onOutputTextureChange(nullptr);
+		topLink.onOutputTextureChange();
+		//topLink.onOutputTextureChange(nullptr);
 	}
 }
 
@@ -711,8 +718,8 @@ Comp::applyLayoutChange()
 {
 	std:: cout << "Applying layout change" << std::endl;
 
-	inTopLinks_ = std::make_unique<InTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_);
-	outTopLinks_ = std::make_unique<OutTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_);
+	inTopLinks_ = std::make_unique<InTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_, cudaStream_);
+	outTopLinks_ = std::make_unique<OutTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_, cudaStream_);
 
 	inChopLinks_ = std::make_unique<InChopLinks>(instance_);
 	outChopLinks_ = std::make_unique<OutChopLinks>(instance_);

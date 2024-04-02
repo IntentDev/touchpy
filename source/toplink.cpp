@@ -7,11 +7,13 @@ TopLink::TopLink(
 	TouchObject<TEGraphicsContext> context,
 	VkPhysicalDevice physicalDevice,
 	VkDevice device,
-	TouchObject<TELinkInfo> linkInfo)
+	TouchObject<TELinkInfo> linkInfo,
+	cudaStream_t cudaStream)
 	:	Link<TopLink>(instance, linkInfo),
 		context_(context),
 		physicalDevice_(physicalDevice),
-		device_(device) { }
+		device_(device),
+		cudaStream_(cudaStream){ }
 
 TopLink::~TopLink() { }
 
@@ -37,7 +39,7 @@ OutTopLink::addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTexture
 }
 
 void 
-OutTopLink::onOutputTextureChange(cudaStream_t cudaStream_)
+OutTopLink::onOutputTextureChange()
 {
 	if (scope_ != Link::Scope::Output)
 		return;
