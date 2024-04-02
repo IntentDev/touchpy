@@ -931,22 +931,29 @@ void Texture::configureCudaMemory(CudaFlags flags)
 		cudaMemory_.desc.shape[0] = extent_.height;
 		cudaMemory_.desc.shape[1] = extent_.width;
 		cudaMemory_.desc.shape[2] = numComponents;
+
+		// Interleaved memory layout
+		cudaMemory_.desc.strides[0] = extent_.width * numComponents; //  num elements to next row
+		cudaMemory_.desc.strides[1] = numComponents; // num elements to next pixel
+		cudaMemory_.desc.strides[2] = 1; // num elements to next component
 	}
 	else // CHW
 	{
 		cudaMemory_.desc.shape[0] = numComponents;
 		cudaMemory_.desc.shape[1] = extent_.height;
 		cudaMemory_.desc.shape[2] = extent_.width;
+
+		// Planar memory layout
+		cudaMemory_.desc.strides[0] = extent_.width * extent_.height; // component stride // num elements to next component
+		cudaMemory_.desc.strides[1] = extent_.width; // row stride // num elements to row
+		cudaMemory_.desc.strides[2] = 1; // column stride // num elements to column
 	}
 
 	cudaMemory_.desc.componentSize = componentSize_;
 	cudaMemory_.desc.flags = flags; // TODO: need to set this base on the format if it's not set... 
 	cudaMemory_.desc.dataType = cudaDataTypeFromVkFormat(format_);
 
-	// Planar memory layout
-	cudaMemory_.desc.strides[0] = extent_.width * extent_.height; // component stride // num elements to next component
-	cudaMemory_.desc.strides[1] = extent_.width; // row stride // num elements to row
-	cudaMemory_.desc.strides[2] = 1; // column stride // num elements to column
+
 
 	cudaMemory_.ptr = cudaBuffer_;
 	cudaMemory_.size = cudaBufferSize_;
