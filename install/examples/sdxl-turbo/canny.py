@@ -35,13 +35,11 @@ class ExampleRunComp:
 		self.canny_detector = CannyDetector()
 		self.inputBuffer = None
 		self.outBuffer = None
-
-		
-		self.testImage = load_image("./circle.png")
+		self.testImage = load_image("./idzard.jpg")
 
 	@staticmethod
 	def on_layout_change(comp, info):
-		#comp.out_tops[0].set_cuda_flags(tp.CudaFlags.BGR | tp.CudaFlags.HWC)
+		comp.out_tops[0].set_cuda_flags(tp.CudaFlags.BGR | tp.CudaFlags.HWC)
 		pass
 
 	@staticmethod
@@ -57,45 +55,21 @@ class ExampleRunComp:
 		######### Process and Copy for next frame (Fast) ###################
 		comp.start_next_frame()	
 		
-		#inference
-		
-		
-
-		okArray = np.array(this.testImage)
-		#print("+++++++ OK ++++")
+		#working reference
+		OKArray = np.array(this.testImage)
 		#print(ok.shape, ok.dtype, ok.strides, ok.flags['C_CONTIGUOUS'])
-		#print("+++++++ OK ++++")
-
-		#cpuBuffer= this.inputBuffer.cpu().numpy().astype(np.uint8) * 255
-		#cv.imshow('Example - Show image in window', cpuBuffer.transpose(1, 2, 0))
+		cannyOK = this.canny_detector(OKArray, detect_resolution=256, image_resolution=512)
+		cv.imshow("canny from OKArray", cannyOK)
 		
-		canny = this.canny_detector(okArray, detect_resolution=384, image_resolution=1024, output_type="pil")
 		
-		canny.show()
-
-		generator = torch.manual_seed(0)
-		
-
-
-		control_image = this.testImage
-		prompt = "pale golden rod circle with old lace background"
-
-
-		this.outBuffer = this.pipeline(prompt, control_image, generator=generator, num_inference_steps=2,output_type="pt")
-		#torch.cuda.synchronize()
-		#print(this.outBuffer, this.outBuffer.device, this.outBuffer.shape)
-
-		#canny = np.array(canny)
-			#print(canny, canny.device)
-		#this.outBuffer = torch.from_numpy(canny/255).cuda()
-		comp.in_tops[0].from_tensor(this.outBuffer)
-		
-		#	output = np.asarray(image)
-		#this.outBuffer = torch.from_numpy(image).cuda()
-		#comp.in_tops[0].from_tensor(this.outBuffer)
-		#comp.in_tops[0].from_tensor(image)
-		
+		#problem case
+		cpuBuffer= this.inputBuffer.cpu().numpy().astype(np.uint8) * 255
+		#print(cpuBuffer.shape, cpuBuffer.dtype, cpuBuffer.strides, cpuBuffer.flags['C_CONTIGUOUS'])
+		cannyTD = this.canny_detector(cpuBuffer, detect_resolution=256, image_resolution=512)
+		cv.imshow("canny from cpuBuffer", cannyTD)
+	
 		this.frame += 1
+		print("Frame: ", this.frame)
 
 	def runComp(self, tox_path):
 		comp = tp.Comp(tox_path, flags=tp.CompFlags.INTERNAL_TIME_AUTO)
