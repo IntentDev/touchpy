@@ -59,15 +59,18 @@ class ExampleRunComp:
 		OKArray = np.array(this.testImage)
 		#print(ok.shape, ok.dtype, ok.strides, ok.flags['C_CONTIGUOUS'])
 		cannyOK = this.canny_detector(OKArray, detect_resolution=256, image_resolution=512)
-		cv.imshow("canny from OKArray", cannyOK)
+		# cv.imshow("canny from OKArray", cannyOK)
 		
 		
 		#problem case
-		cpuBuffer= this.inputBuffer.cpu().numpy().astype(np.uint8) * 255
+		cpuBuffer= this.inputBuffer.cpu().numpy().astype(np.uint8)
 		#print(cpuBuffer.shape, cpuBuffer.dtype, cpuBuffer.strides, cpuBuffer.flags['C_CONTIGUOUS'])
 		cannyTD = this.canny_detector(cpuBuffer, detect_resolution=256, image_resolution=512)
-		cv.imshow("canny from cpuBuffer", cannyTD)
+		# cv.imshow("canny from cpuBuffer", cannyTD)
 	
+		this.outBuffer = torch.from_numpy(cannyTD).cuda()
+		comp.in_tops[0].from_tensor(this.outBuffer, flags=tp.CudaFlags.BGR)
+
 		this.frame += 1
 		print("Frame: ", this.frame)
 
