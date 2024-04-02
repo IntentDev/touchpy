@@ -78,7 +78,7 @@ endif()
 
 add_custom_command(TARGET touchpy POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:touchpy> ${CMAKE_CURRENT_SOURCE_DIR}/example) 
+    $<TARGET_FILE:touchpy> "${CMAKE_CURRENT_SOURCE_DIR}/install/modules") 
 
 
 
@@ -136,7 +136,7 @@ add_custom_command(TARGET touchpy POST_BUILD
 
 add_custom_command(TARGET touchpy POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${cuda_runtime_dll} ${CMAKE_CURRENT_SOURCE_DIR}/example)
+    ${cuda_runtime_dll} "${CMAKE_CURRENT_SOURCE_DIR}/install/modules")
 
 # Python
 # make sure path to python is in the system PATH
@@ -161,7 +161,7 @@ add_custom_command(TARGET touchpy POST_BUILD
 
 add_custom_command(TARGET touchpy POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin ${CMAKE_CURRENT_SOURCE_DIR}/example)    
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin "${CMAKE_CURRENT_SOURCE_DIR}/install/modules")    
 
 target_link_directories(touchpygtest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/lib)
 target_link_libraries(touchpygtest PRIVATE TouchEngine)

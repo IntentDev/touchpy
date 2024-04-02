@@ -12,10 +12,11 @@
       "hidden": true,
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/out/build/${presetName}",
-      "installDir": "${sourceDir}/out/install",
+      "installDir": "${sourceDir}/install",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "cl.exe",
-        "CMAKE_CXX_COMPILER": "cl.exe"
+        "CMAKE_CXX_COMPILER": "cl.exe",
+        "CMAKE_TOOLCHAIN_FILE": "<VCPKG_ROOT_PATH_HERE>/scripts/buildsystems/vcpkg.cmake"
       },
       "condition": {
         "type": "equals",
