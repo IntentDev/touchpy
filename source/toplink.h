@@ -59,6 +59,7 @@ public:
 	~InTopLink() { }
 
 	void copyCudaMemory(const CUDAMemory& cudaMem, cudaStream_t stream);
+	void copyCudaMemory(const CUDAMemory& cudaMem);
 
 	// not used at this moment, is useful if we want to copy external memory (outLink) to input texture
 	//void copyExternalCudaMemory(
@@ -129,6 +130,7 @@ public:
 
 	const CUDAMemory& cudaMemory() { return currentTexture()->cudaMemory(); }
 	void setCudaFlags(CudaFlags flags);
+	void setCudaStream(cudaStream_t stream) { cudaStream_ = stream; }
 
 private:
 	bool requiresCudaMemLock_ { false };

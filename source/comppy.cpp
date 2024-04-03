@@ -26,6 +26,8 @@ void initCompBindings(nb::module_& m)
 		.value("REALTIME", CompFlagBits::Realtime)
 		.value("INTERNAL_TIME_AUTO", CompFlagBits::InternalTimeAuto)
 		.value("INTERNAL_TIME_ASYNC", CompFlagBits::InternalTimeAsync)
+		.value("CUDA_STREAM_DEFAULT", CompFlagBits::CudaStreamDefault)
+		.value("CUDA_STREAM_INTERNAL", CompFlagBits::CudaStreamInternal)
 		.def(nb::self | nb::self)
 		.def(nb::self & nb::self)
 		.def(nb::self ^ nb::self)
@@ -103,4 +105,11 @@ void initCompBindings(nb::module_& m)
 				userDataPtr);
 		}
 	);
+
+	comp.def("cuda_stream", [](Comp& self) -> uintptr_t
+		{ 
+			return reinterpret_cast<uintptr_t>(self.cudaStream());
+		}
+	, nb::rv_policy::reference_internal);
+
 }

@@ -59,6 +59,8 @@ public:
 	void clearOnLayoutChangeCallback();
 	bool callOnLayoutChangeCallback();
 
+	cudaStream_t cudaStream() const { return cudaStream_; }
+
 	// for internal use only, not for python bindings
 	//-----------------------------------------------------------------------------------------------------------------
 	bool freeRunning() const { return asyncRunning_.load(); }

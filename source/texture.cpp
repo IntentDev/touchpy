@@ -273,8 +273,7 @@ Texture::Texture(
 
 Texture::~Texture()
 {
-	// call cuda sync here to wait for all operations to finish
-	cudaStreamSynchronize(cudaStream_);
+	cudaDeviceSynchronize();
 
 	if (cudaBuffer_)
 		CUDA_CHECK(cudaFree(cudaBuffer_));

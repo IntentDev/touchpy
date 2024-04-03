@@ -10,7 +10,8 @@ Comp::Comp()
 	initComp();
 }
 
-Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps)
+Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps) 
+	:	compFlags_(compFlags)
 {
 	initComp();
 	loadTox(filePath, compFlags, fps);
@@ -56,7 +57,11 @@ void
 Comp::cudaInit()
 {
 	setCudaDevice();
-	if (compFlags_ & CompFlagBits::CudaStreamInternal) CUDA_CHECK(cudaStreamCreate(&cudaStream_));
+	if (compFlags_ & CompFlagBits::CudaStreamInternal) 
+	{
+		CUDA_CHECK(cudaStreamCreate(&cudaStream_));
+		std::cout << "CUDA stream created: " << cudaStream_ << std::endl;
+	}
 }
 
 void 
@@ -134,7 +139,7 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 	std::cout << "Loading tox: \t" << std::string(filePath_.begin(), filePath_.end()) << std::endl;
 
 	auto timeMode = TETimeInternal;
-	if (compFlags_ == CompFlagBits::ExternalTime) timeMode = TETimeExternal;
+	if (compFlags_ & CompFlagBits::ExternalTime) timeMode = TETimeExternal;
 
 	TE_CHECK(TEInstanceConfigure(instance_, filePath_.c_str(), timeMode));
 	std::cout << "\t\tInstance configured!" << std::endl;
@@ -167,7 +172,7 @@ Comp::unload()
 		onLayoutChangeCallbackUserData_ = nullptr;
 		onLayoutChangeCallback_ = nullptr;
 
-		cudaStreamSynchronize(cudaStream_);
+		cudaDeviceSynchronize();
 
 
 		lock.unlock();
@@ -265,14 +270,21 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 	{
 		if(result != TEResultCancelled)
 		{
-			// need go through all possible results and handle them accordingly... 
+			if (result == TEResultComponentErrors) comp->setInFrame(false);
 
-			//std::string error = TEResultGetDescription(result);
-			//error = "Frame did not finish successfully: " + error;
-			//throw std::runtime_error("Frame did not finish successfully");
+			else
+			{
+				// need go through all possible results and handle them accordingly... 
+				// create switch...
+				// 
+				//std::string error = TEResultGetDescription(result);
+				//error = "Frame did not finish successfully: " + error;
+				//throw std::runtime_error("Frame did not finish successfully");
 
-			std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result);
-			startNextFrame(prevTimeValue_, prevTimeScale_);
+				std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result);
+				startNextFrame(prevTimeValue_, prevTimeScale_);
+			}
+
 		}
 	}
 }
@@ -505,35 +517,25 @@ void Comp::start()
 {
 	TE_CHECK(TEInstanceResume(instance_));
 
-	switch (compFlags_)
+	if (compFlags_ & CompFlagBits::InternalTimeAuto)
 	{
-	case CompFlagBits::InternalTimeAuto:
 		update();
-		break;
-
-	case CompFlagBits::InternalTimeAsync:
+	}
+	else if (compFlags_ & CompFlagBits::InternalTimeAsync)
+	{
 		startAsync();
-		break;
-
-	default:
-		break;
 	}
 }
 
 void Comp::stop()
 {
-	switch (compFlags_)
+	if (compFlags_ & CompFlagBits::InternalTimeAuto)
 	{
-	case CompFlagBits::InternalTimeAuto:
 		stopUpdate();
-		break;
-
-	case CompFlagBits::InternalTimeAsync:
+	}
+	else if (compFlags_ & CompFlagBits::InternalTimeAsync)
+	{
 		stopAsync();
-		break;
-
-	default:
-		break;
 	}
 
 	TE_CHECK(TEInstanceSuspend(instance_));

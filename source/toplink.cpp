@@ -159,6 +159,11 @@ InTopLink::copyCudaMemory(const CUDAMemory& cudaMem, cudaStream_t stream)
 	else std::cout << "copyCudaMemory: " << name_ << ", failed to copy memory" << std::endl;
 }
 
+void InTopLink::copyCudaMemory(const CUDAMemory& cudaMem)
+{
+	copyCudaMemory(cudaMem, cudaStream_);
+}
+
 //void
 //InTopLink::copyExternalCudaMemory(
 //	void* memory,
