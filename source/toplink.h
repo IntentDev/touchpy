@@ -10,17 +10,17 @@
 class TopLink : public Link<TopLink>
 {
 public:
-	// need a better solution for this, virtual function addLink in Links requires it,
-	// not to be used... 
-	TopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) 
-		:	 Link<TopLink>(instance, linkInfo) { }
-
 	TopLink(
 		TouchObject<TEInstance> instance,
 		TouchObject<TEGraphicsContext> context,
 		VkPhysicalDevice physicalDevice,
 		VkDevice device,
-		TouchObject<TELinkInfo> linkInfo);
+		TouchObject<TELinkInfo> linkInfo,
+		cudaStream_t cudaStream);
+
+	// need a better solution for this, virtual function addLink in Links requires it,
+	// not to be used... 
+	TopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : Link<TopLink>(instance, linkInfo) { }
 
 	~TopLink();
 
@@ -37,23 +37,29 @@ protected:
 
 	HANDLE currentTextureHandle_ { nullptr };
 
+	cudaStream_t cudaStream_ { nullptr };
 };
 
 class InTopLink : public TopLink
 {
 public:
-	InTopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : TopLink(instance, linkInfo) { }
 	InTopLink(
 		TouchObject<TEInstance> instance,
 		TouchObject<TEGraphicsContext> context,
 		VkPhysicalDevice physicalDevice,
 		VkDevice device,
-		TouchObject<TELinkInfo> linkInfo)
-		: TopLink(instance, context, physicalDevice, device, linkInfo) { }
+		TouchObject<TELinkInfo> linkInfo,
+		cudaStream_t cudaStream)
+		:	TopLink(instance, context, physicalDevice, device, linkInfo, cudaStream) { }
+
+	// need a better solution for this, virtual function addLink in Links requires it,
+	// not to be used...
+	InTopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : TopLink(instance, linkInfo) { }
 
 	~InTopLink() { }
 
 	void copyCudaMemory(const CUDAMemory& cudaMem, cudaStream_t stream);
+	void copyCudaMemory(const CUDAMemory& cudaMem);
 
 	// not used at this moment, is useful if we want to copy external memory (outLink) to input texture
 	//void copyExternalCudaMemory(
@@ -78,17 +84,19 @@ public:
 		TouchObject<TEInstance> instance,
 		TouchObject<TEGraphicsContext> context,
 		VkPhysicalDevice physicalDevice,
-		VkDevice device)
+		VkDevice device,
+		cudaStream_t compCudaStream)
 		:	Links<InTopLinks, InTopLink>(instance),
 			context_(context),
 			physicalDevice_(physicalDevice),
-			device_(device) { }
+			device_(device),
+			compCudaStream_(compCudaStream) { }
 
 	~InTopLinks() {};
 
 	void addLink(TouchObject<TELinkInfo> linkInfo) override
 	{
-		links_.push_back(std::make_unique<InTopLink>(instance_, context_, physicalDevice_, device_, linkInfo));
+		links_.push_back(std::make_unique<InTopLink>(instance_, context_, physicalDevice_, device_, linkInfo, compCudaStream_));
 		nameMap_[linkInfo->name] = links_.back().get();
 		identifierMap_[linkInfo->identifier] = links_.back().get();
 	}
@@ -97,6 +105,7 @@ private:
 	TouchObject<TEGraphicsContext> context_{ nullptr };
 	VkPhysicalDevice physicalDevice_{ nullptr };
 	VkDevice device_{ nullptr };
+	cudaStream_t compCudaStream_{ nullptr };
 };
 
 
@@ -109,17 +118,19 @@ public:
 		TouchObject<TEGraphicsContext> context,
 		VkPhysicalDevice physicalDevice,
 		VkDevice device,
-		TouchObject<TELinkInfo> linkInfo)
-		: TopLink(instance, context, physicalDevice, device, linkInfo) { }
+		TouchObject<TELinkInfo> linkInfo,
+		cudaStream_t cudaStream)
+		:	TopLink(instance, context, physicalDevice, device, linkInfo, cudaStream) { }
 
 	~OutTopLink() { }
 
 	void addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTexture* teTexture);
-	void onOutputTextureChange(cudaStream_t cudaStream_);
+	void onOutputTextureChange();
 	void setRequiresCudaMemLock(bool requiresCudaMemLock);
 
 	const CUDAMemory& cudaMemory() { return currentTexture()->cudaMemory(); }
 	void setCudaFlags(CudaFlags flags);
+	void setCudaStream(cudaStream_t stream) { cudaStream_ = stream; }
 
 private:
 	bool requiresCudaMemLock_ { false };
@@ -135,17 +146,19 @@ public:
 		TouchObject<TEInstance> instance,
 		TouchObject<TEGraphicsContext> context,
 		VkPhysicalDevice physicalDevice,
-		VkDevice device)
+		VkDevice device,
+		cudaStream_t compCudaStream)
 		: Links<OutTopLinks, OutTopLink>(instance),
 		context_(context),
 		physicalDevice_(physicalDevice),
-		device_(device) { }
+		device_(device),
+		compCudaStream_(compCudaStream) { }
 
 	~OutTopLinks() {};
 
 	void addLink(TouchObject<TELinkInfo> linkInfo) override
 	{
-		links_.push_back(std::make_unique<OutTopLink>(instance_, context_, physicalDevice_, device_, linkInfo));
+		links_.push_back(std::make_unique<OutTopLink>(instance_, context_, physicalDevice_, device_, linkInfo, compCudaStream_));
 		nameMap_[linkInfo->name] = links_.back().get();
 		identifierMap_[linkInfo->identifier] = links_.back().get();
 	}
@@ -154,4 +167,5 @@ private:
 	TouchObject<TEGraphicsContext> context_{ nullptr };
 	VkPhysicalDevice physicalDevice_{ nullptr };
 	VkDevice device_{ nullptr };
+	cudaStream_t compCudaStream_{ nullptr };
 };

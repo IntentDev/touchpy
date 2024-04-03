@@ -16,9 +16,11 @@ class ExampleRunComp:
 		self.frame = 0
 		self.test_array = np.array([[1],[2],[3],[4],[5],[6],[7],[8],[9],[10]], dtype=np.float32)
 		self.test_array_chan_names = [f"chn{i}" for i in range(10)]
+
+		self.stream = None
 	
 	@staticmethod
-	def on_layout_change(comp, info):
+	def on_layout_change(comp, this):
 		print('layout changed:')
 		print('in tops:', comp.in_tops.count, comp.in_tops.names)
 		print('out tops:', comp.out_tops.count, comp.out_tops.names)
@@ -28,6 +30,13 @@ class ExampleRunComp:
 		print('out dats:', comp.out_dats.count, comp.out_dats.names)
 		print('pars:', comp.par.count, comp.par.names)
 		comp.out_tops[1].set_cuda_flags(tp.CudaFlags.BGRA | tp.CudaFlags.HWC)
+
+		# this.stream = comp.cuda_stream()
+		this.stream = torch.cuda.Stream().cuda_stream
+		# print("cuda stream:", cuda_stream, ", type: ", type(cuda_stream))
+		# torch_stream = torch.cuda.Stream().cuda_stream
+		# print("cuda stream:", torch_stream, ", type: ", type(torch_stream))
+		comp.out_tops[0].set_cuda_stream(this.stream)
 
 
 
@@ -134,6 +143,7 @@ class ExampleRunComp:
 
 			tensor = comp.out_tops[2].as_tensor()
 			if (this.frame == 2):
+				
 				print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.
 				dtype, "tensor device: ", tensor.device, "tensor layout: ", tensor.layout, 
 				"tensor strides: ", tensor.stride(), "tensor is_contiguous: ", tensor.is_contiguous())
@@ -147,7 +157,7 @@ class ExampleRunComp:
 				"tensor2 device: ", tensor2.device, "tensor2 layout: ", tensor2.layout, 
 				"tensor2 strides: ", tensor2.stride(), "tensor2 is_contiguous: ", tensor2.is_contiguous())
 			
-			comp.in_tops[2].from_tensor(tensor2)
+			comp.in_tops[2].from_tensor(tensor2, this.stream)
 			pass
 
 		comp.start_next_frame()
@@ -158,7 +168,7 @@ class ExampleRunComp:
 		# create a comp object and specify a path to a tox file
 		# comp = tp.Comp(tox_path)
 		# comp = tp.Comp(tox_path, flags=tp.CompFlags.INTERNAL_TIME_AUTO)
-		comp = tp.Comp(tox_path, flags=tp.CompFlags.INTERNAL_TIME | tp.CompFlags.AUTO_UPDATE)
+		comp = tp.Comp(tox_path, flags=tp.CompFlags.INTERNAL_TIME_AUTO | tp.CompFlags.CUDA_STREAM_INTERNAL)
 
 		comp.set_on_layout_change_callback(self.on_layout_change, self)
 		comp.set_on_frame_callback(self.on_frame, self)
