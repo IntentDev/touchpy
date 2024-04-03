@@ -172,7 +172,7 @@ Comp::unload()
 		onLayoutChangeCallbackUserData_ = nullptr;
 		onLayoutChangeCallback_ = nullptr;
 
-		cudaDeviceSynchronize();
+		cudaStreamSynchronize(cudaStream_);
 
 
 		lock.unlock();
