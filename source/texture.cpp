@@ -273,6 +273,8 @@ Texture::Texture(
 
 Texture::~Texture()
 {
+	cudaDeviceSynchronize();
+
 	if (cudaBuffer_)
 		CUDA_CHECK(cudaFree(cudaBuffer_));
 	if (cudaSurface_ != 0)

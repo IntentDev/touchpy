@@ -25,11 +25,14 @@ class Comp
 {
 public:
 	Comp();
-	Comp(const std::string& filePath, CompFlags compFlags = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
+	Comp(
+		const std::string& filePath, 
+		CompFlags compFlags = CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault,
+		int64_t fps = 60);
 
 	~Comp();
 
-	bool loadTox(const std::string& filePath, CompFlags compFlags = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
+	bool loadTox(const std::string& filePath, int64_t fps = 60);
 	void unload();
 	bool loaded() const; 
 
@@ -56,6 +59,7 @@ public:
 	void clearOnLayoutChangeCallback();
 	bool callOnLayoutChangeCallback();
 
+	cudaStream_t cudaStream() const { return cudaStream_; }
 
 	// for internal use only, not for python bindings
 	//-----------------------------------------------------------------------------------------------------------------
@@ -94,7 +98,7 @@ private:
 	//-----------------------------------------------------------------------------------------------------------------
 
 	std::string               filePath_;
-	CompFlags                 compFlags_         { CompFlagBits::InternalTimeAuto };
+	CompFlags                 compFlags_         { CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault };
 	TouchObject<TEInstance>   instance_          { nullptr };
 	int64_t                   prevTimeValue_     { 0 };
 	int32_t                   prevTimeScale_     { 0 };
@@ -133,6 +137,7 @@ private:
 
 	void initComp();
 	bool initInstance();
+	bool loadTox(const std::string& filePath, CompFlags compFlags = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
 	void update();
 	void stopUpdate();
 	void applyLayoutChange();

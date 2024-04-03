@@ -136,8 +136,6 @@ private:
 	size_t                  imagePitch_                   { 0 };
 	size_t                  imageSize_                    { 0 };
 
-	cudaStream_t            cudaStream_                   { nullptr };
-
 	cudaExternalSemaphore_t cudaExtSemaphore_ { nullptr };
 
 	cudaExternalMemory_t cudaExtImageMemory_  { nullptr };
