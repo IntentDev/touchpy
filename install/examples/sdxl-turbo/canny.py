@@ -14,8 +14,7 @@ import touchpy as tp
 
 torch.cuda.set_device(0)
 
-from diffusers import StableDiffusionXLAdapterPipeline, AutoPipelineForImage2Image, T2IAdapter, EulerAncestralDiscreteScheduler, AutoencoderKL
-from controlnet_aux.canny import CannyDetector
+from diffusers import StableDiffusionXLAdapterPipeline, T2IAdapter, EulerAncestralDiscreteScheduler, AutoencoderKL
 from diffusers.utils import load_image, make_image_grid
 import torch
 
@@ -26,20 +25,20 @@ class ExampleRunComp:
 		self.frame = 0
 
 		# load adapter
-		adapter = T2IAdapter.from_pretrained("TencentARC/t2i-adapter-canny-sdxl-1.0", torch_dtype=torch.float16, varient="fp16").to("cuda")
+		adapter = T2IAdapter.from_pretrained("TencentARC/t2i-adapter-canny-sdxl-1.0", torch_dtype=torch.float16, variant="fp16").to("cuda")
 		vae=AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16)
 		
-		self.pipeline = StableDiffusionXLAdapterPipeline.from_pretrained("stabilityai/sdxl-turbo", vae=vae, adapter=adapter, torch_dtype=torch.float16, variant="fp16")
-		self.pipeline = self.pipeline.to("cuda")
-		#self.pipeline.enable_xformers_memory_efficient_attention()
-		self.canny_detector = CannyDetector()
+		self.pipe = StableDiffusionXLAdapterPipeline.from_pretrained("stabilityai/sdxl-turbo", vae=vae, adapter=adapter, torch_dtype=torch.float16, variant="fp16")
+		self.pipe = self.pipe.to("cuda")
+		
 		self.inputBuffer = None
 		self.outBuffer = None
 		self.testImage = load_image("./idzard.jpg")
 
 	@staticmethod
 	def on_layout_change(comp, info):
-		comp.out_tops[0].set_cuda_flags(tp.CudaFlags.BGR | tp.CudaFlags.HWC)
+		#comp.out_tops[0].set_cuda_flags(tp.CudaFlags.BGR | tp.CudaFlags.HWC)
+		
 		pass
 
 	@staticmethod
@@ -49,27 +48,32 @@ class ExampleRunComp:
 			comp.stop() # stop running the comp
 			return
 		
-		#read Out TOP from the tox we loaded
-		this.inputBuffer = comp.out_tops[0].as_tensor()
+		#read Out TOPs from the tox we loaded
+		webcam = comp.out_tops[0].as_tensor()
 
+		
+		canny = comp.out_tops[1].as_tensor()
+		print(canny.shape)
 		######### Process and Copy for next frame (Fast) ###################
 		comp.start_next_frame()	
 		
-		#working reference
-		OKArray = np.array(this.testImage)
-		#print(ok.shape, ok.dtype, ok.strides, ok.flags['C_CONTIGUOUS'])
-		cannyOK = this.canny_detector(OKArray, detect_resolution=256, image_resolution=512)
-		# cv.imshow("canny from OKArray", cannyOK)
-		
-		
-		#problem case
-		cpuBuffer= this.inputBuffer.cpu().numpy().astype(np.uint8)
-		#print(cpuBuffer.shape, cpuBuffer.dtype, cpuBuffer.strides, cpuBuffer.flags['C_CONTIGUOUS'])
-		cannyTD = this.canny_detector(cpuBuffer, detect_resolution=256, image_resolution=512)
-		# cv.imshow("canny from cpuBuffer", cannyTD)
 	
-		this.outBuffer = torch.from_numpy(cannyTD).cuda()
-		comp.in_tops[0].from_tensor(this.outBuffer, flags=tp.CudaFlags.BGR)
+
+		prompt = "Mystical fairy in real, magic, 4k picture, high quality"
+		negative_prompt = "extra digit, fewer digits, cropped, worst quality, low quality, glitch, deformed, mutated, ugly, disfigured"
+
+		result = this.pipe(
+			prompt=prompt,
+			negative_prompt=negative_prompt,
+			image=canny,
+			width=512,
+			height=512,
+			output_type="pt"
+		).images[0]	
+
+		print(result.device)
+		comp.in_tops[0].from_tensor(result)
+
 
 		this.frame += 1
 		print("Frame: ", this.frame)
