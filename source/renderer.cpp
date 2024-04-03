@@ -16,6 +16,9 @@ Renderer::~Renderer()
 void 
 Renderer::cleanup()
 {
+	// wait for device to finish
+	vkDeviceWaitIdle(vContext_.device);
+
 	for (auto callback = --vDestroyCallbacks_.end();
 		callback != vDestroyCallbacks_.begin(); --callback)
 	{

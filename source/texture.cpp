@@ -11,13 +11,16 @@ Texture::Texture(
 	VkPhysicalDevice physicalDevice_, 
 	VkDevice device, 
 	TEInstance* teInstance, 
-	TEVulkanTexture* texture, 
+	TEVulkanTexture* texture,
+	cudaStream_t* streamPtr,
 	CudaFlags cudaFlags,
-	bool requiresCudaMemLock)
+	bool requiresCudaMemLock
+)
 	:	physicalDevice_(physicalDevice_),
 		device_(device),
 		flipped_(TETextureGetOrigin(texture) == TETextureOriginBottomLeft),
-		requiresCudaMemLock_(requiresCudaMemLock)
+		requiresCudaMemLock_(requiresCudaMemLock),
+		cudaStreamPtr_(streamPtr)
 
 {
 	format_ = TEVulkanTextureGetFormat(texture);
@@ -133,12 +136,14 @@ Texture::Texture(
 	VkDevice device,
 	VkExtent2D extent,
 	VkFormat format, 
-	CUDAMemoryDesc cudaMemDesc
+	CUDAMemoryDesc cudaMemDesc,
+	cudaStream_t* streamPtr
 )
 	:	physicalDevice_(physicalDevice),
 		device_(device),
 		extent_(extent),
-		format_(format)
+		format_(format),
+		cudaStreamPtr_(streamPtr)
 
 
 {
@@ -273,6 +278,8 @@ Texture::Texture(
 
 Texture::~Texture()
 {
+	cudaStreamSynchronize(*cudaStreamPtr_);
+
 	if (cudaBuffer_)
 		CUDA_CHECK(cudaFree(cudaBuffer_));
 	if (cudaSurface_ != 0)
@@ -291,6 +298,8 @@ Texture::~Texture()
 
 	if (ownsSemaphore_)
 		CloseHandle(semaphoreHandle_);
+
+	vkDeviceWaitIdle(device_);
 
 	if (imageView_ != VK_NULL_HANDLE)
 		vkDestroyImageView(device_, imageView_, nullptr);
@@ -549,50 +558,6 @@ bool Texture::copyCudaMemToImage(void* memory,
 			cudaVkSemaphoreWait(waitSemaphore, waitValue, stream);
 
 		copyToSurfaceFunc_(cudaSurface_, extent_.width, extent_.height, memory, stream);
-
-		// need to create fast lookup based on number of components, format, channel order 
-
-
-
-		// TODO: change the sequence of calls so the switch is before the wait
-		// format_ has already been set by the function that called this one, the switch should be in that function
-		//switch (format_)
-		//{
-		//	case VK_FORMAT_B8G8R8A8_UNORM:
-		//		switch (cudaMemory_.desc.shape[0])
-		//		{
-		//			case 3:
-		//				memCopyPlanarToSurface<uchar4, uint8_t, 2, 1, 0>(cudaSurface_, extent_.width, extent_.height, memory, stream);
-		//				break;
-		//			case 4:
-		//				memCopyPlanarToSurface<uchar4, uint8_t, 2, 1, 0, 3>(cudaSurface_, extent_.width, extent_.height, memory, stream);
-		//				break;
-		//			default:
-		//				return;
-		//		}
-		//		break;
-		//	case VK_FORMAT_R32G32B32A32_SFLOAT:
-		//		switch (cudaMemory_.desc.shape[0])
-		//		{
-		//			case 3:
-		//				memCopyPlanarToSurface<float4, float, 0, 1, 2>(cudaSurface_, extent_.width, extent_.height, memory, stream);
-		//				break;
-		//			case 4:
-		//				memCopyPlanarToSurface<float4, float, 0, 1, 2, 3>(cudaSurface_, extent_.width, extent_.height, memory, stream);
-		//				break;
-		//			default:
-		//				return;
-		//		}
-		//		break;
-		//	case VK_FORMAT_R32G32_SFLOAT:
-		//		memCopyPlanarToSurface<float2, float, 0, 1>(cudaSurface_, extent_.width, extent_.height, memory, stream);
-		//		break;
-		//	case VK_FORMAT_R32_SFLOAT:
-		//		memCopyToSurface<float>(cudaSurface_, extent_.width, extent_.height, memory, stream);
-		//		break;
-		//	default:
-		//		return;
-		//}
 		cudaVkSemaphoreSignal(signalSemaphore, signalValue, stream);
 		return true;
 	}
