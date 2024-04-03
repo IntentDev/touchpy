@@ -33,7 +33,7 @@ OutTopLink::addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTexture
 	if (scope_ != Link::Scope::Output)
 		return;
 
-	textures_.push_back(std::make_unique<Texture>(physicalDevice_, device_, teInstance, teTexture, cudaFlags_, requiresCudaMemLock_));
+	textures_.push_back(std::make_unique<Texture>(physicalDevice_, device_, teInstance, teTexture, &cudaStream_, cudaFlags_, requiresCudaMemLock_));
 	auto& texture = textures_.back();
 	handleMap_[texture->textureHandle()] = texture.get();
 }
@@ -107,7 +107,7 @@ void
 InTopLink::setInputTexture(VkExtent2D extent, VkFormat format, CUDAMemoryDesc cudaMemDesc)
 {
 	textures_.resize(1);
-	textures_[0] = std::make_unique<Texture>(physicalDevice_, device_, extent, format, cudaMemDesc);
+	textures_[0] = std::make_unique<Texture>(physicalDevice_, device_, extent, format, cudaMemDesc, &cudaStream_);
 	handleMap_[textures_[0]->textureHandle()] = textures_[0].get();
 }
 
