@@ -64,12 +64,12 @@ void initChopLinkBindings(nb::module_& m)
 		},
 		nb::rv_policy::automatic);
 
-	nb::class_<OutChopLink> outChopLink(m, "OutChopLink");
-	outChopLink.doc() = "An in or out CHOP in a TouchDesigner component";
-	outChopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
-	outChopLink.def("chan_names", &OutChopLink::channelNames, nb::rv_policy::reference_internal);
+	nb::class_<OutChopLink> outChop(m, "OutChop");
+	outChop.doc() = "An interface for an OutCHOP in a loaded TouchDesigner component";
+	outChop.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
+	outChop.def("chan_names", &OutChopLink::channelNames, nb::rv_policy::reference_internal);
 
-	outChopLink.def("as_numpy", [](OutChopLink& self)
+	outChop.def("as_numpy", [](OutChopLink& self)
 		{
 			auto& chans = self.chopChannels();
 			size_t shape[2] = { 
@@ -80,7 +80,7 @@ void initChopLinkBindings(nb::module_& m)
 		},
 		nb::rv_policy::automatic);
 
-	outChopLink.def("as_numpy_ref", [](OutChopLink& self)
+	outChop.def("as_numpy_ref", [](OutChopLink& self)
 		{
 			auto& chans = self.chopChannels();
 			size_t shape[2] = {
@@ -92,23 +92,23 @@ void initChopLinkBindings(nb::module_& m)
 		nb::rv_policy::reference_internal);
 
 
-	nb::class_<OutChopLinks> outChopLinks(m, "OutChopLinks");
-	outChopLinks.doc() = "A collection of CHOP links in a TouchDesigner component";
-	outChopLinks.def(nb::init<>())
+	nb::class_<OutChopLinks> outChops(m, "OutChops");
+	outChops.doc() = "A container of OutChop objects.";
+	outChops.def(nb::init<>())
 		.def_prop_ro("count", [](OutChopLinks& self) { return self.size(); })
 		.def_prop_ro("names", [](OutChopLinks& self) { return self.getLinkNames(); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](OutChopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](OutChopLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
 
-	nb::class_<InChopLink> inChopLink(m, "InChopLink");
-	inChopLink.doc() = "An inCHOP in a TouchDesigner component";
-	inChopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+	nb::class_<InChopLink> inChop(m, "InChop");
+	inChop.doc() = "An interface for an InCHOP in a loaded TouchDesigner component";
+	inChop.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("from_numpy", &fromNumpyToChopLink, "array"_a, "names"_a = nb::list());
 
-	nb::class_<InChopLinks> inChopLinks(m, "InChopLinks");
-	inChopLinks.doc() = "A collection of CHOP links in a TouchDesigner component";
-	inChopLinks.def(nb::init<>())
+	nb::class_<InChopLinks> inChops(m, "InChops");
+	inChops.doc() = "A container of InChop objects.";
+	inChops.def(nb::init<>())
 		.def_prop_ro("count", [](InChopLinks& self) { return self.size(); })
 		.def_prop_ro("names", [](InChopLinks& self) { return self.getLinkNames(); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](InChopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
