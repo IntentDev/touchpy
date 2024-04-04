@@ -2,10 +2,12 @@
 # 	open command prompt in the directory of this file
 # 	run: python
 # 	run: from free_running_init import *
-# 	run: comp = tp.Comp('FreeRunningIO.tox', free_running=True) # or any other tox file
+# 	run: comp = tp.Comp('FreeRunningIO.tox', flags=tp.CompFlags.INTERNAL_TIME_ASYNC) # or any other tox file
+#   run: comp.start()
 # 	run: comp.set_on_frame_callback(on_frame, user_data)
 # 	set or get values on the comp
-# 	run: del(comp) or exit() python
+# 	run: comp.stop()
+# 	run: comp.unload() and exit() python
 
 import touchpy as tp
 import numpy as np
