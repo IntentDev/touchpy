@@ -128,7 +128,7 @@ public:
 	void onOutputTextureChange();
 	void setRequiresCudaMemLock(bool requiresCudaMemLock);
 
-	const CUDAMemory& cudaMemory() { return currentTexture()->cudaMemory(); }
+	const CUDAMemory& cudaMemory(bool syncCudaStream = false) { return currentTexture()->cudaMemory(syncCudaStream); }
 	void setCudaFlags(CudaFlags flags);
 	void setCudaStream(cudaStream_t stream) { cudaStream_ = stream; }
 

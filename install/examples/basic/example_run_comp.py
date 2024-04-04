@@ -149,7 +149,7 @@ class ExampleRunComp:
 
 
 		# copy the cuda memory from out_top_link to in_top_link
-		cudamem = comp.out_tops[0].cuda_memory()
+		cudamem = comp.out_tops[0].cuda_memory(sync_cuda_stream=True)
 		comp.in_tops[0].copy_cuda_memory(cudamem)
 
 		# copy the cuda memory from out_top_link to in_top_link
@@ -162,7 +162,7 @@ class ExampleRunComp:
 				# tensor2 = tensor * 2 # do some work on the tensor
 				# comp.in_tops[0].from_tensor(tensor2)
 
-				tensor = comp.out_tops[2].as_tensor()
+				tensor = comp.out_tops[2].as_tensor(sync_cuda_stream=True)
 				if (this.frame == 2):
 					
 					print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.

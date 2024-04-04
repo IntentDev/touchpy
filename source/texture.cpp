@@ -576,13 +576,25 @@ void Texture::transferToInputLink(TouchObject<TEInstance> teInstance, TouchObjec
 		std::cout << "transferToInputLink: " << identifier << ", " << TEResultGetDescription(result) << std::endl;
 }
 
-const CUDAMemory& 
-Texture::cudaMemory() const 
-{ 
-	if (!requiresCudaMemLock_) return cudaMemory_;
+//const CUDAMemory& 
+//Texture::cudaMemory(bool syncCudaStream) const
+//{ 
+//	if (!requiresCudaMemLock_) return cudaMemory_;
+//
+//	std::lock_guard<std::mutex> guard(mutex_);
+//	return cudaMemory_; 
+//}
 
-	std::lock_guard<std::mutex> guard(mutex_);
-	return cudaMemory_; 
+const CUDAMemory&
+Texture::cudaMemory(bool syncCudaStream) const
+{
+	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
+
+	if (requiresCudaMemLock_) lock.lock();
+
+	if (syncCudaStream) cudaStreamSynchronize(*cudaStreamPtr_);
+	
+	return cudaMemory_;
 }
 
 void Texture::setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory, CudaFlags flags)

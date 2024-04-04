@@ -75,9 +75,9 @@ dtypeFromCUDADataType(CUDADataType type)
 }
 
 template<typename ...Args> nb::ndarray<Args...> 
-arrayFromCudaMem(OutTopLink& outTopLink)
+arrayFromCudaMem(OutTopLink& outTopLink, bool syncCudaStream)
 {
-	const auto& cudaMem = outTopLink.cudaMemory();
+	const auto& cudaMem = outTopLink.cudaMemory(syncCudaStream);
 	auto compSize = static_cast<int64_t>(cudaMem.desc.componentSize);
 
 	return nb::ndarray<Args...>(
@@ -205,7 +205,7 @@ initTopLinkBindings(nb::module_& m)
 	nb::class_<OutTopLink> outTop(m, "OutTop");
 	outTop.doc() = "An interface for an OutTOP in a loaded TouchDesigner component";
 	outTop.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
-		.def("cuda_memory", &OutTopLink::cudaMemory)
+		.def("cuda_memory", &OutTopLink::cudaMemory, "sync_cuda_stream"_a = false)
 		.def("set_cuda_flags", [](OutTopLink& self, CudaFlagBits flags) { self.setCudaFlags(flags); }, "flags"_a)
 
 		.def("set_cuda_stream", [](OutTopLink& self, uintptr_t stream) 
@@ -215,8 +215,8 @@ initTopLinkBindings(nb::module_& m)
 				self.setCudaStream(stream_); 
 			}, "stream"_a)
 
-		.def("as_dlpack", &arrayFromCudaMem<>, nb::rv_policy::reference_internal)
-		.def("as_tensor", &arrayFromCudaMem<nb::pytorch>, nb::rv_policy::reference_internal)
+		.def("as_dlpack", &arrayFromCudaMem<>, "sync_cuda_stream"_a = false, nb::rv_policy::reference_internal)
+		.def("as_tensor", &arrayFromCudaMem<nb::pytorch>, "sync_cuda_stream"_a = false, nb::rv_policy::reference_internal)
 		;
 
 	nb::class_<OutTopLinks> outTops(m, "OutTops");

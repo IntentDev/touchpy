@@ -87,7 +87,7 @@ public:
 
 	void* cudaBuffer() const { return cudaBuffer_; }
 	size_t cudaBufferSize() const { return cudaBufferSize_; }
-	const CUDAMemory& cudaMemory() const;
+	const CUDAMemory& cudaMemory(bool syncCudaStream = false) const;
 	void setRequiresCudaMemLock(bool requiresLock) { requiresCudaMemLock_ = requiresLock; }
 	void setCudaMemoryDesc(CUDAMemoryDesc desc) { cudaMemory_.desc = desc; }
 	void configureCudaMemory(CudaFlags flags = CudaFlagBits::None);
