@@ -434,33 +434,19 @@ Comp::setInFrame(bool inFrame)
 	if (usingSwapBuffer_) cv_.notify_one();
 }
 
-//void Comp::setOnFrameCallback(
-//	std::function<void(Comp&, std::shared_ptr<void>)> callback,
-//	std::shared_ptr<void> userData)
-//{
-//	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
-//
-//	if (usingSwapBuffer_) 
-//	{
-//		lock.lock();
-//		cv_.wait(lock, [this] { return ssInFrame_; });
-//	}
-//
-//	onFrameCallback_ = callback;
-//	onFrameCallbackUserData_ = userData;
-//}
-
-void Comp::setOnFrameCallback(
-	std::function<void(Comp&, std::shared_ptr<void>)> callback,
-	std::shared_ptr<void> userData)
+void Comp::setOnFrameCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData)
 {
 	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
+
 
 	if (usingSwapBuffer_)
 	{
 		lock.lock();
 		cv_.wait(lock, [this] { return ssInFrame_; });
 	}
+
+	onFrameCallback_ = nullptr;
+	onFrameCallbackUserData_ = nullptr;
 
 	onFrameCallback_ = callback;
 	onFrameCallbackUserData_ = userData;
@@ -491,9 +477,7 @@ bool Comp::callOnFrameCallback()
 	return false;
 }
 
-void Comp::setOnLayoutChangeCallback(
-	std::function<void(Comp&, std::shared_ptr<void>)> callback,
-	std::shared_ptr<void> userData)
+void Comp::setOnLayoutChangeCallback( std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData)
 {
 	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
 
@@ -502,6 +486,9 @@ void Comp::setOnLayoutChangeCallback(
 		lock.lock();
 		cv_.wait(lock, [this] { return ssInFrame_; });
 	}
+
+	onLayoutChangeCallback_ = nullptr;
+	onLayoutChangeCallbackUserData_ = nullptr;
 
 	onLayoutChangeCallback_ = callback;
 	onLayoutChangeCallbackUserData_ = userData;
