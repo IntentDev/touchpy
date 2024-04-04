@@ -10,7 +10,8 @@ Comp::Comp()
 	initComp();
 }
 
-Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps)
+Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps) 
+	:	compFlags_(compFlags)
 {
 	initComp();
 	loadTox(filePath, compFlags, fps);
@@ -30,7 +31,7 @@ Comp::~Comp()
 	// call unload() before destruction, or not at all but that will cause memory leaks if the object is the global scope
 	// unload();
 
-	CUDA_CHECK(cudaStreamDestroy(cudaStream_));
+	if (cudaStream_ && compFlags_ & CompFlagBits::CudaStreamInternal) CUDA_CHECK(cudaStreamDestroy(cudaStream_));
 
 	vkDestroyFence(device_, submitFence_, nullptr);
 }
@@ -56,7 +57,11 @@ void
 Comp::cudaInit()
 {
 	setCudaDevice();
-	CUDA_CHECK(cudaStreamCreate(&cudaStream_));
+	if (compFlags_ & CompFlagBits::CudaStreamInternal) 
+	{
+		CUDA_CHECK(cudaStreamCreate(&cudaStream_));
+		std::cout << "CUDA stream created: " << cudaStream_ << std::endl;
+	}
 }
 
 void 
@@ -120,6 +125,11 @@ Comp::initInstance()
 	return true;
 }
 
+bool Comp::loadTox(const std::string& filePath, int64_t fps)
+{
+	return loadTox(filePath, compFlags_, fps);
+}
+
 bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps)
 {
 	compFlags_ = compFlags;
@@ -129,7 +139,7 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 	std::cout << "Loading tox: \t" << std::string(filePath_.begin(), filePath_.end()) << std::endl;
 
 	auto timeMode = TETimeInternal;
-	if (compFlags_ == CompFlagBits::ExternalTime) timeMode = TETimeExternal;
+	if (compFlags_ & CompFlagBits::ExternalTime) timeMode = TETimeExternal;
 
 	TE_CHECK(TEInstanceConfigure(instance_, filePath_.c_str(), timeMode));
 	std::cout << "\t\tInstance configured!" << std::endl;
@@ -147,10 +157,9 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 void 
 Comp::unload()
 {
-	clearOnFrameCallback();
-
 	if (asyncRunning_.load()) stopAsync();
 	else if (updateLoopRunning_) stopUpdate();
+
 
 	std::unique_lock<std::mutex> lock(mutex_);
 	if (ssLoaded_)
@@ -162,6 +171,9 @@ Comp::unload()
 		onFrameCallback_ = nullptr;
 		onLayoutChangeCallbackUserData_ = nullptr;
 		onLayoutChangeCallback_ = nullptr;
+
+		cudaStreamSynchronize(cudaStream_);
+
 
 		lock.unlock();
 		TE_CHECK(TEInstanceUnload(instance_));
@@ -258,14 +270,21 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 	{
 		if(result != TEResultCancelled)
 		{
-			// need go through all possible results and handle them accordingly... 
+			if (result == TEResultComponentErrors) comp->setInFrame(false);
 
-			//std::string error = TEResultGetDescription(result);
-			//error = "Frame did not finish successfully: " + error;
-			//throw std::runtime_error("Frame did not finish successfully");
+			else
+			{
+				// need go through all possible results and handle them accordingly... 
+				// create switch...
+				// 
+				//std::string error = TEResultGetDescription(result);
+				//error = "Frame did not finish successfully: " + error;
+				//throw std::runtime_error("Frame did not finish successfully");
 
-			std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result);
-			startNextFrame(prevTimeValue_, prevTimeScale_);
+				std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result);
+				startNextFrame(prevTimeValue_, prevTimeScale_);
+			}
+
 		}
 	}
 }
@@ -498,35 +517,25 @@ void Comp::start()
 {
 	TE_CHECK(TEInstanceResume(instance_));
 
-	switch (compFlags_)
+	if (compFlags_ & CompFlagBits::InternalTimeAuto)
 	{
-	case CompFlagBits::InternalTimeAuto:
 		update();
-		break;
-
-	case CompFlagBits::InternalTimeAsync:
+	}
+	else if (compFlags_ & CompFlagBits::InternalTimeAsync)
+	{
 		startAsync();
-		break;
-
-	default:
-		break;
 	}
 }
 
 void Comp::stop()
 {
-	switch (compFlags_)
+	if (compFlags_ & CompFlagBits::InternalTimeAuto)
 	{
-	case CompFlagBits::InternalTimeAuto:
 		stopUpdate();
-		break;
-
-	case CompFlagBits::InternalTimeAsync:
+	}
+	else if (compFlags_ & CompFlagBits::InternalTimeAsync)
+	{
 		stopAsync();
-		break;
-
-	default:
-		break;
 	}
 
 	TE_CHECK(TEInstanceSuspend(instance_));
@@ -651,8 +660,8 @@ Comp::applyOutputTextureChange()
 	for (const auto& identifier : changedOutputTextures_)
 	{
 		auto& topLink = *outTopLinks_->getLinkByIdentifier(identifier);
-		//topLink.onOutputTextureChange(cudaStream_);
-		topLink.onOutputTextureChange(nullptr);
+		topLink.onOutputTextureChange();
+		//topLink.onOutputTextureChange(nullptr);
 	}
 }
 
@@ -711,8 +720,8 @@ Comp::applyLayoutChange()
 {
 	std:: cout << "Applying layout change" << std::endl;
 
-	inTopLinks_ = std::make_unique<InTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_);
-	outTopLinks_ = std::make_unique<OutTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_);
+	inTopLinks_ = std::make_unique<InTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_, cudaStream_);
+	outTopLinks_ = std::make_unique<OutTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_, cudaStream_);
 
 	inChopLinks_ = std::make_unique<InChopLinks>(instance_);
 	outChopLinks_ = std::make_unique<OutChopLinks>(instance_);

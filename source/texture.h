@@ -19,6 +19,7 @@ public:
 		VkDevice device, 
 		TEInstance* teInstance, 
 		TEVulkanTexture* teTexture,
+		cudaStream_t* streamPtr,
 		CudaFlags cudaFlags = CudaFlagBits::None,
 		bool requiresCudaMemLock = false
 	);
@@ -28,7 +29,8 @@ public:
 		VkDevice device, 
 		VkExtent2D extent, 
 		VkFormat format,
-		CUDAMemoryDesc cudaMemDesc
+		CUDAMemoryDesc cudaMemDesc,
+		cudaStream_t* streamPtr
 	);
 
 	~Texture();
@@ -85,7 +87,7 @@ public:
 
 	void* cudaBuffer() const { return cudaBuffer_; }
 	size_t cudaBufferSize() const { return cudaBufferSize_; }
-	const CUDAMemory& cudaMemory() const;
+	const CUDAMemory& cudaMemory(bool syncCudaStream = false) const;
 	void setRequiresCudaMemLock(bool requiresLock) { requiresCudaMemLock_ = requiresLock; }
 	void setCudaMemoryDesc(CUDAMemoryDesc desc) { cudaMemory_.desc = desc; }
 	void configureCudaMemory(CudaFlags flags = CudaFlagBits::None);
@@ -136,8 +138,6 @@ private:
 	size_t                  imagePitch_                   { 0 };
 	size_t                  imageSize_                    { 0 };
 
-	cudaStream_t            cudaStream_                   { nullptr };
-
 	cudaExternalSemaphore_t cudaExtSemaphore_ { nullptr };
 
 	cudaExternalMemory_t cudaExtImageMemory_  { nullptr };
@@ -146,6 +146,7 @@ private:
 	cudaArray_t          cudaArray_           { nullptr };
 	void*                cudaBuffer_          { nullptr };
 	size_t               cudaBufferSize_      { 0 };
+	cudaStream_t*		 cudaStreamPtr_          { nullptr };
 
 	CUDAMemory           cudaMemory_          { };
 	bool                 requiresCudaMemLock_ { false };

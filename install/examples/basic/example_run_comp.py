@@ -6,6 +6,23 @@ from image_filter import ImageFilter
 
 import touchpy as tp
 
+# # interface class to pass a cuda stream pointer to torch
+# class CudaStream:
+# 	def __init__(self, stream, device=torch.device('cuda'), device_index=0):
+# 		self.stream_id = stream
+# 		self.device = device
+# 		self.device_index = device_index
+# 		self.device_type = 'cuda'
+
+# 	@property
+# 	def cuda_stream(self):
+# 		return self.stream_id
+	
+# 	@cuda_stream.setter
+# 	def cuda_stream(self, stream):
+# 		self.stream_id = stream
+
+
 class ExampleRunComp:
 	def __init__(self):
 		self.running = True # used to gracefully exit the loop
@@ -16,9 +33,11 @@ class ExampleRunComp:
 		self.frame = 0
 		self.test_array = np.array([[1],[2],[3],[4],[5],[6],[7],[8],[9],[10]], dtype=np.float32)
 		self.test_array_chan_names = [f"chn{i}" for i in range(10)]
+
+		self.stream = None
 	
 	@staticmethod
-	def on_layout_change(comp, info):
+	def on_layout_change(comp, this):
 		print('layout changed:')
 		print('in tops:', comp.in_tops.count, comp.in_tops.names)
 		print('out tops:', comp.out_tops.count, comp.out_tops.names)
@@ -28,6 +47,16 @@ class ExampleRunComp:
 		print('out dats:', comp.out_dats.count, comp.out_dats.names)
 		print('pars:', comp.par.count, comp.par.names)
 		comp.out_tops[1].set_cuda_flags(tp.CudaFlags.BGRA | tp.CudaFlags.HWC)
+
+		this.stream = torch.cuda.ExternalStream(comp.cuda_stream(), device=this.device)
+		# this.stream = CudaStream(comp.cuda_stream())
+		# this.stream = torch.cuda.Stream().cuda_stream
+
+		# print("cuda stream:", cuda_stream, ", type: ", type(cuda_stream))
+	
+		# print("cuda stream:", torch_stream, ", type: ", type(torch_stream))
+		# comp.out_tops[0].set_cuda_stream(this.stream)
+		# comp.out_tops[0].set_cuda_stream(this.torch_stream.cuda_stream)
 
 
 
@@ -120,45 +149,49 @@ class ExampleRunComp:
 
 
 		# copy the cuda memory from out_top_link to in_top_link
-		cudamem = comp.out_tops[0].cuda_memory()
+		cudamem = comp.out_tops[0].cuda_memory(sync_cuda_stream=True)
 		comp.in_tops[0].copy_cuda_memory(cudamem)
 
 		# copy the cuda memory from out_top_link to in_top_link
 		cudamem = comp.out_tops[1].cuda_memory()
 		comp.in_tops[1].copy_cuda_memory(cudamem)
 
-		with torch.no_grad():
-			# tensor = comp.out_tops[0].as_tensor() # get the first top as a tensor
-			# tensor2 = tensor * 2 # do some work on the tensor
-			# comp.in_tops[0].from_tensor(tensor2)
+		with torch.cuda.stream(this.stream):	
+			with torch.no_grad():
+				# tensor = comp.out_tops[0].as_tensor() # get the first top as a tensor
+				# tensor2 = tensor * 2 # do some work on the tensor
+				# comp.in_tops[0].from_tensor(tensor2)
 
-			tensor = comp.out_tops[2].as_tensor()
-			if (this.frame == 2):
-				print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.
-				dtype, "tensor device: ", tensor.device, "tensor layout: ", tensor.layout, 
-				"tensor strides: ", tensor.stride(), "tensor is_contiguous: ", tensor.is_contiguous())
+				tensor = comp.out_tops[2].as_tensor(sync_cuda_stream=True)
+				if (this.frame == 2):
+					
+					print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.
+					dtype, "tensor device: ", tensor.device, "tensor layout: ", tensor.layout, 
+					"tensor strides: ", tensor.stride(), "tensor is_contiguous: ", tensor.is_contiguous())
 
-			# filter tensor only works with 32bit float data (comp.out_tops[2] is 32bit float in this example)
-			# filter expects (b, c, h, w) layout
-			tensor2 = this.imag_filter(tensor.unsqueeze(0)).squeeze(0) 
+				# filter tensor only works with 32bit float data (comp.out_tops[2] is 32bit float in this example)
+				# filter expects (b, c, h, w) layout
+				tensor2 = this.imag_filter(tensor.unsqueeze(0)).squeeze(0) 
 
-			if (this.frame == 2):
-				print("tensor2 shape: ", tensor2.shape, "tensor2 dtype: ", tensor2.dtype, 
-				"tensor2 device: ", tensor2.device, "tensor2 layout: ", tensor2.layout, 
-				"tensor2 strides: ", tensor2.stride(), "tensor2 is_contiguous: ", tensor2.is_contiguous())
-			
-			comp.in_tops[2].from_tensor(tensor2)
-			pass
+				if (this.frame == 2):
+					print("tensor2 shape: ", tensor2.shape, "tensor2 dtype: ", tensor2.dtype, 
+					"tensor2 device: ", tensor2.device, "tensor2 layout: ", tensor2.layout, 
+					"tensor2 strides: ", tensor2.stride(), "tensor2 is_contiguous: ", tensor2.is_contiguous())
+				
+				# comp.in_tops[2].from_tensor(tensor2, this.stream)
+				comp.in_tops[2].from_tensor(tensor2)
+				# comp.in_tops[2].from_tensor(tensor2)
+				pass
 
-		comp.start_next_frame()
-	
-		this.frame += 1
+			comp.start_next_frame()
+		
+			this.frame += 1
 
 	def runComp(self, tox_path):
 		# create a comp object and specify a path to a tox file
 		# comp = tp.Comp(tox_path)
 		# comp = tp.Comp(tox_path, flags=tp.CompFlags.INTERNAL_TIME_AUTO)
-		comp = tp.Comp(tox_path, flags=tp.CompFlags.INTERNAL_TIME | tp.CompFlags.AUTO_UPDATE)
+		comp = tp.Comp(tox_path, flags=tp.CompFlags.INTERNAL_TIME_AUTO | tp.CompFlags.CUDA_STREAM_INTERNAL)
 
 		comp.set_on_layout_change_callback(self.on_layout_change, self)
 		comp.set_on_frame_callback(self.on_frame, self)

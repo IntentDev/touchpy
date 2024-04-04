@@ -87,38 +87,38 @@ void initDatLinkBindings(nb::module_& m)
 		}, "list"_a, "cast"_a = false
 	);
 
-	nb::class_<OutDatLink> outDatLink(m, "OutDatLink");
-	outDatLink.doc() = "A in or out DAT in a TouchDesigner component";
-	outDatLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+	nb::class_<OutDatLink> outDat(m, "OutDat");
+	outDat.doc() = "An interface for an OutDAT in a loaded TouchDesigner component";
+	outDat.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("as_table", &OutDatLink::asTable, nb::rv_policy::reference_internal)
 		.def("as_string", &OutDatLink::asString, nb::rv_policy::reference_internal)
 		;
 
-	nb::class_<OutDatLinks> outDatLinks(m, "OutDatLinks");
-	outDatLinks.doc() = "A collection of DAT links in a TouchDesigner component";
-	outDatLinks.def(nb::init<>())
+	nb::class_<OutDatLinks> outDats(m, "OutDats");
+	outDats.doc() = "A container of OutDat objects.";
+	outDats.def(nb::init<>())
 		.def_prop_ro("count", [](OutDatLinks& self) { return self.size(); } )
 		.def_prop_ro("names", [](OutDatLinks& self) { return self.getLinkNames(); })
 		.def("__getitem__", [](OutDatLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](OutDatLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
 
-	nb::class_<InDatLink> inDatLink(m, "InDatLink");
-	inDatLink.doc() = "A in or out DAT in a TouchDesigner component";
-	inDatLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+	nb::class_<InDatLink> inDat(m, "InDat");
+	inDat.doc() = "An interface for an InDAT in a loaded TouchDesigner component";
+	inDat.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("from_table", nb::overload_cast<const DatTable&>(&InDatLink::set))
 		.def("from_string", nb::overload_cast<const std::string&>(&InDatLink::set))
 		;
 
-	inDatLink.def("from_list", [](InDatLink& self, const nb::list& list, bool cast = false)
+	inDat.def("from_list", [](InDatLink& self, const nb::list& list, bool cast = false)
 		{
 			self.set(tableFromList(list, cast));
 		}, "list"_a, "cast"_a = false
 	);
 
-	nb::class_<InDatLinks> inDatLinks(m, "InDatLinks");
-	inDatLinks.doc() = "A collection of DAT links in a TouchDesigner component";
-	inDatLinks.def(nb::init<>())
+	nb::class_<InDatLinks> inDats(m, "InDats");
+	inDats.doc() = "A container of InDat objects.";
+	inDats.def(nb::init<>())
 		.def_prop_ro("count", [](InDatLinks& self) { return self.size(); } )
 		.def_prop_ro("names", [](InDatLinks& self) { return self.getLinkNames(); })
 		.def("__getitem__", [](InDatLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)

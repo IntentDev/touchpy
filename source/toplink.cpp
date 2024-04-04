@@ -7,11 +7,13 @@ TopLink::TopLink(
 	TouchObject<TEGraphicsContext> context,
 	VkPhysicalDevice physicalDevice,
 	VkDevice device,
-	TouchObject<TELinkInfo> linkInfo)
+	TouchObject<TELinkInfo> linkInfo,
+	cudaStream_t cudaStream)
 	:	Link<TopLink>(instance, linkInfo),
 		context_(context),
 		physicalDevice_(physicalDevice),
-		device_(device) { }
+		device_(device),
+		cudaStream_(cudaStream){ }
 
 TopLink::~TopLink() { }
 
@@ -31,13 +33,13 @@ OutTopLink::addOutputTexture(TouchObject<TEInstance> teInstance, TEVulkanTexture
 	if (scope_ != Link::Scope::Output)
 		return;
 
-	textures_.push_back(std::make_unique<Texture>(physicalDevice_, device_, teInstance, teTexture, cudaFlags_, requiresCudaMemLock_));
+	textures_.push_back(std::make_unique<Texture>(physicalDevice_, device_, teInstance, teTexture, &cudaStream_, cudaFlags_, requiresCudaMemLock_));
 	auto& texture = textures_.back();
 	handleMap_[texture->textureHandle()] = texture.get();
 }
 
 void 
-OutTopLink::onOutputTextureChange(cudaStream_t cudaStream_)
+OutTopLink::onOutputTextureChange()
 {
 	if (scope_ != Link::Scope::Output)
 		return;
@@ -105,7 +107,7 @@ void
 InTopLink::setInputTexture(VkExtent2D extent, VkFormat format, CUDAMemoryDesc cudaMemDesc)
 {
 	textures_.resize(1);
-	textures_[0] = std::make_unique<Texture>(physicalDevice_, device_, extent, format, cudaMemDesc);
+	textures_[0] = std::make_unique<Texture>(physicalDevice_, device_, extent, format, cudaMemDesc, &cudaStream_);
 	handleMap_[textures_[0]->textureHandle()] = textures_[0].get();
 }
 
@@ -155,6 +157,11 @@ InTopLink::copyCudaMemory(const CUDAMemory& cudaMem, cudaStream_t stream)
 
 	if (copied) transferTextureToInputLink();
 	else std::cout << "copyCudaMemory: " << name_ << ", failed to copy memory" << std::endl;
+}
+
+void InTopLink::copyCudaMemory(const CUDAMemory& cudaMem)
+{
+	copyCudaMemory(cudaMem, cudaStream_);
 }
 
 //void
