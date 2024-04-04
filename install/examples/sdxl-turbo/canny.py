@@ -25,7 +25,7 @@ class ExampleRunComp:
 		self.frame = 0
 
 		# load adapter
-		adapter = T2IAdapter.from_pretrained("TencentARC/t2i-adapter-canny-sdxl-1.0", torch_dtype=torch.float16, variant="fp16").to("cuda")
+		adapter = T2IAdapter.from_pretrained("Adapter/t2iadapter", subfolder="sketch_sdxl_1.0", torch_dtype=torch.float16, adapter_type="full_adapter_xl").to("cuda")
 		vae=AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16)
 		
 		self.pipe = StableDiffusionXLAdapterPipeline.from_pretrained("stabilityai/sdxl-turbo", vae=vae, adapter=adapter, torch_dtype=torch.float16, variant="fp16")
@@ -37,7 +37,7 @@ class ExampleRunComp:
 
 	@staticmethod
 	def on_layout_change(comp, info):
-		#comp.out_tops[0].set_cuda_flags(tp.CudaFlags.BGR | tp.CudaFlags.HWC)
+		comp.out_tops[1].set_cuda_flags(tp.CudaFlags.BGR)
 		
 		pass
 
@@ -57,26 +57,39 @@ class ExampleRunComp:
 		######### Process and Copy for next frame (Fast) ###################
 		comp.start_next_frame()	
 		
-	
+		#canny = canny.cpu().numpy()	
+		#canny = cv.cvtColor(canny, cv.COLOR_BGR2GRAY)
+		print(canny.shape)
+
 
 		prompt = "Mystical fairy in real, magic, 4k picture, high quality"
 		negative_prompt = "extra digit, fewer digits, cropped, worst quality, low quality, glitch, deformed, mutated, ugly, disfigured"
+		# fix the random seed, so you will get the same result as the example
+		generator = torch.Generator().manual_seed(42)
 
 		result = this.pipe(
 			prompt=prompt,
 			negative_prompt=negative_prompt,
 			image=canny,
 			width=512,
-			height=512,
-			output_type="pt"
+			height=512, #output_type="pt"
+			generator=generator,
+    		guidance_scale=7.5
 		).images[0]	
 
-		print(result.device)
-		comp.in_tops[0].from_tensor(result)
+		
+		result.show()
+		#print(result)
+		#out = np.array(result)
+		#cv.imshow("test", out)
+		
+		#print(canny, canny.device)
+		#out = torch.from_numpy(out/255).cuda()
+		#comp.in_tops[0].from_tensor(out)
 
 
 		this.frame += 1
-		print("Frame: ", this.frame)
+		#print("Frame: ", this.frame)
 
 	def runComp(self, tox_path):
 		comp = tp.Comp(tox_path, flags=tp.CompFlags.INTERNAL_TIME_AUTO)
