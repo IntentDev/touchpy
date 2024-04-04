@@ -202,9 +202,9 @@ initTopLinkBindings(nb::module_& m)
 			{ return reinterpret_cast<uintptr_t>(self.ptr); }, nb::rv_policy::reference_internal);
 
 
-	nb::class_<OutTopLink> outTopLink(m, "OutTopLink");
-	outTopLink.doc() = "An OutTOP in a TouchDesigner component";
-	outTopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+	nb::class_<OutTopLink> outTop(m, "OutTop");
+	outTop.doc() = "An interface for an OutTOP in a loaded TouchDesigner component";
+	outTop.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("cuda_memory", &OutTopLink::cudaMemory)
 		.def("set_cuda_flags", [](OutTopLink& self, CudaFlagBits flags) { self.setCudaFlags(flags); }, "flags"_a)
 
@@ -219,20 +219,20 @@ initTopLinkBindings(nb::module_& m)
 		.def("as_tensor", &arrayFromCudaMem<nb::pytorch>, nb::rv_policy::reference_internal)
 		;
 
-	nb::class_<OutTopLinks> outTopLinks(m, "OutTopLinks");
-	outTopLinks.doc() = "A collection of OutTOP links in a TouchDesigner component";
-	outTopLinks.def(nb::init<>())
+	nb::class_<OutTopLinks> outTops(m, "OutTops");
+	outTops.doc() = "A container of OutTop objects";
+	outTops.def(nb::init<>())
 		.def_prop_ro("count", [](OutTopLinks& self) { return self.size(); })
 		.def_prop_ro("names", [](OutTopLinks& self) { return self.getLinkNames(); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](OutTopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](OutTopLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
 
-	nb::class_<InTopLink> inTopLink(m, "InTopLink");
-	inTopLink.doc() = "An InTOP in a TouchDesigner component";
-	inTopLink.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
+	nb::class_<InTopLink> inTop(m, "InTop");
+	inTop.doc() = "An interface for an InTOP in a loaded TouchDesigner component";
+	inTop.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
 
-	inTopLink
+	inTop
 		.def("from_dlpack",
 			[](InTopLink& self, nb::ndarray<arrayShapeCHW4, nb::device::cuda> array, CudaFlagBits flags)
 			{	flags |= CudaFlagBits::CHW; flags &= ~CudaFlagBits::HWC;
@@ -317,7 +317,7 @@ initTopLinkBindings(nb::module_& m)
 
 		;
 			
-	inTopLink
+	inTop
 		.def("from_tensor",
 			[](InTopLink& self, nb::ndarray<nb::pytorch, arrayShapeCHW4, nb::device::cuda> array, CudaFlagBits flags)
 			{	flags |= CudaFlagBits::CHW; flags &= ~CudaFlagBits::HWC;
@@ -402,7 +402,7 @@ initTopLinkBindings(nb::module_& m)
 
 		;
 
-	inTopLink.def("copy_cuda_memory", [](InTopLink& self, const CUDAMemory& memory)
+	inTop.def("copy_cuda_memory", [](InTopLink& self, const CUDAMemory& memory)
 		{
 			self.copyCudaMemory(memory, nullptr);
 		}, "cuda_mem"_a);
@@ -412,9 +412,9 @@ initTopLinkBindings(nb::module_& m)
 	//		self.copyCudaMemory(memory, nullptr);
 	//	}, "cuda_mem"_a, "flags"_a = CudaFlagBits::None);
 
-	nb::class_<InTopLinks> inTopLinks(m, "InTopLinks");
-	inTopLinks.doc() = "A collection of InTOP links in a TouchDesigner component";
-	inTopLinks.def(nb::init<>())
+	nb::class_<InTopLinks> inTops(m, "InTops");
+	inTops.doc() = "A container of InTop objects.";
+	inTops.def(nb::init<>())
 		.def_prop_ro("count", [](InTopLinks& self) { return self.size(); })
 		.def_prop_ro("names", [](InTopLinks& self) { return self.getLinkNames(); }, nb::rv_policy::reference_internal)
 		.def("__getitem__", [](InTopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
