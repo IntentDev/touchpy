@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <thread>
 #include <array>
+//#include <bitset>
 
 Comp::Comp()
 {
@@ -433,13 +434,29 @@ Comp::setInFrame(bool inFrame)
 	if (usingSwapBuffer_) cv_.notify_one();
 }
 
+//void Comp::setOnFrameCallback(
+//	std::function<void(Comp&, std::shared_ptr<void>)> callback,
+//	std::shared_ptr<void> userData)
+//{
+//	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
+//
+//	if (usingSwapBuffer_) 
+//	{
+//		lock.lock();
+//		cv_.wait(lock, [this] { return ssInFrame_; });
+//	}
+//
+//	onFrameCallback_ = callback;
+//	onFrameCallbackUserData_ = userData;
+//}
+
 void Comp::setOnFrameCallback(
 	std::function<void(Comp&, std::shared_ptr<void>)> callback,
 	std::shared_ptr<void> userData)
 {
 	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
 
-	if (usingSwapBuffer_) 
+	if (usingSwapBuffer_)
 	{
 		lock.lock();
 		cv_.wait(lock, [this] { return ssInFrame_; });
@@ -448,6 +465,7 @@ void Comp::setOnFrameCallback(
 	onFrameCallback_ = callback;
 	onFrameCallbackUserData_ = userData;
 }
+
 
 void Comp::clearOnFrameCallback()
 {
@@ -517,25 +535,34 @@ void Comp::start()
 {
 	TE_CHECK(TEInstanceResume(instance_));
 
-	if (compFlags_ & CompFlagBits::InternalTimeAuto)
+	// print out the flags as bits
+	//std::cout << "Comp flags: " << std::bitset<32>(compFlags_()) << std::endl;
+	//std::cout << "InternalTimeAuto: " << std::bitset<32>(static_cast<uint32_t>(CompFlagBits::InternalTimeAuto)) << std::endl;
+	//std::cout << "InternalTimeAsync: " << std::bitset<32>(static_cast<uint32_t>(CompFlagBits::InternalTimeAsync)) << std::endl;
+
+	if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AutoUpdate)
 	{
+		std::cout << "Starting update loop" << std::endl;
 		update();
 	}
-	else if (compFlags_ & CompFlagBits::InternalTimeAsync)
+	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate)
 	{
+		std::cout << "Starting async loop" << std::endl;
 		startAsync();
 	}
 }
 
 void Comp::stop()
 {
-	if (compFlags_ & CompFlagBits::InternalTimeAuto)
+	if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AutoUpdate)
 	{
 		stopUpdate();
 	}
-	else if (compFlags_ & CompFlagBits::InternalTimeAsync)
+	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate)
 	{
+		std::cout << "Stopping async loop" << std::endl;
 		stopAsync();
+		std::cout << "Async loop stopped" << std::endl;
 	}
 
 	TE_CHECK(TEInstanceSuspend(instance_));
