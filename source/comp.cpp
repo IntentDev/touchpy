@@ -237,7 +237,7 @@ Comp::onEventInstanceReady(TEResult result, Comp* comp)
 
 	comp->ssReady_ = result == TEResultSuccess;
 	comp->cv_.notify_one(); // notify load() that instance is ready
-
+	lock.unlock();
 	std::cout << "\t\tInstance Ready: " << TEResultGetDescription(result) << std::endl;
 }
 
@@ -478,16 +478,34 @@ void Comp::setOnFrameCallback(std::function<void(Comp&, std::shared_ptr<void>)> 
 
 void Comp::clearOnFrameCallback()
 {
-	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
-
-	if (usingSwapBuffer_)
+	if (!usingSwapBuffer_)
 	{
-		lock.lock();
-		cv_.wait(lock, [this] { return ssInFrame_; });
+		onFrameCallback_ = nullptr;
+		onFrameCallbackUserData_ = nullptr;
+		return;
 	}
+	else
+	{
+		std::unique_lock<std::mutex> lock(asyncMutex_);
+		cv_.wait(lock, [this] { return ssInFrame_; });
 
-	onFrameCallback_ = nullptr;
-	onFrameCallbackUserData_ = nullptr;
+		if (asyncRunning_.load())
+		{
+			asyncSettingCallback_ = true;
+			asyncCV_.notify_one();
+		}
+
+		onFrameCallback_ = nullptr;
+		onFrameCallbackUserData_ = nullptr;
+
+		if (asyncRunning_.load())
+		{
+			asyncSettingCallback_ = false;
+			asyncCV_.notify_one();
+		}
+
+		lock.unlock();
+	}
 }
 
 bool Comp::callOnFrameCallback()
@@ -502,33 +520,72 @@ bool Comp::callOnFrameCallback()
 
 void Comp::setOnLayoutChangeCallback( std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData)
 {
-	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
-
-	if (usingSwapBuffer_)
+	if (!usingSwapBuffer_)
 	{
-		lock.lock();
-		cv_.wait(lock, [this] { return ssInFrame_; });
+		onLayoutChangeCallback_ = nullptr;
+		onLayoutChangeCallbackUserData_ = nullptr;
+
+		onLayoutChangeCallback_ = callback;
+		onLayoutChangeCallbackUserData_ = userData;
+		return;
 	}
+	else
+	{
+		std::unique_lock<std::mutex> lock(asyncMutex_);
+		cv_.wait(lock, [this] { return ssInFrame_; });
 
-	onLayoutChangeCallback_ = nullptr;
-	onLayoutChangeCallbackUserData_ = nullptr;
+		if (asyncRunning_.load())
+		{
+			asyncSettingCallback_ = true;
+			asyncCV_.notify_one();
+		}
 
-	onLayoutChangeCallback_ = callback;
-	onLayoutChangeCallbackUserData_ = userData;
+		onLayoutChangeCallback_ = nullptr;
+		onLayoutChangeCallbackUserData_ = nullptr;
+
+		onLayoutChangeCallback_ = callback;
+		onLayoutChangeCallbackUserData_ = userData;
+
+		if (asyncRunning_.load())
+		{
+			asyncSettingCallback_ = false;
+			asyncCV_.notify_one();
+		}
+
+		lock.unlock();
+	}
 }
 
 void Comp::clearOnLayoutChangeCallback()
 {
-	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
-
-	if (usingSwapBuffer_)
+	if (!usingSwapBuffer_)
 	{
-		lock.lock();
-		cv_.wait(lock, [this] { return ssInFrame_; });
+		onLayoutChangeCallback_ = nullptr;
+		onLayoutChangeCallbackUserData_ = nullptr;
+		return;
 	}
+	else
+	{
+		std::unique_lock<std::mutex> lock(asyncMutex_);
+		cv_.wait(lock, [this] { return ssInFrame_; });
 
-	onLayoutChangeCallback_ = nullptr;
-	onLayoutChangeCallbackUserData_ = nullptr;
+		if (asyncRunning_.load())
+		{
+			asyncSettingCallback_ = true;
+			asyncCV_.notify_one();
+		}
+
+		onLayoutChangeCallback_ = nullptr;
+		onLayoutChangeCallbackUserData_ = nullptr;
+
+		if (asyncRunning_.load())
+		{
+			asyncSettingCallback_ = false;
+			asyncCV_.notify_one();
+		}
+
+		lock.unlock();
+	}
 }
 
 bool Comp::callOnLayoutChangeCallback()
@@ -599,15 +656,29 @@ void Comp::stopUpdate()
 
 void Comp::startAsync()
 {
+	// need to wait before returning from this function until first frame is finished
+
 	usingSwapBuffer_ = true;
 	asyncRunning_ = true;
+	asyncContinueStop_ = false;
 	asyncThread_ = std::thread(&Comp::asyncUpdate, this);
+
+	std::unique_lock<std::mutex> lock(asyncMutex_);
+	asyncLayoutReadyCV_.wait(lock, [this] { return asyncLayoutReady_; });
+	lock.unlock();
 }
 
 void Comp::stopAsync()
 {
 	asyncSettingCallback_ = false;
 	asyncRunning_.store(false);
+
+	{
+		std::unique_lock<std::mutex> lock(asyncMutex_);
+		asyncStopCV_.wait(lock, [this] { return asyncContinueStop_; });
+		lock.unlock();
+	}
+
 	if (asyncThread_.joinable())
 		asyncThread_.join();
 
@@ -634,18 +705,19 @@ void Comp::asyncUpdate()
 		{
 			applyValueChanges();
 
-			//running = asyncRunning_.load();
-			//if (!running) break;
-
 			std::unique_lock<std::mutex> lock(asyncMutex_);
 			asyncCV_.wait(lock, [this] { return !asyncSettingCallback_; });
 
 			if (!callOnFrameCallback()) startNextFrame();
 
 			lock.unlock();
-
-
 		}
+	}
+
+	{
+		std::lock_guard<std::mutex> lock(asyncMutex_);
+		asyncContinueStop_ = true;
+		asyncStopCV_.notify_one();  // Notify stopAsync() that the loop is finished
 	}
 }
 
@@ -763,6 +835,15 @@ Comp::applyOutputStringDataChange()
 void 
 Comp::applyLayoutChange()
 {
+	if (usingSwapBuffer_)
+	{
+		{
+			std::lock_guard<std::mutex> lock(asyncMutex_);
+			asyncLayoutReady_ = false;
+		}
+		asyncLayoutReadyCV_.notify_one();
+	}
+
 	std:: cout << "Applying layout change" << std::endl;
 
 	inTopLinks_ = std::make_unique<InTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_, cudaStream_);
@@ -851,6 +932,15 @@ Comp::applyLayoutChange()
 				}
 			}
 		}
+	}
+
+	if (usingSwapBuffer_)
+	{
+		{
+			std::lock_guard<std::mutex> lock(asyncMutex_);
+			asyncLayoutReady_ = true;
+		}
+		asyncLayoutReadyCV_.notify_one();
 	}
 
 	callOnLayoutChangeCallback();

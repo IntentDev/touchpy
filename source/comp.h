@@ -92,6 +92,10 @@ private:
 	std::mutex							  asyncMutex_;
 	std::condition_variable 			  asyncCV_;
 	bool							      asyncSettingCallback_ { false };
+	std::condition_variable 			  asyncStopCV_;
+	bool								  asyncContinueStop_ { false };
+	std::condition_variable 			  asyncLayoutReadyCV_;
+	bool								  asyncLayoutReady_ { false };
 	void								  asyncUpdate();
 	void								  startAsync();
 	void								  stopAsync();
