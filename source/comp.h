@@ -86,9 +86,9 @@ private:
 
 	// free running 
 	//-----------------------------------------------------------------------------------------------------------------
+	bool								  asyncActive_{ false }; 
 	std::atomic<bool>					  asyncRunning_ { false };
 	std::thread							  asyncThread_;
-	bool								  usingSwapBuffer_{ false }; // could remove this and use asyncRunning_
 	std::mutex							  asyncMutex_;
 	std::condition_variable 			  asyncCV_;
 	bool							      asyncSettingCallback_ { false };

@@ -362,7 +362,7 @@ Comp::onLinkEventValueChange(const char* identifier)
 		}
 		case TELinkTypeFloatBuffer:
 		{
-			if (usingSwapBuffer_)
+			if (asyncActive_)
 			{
 				auto chopLink = outChopLinks_->getLinkByIdentifier(identifier);
 				chopLink->writeBuffer();
@@ -375,7 +375,7 @@ Comp::onLinkEventValueChange(const char* identifier)
 		}
 		case TELinkTypeStringData:
 		{
-			if (usingSwapBuffer_)
+			if (asyncActive_)
 			{
 				auto datLink = outDatLinks_->getLinkByIdentifier(identifier);
 				datLink->writeBuffer();
@@ -431,13 +431,13 @@ Comp::setInFrame(bool inFrame)
 	std::unique_lock<std::mutex> lock(mutex_);
 	ssInFrame_ = inFrame;
 
-	if (usingSwapBuffer_) cv_.notify_one();
+	if (asyncActive_) cv_.notify_one();
 	lock.unlock();
 }
 
 void Comp::setOnFrameCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData)
 {
-	if (!usingSwapBuffer_)
+	if (!asyncActive_)
 	{
 		onFrameCallback_ = nullptr;
 		onFrameCallbackUserData_ = nullptr;
@@ -478,7 +478,7 @@ void Comp::setOnFrameCallback(std::function<void(Comp&, std::shared_ptr<void>)> 
 
 void Comp::clearOnFrameCallback()
 {
-	if (!usingSwapBuffer_)
+	if (!asyncActive_)
 	{
 		onFrameCallback_ = nullptr;
 		onFrameCallbackUserData_ = nullptr;
@@ -520,7 +520,7 @@ bool Comp::callOnFrameCallback()
 
 void Comp::setOnLayoutChangeCallback( std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData)
 {
-	if (!usingSwapBuffer_)
+	if (!asyncActive_)
 	{
 		onLayoutChangeCallback_ = nullptr;
 		onLayoutChangeCallbackUserData_ = nullptr;
@@ -558,7 +558,7 @@ void Comp::setOnLayoutChangeCallback( std::function<void(Comp&, std::shared_ptr<
 
 void Comp::clearOnLayoutChangeCallback()
 {
-	if (!usingSwapBuffer_)
+	if (!asyncActive_)
 	{
 		onLayoutChangeCallback_ = nullptr;
 		onLayoutChangeCallbackUserData_ = nullptr;
@@ -658,7 +658,7 @@ void Comp::startAsync()
 {
 	// need to wait before returning from this function until first frame is finished
 
-	usingSwapBuffer_ = true;
+	asyncActive_ = true;
 	asyncRunning_ = true;
 	asyncContinueStop_ = false;
 	asyncThread_ = std::thread(&Comp::asyncUpdate, this);
@@ -682,7 +682,7 @@ void Comp::stopAsync()
 	if (asyncThread_.joinable())
 		asyncThread_.join();
 
-	usingSwapBuffer_ = false;
+	asyncActive_ = false;
 }
 
 void Comp::asyncUpdate()
@@ -785,7 +785,7 @@ Comp::applyOutputTextureChange()
 void
 Comp::applyOutputFloatBufferChange()
 {
-	if (!usingSwapBuffer_)
+	if (!asyncActive_)
 	{
 		for (const auto& identifier : changedOutputFloatBuffers_)
 		{
@@ -810,7 +810,7 @@ Comp::applyOutputFloatBufferChange()
 void
 Comp::applyOutputStringDataChange()
 {
-	if (!usingSwapBuffer_)
+	if (!asyncActive_)
 	{
 		for (const auto& identifier : changedOutputStringData_)
 		{
@@ -835,7 +835,7 @@ Comp::applyOutputStringDataChange()
 void 
 Comp::applyLayoutChange()
 {
-	if (usingSwapBuffer_)
+	if (asyncActive_)
 	{
 		{
 			std::lock_guard<std::mutex> lock(asyncMutex_);
@@ -895,7 +895,7 @@ Comp::applyLayoutChange()
 								else if (info->scope == TEScopeOutput)
 								{
 									outTopLinks_->addLink(info);
-									(*outTopLinks_)[outTopLinks_->size() - 1].setRequiresCudaMemLock(usingSwapBuffer_);
+									(*outTopLinks_)[outTopLinks_->size() - 1].setRequiresCudaMemLock(asyncActive_);
 								}
 							}
 
@@ -907,7 +907,7 @@ Comp::applyLayoutChange()
 								else if (info->scope == TEScopeOutput)
 								{
 									outChopLinks_->addLink(info);
-									(*outChopLinks_)[outChopLinks_->size() - 1].setUsingSwapBuffer(usingSwapBuffer_);
+									(*outChopLinks_)[outChopLinks_->size() - 1].setUsingSwapBuffer(asyncActive_);
 								}
 							}
 
@@ -919,7 +919,7 @@ Comp::applyLayoutChange()
 								else if (info->scope == TEScopeOutput)
 								{
 									outDatLinks_->addLink(info);
-									(*outDatLinks_)[outDatLinks_->size() - 1].setUsingSwapBuffer(usingSwapBuffer_);
+									(*outDatLinks_)[outDatLinks_->size() - 1].setUsingSwapBuffer(asyncActive_);
 								}
 							}
 
@@ -934,7 +934,7 @@ Comp::applyLayoutChange()
 		}
 	}
 
-	if (usingSwapBuffer_)
+	if (asyncActive_)
 	{
 		{
 			std::lock_guard<std::mutex> lock(asyncMutex_);
