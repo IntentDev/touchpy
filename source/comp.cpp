@@ -432,24 +432,47 @@ Comp::setInFrame(bool inFrame)
 	ssInFrame_ = inFrame;
 
 	if (usingSwapBuffer_) cv_.notify_one();
+	lock.unlock();
 }
 
 void Comp::setOnFrameCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData)
 {
-	std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
-
-
-	if (usingSwapBuffer_)
+	if (!usingSwapBuffer_)
 	{
-		lock.lock();
-		cv_.wait(lock, [this] { return ssInFrame_; });
+		onFrameCallback_ = nullptr;
+		onFrameCallbackUserData_ = nullptr;
+
+		onFrameCallback_ = callback;
+		onFrameCallbackUserData_ = userData;
+		return;
 	}
+	else
+	{
+		std::unique_lock<std::mutex> lock(asyncMutex_);
+		cv_.wait(lock, [this] { return ssInFrame_; });
 
-	onFrameCallback_ = nullptr;
-	onFrameCallbackUserData_ = nullptr;
+		// notify async thread to wait for callback to finish
+		// if async thread is running
+		if (asyncRunning_.load())
+		{
+			asyncSettingCallback_ = true;
+			asyncCV_.notify_one();
+		}
 
-	onFrameCallback_ = callback;
-	onFrameCallbackUserData_ = userData;
+		onFrameCallback_ = nullptr;
+		onFrameCallbackUserData_ = nullptr;
+
+		onFrameCallback_ = callback;
+		onFrameCallbackUserData_ = userData;
+
+		if (asyncRunning_.load())
+		{
+			asyncSettingCallback_ = false;
+			asyncCV_.notify_one();
+		}
+
+		lock.unlock();
+	}
 }
 
 
@@ -583,6 +606,7 @@ void Comp::startAsync()
 
 void Comp::stopAsync()
 {
+	asyncSettingCallback_ = false;
 	asyncRunning_.store(false);
 	if (asyncThread_.joinable())
 		asyncThread_.join();
@@ -593,7 +617,7 @@ void Comp::stopAsync()
 void Comp::asyncUpdate()
 {
 	bool running { true };
-	while (running)
+	while (asyncRunning_.load())
 	{
 		bool ready, loaded, linksLayoutChanged, inFrame;
 		getState(ready, loaded, linksLayoutChanged, inFrame);
@@ -610,10 +634,17 @@ void Comp::asyncUpdate()
 		{
 			applyValueChanges();
 
-			running = asyncRunning_.load();
-			if (!running) break;
+			//running = asyncRunning_.load();
+			//if (!running) break;
+
+			std::unique_lock<std::mutex> lock(asyncMutex_);
+			asyncCV_.wait(lock, [this] { return !asyncSettingCallback_; });
 
 			if (!callOnFrameCallback()) startNextFrame();
+
+			lock.unlock();
+
+
 		}
 	}
 }

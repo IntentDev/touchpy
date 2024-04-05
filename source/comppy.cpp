@@ -69,7 +69,7 @@ void initCompBindings(nb::module_& m)
 			self.setOnFrameCallback([pythonCallback](Comp& comp, std::shared_ptr<void> userData)
 				{
 					auto& userDataPyObj = *std::static_pointer_cast<nb::object>(userData);
-					if (!comp.freeRunning())
+					if (!comp.asyncRunning())
 					{
 						pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userDataPyObj);
 					}
@@ -91,7 +91,7 @@ void initCompBindings(nb::module_& m)
 			self.setOnLayoutChangeCallback([pythonCallback](Comp& comp, std::shared_ptr<void> userData)
 				{
 					auto& userDataPyObj = *std::static_pointer_cast<nb::object>(userData);
-					if (!comp.freeRunning())
+					if (!comp.asyncRunning())
 					{
 						pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userDataPyObj);
 					}
