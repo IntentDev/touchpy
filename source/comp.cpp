@@ -607,12 +607,12 @@ void Comp::start()
 	//std::cout << "InternalTimeAuto: " << std::bitset<32>(static_cast<uint32_t>(CompFlagBits::InternalTimeAuto)) << std::endl;
 	//std::cout << "InternalTimeAsync: " << std::bitset<32>(static_cast<uint32_t>(CompFlagBits::InternalTimeAsync)) << std::endl;
 
-	if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AutoUpdate)
+	if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AutoUpdate && !updateLoopRunning_)
 	{
 		std::cout << "Starting update loop" << std::endl;
 		update();
 	}
-	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate)
+	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate && !asyncRunning_.load())
 	{
 		std::cout << "Starting async loop" << std::endl;
 		startAsync();
