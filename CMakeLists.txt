@@ -127,6 +127,19 @@ target_link_libraries(touchpy PRIVATE CUDA::cudart)
 target_include_directories(touchpygtest PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 target_link_libraries(touchpygtest PRIVATE CUDA::cudart)
 
+# spdlog
+# .\vcpkg install spdlog
+#################################################################################################
+find_package(spdlog REQUIRED)
+target_link_libraries(touchpy PRIVATE spdlog::spdlog)
+target_link_libraries(touchpygtest PRIVATE spdlog::spdlog)
+add_custom_command(TARGET touchpy POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:spdlog::spdlog> "${CMAKE_CURRENT_SOURCE_DIR}/install/modules")
+add_custom_command(TARGET touchpy POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:fmt::fmt> "${CMAKE_CURRENT_SOURCE_DIR}/install/modules")
+
 
 # Post-build command to copy the CUDA runtime DLL to the output directory
 set(cuda_runtime_dll "${CUDAToolkit_BIN_DIR}/cudart64_110.dll")

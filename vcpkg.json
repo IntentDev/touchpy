@@ -1,6 +1,7 @@
 {
   "dependencies": [
     "vulkan-memory-allocator",
-    "gtest"
+    "gtest",
+    "spdlog"
   ]
 }

@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <thread>
 #include <array>
+
 //#include <bitset>
 
 Comp::Comp()
@@ -14,8 +15,23 @@ Comp::Comp()
 Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps) 
 	:	compFlags_(compFlags)
 {
+	//spdlog::set_level(spdlog::level::info); // Set global log level to info
+	// Retrieve your logger by name
+
+	//spdlog::info("This default is an info message");
+	logger_ = spdlog::get("python_logger");
+	//auto logger = spdlog::get("python_logger");
+	if (logger_)
+	{
+		logger_->info("This is an info message");
+		logger_->error("This is an error message");
+		logger_->critical("This is a critical message");
+	}
+
 	initComp();
 	loadTox(filePath, compFlags, fps);
+
+
 }
 
 void
@@ -239,6 +255,7 @@ Comp::onEventInstanceReady(TEResult result, Comp* comp)
 	comp->cv_.notify_one(); // notify load() that instance is ready
 	lock.unlock();
 	std::cout << "\t\tInstance Ready: " << TEResultGetDescription(result) << std::endl;
+	logger_->info("Instance Ready: {}", TEResultGetDescription(result));
 }
 
 void 
@@ -615,7 +632,7 @@ void Comp::start()
 	}
 	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate && !asyncRunning_.load())
 	{
-		std::cout << "Starting async loop" << std::endl;
+		logger_->info("invoking startAsync()");
 		startAsync();
 	}
 }
@@ -628,9 +645,9 @@ void Comp::stop()
 	}
 	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate)
 	{
-		std::cout << "Stopping async loop" << std::endl;
+		logger_->info("invoking stopAsync()");
 		stopAsync();
-		std::cout << "Async loop stopped" << std::endl;
+		logger_->info("asyncUpdate stopped");
 	}
 
 	TE_CHECK(TEInstanceSuspend(instance_));
@@ -688,7 +705,8 @@ void Comp::stopAsync()
 
 void Comp::asyncUpdate()
 {
-	bool running { true };
+	//logger_->info("asyncUpdate()");
+
 	while (asyncRunning_.load())
 	{
 		bool ready, loaded, linksLayoutChanged, inFrame;
@@ -720,6 +738,8 @@ void Comp::asyncUpdate()
 		asyncContinueStop_ = true;
 		asyncStopCV_.notify_one();  // Notify stopAsync() that the loop is finished
 	}
+
+	//logger_->info("asyncUpdate() finished");
 }
 
 bool 

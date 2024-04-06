@@ -1,6 +1,8 @@
 #pragma once
 
 #include <TouchEngine/TouchEngine.h>
+#include <spdlog/spdlog.h>
+
 #include "renderer.h"
 #include "texture.h"
 #include "common/cuda_helpers.h"
@@ -66,6 +68,8 @@ public:
 	bool asyncRunning() const { return asyncRunning_.load(); }
 
 private:
+
+	std::shared_ptr<spdlog::logger> logger_;
 
 	// shared state between the main or free running thread and the TouchEngine thread
 	//-----------------------------------------------------------------------------------------------------------------

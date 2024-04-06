@@ -1,16 +1,6 @@
-# to use:
-# 	open command prompt in the directory of this file
-# 	run: python
-# 	run: from free_running_init import *
-# 	run: comp = tp.Comp('TopChopDatIO.tox', flags=tp.CompFlags.INTERNAL_TIME_ASYNC) # or any other tox file
-#   run: comp.start()
-# 	run: comp.set_on_frame_callback(on_frame, user_data)
-# 	set or get values on the comp
-# 	run: comp.stop()
-# 	run: comp.unload() and exit() python
-
 import touchpy as tp
 import numpy as np
+
 
 comp = tp.Comp('TopChopDatIO.tox', flags=tp.CompFlags.INTERNAL_TIME_ASYNC)
 
