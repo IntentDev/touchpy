@@ -271,7 +271,8 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 	{
 		if(result != TEResultCancelled)
 		{
-			if (result == TEResultComponentErrors) comp->setInFrame(false);
+			if (result == TEResultComponentErrors || result == TEResultComponentWarnings) comp->setInFrame(false);
+
 
 			else
 			{
