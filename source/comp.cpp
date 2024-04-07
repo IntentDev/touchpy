@@ -5,6 +5,8 @@
 #include <thread>
 #include <array>
 
+#include "logging.h"
+
 //#include <bitset>
 
 Comp::Comp()
@@ -15,23 +17,24 @@ Comp::Comp()
 Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps) 
 	:	compFlags_(compFlags)
 {
-	//spdlog::set_level(spdlog::level::info); // Set global log level to info
-	// Retrieve your logger by name
 
-	//spdlog::info("This default is an info message");
-	logger_ = spdlog::get("python_logger");
-	//auto logger = spdlog::get("python_logger");
-	if (logger_)
-	{
-		logger_->info("This is an info message");
-		logger_->error("This is an error message");
-		logger_->critical("This is a critical message");
-	}
+	spdlog::info("This is an info message");
+	spdlog::error("This is an error message");
+	spdlog::critical("This is a critical message");
+	
+	SPDLOG_DEBUG("debug message to touchpy_logger");
+	SPDLOG_TRACE("trace message to touchpy_logger");
+	spdlog::info("info message to touchpy_logger");
+
+	spdlog::info("info message to default logger");
+
+
+	printInfo("printInfo() Comp constructor");
 
 	initComp();
 	loadTox(filePath, compFlags, fps);
 
-
+	//spdlog::default_logger()->flush();
 }
 
 void
@@ -46,11 +49,13 @@ Comp::~Comp()
 {
 	// Calling unload here can cause python to deadlock if it doesn't finish before python is closed... 
 	// call unload() before destruction, or not at all but that will cause memory leaks if the object is the global scope
-	// unload();
+	//unload();
 
 	if (cudaStream_ && compFlags_ & CompFlagBits::CudaStreamInternal) CUDA_CHECK(cudaStreamDestroy(cudaStream_));
 
 	vkDestroyFence(device_, submitFence_, nullptr);
+
+	//spdlog::default_logger()->flush();
 }
 
 void 
@@ -198,6 +203,7 @@ Comp::unload()
 		lock.lock();
 		cv_.wait(lock, [this] { return !ssLoaded_; });
 	}
+	//spdlog::default_logger()->flush();
 }
 
 
@@ -255,12 +261,13 @@ Comp::onEventInstanceReady(TEResult result, Comp* comp)
 	comp->cv_.notify_one(); // notify load() that instance is ready
 	lock.unlock();
 	std::cout << "\t\tInstance Ready: " << TEResultGetDescription(result) << std::endl;
-	logger_->info("Instance Ready: {}", TEResultGetDescription(result));
+	//spdlog::info("Instance Ready: {}", TEResultGetDescription(result));
 }
 
 void 
 Comp::onEventInstanceDidLoad(TEResult result, Comp* comp)
 {
+	std::cout << "onEventInstanceDidLoad()" << std::endl;
 	std::lock_guard<std::mutex> lock(comp->mutex_);
 	comp->ssLoaded_ = true;
 }
@@ -632,7 +639,7 @@ void Comp::start()
 	}
 	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate && !asyncRunning_.load())
 	{
-		logger_->info("invoking startAsync()");
+		spdlog::info("invoking startAsync()");
 		startAsync();
 	}
 }
@@ -645,12 +652,13 @@ void Comp::stop()
 	}
 	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate)
 	{
-		logger_->info("invoking stopAsync()");
+		spdlog::info("invoking stopAsync()");
 		stopAsync();
-		logger_->info("asyncUpdate stopped");
+		spdlog::info("asyncUpdate stopped");
 	}
 
 	TE_CHECK(TEInstanceSuspend(instance_));
+	//spdlog::default_logger()->flush();
 }
 
 void Comp::update()
@@ -681,6 +689,8 @@ void Comp::startAsync()
 	asyncContinueStop_ = false;
 	asyncThread_ = std::thread(&Comp::asyncUpdate, this);
 
+	std::cout << "asyncUpdate() started" << std::endl;
+
 	std::unique_lock<std::mutex> lock(asyncMutex_);
 	asyncLayoutReadyCV_.wait(lock, [this] { return asyncLayoutReady_; });
 	lock.unlock();
@@ -705,23 +715,34 @@ void Comp::stopAsync()
 
 void Comp::asyncUpdate()
 {
-	//logger_->info("asyncUpdate()");
-
+	//printInfo("asyncUpdate() started");
+	//std::cout << "asyncUpdate() thread id: " << std::this_thread::get_id() << std::endl;
+	spdlog::info("asyncUpdate() log in thread successfull");
+	static uint64_t counter = 0;
 	while (asyncRunning_.load())
 	{
 		bool ready, loaded, linksLayoutChanged, inFrame;
 		getState(ready, loaded, linksLayoutChanged, inFrame);
 
+		//std::cout << std::boolalpha << "asyncUpdate() ready: " << ready << " loaded: " << loaded << " linksLayoutChanged: " << linksLayoutChanged << " inFrame: " << inFrame << std::endl;
 		if (!loaded || !ready) continue;
 
 		if (linksLayoutChanged)
 		{
 			applyLayoutChange();
+			spdlog::info("asyncUpdate() layout changed");
+			printInfo("printInfo() asyncUpdate() layout changed");
 			continue;
 		}
 		
 		if (!inFrame)
 		{
+			if (counter == 240) 
+			{
+				spdlog::info("asyncUpdate() running");
+			}
+			++counter;
+
 			applyValueChanges();
 
 			std::unique_lock<std::mutex> lock(asyncMutex_);
@@ -739,7 +760,7 @@ void Comp::asyncUpdate()
 		asyncStopCV_.notify_one();  // Notify stopAsync() that the loop is finished
 	}
 
-	//logger_->info("asyncUpdate() finished");
+	//spdlog::info("asyncUpdate() finished");
 }
 
 bool 

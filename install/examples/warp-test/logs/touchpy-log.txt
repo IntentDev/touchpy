@@ -1,0 +1,96 @@
+[13:55] [24832] [info]: This is an info message
+[13:55] [24832] [error]: This is an error message
+[13:55] [24832] [critical]: This is a critical message
+[13:55] [24832] [debug]: debug message to touchpy_logger
+[13:55] [24832] [trace]: trace message to touchpy_logger
+[13:55] [24832] [info]: info message to touchpy_logger
+[13:55] [24832] [info]: info message to default logger
+[14:05] [24832] [info]: invoking startAsync()
+[14:05] [24388] [info]: asyncUpdate() log in thread successfull
+[14:05] [24388] [info]: asyncUpdate() layout changed
+[14:10] [24388] [info]: asyncUpdate() running
+[14:15] [24832] [info]: invoking stopAsync()
+[14:15] [24832] [info]: asyncUpdate stopped
+[17:16:50] [42564] [info]: This is an info message
+[17:16:50] [42564] [error]: This is an error message
+[17:16:50] [42564] [critical]: This is a critical message
+[17:16:50] [42564] [debug]: debug message to touchpy_logger
+[17:16:50] [42564] [trace]: trace message to touchpy_logger
+[17:16:50] [42564] [info]: info message to touchpy_logger
+[17:16:50] [42564] [info]: info message to default logger
+[17:17:00] [42564] [info]: invoking startAsync()
+[17:17:00] [36188] [info]: asyncUpdate() log in thread successfull
+[17:17:00] [36188] [info]: asyncUpdate() layout changed
+[17:17:05] [36188] [info]: asyncUpdate() running
+[19:22:14] [43284] [info]: This is an info message
+[19:22:14] [43284] [error]: This is an error message
+[19:22:14] [43284] [critical]: This is a critical message
+[19:22:14] [43284] [debug]: debug message to touchpy_logger
+[19:22:14] [43284] [trace]: trace message to touchpy_logger
+[19:22:14] [43284] [info]: info message to touchpy_logger
+[19:22:14] [43284] [info]: info message to default logger
+[19:22:25] [43284] [info]: invoking startAsync()
+[19:22:25] [43416] [info]: asyncUpdate() log in thread successfull
+[19:22:25] [43416] [info]: asyncUpdate() layout changed
+[19:22:30] [43416] [info]: asyncUpdate() running
+[19:22:46] [43284] [info]: invoking stopAsync()
+[19:22:46] [43284] [info]: asyncUpdate stopped
+[19:25:30] [19068] [info]: This is an info message
+[19:25:30] [19068] [error]: This is an error message
+[19:25:30] [19068] [critical]: This is a critical message
+[19:25:30] [19068] [debug]: debug message to touchpy_logger
+[19:25:30] [19068] [trace]: trace message to touchpy_logger
+[19:25:30] [19068] [info]: info message to touchpy_logger
+[19:25:30] [19068] [info]: info message to default logger
+[19:25:41] [19068] [info]: invoking startAsync()
+[19:25:41] [35480] [info]: asyncUpdate() log in thread successfull
+[19:25:41] [35480] [info]: asyncUpdate() layout changed
+[19:25:46] [35480] [info]: asyncUpdate() running
+[19:29:53] [19068] [info]: invoking stopAsync()
+[19:29:53] [19068] [info]: asyncUpdate stopped
+[19:48:53] [34272] [info]: This is an info message
+[19:48:53] [34272] [error]: This is an error message
+[19:48:53] [34272] [critical]: This is a critical message
+[19:48:53] [34272] [debug]: debug message to touchpy_logger
+[19:48:53] [34272] [trace]: trace message to touchpy_logger
+[19:48:53] [34272] [info]: info message to touchpy_logger
+[19:48:53] [34272] [info]: info message to default logger
+[19:49:04] [34272] [info]: invoking startAsync()
+[19:49:04] [44000] [info]: asyncUpdate() log in thread successfull
+[19:49:04] [44000] [info]: asyncUpdate() layout changed
+[19:49:04] [44000] [trace]: Texture Component Size: 1, Num Components: 4
+[19:49:04] [44000] [trace]: Allocating Vk Memory, Size: 8847360, Memory Type Index: 1
+[19:49:04] [44000] [trace]: Texture Created, width: 1920, height: 1080, format: VK_FORMAT_B8G8R8A8_UNORM
+[19:49:04] [44000] [trace]: Texture Component Size: 1, Num Components: 4
+[19:49:04] [44000] [trace]: Allocating Vk Memory, Size: 3932160, Memory Type Index: 1
+[19:49:04] [44000] [trace]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_B8G8R8A8_UNORM
+[19:49:04] [44000] [trace]: Texture Component Size: 4, Num Components: 4
+[19:49:04] [44000] [trace]: Allocating Vk Memory, Size: 15728640, Memory Type Index: 1
+[19:49:04] [44000] [trace]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_R32G32B32A32_SFLOAT
+[19:49:04] [44000] [trace]: Texture Component Size: 1, Num Components: 4
+[19:49:04] [44000] [trace]: Allocating Vk Memory, Size: 8847360, Memory Type Index: 1
+[19:49:04] [44000] [trace]: Texture Created, width: 1920, height: 1080, format: VK_FORMAT_B8G8R8A8_UNORM
+[19:49:04] [44000] [trace]: Texture Component Size: 1, Num Components: 4
+[19:49:04] [44000] [trace]: Allocating Vk Memory, Size: 3932160, Memory Type Index: 1
+[19:49:04] [44000] [trace]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_B8G8R8A8_UNORM
+[19:49:04] [44000] [trace]: Texture Component Size: 4, Num Components: 4
+[19:49:04] [44000] [trace]: Allocating Vk Memory, Size: 15728640, Memory Type Index: 1
+[19:49:04] [44000] [trace]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_R32G32B32A32_SFLOAT
+[19:49:08] [44000] [info]: asyncUpdate() running
+[20:24:37] [33920] [info]: This is an info message
+[20:24:37] [33920] [error]: This is an error message
+[20:24:37] [33920] [critical]: This is a critical message
+[20:24:37] [33920] [debug]: debug message to touchpy_logger
+[20:24:37] [33920] [trace]: trace message to touchpy_logger
+[20:24:37] [33920] [info]: info message to touchpy_logger
+[20:24:37] [33920] [info]: info message to default logger
+[20:24:47] [33920] [info]: invoking startAsync()
+[20:24:47] [31012] [info]: asyncUpdate() log in thread successfull
+[20:24:47] [31012] [info]: asyncUpdate() layout changed
+[20:24:48] [31012] [debug]: Texture Created, width: 1920, height: 1080, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 8847360, Memory Type Index: 1
+[20:24:48] [31012] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 3932160, Memory Type Index: 1
+[20:24:48] [31012] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_R32G32B32A32_SFLOAT, Size: 15728640, Memory Type Index: 1
+[20:24:48] [31012] [debug]: Texture Created, width: 1920, height: 1080, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 8847360, Memory Type Index: 1
+[20:24:48] [31012] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 3932160, Memory Type Index: 1
+[20:24:48] [31012] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_R32G32B32A32_SFLOAT, Size: 15728640, Memory Type Index: 1
+[20:24:52] [31012] [info]: asyncUpdate() running

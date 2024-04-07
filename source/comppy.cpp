@@ -16,8 +16,18 @@ Returns:
 	True if the .tox file was loaded successfully, False otherwise
 )";
 
+
+//void printInfo(const std::string& str)
+//{
+//	nb::gil_scoped_acquire acquire;
+//	nb::print(str.c_str());
+//}
+
+
 void initCompBindings(nb::module_& m)
 {
+	//Comp::setPrintInfoFunc(printInfo);
+
 	nb::enum_<CompFlagBits>(m, "CompFlags")
 		.value("INTERNAL_TIME", CompFlagBits::InternalTime)
 		.value("EXTERNAL_TIME", CompFlagBits::ExternalTime)
@@ -43,7 +53,7 @@ void initCompBindings(nb::module_& m)
 	comp.doc() = "A TouchDesigner component loaded in a TouchEngine instance.";
 	comp.def(nb::init<>())
 		.def(nb::init<const std::string&, CompFlagBits, int64_t>(),
-			"tox_path"_a, "flags"_a = CompFlagBits::InternalTimeAuto, "fps"_a = 60, nb::rv_policy::automatic)
+			"tox_path"_a, "flags"_a = CompFlagBits::InternalTimeAuto, "fps"_a = 60, nb::rv_policy::take_ownership)
 		.def("load_tox", [](Comp& self, std::string path, int fps) { self.loadTox(path, fps); } , "path"_a, "fps"_a = 60, load_toxDoc)
 		.def("loaded",                 &Comp::loaded, nb::rv_policy::reference_internal)
 		.def("unload",                 &Comp::unload, nb::rv_policy::reference_internal)
@@ -111,5 +121,7 @@ void initCompBindings(nb::module_& m)
 			return reinterpret_cast<uintptr_t>(self.cudaStream());
 		}
 	, nb::rv_policy::reference_internal);
+
+	
 
 }

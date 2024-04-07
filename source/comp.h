@@ -1,7 +1,6 @@
 #pragma once
 
 #include <TouchEngine/TouchEngine.h>
-#include <spdlog/spdlog.h>
 
 #include "renderer.h"
 #include "texture.h"
@@ -30,7 +29,8 @@ public:
 	Comp(
 		const std::string& filePath, 
 		CompFlags compFlags = CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault,
-		int64_t fps = 60);
+		int64_t fps = 60
+	);
 
 	~Comp();
 
@@ -67,10 +67,9 @@ public:
 	//-----------------------------------------------------------------------------------------------------------------
 	bool asyncRunning() const { return asyncRunning_.load(); }
 
+	//static void setPrintInfoFunc(std::function<void(std::string)> func) { printInfo = func; }
+
 private:
-
-	std::shared_ptr<spdlog::logger> logger_;
-
 	// shared state between the main or free running thread and the TouchEngine thread
 	//-----------------------------------------------------------------------------------------------------------------
 
@@ -144,6 +143,8 @@ private:
 	std::function<void(Comp&, std::shared_ptr<void>)> onFrameCallback_ { nullptr };
 	std::shared_ptr<void>							  onLayoutChangeCallbackUserData_{ nullptr };
 	std::function<void(Comp&, std::shared_ptr<void>)> onLayoutChangeCallback_{ nullptr };
+
+	//static std::function<void(std::string)> printInfo;
 
 	void initComp();
 	bool initInstance();

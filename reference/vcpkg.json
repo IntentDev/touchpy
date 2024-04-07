@@ -1,0 +1,10 @@
+{
+	"dependencies": [
+	  "vulkan-memory-allocator",
+	  "gtest",
+	  {
+		"name": "spdlog",
+		"version>=": "1.13.0"
+	  }
+	]
+  }

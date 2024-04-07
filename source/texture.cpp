@@ -7,6 +7,8 @@
 
 #include "cudamemory.h"
 
+#include "logging.h"
+
 Texture::Texture(
 	VkPhysicalDevice physicalDevice_, 
 	VkDevice device, 
@@ -31,11 +33,12 @@ Texture::Texture(
 		static_cast<uint32_t> (TEVulkanTextureGetHeight(texture))
 	};
 
-	std::cout << "Texture Component Size: " << componentSize_ << ", Num Components: " << static_cast<int>(numComponents_) << std::endl;
+
+
+	//std::cout << "Texture Component Size: " << componentSize_ << ", Num Components: " << static_cast<int>(numComponents_) << std::endl;
 	imagePitch_ = extent_.width * componentSize_ * numComponents_;
 
 	textureHandle_ = TEVulkanTextureGetHandle(texture);
-	std::cout << "TE Texture Handle: " << textureHandle_ << std::endl;
 
 	VkExternalMemoryHandleTypeFlagBits handleType = TEVulkanTextureGetHandleType(texture);
 	//std::cout << "Texture Handle Type: " << string_VkExternalMemoryHandleTypeFlags(handleType) << std::endl;
@@ -63,7 +66,6 @@ Texture::Texture(
 
 	VK_CHECK(vkCreateImage(device_, &imageCreateInfo, nullptr, &image_));
 
-	std::cout << "Image Created: " << image_ << std::endl;
 
 	VkImportMemoryWin32HandleInfoKHR importMemoryInfo = {};
 	importMemoryInfo.sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR;
@@ -80,9 +82,6 @@ Texture::Texture(
 	);
 
 	imageSize_ = static_cast<size_t>(memRequirements.size);
-
-	std::cout << "Allocating Vk Memory, Size: " << memRequirements.size
-		<< " Memory Type Index: " << memoryTypeIndex << std::endl;
 
 	VkMemoryAllocateInfo memoryAllocateInfo = {};
 	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -106,9 +105,7 @@ Texture::Texture(
 	// 
 	VkDeviceMemory externalMemory;
 	VK_CHECK(vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &externalMemory));
-	std::cout << "Memory Imported" << std::endl;
 	VK_CHECK(vkBindImageMemory(device_, image_, externalMemory, 0));
-	std::cout << "Memory Bound to Image" << std::endl;
 
 	VkImageViewCreateInfo viewInfo{};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -123,12 +120,14 @@ Texture::Texture(
 
 	VK_CHECK(vkCreateImageView(device_, &viewInfo, nullptr, &imageView_));
 
-	std::cout	<< "Texture Created (output), width: " 
-				<< extent_.width << " height: " << extent_.height << ", format: " << string_VkFormat(format_) << std::endl;
+	SPDLOG_DEBUG("Texture Created, width: {}, height: {}, format: {}, Size: {}, Memory Type Index: {}", 
+		extent_.width, extent_.height, string_VkFormat(format_), memRequirements.size, memoryTypeIndex);
 
 	importSemaphore(teInstance, texture);
 
 	setupCudaResources(textureHandle_, semaphoreHandle_, true, cudaFlags);
+
+	
 }
 
 Texture::Texture(
