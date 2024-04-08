@@ -565,6 +565,15 @@ bool Texture::copyCudaMemToImage(void* memory,
 
 void Texture::transferToInputLink(TouchObject<TEInstance> teInstance, TouchObject<TEGraphicsContext> context, const char* identifier)
 {
+	// need create TETexture pool to avoid creating a new TETexture for each transfer
+	// 
+	// If you are setting a shareable texture type on input links directly, TouchEngine will use the lifetime of the 
+	// TETextures you create to manage the lifetime of internal resources. For this reason, performance is improved by 
+	// recycling textures in a pool, and keeping the associated TETexture alive for the lifetime of the underlying 
+	// resource. To know when a texture is in use by TouchEngine, use the TEObjectEvent parameter of the TETexture's 
+	// callback and monitor TEObjectEventBeginUse and TEObjectEventEndUse. When TEObjectEventEndUse is received, the 
+	// texture can be returned to your pool for reuse.
+
 	TouchObject<TETexture> texture;
 	texture.set(teVkTexture_);
 	TEResult result = TEInstanceLinkSetTextureValue(teInstance, identifier, texture, context);
