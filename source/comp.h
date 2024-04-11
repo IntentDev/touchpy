@@ -149,7 +149,7 @@ private:
 	void initComp();
 	bool initInstance();
 	bool loadTox(const std::string& filePath, CompFlags compFlags = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
-	void update();
+	void autoUpdate();
 	void stopUpdate();
 	void applyLayoutChange();
 	void applyOutputTextureChange();
@@ -196,7 +196,7 @@ private:
 	void onLinkEventStateChange(const char* identifier) { onLinkLayoutChange(TELinkEventStateChange, identifier); }
 	void onLinkEventChildChange(const char* identifier) { onLinkLayoutChange(TELinkEventChildChange, identifier); }    
 
-	void printLinkInfo(TouchObject<TELinkInfo> info);
+	std::string getLinkInfoAsString(TouchObject<TELinkInfo> info);
 
 
 };

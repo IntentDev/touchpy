@@ -1,96 +1,217 @@
-[13:55] [24832] [info]: This is an info message
-[13:55] [24832] [error]: This is an error message
-[13:55] [24832] [critical]: This is a critical message
-[13:55] [24832] [debug]: debug message to touchpy_logger
-[13:55] [24832] [trace]: trace message to touchpy_logger
-[13:55] [24832] [info]: info message to touchpy_logger
-[13:55] [24832] [info]: info message to default logger
-[14:05] [24832] [info]: invoking startAsync()
-[14:05] [24388] [info]: asyncUpdate() log in thread successfull
-[14:05] [24388] [info]: asyncUpdate() layout changed
-[14:10] [24388] [info]: asyncUpdate() running
-[14:15] [24832] [info]: invoking stopAsync()
-[14:15] [24832] [info]: asyncUpdate stopped
-[17:16:50] [42564] [info]: This is an info message
-[17:16:50] [42564] [error]: This is an error message
-[17:16:50] [42564] [critical]: This is a critical message
-[17:16:50] [42564] [debug]: debug message to touchpy_logger
-[17:16:50] [42564] [trace]: trace message to touchpy_logger
-[17:16:50] [42564] [info]: info message to touchpy_logger
-[17:16:50] [42564] [info]: info message to default logger
-[17:17:00] [42564] [info]: invoking startAsync()
-[17:17:00] [36188] [info]: asyncUpdate() log in thread successfull
-[17:17:00] [36188] [info]: asyncUpdate() layout changed
-[17:17:05] [36188] [info]: asyncUpdate() running
-[19:22:14] [43284] [info]: This is an info message
-[19:22:14] [43284] [error]: This is an error message
-[19:22:14] [43284] [critical]: This is a critical message
-[19:22:14] [43284] [debug]: debug message to touchpy_logger
-[19:22:14] [43284] [trace]: trace message to touchpy_logger
-[19:22:14] [43284] [info]: info message to touchpy_logger
-[19:22:14] [43284] [info]: info message to default logger
-[19:22:25] [43284] [info]: invoking startAsync()
-[19:22:25] [43416] [info]: asyncUpdate() log in thread successfull
-[19:22:25] [43416] [info]: asyncUpdate() layout changed
-[19:22:30] [43416] [info]: asyncUpdate() running
-[19:22:46] [43284] [info]: invoking stopAsync()
-[19:22:46] [43284] [info]: asyncUpdate stopped
-[19:25:30] [19068] [info]: This is an info message
-[19:25:30] [19068] [error]: This is an error message
-[19:25:30] [19068] [critical]: This is a critical message
-[19:25:30] [19068] [debug]: debug message to touchpy_logger
-[19:25:30] [19068] [trace]: trace message to touchpy_logger
-[19:25:30] [19068] [info]: info message to touchpy_logger
-[19:25:30] [19068] [info]: info message to default logger
-[19:25:41] [19068] [info]: invoking startAsync()
-[19:25:41] [35480] [info]: asyncUpdate() log in thread successfull
-[19:25:41] [35480] [info]: asyncUpdate() layout changed
-[19:25:46] [35480] [info]: asyncUpdate() running
-[19:29:53] [19068] [info]: invoking stopAsync()
-[19:29:53] [19068] [info]: asyncUpdate stopped
-[19:48:53] [34272] [info]: This is an info message
-[19:48:53] [34272] [error]: This is an error message
-[19:48:53] [34272] [critical]: This is a critical message
-[19:48:53] [34272] [debug]: debug message to touchpy_logger
-[19:48:53] [34272] [trace]: trace message to touchpy_logger
-[19:48:53] [34272] [info]: info message to touchpy_logger
-[19:48:53] [34272] [info]: info message to default logger
-[19:49:04] [34272] [info]: invoking startAsync()
-[19:49:04] [44000] [info]: asyncUpdate() log in thread successfull
-[19:49:04] [44000] [info]: asyncUpdate() layout changed
-[19:49:04] [44000] [trace]: Texture Component Size: 1, Num Components: 4
-[19:49:04] [44000] [trace]: Allocating Vk Memory, Size: 8847360, Memory Type Index: 1
-[19:49:04] [44000] [trace]: Texture Created, width: 1920, height: 1080, format: VK_FORMAT_B8G8R8A8_UNORM
-[19:49:04] [44000] [trace]: Texture Component Size: 1, Num Components: 4
-[19:49:04] [44000] [trace]: Allocating Vk Memory, Size: 3932160, Memory Type Index: 1
-[19:49:04] [44000] [trace]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_B8G8R8A8_UNORM
-[19:49:04] [44000] [trace]: Texture Component Size: 4, Num Components: 4
-[19:49:04] [44000] [trace]: Allocating Vk Memory, Size: 15728640, Memory Type Index: 1
-[19:49:04] [44000] [trace]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_R32G32B32A32_SFLOAT
-[19:49:04] [44000] [trace]: Texture Component Size: 1, Num Components: 4
-[19:49:04] [44000] [trace]: Allocating Vk Memory, Size: 8847360, Memory Type Index: 1
-[19:49:04] [44000] [trace]: Texture Created, width: 1920, height: 1080, format: VK_FORMAT_B8G8R8A8_UNORM
-[19:49:04] [44000] [trace]: Texture Component Size: 1, Num Components: 4
-[19:49:04] [44000] [trace]: Allocating Vk Memory, Size: 3932160, Memory Type Index: 1
-[19:49:04] [44000] [trace]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_B8G8R8A8_UNORM
-[19:49:04] [44000] [trace]: Texture Component Size: 4, Num Components: 4
-[19:49:04] [44000] [trace]: Allocating Vk Memory, Size: 15728640, Memory Type Index: 1
-[19:49:04] [44000] [trace]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_R32G32B32A32_SFLOAT
-[19:49:08] [44000] [info]: asyncUpdate() running
-[20:24:37] [33920] [info]: This is an info message
-[20:24:37] [33920] [error]: This is an error message
-[20:24:37] [33920] [critical]: This is a critical message
-[20:24:37] [33920] [debug]: debug message to touchpy_logger
-[20:24:37] [33920] [trace]: trace message to touchpy_logger
-[20:24:37] [33920] [info]: info message to touchpy_logger
-[20:24:37] [33920] [info]: info message to default logger
-[20:24:47] [33920] [info]: invoking startAsync()
-[20:24:47] [31012] [info]: asyncUpdate() log in thread successfull
-[20:24:47] [31012] [info]: asyncUpdate() layout changed
-[20:24:48] [31012] [debug]: Texture Created, width: 1920, height: 1080, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 8847360, Memory Type Index: 1
-[20:24:48] [31012] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 3932160, Memory Type Index: 1
-[20:24:48] [31012] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_R32G32B32A32_SFLOAT, Size: 15728640, Memory Type Index: 1
-[20:24:48] [31012] [debug]: Texture Created, width: 1920, height: 1080, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 8847360, Memory Type Index: 1
-[20:24:48] [31012] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 3932160, Memory Type Index: 1
-[20:24:48] [31012] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_R32G32B32A32_SFLOAT, Size: 15728640, Memory Type Index: 1
-[20:24:52] [31012] [info]: asyncUpdate() running
+[14:28:55] [33068] [info]: This is an info message
+[14:28:55] [33068] [error]: This is an error message
+[14:28:55] [33068] [critical]: This is a critical message
+[14:28:55] [33068] [debug]: debug message to touchpy_logger
+[14:28:55] [33068] [trace]: trace message to touchpy_logger
+[14:28:55] [33068] [info]: info message to touchpy_logger
+[14:28:55] [33068] [info]: info message to default logger
+[14:28:55] [33068] [info]: Set CUDA device: 0 : NVIDIA GeForce RTX 4090 with compute 8
+[14:28:55] [33068] [info]: TouchEngine instance created
+[14:28:55] [33068] [info]: TouchEngine instance associated with Graphics Context
+[14:28:55] [33068] [info]: Loading tox: TopChopDatIO.tox
+[14:28:55] [33068] [info]: Instance configured
+[14:28:55] [33068] [info]: Instance loading...
+[14:29:05] [34296] [info]: Instance Ready: Success
+[14:29:05] [33068] [info]: invoking startAsync()
+[14:29:05] [26192] [info]: asyncUpdate() log in thread successfull
+[14:29:05] [26192] [info]: Applying layout change
+[14:29:05] [26192] [info]: asyncUpdate() layout changed
+[14:29:05] [26192] [debug]: Texture Created, width: 1920, height: 1080, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 8847360, Memory Type Index: 1
+[14:29:05] [26192] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 3932160, Memory Type Index: 1
+[14:29:05] [26192] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_R32G32B32A32_SFLOAT, Size: 15728640, Memory Type Index: 1
+[14:29:05] [26192] [debug]: Texture Created, width: 1920, height: 1080, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 8847360, Memory Type Index: 1
+[14:29:05] [26192] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 3932160, Memory Type Index: 1
+[14:29:05] [26192] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_R32G32B32A32_SFLOAT, Size: 15728640, Memory Type Index: 1
+[14:29:30] [33068] [info]: invoking stopAsync()
+[14:29:30] [33068] [info]: asyncUpdate stopped
+[14:29:36] [33068] [info]: Unloading TouchEngine instance...
+[14:29:36] [34296] [info]: Instance Unloaded: Success
+[14:36:33] [28956] [info]: This is an info message
+[14:36:33] [28956] [error]: This is an error message
+[14:36:33] [28956] [critical]: This is a critical message
+[14:36:33] [28956] [debug]: debug message to touchpy_logger
+[14:36:33] [28956] [trace]: trace message to touchpy_logger
+[14:36:33] [28956] [info]: info message to touchpy_logger
+[14:36:33] [28956] [info]: info message to default logger
+[14:36:34] [28956] [info]: Set CUDA device: 0 : NVIDIA GeForce RTX 4090 with compute 8
+[14:36:34] [28956] [info]: TouchEngine instance created
+[14:36:34] [28956] [info]: TouchEngine instance associated with Graphics Context
+[14:36:34] [28956] [info]: Loading tox: TopChopDatIO.tox
+[14:36:34] [28956] [info]: Instance configured
+[14:36:34] [28956] [info]: Instance loading...
+[14:36:44] [4968] [info]: Instance Ready: Success
+[14:36:44] [28956] [info]: Starting async update
+[14:36:44] [7196] [info]: asyncUpdate() log in thread successfull
+[14:36:44] [7196] [info]: Applying layout change
+[14:36:44] [7196] [info]: Link: pn/Translate    name: Translate       label: Translate       scope: TEScopeInput    intent: TELinkIntentPositionXYZW    domain: TELinkDomainParameter   count: 2    type: TELinkTypeDouble
+
+[14:36:44] [7196] [info]: Link: pn/Rotate       name: Rotate          label: Rotate          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeDouble
+
+[14:36:44] [7196] [info]: Link: pn/Scale        name: Scale           label: Scale           scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeDouble
+
+[14:36:44] [7196] [info]: Link: pn/Monitortop   name: Monitortop      label: Monitor TOP     scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeString
+
+[14:36:44] [7196] [info]: Link: pn/File         name: File            label: File            scope: TEScopeInput    intent: TELinkIntentFilePath        domain: TELinkDomainParameter   count: 1    type: TELinkTypeString
+
+[14:36:44] [7196] [info]: Link: pn/Float        name: Float           label: Float           scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeDouble
+
+[14:36:44] [7196] [info]: Link: pn/Int          name: Int             label: Int             scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeInt   
+
+[14:36:44] [7196] [info]: Link: pn/Menu         name: Menu            label: Menu            scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeInt   
+
+[14:36:44] [7196] [info]: Link: pn/Toggle       name: Toggle          label: Toggle          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeBoolean
+
+[14:36:44] [7196] [info]: Link: pn/Momentary    name: Momentary       label: Momentary       scope: TEScopeInput    intent: TELinkIntentMomentary       domain: TELinkDomainParameter   count: 1    type: TELinkTypeBoolean
+
+[14:36:44] [7196] [info]: Link: pn/Pulse        name: Pulse           label: Pulse           scope: TEScopeInput    intent: TELinkIntentPulse           domain: TELinkDomainParameter   count: 1    type: TELinkTypeBoolean
+
+[14:36:44] [7196] [info]: Link: pn/Rgba         name: Rgba            label: Rgba            scope: TEScopeInput    intent: TELinkIntentColorRGBA       domain: TELinkDomainParameter   count: 4    type: TELinkTypeDouble
+
+[14:36:44] [7196] [info]: Link: pn/Xyzw         name: Xyzw            label: Xyzw            scope: TEScopeInput    intent: TELinkIntentPositionXYZW    domain: TELinkDomainParameter   count: 4    type: TELinkTypeDouble
+
+[14:36:44] [7196] [info]: Link: pn/Uvw          name: Uvw             label: Uvw             scope: TEScopeInput    intent: TELinkIntentUVW             domain: TELinkDomainParameter   count: 3    type: TELinkTypeDouble
+
+[14:36:44] [7196] [info]: Link: op/chopIn1      name: chopIn1         label: chopIn1         scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+
+[14:36:44] [7196] [info]: Link: op/chopIn2      name: chopIn2         label: chopIn2         scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+
+[14:36:44] [7196] [info]: Link: op/chopIn3      name: chopIn3         label: chopIn3         scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+
+[14:36:44] [7196] [info]: Link: op/datIn1       name: datIn1          label: datIn1          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeStringData
+
+[14:36:44] [7196] [info]: Link: op/datIn2       name: datIn2          label: datIn2          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeStringData
+
+[14:36:44] [7196] [info]: Link: op/topIn1       name: topIn1          label: topIn1          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+
+[14:36:44] [7196] [info]: Link: op/topIn2       name: topIn2          label: topIn2          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+
+[14:36:44] [7196] [info]: Link: op/topIn3       name: topIn3          label: topIn3          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+
+[14:36:44] [7196] [info]: Link: op/chopOut1     name: chopOut1        label: chopOut1        scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+
+[14:36:44] [7196] [info]: Link: op/chopOut2     name: chopOut2        label: chopOut2        scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+
+[14:36:44] [7196] [info]: Link: op/chopOut3     name: chopOut3        label: chopOut3        scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+
+[14:36:44] [7196] [info]: Link: op/datOut1      name: datOut1         label: datOut1         scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeStringData
+
+[14:36:44] [7196] [info]: Link: op/datOut2      name: datOut2         label: datOut2         scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeStringData
+
+[14:36:44] [7196] [info]: Link: op/topOut1      name: topOut1         label: topOut1         scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+
+[14:36:44] [7196] [info]: Link: op/topOut2      name: topOut2         label: topOut2         scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+
+[14:36:44] [7196] [info]: Link: op/topOut3      name: topOut3         label: topOut3         scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+
+[14:36:44] [7196] [info]: layout changed
+[14:36:44] [7196] [debug]: Texture Created, width: 1920, height: 1080, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 8847360, Memory Type Index: 1
+[14:36:44] [7196] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 3932160, Memory Type Index: 1
+[14:36:44] [7196] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_R32G32B32A32_SFLOAT, Size: 15728640, Memory Type Index: 1
+[14:36:44] [7196] [debug]: Texture Created, width: 1920, height: 1080, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 8847360, Memory Type Index: 1
+[14:36:44] [7196] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 3932160, Memory Type Index: 1
+[14:36:44] [7196] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_R32G32B32A32_SFLOAT, Size: 15728640, Memory Type Index: 1
+[14:37:04] [28956] [info]: async update stopped
+[14:37:09] [28956] [info]: Unloading TouchEngine instance...
+[14:37:09] [4968] [info]: Instance Unloaded: Success
+[14:40:08] [31988] [info]: Creating Comp
+[14:40:08] [31988] [info]: Set CUDA device: 0 : NVIDIA GeForce RTX 4090 with compute 8
+[14:40:08] [31988] [info]: TouchEngine instance created
+[14:40:08] [31988] [info]: TouchEngine instance associated with Graphics Context
+[14:40:08] [31988] [info]: Loading tox: TopChopDatIO.tox
+[14:40:08] [31988] [info]: Instance configured
+[14:40:08] [31988] [info]: Instance loading...
+[14:40:17] [26060] [info]: Instance Ready: Success
+[14:40:17] [31988] [info]: Starting async update
+[14:40:17] [31876] [info]: asyncUpdate() log in thread successfull
+[14:40:18] [31876] [info]: Applying layout change
+[14:40:18] [31876] [info]: Link: pn/Translate    name: Translate       label: Translate       scope: TEScopeInput    intent: TELinkIntentPositionXYZW    domain: TELinkDomainParameter   count: 2    type: TELinkTypeDouble
+[14:40:18] [31876] [info]: Link: pn/Rotate       name: Rotate          label: Rotate          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeDouble
+[14:40:18] [31876] [info]: Link: pn/Scale        name: Scale           label: Scale           scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeDouble
+[14:40:18] [31876] [info]: Link: pn/Monitortop   name: Monitortop      label: Monitor TOP     scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeString
+[14:40:18] [31876] [info]: Link: pn/File         name: File            label: File            scope: TEScopeInput    intent: TELinkIntentFilePath        domain: TELinkDomainParameter   count: 1    type: TELinkTypeString
+[14:40:18] [31876] [info]: Link: pn/Float        name: Float           label: Float           scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeDouble
+[14:40:18] [31876] [info]: Link: pn/Int          name: Int             label: Int             scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeInt   
+[14:40:18] [31876] [info]: Link: pn/Menu         name: Menu            label: Menu            scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeInt   
+[14:40:18] [31876] [info]: Link: pn/Toggle       name: Toggle          label: Toggle          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeBoolean
+[14:40:18] [31876] [info]: Link: pn/Momentary    name: Momentary       label: Momentary       scope: TEScopeInput    intent: TELinkIntentMomentary       domain: TELinkDomainParameter   count: 1    type: TELinkTypeBoolean
+[14:40:18] [31876] [info]: Link: pn/Pulse        name: Pulse           label: Pulse           scope: TEScopeInput    intent: TELinkIntentPulse           domain: TELinkDomainParameter   count: 1    type: TELinkTypeBoolean
+[14:40:18] [31876] [info]: Link: pn/Rgba         name: Rgba            label: Rgba            scope: TEScopeInput    intent: TELinkIntentColorRGBA       domain: TELinkDomainParameter   count: 4    type: TELinkTypeDouble
+[14:40:18] [31876] [info]: Link: pn/Xyzw         name: Xyzw            label: Xyzw            scope: TEScopeInput    intent: TELinkIntentPositionXYZW    domain: TELinkDomainParameter   count: 4    type: TELinkTypeDouble
+[14:40:18] [31876] [info]: Link: pn/Uvw          name: Uvw             label: Uvw             scope: TEScopeInput    intent: TELinkIntentUVW             domain: TELinkDomainParameter   count: 3    type: TELinkTypeDouble
+[14:40:18] [31876] [info]: Link: op/chopIn1      name: chopIn1         label: chopIn1         scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+[14:40:18] [31876] [info]: Link: op/chopIn2      name: chopIn2         label: chopIn2         scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+[14:40:18] [31876] [info]: Link: op/chopIn3      name: chopIn3         label: chopIn3         scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+[14:40:18] [31876] [info]: Link: op/datIn1       name: datIn1          label: datIn1          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeStringData
+[14:40:18] [31876] [info]: Link: op/datIn2       name: datIn2          label: datIn2          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeStringData
+[14:40:18] [31876] [info]: Link: op/topIn1       name: topIn1          label: topIn1          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+[14:40:18] [31876] [info]: Link: op/topIn2       name: topIn2          label: topIn2          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+[14:40:18] [31876] [info]: Link: op/topIn3       name: topIn3          label: topIn3          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+[14:40:18] [31876] [info]: Link: op/chopOut1     name: chopOut1        label: chopOut1        scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+[14:40:18] [31876] [info]: Link: op/chopOut2     name: chopOut2        label: chopOut2        scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+[14:40:18] [31876] [info]: Link: op/chopOut3     name: chopOut3        label: chopOut3        scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+[14:40:18] [31876] [info]: Link: op/datOut1      name: datOut1         label: datOut1         scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeStringData
+[14:40:18] [31876] [info]: Link: op/datOut2      name: datOut2         label: datOut2         scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeStringData
+[14:40:18] [31876] [info]: Link: op/topOut1      name: topOut1         label: topOut1         scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+[14:40:18] [31876] [info]: Link: op/topOut2      name: topOut2         label: topOut2         scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+[14:40:18] [31876] [info]: Link: op/topOut3      name: topOut3         label: topOut3         scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+[14:40:18] [31876] [info]: layout changed
+[14:40:18] [31876] [debug]: Texture Created, width: 1920, height: 1080, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 8847360, Memory Type Index: 1
+[14:40:18] [31876] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 3932160, Memory Type Index: 1
+[14:40:18] [31876] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_R32G32B32A32_SFLOAT, Size: 15728640, Memory Type Index: 1
+[14:40:18] [31876] [debug]: Texture Created, width: 1920, height: 1080, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 8847360, Memory Type Index: 1
+[14:40:18] [31876] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 3932160, Memory Type Index: 1
+[14:40:18] [31876] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_R32G32B32A32_SFLOAT, Size: 15728640, Memory Type Index: 1
+[14:40:40] [31988] [info]: async update stopped
+[14:40:46] [31988] [info]: Unloading TouchEngine instance...
+[14:40:46] [26060] [info]: Instance Unloaded: Success
+[14:42:36] [31988] [info]: Creating Comp
+[14:42:36] [31988] [info]: Set CUDA device: 0 : NVIDIA GeForce RTX 4090 with compute 8
+[14:42:36] [31988] [info]: TouchEngine instance created
+[14:42:36] [31988] [info]: TouchEngine instance associated with Graphics Context
+[14:42:36] [31988] [info]: Loading tox: TopChopDatIO.tox
+[14:42:36] [31988] [info]: Instance configured
+[14:42:36] [31988] [info]: Instance loading...
+[14:42:46] [6068] [info]: Instance Ready: Success
+[14:42:46] [31988] [info]: Comp resources destroyed
+[14:42:46] [31988] [info]: Starting async update
+[14:42:46] [27872] [info]: asyncUpdate() log in thread successfull
+[14:42:46] [27872] [info]: Applying layout change
+[14:42:46] [27872] [info]: Link: pn/Translate    name: Translate       label: Translate       scope: TEScopeInput    intent: TELinkIntentPositionXYZW    domain: TELinkDomainParameter   count: 2    type: TELinkTypeDouble
+[14:42:46] [27872] [info]: Link: pn/Rotate       name: Rotate          label: Rotate          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeDouble
+[14:42:46] [27872] [info]: Link: pn/Scale        name: Scale           label: Scale           scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeDouble
+[14:42:46] [27872] [info]: Link: pn/Monitortop   name: Monitortop      label: Monitor TOP     scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeString
+[14:42:46] [27872] [info]: Link: pn/File         name: File            label: File            scope: TEScopeInput    intent: TELinkIntentFilePath        domain: TELinkDomainParameter   count: 1    type: TELinkTypeString
+[14:42:46] [27872] [info]: Link: pn/Float        name: Float           label: Float           scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeDouble
+[14:42:46] [27872] [info]: Link: pn/Int          name: Int             label: Int             scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeInt   
+[14:42:46] [27872] [info]: Link: pn/Menu         name: Menu            label: Menu            scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeInt   
+[14:42:46] [27872] [info]: Link: pn/Toggle       name: Toggle          label: Toggle          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainParameter   count: 1    type: TELinkTypeBoolean
+[14:42:46] [27872] [info]: Link: pn/Momentary    name: Momentary       label: Momentary       scope: TEScopeInput    intent: TELinkIntentMomentary       domain: TELinkDomainParameter   count: 1    type: TELinkTypeBoolean
+[14:42:46] [27872] [info]: Link: pn/Pulse        name: Pulse           label: Pulse           scope: TEScopeInput    intent: TELinkIntentPulse           domain: TELinkDomainParameter   count: 1    type: TELinkTypeBoolean
+[14:42:46] [27872] [info]: Link: pn/Rgba         name: Rgba            label: Rgba            scope: TEScopeInput    intent: TELinkIntentColorRGBA       domain: TELinkDomainParameter   count: 4    type: TELinkTypeDouble
+[14:42:46] [27872] [info]: Link: pn/Xyzw         name: Xyzw            label: Xyzw            scope: TEScopeInput    intent: TELinkIntentPositionXYZW    domain: TELinkDomainParameter   count: 4    type: TELinkTypeDouble
+[14:42:46] [27872] [info]: Link: pn/Uvw          name: Uvw             label: Uvw             scope: TEScopeInput    intent: TELinkIntentUVW             domain: TELinkDomainParameter   count: 3    type: TELinkTypeDouble
+[14:42:46] [27872] [info]: Link: op/chopIn1      name: chopIn1         label: chopIn1         scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+[14:42:46] [27872] [info]: Link: op/chopIn2      name: chopIn2         label: chopIn2         scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+[14:42:46] [27872] [info]: Link: op/chopIn3      name: chopIn3         label: chopIn3         scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+[14:42:46] [27872] [info]: Link: op/datIn1       name: datIn1          label: datIn1          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeStringData
+[14:42:46] [27872] [info]: Link: op/datIn2       name: datIn2          label: datIn2          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeStringData
+[14:42:46] [27872] [info]: Link: op/topIn1       name: topIn1          label: topIn1          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+[14:42:46] [27872] [info]: Link: op/topIn2       name: topIn2          label: topIn2          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+[14:42:46] [27872] [info]: Link: op/topIn3       name: topIn3          label: topIn3          scope: TEScopeInput    intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+[14:42:46] [27872] [info]: Link: op/chopOut1     name: chopOut1        label: chopOut1        scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+[14:42:46] [27872] [info]: Link: op/chopOut2     name: chopOut2        label: chopOut2        scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+[14:42:46] [27872] [info]: Link: op/chopOut3     name: chopOut3        label: chopOut3        scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeFloatBuffer
+[14:42:46] [27872] [info]: Link: op/datOut1      name: datOut1         label: datOut1         scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeStringData
+[14:42:46] [27872] [info]: Link: op/datOut2      name: datOut2         label: datOut2         scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeStringData
+[14:42:46] [27872] [info]: Link: op/topOut1      name: topOut1         label: topOut1         scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+[14:42:46] [27872] [info]: Link: op/topOut2      name: topOut2         label: topOut2         scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+[14:42:46] [27872] [info]: Link: op/topOut3      name: topOut3         label: topOut3         scope: TEScopeOutput   intent: TELinkIntentNotSpecified    domain: TELinkDomainOperator    count: 1    type: TELinkTypeTexture
+[14:42:46] [27872] [info]: layout changed
+[14:42:46] [27872] [debug]: Texture Created, width: 1920, height: 1080, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 8847360, Memory Type Index: 1
+[14:42:46] [27872] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 3932160, Memory Type Index: 1
+[14:42:46] [27872] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_R32G32B32A32_SFLOAT, Size: 15728640, Memory Type Index: 1
+[14:42:46] [27872] [debug]: Texture Created, width: 1920, height: 1080, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 8847360, Memory Type Index: 1
+[14:42:46] [27872] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_B8G8R8A8_UNORM, Size: 3932160, Memory Type Index: 1
+[14:42:46] [27872] [debug]: Texture Created, width: 1280, height: 720, format: VK_FORMAT_R32G32B32A32_SFLOAT, Size: 15728640, Memory Type Index: 1
+[14:42:50] [31988] [info]: Unloading TouchEngine instance...
+[14:42:50] [6068] [info]: Instance Unloaded: Success
