@@ -90,6 +90,8 @@ myClass.run_comp("MyComponent.tox")
 
 - See example_run_comp.py for more examples
 
+## Notes
+- use `Get-Content logs/touchpy-log.txt -Tail 20 -Wait` to print logs to terminal in real-time
 
 ## Comp class
 A TouchDesigner component loaded in a TouchEngine instance.

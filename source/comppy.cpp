@@ -10,19 +10,11 @@ using namespace nb::literals;
 const char* load_toxDoc = 
 R"(Loads a .tox file, creates and initializes a TouchEngine Instance
 Args:
-	path: the path to the .tox file
+	path (str) : the path to the .tox file
 
 Returns:
 	True if the .tox file was loaded successfully, False otherwise
 )";
-
-
-//void printInfo(const std::string& str)
-//{
-//	nb::gil_scoped_acquire acquire;
-//	nb::print(str.c_str());
-//}
-
 
 void initCompBindings(nb::module_& m)
 {

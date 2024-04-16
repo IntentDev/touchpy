@@ -1,5 +1,6 @@
 #include "toplink.h"
 #include <TouchEngine/TEVulkan.h>
+#include "logging.h"
 
 
 TopLink::TopLink(
@@ -83,7 +84,8 @@ OutTopLink::onOutputTextureChange()
 		currentTextureHandle_ = handle;
 	}
 	else
-		std::cout << "onOutputTextureChange: " << identifier_ << ", " << TEResultGetDescription(result) << std::endl;
+		spdlog::error("onOutputTextureChange {}, {}", name_, TEResultGetDescription(result));
+		spdlog::default_logger()->flush();
 
 }
 
@@ -123,7 +125,7 @@ InTopLink::transferTextureToInputLink()
 		result = TEInstanceAddTextureTransfer(instance_, teTexture, textures_[0]->teVkSemaphore(), textures_[0]->signalValue());
 
 	if (result != TEResultSuccess)
-		std::cout << "transferToInputLink: " << identifier_ << ", " << TEResultGetDescription(result) << std::endl;
+		spdlog::error("transferTextureToInputLink: {}, {}", name_, TEResultGetDescription(result));
 }
 
 void
@@ -156,7 +158,7 @@ InTopLink::copyCudaMemory(const CUDAMemory& cudaMem, cudaStream_t stream)
 	auto copied = textures_[0]->copyCudaMemToImage(cudaMem.ptr, nullptr, textures_[0]->cudaExtSemaphore(), 0, signalValue, stream);
 
 	if (copied) transferTextureToInputLink();
-	else std::cout << "copyCudaMemory: " << name_ << ", failed to copy memory" << std::endl;
+	else spdlog::error("copyCudaMemory: {}, failed to copy memory", name_);
 }
 
 void InTopLink::copyCudaMemory(const CUDAMemory& cudaMem)

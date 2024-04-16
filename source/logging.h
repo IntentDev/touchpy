@@ -16,4 +16,13 @@ using Logger = std::shared_ptr<spdlog::logger>;
 // implemented in touchpy.cpp for Python and in logging_gtest.cpp for GTest
 void printInfo(const std::string& info);
 
-void init_logging();
+void initLogging(spdlog::level::level_enum level = spdlog::level::warn);
+void setLogLevel(spdlog::level::level_enum level = spdlog::level::info);
+
+#define SPDLOG_FLUSH spdlog::default_logger()->flush();
+
+#if SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_DEBUG
+#define SPDLOG_FLUSH_DEBUG spdlog::default_logger()->flush();
+#else
+#define SPDLOG_FLUSH_DEBUG
+#endif

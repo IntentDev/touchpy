@@ -684,7 +684,8 @@ void Comp::stopAsync()
 
 void Comp::asyncUpdate()
 {
-	spdlog::info("asyncUpdate() log in thread successfull");
+	SPDLOG_DEBUG("asyncUpdate() log in thread successfull");
+	SPDLOG_FLUSH_DEBUG
 	static uint64_t counter = 0;
 	while (asyncRunning_.load())
 	{
@@ -696,7 +697,8 @@ void Comp::asyncUpdate()
 		if (linksLayoutChanged)
 		{
 			applyLayoutChange();
-			spdlog::info("layout changed");
+			SPDLOG_DEBUG("layout changed");
+			SPDLOG_FLUSH_DEBUG
 			continue;
 		}
 		
@@ -886,7 +888,7 @@ Comp::applyLayoutChange()
 						result = TEInstanceLinkGetInfo(instance_, children->strings[j], info.take());
 						if (result == TEResultSuccess)
 						{
-							spdlog::info(getLinkInfoAsString(info));
+							spdlog::debug(getLinkInfoAsString(info));
 
 							if (info->type == TELinkTypeTexture)
 							{
