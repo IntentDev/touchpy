@@ -1,6 +1,7 @@
 #pragma once
 
 #include <TouchEngine/TouchEngine.h>
+
 #include "renderer.h"
 #include "texture.h"
 #include "common/cuda_helpers.h"
@@ -28,7 +29,8 @@ public:
 	Comp(
 		const std::string& filePath, 
 		CompFlags compFlags = CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault,
-		int64_t fps = 60);
+		int64_t fps = 60
+	);
 
 	~Comp();
 
@@ -65,8 +67,9 @@ public:
 	//-----------------------------------------------------------------------------------------------------------------
 	bool asyncRunning() const { return asyncRunning_.load(); }
 
-private:
+	//static void setPrintInfoFunc(std::function<void(std::string)> func) { printInfo = func; }
 
+private:
 	// shared state between the main or free running thread and the TouchEngine thread
 	//-----------------------------------------------------------------------------------------------------------------
 
@@ -141,10 +144,12 @@ private:
 	std::shared_ptr<void>							  onLayoutChangeCallbackUserData_{ nullptr };
 	std::function<void(Comp&, std::shared_ptr<void>)> onLayoutChangeCallback_{ nullptr };
 
+	//static std::function<void(std::string)> printInfo;
+
 	void initComp();
 	bool initInstance();
 	bool loadTox(const std::string& filePath, CompFlags compFlags = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
-	void update();
+	void autoUpdate();
 	void stopUpdate();
 	void applyLayoutChange();
 	void applyOutputTextureChange();
@@ -191,7 +196,7 @@ private:
 	void onLinkEventStateChange(const char* identifier) { onLinkLayoutChange(TELinkEventStateChange, identifier); }
 	void onLinkEventChildChange(const char* identifier) { onLinkLayoutChange(TELinkEventChildChange, identifier); }    
 
-	void printLinkInfo(TouchObject<TELinkInfo> info);
+	std::string getLinkInfoAsString(TouchObject<TELinkInfo> info);
 
 
 };

@@ -7,6 +7,8 @@
 
 #include "cudamemory.h"
 
+#include "logging.h"
+
 Texture::Texture(
 	VkPhysicalDevice physicalDevice_, 
 	VkDevice device, 
@@ -31,14 +33,9 @@ Texture::Texture(
 		static_cast<uint32_t> (TEVulkanTextureGetHeight(texture))
 	};
 
-	std::cout << "Texture Component Size: " << componentSize_ << ", Num Components: " << static_cast<int>(numComponents_) << std::endl;
 	imagePitch_ = extent_.width * componentSize_ * numComponents_;
-
 	textureHandle_ = TEVulkanTextureGetHandle(texture);
-	std::cout << "TE Texture Handle: " << textureHandle_ << std::endl;
-
 	VkExternalMemoryHandleTypeFlagBits handleType = TEVulkanTextureGetHandleType(texture);
-	//std::cout << "Texture Handle Type: " << string_VkExternalMemoryHandleTypeFlags(handleType) << std::endl;
 
 	VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
 	externalMemoryImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
@@ -63,7 +60,6 @@ Texture::Texture(
 
 	VK_CHECK(vkCreateImage(device_, &imageCreateInfo, nullptr, &image_));
 
-	std::cout << "Image Created: " << image_ << std::endl;
 
 	VkImportMemoryWin32HandleInfoKHR importMemoryInfo = {};
 	importMemoryInfo.sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR;
@@ -80,9 +76,6 @@ Texture::Texture(
 	);
 
 	imageSize_ = static_cast<size_t>(memRequirements.size);
-
-	std::cout << "Allocating Vk Memory, Size: " << memRequirements.size
-		<< " Memory Type Index: " << memoryTypeIndex << std::endl;
 
 	VkMemoryAllocateInfo memoryAllocateInfo = {};
 	memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -106,9 +99,7 @@ Texture::Texture(
 	// 
 	VkDeviceMemory externalMemory;
 	VK_CHECK(vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &externalMemory));
-	std::cout << "Memory Imported" << std::endl;
 	VK_CHECK(vkBindImageMemory(device_, image_, externalMemory, 0));
-	std::cout << "Memory Bound to Image" << std::endl;
 
 	VkImageViewCreateInfo viewInfo{};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -123,12 +114,14 @@ Texture::Texture(
 
 	VK_CHECK(vkCreateImageView(device_, &viewInfo, nullptr, &imageView_));
 
-	std::cout	<< "Texture Created (output), width: " 
-				<< extent_.width << " height: " << extent_.height << ", format: " << string_VkFormat(format_) << std::endl;
+	SPDLOG_DEBUG("Texture Created, width: {}, height: {}, format: {}, Size: {}, Memory Type Index: {}", 
+		extent_.width, extent_.height, string_VkFormat(format_), memRequirements.size, memoryTypeIndex);
+	SPDLOG_FLUSH_DEBUG
 
 	importSemaphore(teInstance, texture);
 
 	setupCudaResources(textureHandle_, semaphoreHandle_, true, cudaFlags);
+
 }
 
 Texture::Texture(
@@ -150,8 +143,6 @@ Texture::Texture(
 	numComponents_ = numCompsFromVkFormat(format_);
 	componentSize_ = componentSizeFromVkFormat(format_);
 	imagePitch_ = extent_.width * componentSize_ * numComponents_;
-
-	std::cout << "Creating Texture to TE" << std::endl;
 
 	VkExternalMemoryImageCreateInfo externalMemoryImageCreateInfo = {};
 	externalMemoryImageCreateInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
@@ -175,8 +166,6 @@ Texture::Texture(
 
 	VK_CHECK(vkCreateImage(device_, &imageCreateInfo, nullptr, &image_));
 
-	std::cout << "Image Created" << std::endl;
-
 	VkExportMemoryAllocateInfo exportMemoryInfo = {};
 	exportMemoryInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
 	exportMemoryInfo.pNext = nullptr;
@@ -193,9 +182,6 @@ Texture::Texture(
 
 	imageSize_ = static_cast<size_t>(memRequirements.size);
 
-	std::cout	<< "Allocating Memory Size: " << memRequirements.size 
-				<< " Memory Type Index: " << memoryTypeIndex << std::endl;
-
 	VkMemoryAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.pNext = &exportMemoryInfo;
@@ -203,12 +189,7 @@ Texture::Texture(
 	allocInfo.memoryTypeIndex = memoryTypeIndex;
 
 	VK_CHECK(vkAllocateMemory(device, &allocInfo, nullptr, &memory_));
-
-	std::cout << "Memory Allocated" << std::endl;
-
 	VK_CHECK(vkBindImageMemory(device, image_, memory_, 0));
-
-	std::cout << "Memory Bound to Image" << std::endl;
 
 	VkImageViewCreateInfo viewInfo{};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -222,8 +203,6 @@ Texture::Texture(
 	viewInfo.subresourceRange.layerCount = 1;
 
 	VK_CHECK(vkCreateImageView(device_, &viewInfo, nullptr, &imageView_));
-
-	std::cout << "Image View Created" << std::endl;
 
 	textureHandle_ = getVkMemoryHandle(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR, memory_);
 
@@ -254,8 +233,6 @@ Texture::Texture(
 
 	VK_CHECK(vkCreateSemaphore(device_, &semaphoreCreateInfo, nullptr, &semaphore_));
 
-	std::cout << "Semaphore Created" << std::endl;
-
 	semaphoreHandle_ = getVkSemaphoreHandle(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT, semaphore_);
 
 	teVkSemaphore_.set(TEVulkanSemaphoreCreate(
@@ -272,8 +249,11 @@ Texture::Texture(
 	setupCudaResources(textureHandle_, semaphoreHandle_, false);
 	setCudaCopyToSurfaceFunc();
 
-	std::cout	<< "Texture Created (to TE), width: " << extent_.width 
-				<< " height: " << extent_.height << std::endl;
+	SPDLOG_DEBUG("Texture Created, width: {}, height: {}, format: {}, Size: {}, Memory Type Index: {}", 
+		extent_.width, extent_.height, string_VkFormat(format_), memRequirements.size, memoryTypeIndex);
+	SPDLOG_FLUSH_DEBUG
+
+
 }
 
 Texture::~Texture()
@@ -320,11 +300,10 @@ void Texture::importSemaphore(TEInstance* teInstance, TETexture* teTexture)
 	uint64_t waitValue = 0;
 	TEResult result = TEInstanceGetTextureTransfer(teInstance, teTexture, teSemaphore.take(), &waitValue);
 
-	//std::cout << "TESemaphore: " << teSemaphore.get() << " waitValue: " << waitValue << std::endl;
+	//SPDLOG_DEBUG("Texture transfer: {}, waitValue: {}", result, waitValue);
 
 	if (result == TEResultSuccess)
 	{
-		//std::cout << "Texture transfer: " << identifier << " : " << waitValue << std::endl;
 		if (TESemaphoreGetType(teSemaphore) == TESemaphoreTypeVulkan)
 		{
 			TEVulkanSemaphore* teVulkanSemaphore = static_cast<TEVulkanSemaphore*>(teSemaphore.get());
@@ -332,9 +311,9 @@ void Texture::importSemaphore(TEInstance* teInstance, TETexture* teTexture)
 			semaphoreHandle_ = TEVulkanSemaphoreGetHandle(teVulkanSemaphore);
 			semaphoreType_ = TEVulkanSemaphoreGetType(teVulkanSemaphore);
 			semaphoreHandleType_ = TEVulkanSemaphoreGetHandleType(teVulkanSemaphore);
-
-			//std::cout << "Semaphore handle: " << handle 
-			// << " type: " << type << " handleType: " << handleType << std::endl;
+			
+			// need to cast for fmt... 
+			//SPDLOG_DEBUG("Semaphore handle: {}, type: {}, handleType: {}", semaphoreHandle_, semaphoreType_, semaphoreHandleType_);
 
 			VkSemaphoreTypeCreateInfoKHR semaphoreTypeCreateInfo {};
 			semaphoreTypeCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
@@ -345,7 +324,6 @@ void Texture::importSemaphore(TEInstance* teInstance, TETexture* teTexture)
 			VkSemaphoreCreateInfo semaphoreCreateInfo = {
 				VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, &semaphoreTypeCreateInfo, 0 };
 
-			//VkSemaphore importSemaphore;
 			VK_CHECK(vkCreateSemaphore(
 				device_,
 				&semaphoreCreateInfo,
@@ -353,8 +331,7 @@ void Texture::importSemaphore(TEInstance* teInstance, TETexture* teTexture)
 				&semaphore_
 			));
 
-			//std::cout << "vkCreateSemaphore: " << string_VkResult(vkResult) << std::endl;
-
+			//SPDLOG_DEBUG("Semaphore Created: {}", semaphore_);
 
 			// import semaphore
 			VkImportSemaphoreWin32HandleInfoKHR importSemaphoreInfo {};
@@ -371,9 +348,10 @@ void Texture::importSemaphore(TEInstance* teInstance, TETexture* teTexture)
 
 			VK_CHECK(vkImportSemaphoreWin32HandleKHR(device_, &importSemaphoreInfo));
 
-			//std::cout << "vkImportSemaphoreWin32HandleKHR: " << string_VkResult(vkResult) << std::endl;
+			//SPDLOG_DEBUG("Semaphore Imported: {}", semaphore_);
 		}
 	}
+	//SPDLOG_FLUSH_DEBUG
 }
 
 void Texture::cmdTransitionImageLayout(VkCommandBuffer cmdBuffer, VkImageLayout oldLayout, VkImageLayout newLayout)
@@ -566,6 +544,15 @@ bool Texture::copyCudaMemToImage(void* memory,
 
 void Texture::transferToInputLink(TouchObject<TEInstance> teInstance, TouchObject<TEGraphicsContext> context, const char* identifier)
 {
+	// need create TETexture pool to avoid creating a new TETexture for each transfer
+	// 
+	// If you are setting a shareable texture type on input links directly, TouchEngine will use the lifetime of the 
+	// TETextures you create to manage the lifetime of internal resources. For this reason, performance is improved by 
+	// recycling textures in a pool, and keeping the associated TETexture alive for the lifetime of the underlying 
+	// resource. To know when a texture is in use by TouchEngine, use the TEObjectEvent parameter of the TETexture's 
+	// callback and monitor TEObjectEventBeginUse and TEObjectEventEndUse. When TEObjectEventEndUse is received, the 
+	// texture can be returned to your pool for reuse.
+
 	TouchObject<TETexture> texture;
 	texture.set(teVkTexture_);
 	TEResult result = TEInstanceLinkSetTextureValue(teInstance, identifier, texture, context);
@@ -573,7 +560,10 @@ void Texture::transferToInputLink(TouchObject<TEInstance> teInstance, TouchObjec
 		result = TEInstanceAddTextureTransfer(teInstance, texture, teVkSemaphore_, signalValue_);
 
 	if (result != TEResultSuccess)
-		std::cout << "transferToInputLink: " << identifier << ", " << TEResultGetDescription(result) << std::endl;
+	{
+		spdlog::error("transferToInputLink: {}, {}", identifier, TEResultGetDescription(result));
+		SPDLOG_FLUSH
+	}
 }
 
 const CUDAMemory& 
@@ -635,15 +625,11 @@ void Texture::cudaImportImageMemory(HANDLE imageHandle)
 	cudaExtMemHandleDesc.size = imageSize_;
 	cudaExtMemHandleDesc.flags = 0;
 
-	//std::cout << "Cuda External Memory Handle: " << imageHandle << ", Size: " << imageSize_ << std::endl;
-
 	CUDA_CHECK(cudaImportExternalMemory(&cudaExtImageMemory_, &cudaExtMemHandleDesc));
-	std::cout << "Cuda Imported External Memory:" << cudaExtImageMemory_ << std::endl;
 
 	cudaExternalMemoryMipmappedArrayDesc cudaExtMemMipArrayDesc;
 	std::memset(&cudaExtMemMipArrayDesc, 0, sizeof(cudaExtMemMipArrayDesc));
 	auto chanDesc = cudaChannelFormatDescFromVkFormat(format_);
-	//std::cout << "Channel Format: " << chanDesc.x << ", " << chanDesc.y << ", " << chanDesc.z << ", " << chanDesc.w << ", " << chanDesc.f << std::endl;
 
 	cudaExtMemMipArrayDesc.formatDesc = chanDesc; // { 8, 8, 8, 8, cudaChannelFormatKindUnsigned };
 	cudaExtMemMipArrayDesc.extent = { extent_.width, extent_.height, 0 }; // depth is 0 for 2D extent...
@@ -660,7 +646,6 @@ void Texture::cudaImportImageMemory(HANDLE imageHandle)
 	std::memset(&resDesc, 0, sizeof(resDesc));
 	resDesc.resType = cudaResourceTypeArray;
 	resDesc.res.array.array = cudaArray_;
-
 
 	CUDA_CHECK(cudaCreateSurfaceObject(&cudaSurface_, &resDesc));
 }
@@ -768,7 +753,9 @@ void Texture::setCudaCopySurfaceFunc(CudaFlags flags)
 
 void Texture::setCudaCopyToSurfaceFunc()
 {
-	std::cout << "Setting CopyToSurfaceFunc" << std::endl;
+	SPDLOG_DEBUG("Setting CopyToSurfaceFunc");
+	SPDLOG_FLUSH_DEBUG
+
 	auto flags = cudaMemory_.desc.flags;
 	if (!(flags & CudaFlagBits::CHW || flags & CudaFlagBits::HWC)) flags |= CudaFlagBits::CHW;
 

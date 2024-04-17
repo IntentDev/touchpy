@@ -1,4 +1,5 @@
 #include "choplink.h"
+#include "logging.h"
 
 #include <iostream>
 #include <algorithm>
@@ -38,7 +39,7 @@ InChopLink::set(ChopChannelsReference&& chopChannels)
 
 	if (result != TEResultSuccess)
 	{
-		std::cout << "Error setting float buffer value: " << TEResultGetDescription(result) << std::endl;
+		spdlog::error("Error setting float buffer value: {}", TEResultGetDescription(result));
 	}
 }
 
