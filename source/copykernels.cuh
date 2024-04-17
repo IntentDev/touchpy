@@ -1,9 +1,11 @@
 #pragma once
 
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
+#include <cuda_runtime.h>
+#include <device_launch_parameters.h>
 #include <stdint.h>
 #include <cstdio>
+
+#include "cudadatatypes.h"
 
 #ifdef _DEBUG
 #define CHECK_CUDA_ERROR_AND_RETURN_STATUS(call) do { \
@@ -153,6 +155,25 @@ fromSurface(void* dst, int width, int height, cudaSurfaceObject_t src)
     dstPtr[x] = color;
 }
 
+// BGRA -> BRG interleaved
+// RGBA -> RGB interleaved
+template<typename CompType, typename Tag> __global__ void
+fromSurface(void* dst, int width, int height, cudaSurfaceObject_t src) {
+	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (x >= width || y >= height)
+		return;
+
+	CompType color;
+	surf2Dread(&color, src, x * sizeof(CompType), y, cudaBoundaryModeZero);
+	Vec3<CompType>* dstPtr = static_cast<Vec3<CompType>*>(dst) + (x + (height - y - 1) * width);
+
+	dstPtr->x = color.x;
+	dstPtr->y = color.y;
+	dstPtr->z = color.z;
+}
+
 
 // BGRA -> BGRA (uint8_t)
 // RGBA -> BGRA (uint8_t)
@@ -287,3 +308,24 @@ toSurface(cudaSurfaceObject_t dst, int width, int height, const void* src)
     surf2Dwrite(color, dst, x * sizeof(T), y, cudaBoundaryModeZero);
 }
 
+// BGR -> BRGA from interleaved
+// RGB -> RGBA from interleaved
+template<typename CompType, typename Tag> __global__ void
+toSurface(cudaSurfaceObject_t dst, int width, int height, const void* src) {
+    unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= width || y >= height)
+        return;
+
+    size_t idx = (x + (height - y - 1) * width);
+    Vec3<CompType> srcColor = static_cast<const Vec3<CompType>*>(src)[idx];
+
+    Vec4<CompType> color;
+    color.x = srcColor.x;
+    color.y = srcColor.y;
+    color.z = srcColor.z;
+    color.w = 0;
+
+    surf2Dwrite(color, dst, x * sizeof(Vec4<CompType>), y);
+}

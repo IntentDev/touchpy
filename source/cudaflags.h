@@ -16,6 +16,9 @@ enum class CudaFlagBits : Type
 	BGR = 1 << 5,
 	CHW = 1 << 6,
 	HWC = 1 << 7,
+	VEC4 = 1 << 8,
+	VEC3 = 1 << 9,
+	VEC2 = 1 << 10,
 	//Interleaved = 1 << 8, 
 	//Planar = 1 << 9, // currently always planar
 	//Flipped = 1 << 10, // currently always vertically flipped
