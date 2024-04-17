@@ -202,17 +202,21 @@ class Example:
 		if (keyboard.is_pressed('r')):
 			this.reset_particles()
 		
-		this.step()
-		t = wp.to_torch(this.x)
-		r = t.permute(1, 0).contiguous()
-		this.buffer = r.reshape(3, 100, -1)
 			
+		if this.frameTD == 300:
+			print(this.x.shape, this.x.strides, this.x.dtype)
+			y = this.x.reshape((100, 100))
+			print(y.shape, y.strides, y.dtype)
+			comp.stop()
 
 
 		######### Process and Copy for next frame (Fast) ###################
 		comp.start_next_frame()	
-		
-		comp.in_tops[0].from_tensor(this.buffer, tp.CudaFlags.CHW)
+
+		this.step()
+		y = this.x.reshape((100, 100))
+		comp.in_tops[0].from_dlpack(wp.to_dlpack(y), tp.CudaFlags.RGB)
+
 		this.frameTD += 1
 		pass
 
@@ -240,7 +244,7 @@ class Example:
 			)
 
 	def step(self):
-		with wp.ScopedTimer("step", active=True):
+		with wp.ScopedTimer("step", print=False, active=True):
 			with wp.ScopedTimer("grid build", active=False):
 				self.grid.build(self.x, self.grid_cell_size)
 
