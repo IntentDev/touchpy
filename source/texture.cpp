@@ -517,7 +517,7 @@ void Texture::copyImageToCudaMem(uint64_t& waitValue, cudaStream_t stream, bool 
 	{ 
 		// TODO: change the sequence of calls so the switch is before the wait
 		cudaVkSemaphoreWait(cudaExtSemaphore_, waitValue, stream);
-		copySurfaceFunc_(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream);
+		CUDA_CHECK(copySurfaceFunc_(cudaBuffer_, extent_.width, extent_.height, cudaSurface_, stream));
 		cudaVkSemaphoreSignal(cudaExtSemaphore_, ++waitValue, stream);
 		waitValue_ = waitValue;
 	}
@@ -535,7 +535,7 @@ bool Texture::copyCudaMemToImage(void* memory,
 		if (waitSemaphore)
 			cudaVkSemaphoreWait(waitSemaphore, waitValue, stream);
 
-		copyToSurfaceFunc_(cudaSurface_, extent_.width, extent_.height, memory, stream);
+		CUDA_CHECK(copyToSurfaceFunc_(cudaSurface_, extent_.width, extent_.height, memory, stream));
 		cudaVkSemaphoreSignal(signalSemaphore, signalValue, stream);
 		return true;
 	}
@@ -680,30 +680,30 @@ void Texture::setCudaCopySurfaceFunc(CudaFlags flags)
 		{
 		case VK_FORMAT_B8G8R8A8_UNORM:
 		{
-			if (flags & CudaFlagBits::BGRA)		 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<uchar4, uint8_t, 0, 1, 2, 3>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::BGR)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<uchar4, uint8_t, 0, 1, 2>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::RGBA) copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::RGB)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
-			else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			if (flags & CudaFlagBits::BGRA)		 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<uchar4, uint8_t, 0, 1, 2, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<uchar4, uint8_t, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGBA) copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
+			else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
 			return;
 		}
 		case VK_FORMAT_R32G32B32A32_SFLOAT:
 		{
-			if (flags & CudaFlagBits::RGBA)		 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<float4, float, 0, 1, 2, 3>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::RGB)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<float4, float, 0, 1, 2>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::BGRA) copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<float4, float, 2, 1, 0, 3>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::BGR)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<float4, float, 2, 1, 0>(dst, width, height, src, stream); };
-			else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<float4, float, 0, 1, 2, 3>(dst, width, height, src, stream); };
+			if (flags & CudaFlagBits::RGBA)		 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<float4, float, 0, 1, 2, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<float4, float, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGRA) copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<float4, float, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<float4, float, 2, 1, 0>(dst, width, height, src, stream); };
+			else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<float4, float, 0, 1, 2, 3>(dst, width, height, src, stream); };
 			return;
 		}
 		case VK_FORMAT_R32G32_SFLOAT:
 		{
-			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurfaceToPlanar<float2, float, 0, 1>(dst, width, height, src, stream); };
+			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<float2, float, 0, 1>(dst, width, height, src, stream); };
 			return;
 		}
 		case VK_FORMAT_R32_SFLOAT:
 		{
-			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurface<float>(dst, width, height, src, stream); };
+			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurface<float>(dst, width, height, src, stream); };
 			return;
 		}
 		default:
@@ -717,30 +717,30 @@ void Texture::setCudaCopySurfaceFunc(CudaFlags flags)
 		{
 		case VK_FORMAT_B8G8R8A8_UNORM:
 		{
-			if (flags & CudaFlagBits::BGRA)		 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurface<uchar4>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::BGR)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurface<uchar4, uint8_t, 0, 1, 2>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::RGBA) copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::RGB)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurface<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
-			else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			if (flags & CudaFlagBits::BGRA)		 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<uchar4>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<uchar4, uint8_t, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGBA) copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
+			else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
 			return;
 		}
 		case VK_FORMAT_R32G32B32A32_SFLOAT:
 		{
-			if (flags & CudaFlagBits::RGBA)		 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurface<float4>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::RGB)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurface<float4, float, 0, 1, 2>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::BGRA) copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurface<float4, float, 2, 1, 0, 3>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::BGR)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurface<float4, float, 2, 1, 0>(dst, width, height, src, stream); };
-			else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurface<float4>(dst, width, height, src, stream); };
+			if (flags & CudaFlagBits::RGBA)		 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<float4>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<float4, float, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGRA) copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<float4, float, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<float4, float, 2, 1, 0>(dst, width, height, src, stream); };
+			else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<float4>(dst, width, height, src, stream); };
 			return;
 		}
 		case VK_FORMAT_R32G32_SFLOAT:
 		{
-			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurface<float2>(dst, width, height, src, stream); };
+			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<float2>(dst, width, height, src, stream); };
 			return;
 		}
 		case VK_FORMAT_R32_SFLOAT:
 		{
-			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { memCopySurface<float>(dst, width, height, src, stream); };
+			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<float>(dst, width, height, src, stream); };
 			return;
 		}
 		default:
@@ -767,39 +767,39 @@ void Texture::setCudaCopyToSurfaceFunc()
 		{
 		case VK_FORMAT_B8G8R8A8_UNORM: // default is RGBA
 		{
-			if (flags & CudaFlagBits::BGRA)      copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<uchar4, uint8_t, 0, 1, 2, 3>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::BGR)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<uchar4, uint8_t, 0, 1, 2>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::RGBA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::RGB)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
+			if (flags & CudaFlagBits::BGRA)      copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<uchar4, uint8_t, 0, 1, 2, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<uchar4, uint8_t, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGBA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
 			else
 			{
-				if (numComponents == 4)			 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
-				else if (numComponents == 3)	 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
+				if (numComponents == 4)			 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
+				else if (numComponents == 3)	 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
 			}
 			return;
 		}
 		case VK_FORMAT_R32G32B32A32_SFLOAT: // default is RGBA
 		{
-			if (flags & CudaFlagBits::RGBA)      copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<float4, float, 0, 1, 2, 3>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::RGB)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<float4, float, 0, 1, 2>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::BGRA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<float4, float, 2, 1, 0, 3>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::BGR)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<float4, float, 2, 1, 0>(dst, width, height, src, stream); };
+			if (flags & CudaFlagBits::RGBA)      copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<float4, float, 0, 1, 2, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<float4, float, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGRA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<float4, float, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<float4, float, 2, 1, 0>(dst, width, height, src, stream); };
 			else
 			{
-				if (numComponents == 4)			 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<float4, float, 0, 1, 2, 3>(dst, width, height, src, stream); };
-				else if (numComponents == 3)	 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<float4, float, 0, 1, 2>(dst, width, height, src, stream); };
+				if (numComponents == 4)			 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<float4, float, 0, 1, 2, 3>(dst, width, height, src, stream); };
+				else if (numComponents == 3)	 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<float4, float, 0, 1, 2>(dst, width, height, src, stream); };
 			}
 
 			return;
 		}
 		case VK_FORMAT_R32G32_SFLOAT:
 		{
-			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyPlanarToSurface<float2, float, 0, 1>(dst, width, height, src, stream); };
+			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<float2, float, 0, 1>(dst, width, height, src, stream); };
 			return;
 		}
 		case VK_FORMAT_R32_SFLOAT:
 		{
-			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float>(dst, width, height, src, stream); };
+			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<float>(dst, width, height, src, stream); };
 			return;
 		}
 		default:
@@ -817,38 +817,38 @@ void Texture::setCudaCopyToSurfaceFunc()
 		{
 		case VK_FORMAT_B8G8R8A8_UNORM: // default is RGBA
 		{
-			if		(flags & CudaFlagBits::BGRA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<uchar4>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::BGR)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<uchar4, uint8_t, 0, 1, 2>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::RGBA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::RGB)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
+			if		(flags & CudaFlagBits::BGRA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<uchar4>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<uchar4, uint8_t, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGBA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
 			else
 			{
-				if (numComponents == 4)			 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
-				else if (numComponents == 3)	 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
+				if (numComponents == 4)			 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
+				else if (numComponents == 3)	 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<uchar4, uint8_t, 2, 1, 0>(dst, width, height, src, stream); };
 			}
 			return;
 		}
 		case VK_FORMAT_R32G32B32A32_SFLOAT: // default is RGBA
 		{
-			if		(flags & CudaFlagBits::RGBA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float4>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::RGB)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float4, float, 0, 1, 2>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::BGRA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float4, float, 2, 1, 0, 3>(dst, width, height, src, stream); };
-			else if (flags & CudaFlagBits::BGR)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float4, float, 2, 1, 0>(dst, width, height, src, stream); };
+			if		(flags & CudaFlagBits::RGBA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<float4>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<float4, float, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGRA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<float4, float, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<float4, float, 2, 1, 0>(dst, width, height, src, stream); };
 			else								 
 			{
-				if (numComponents == 4)			 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float4>(dst, width, height, src, stream); };
-				else if (numComponents == 3)	 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float4, float, 2, 1, 0>(dst, width, height, src, stream); };
+				if (numComponents == 4)			 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<float4>(dst, width, height, src, stream); };
+				else if (numComponents == 3)	 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<float4, float, 2, 1, 0>(dst, width, height, src, stream); };
 			}
 			return;
 		}
 		case VK_FORMAT_R32G32_SFLOAT:
 		{
-			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float2>(dst, width, height, src, stream); };
+			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<float2>(dst, width, height, src, stream); };
 			return;
 		}
 		case VK_FORMAT_R32_SFLOAT:
 		{
-			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { memCopyToSurface<float>(dst, width, height, src, stream); };
+			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<float>(dst, width, height, src, stream); };
 			return;
 		}
 		default:

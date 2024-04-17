@@ -152,8 +152,8 @@ private:
 	bool                 requiresCudaMemLock_ { false };
 	mutable              std::mutex mutex_;
 
-	std::function<void(void*, int, int, cudaSurfaceObject_t, cudaStream_t)> copySurfaceFunc_ { nullptr };
-	std::function<void(cudaSurfaceObject_t, int, int, const void*, cudaStream_t)> copyToSurfaceFunc_ { nullptr };
+	std::function<cudaError_t(void*, int, int, cudaSurfaceObject_t, cudaStream_t)> copySurfaceFunc_ { nullptr };
+	std::function<cudaError_t(cudaSurfaceObject_t, int, int, const void*, cudaStream_t)> copyToSurfaceFunc_ { nullptr };
 
 	void setupCudaResources(HANDLE imageHandle, HANDLE semaphoreHandle, bool allocateMemory, CudaFlags flags = CudaFlagBits::None);
 	void cudaImportTimelineSemaphore(HANDLE semaphoreHandle);
