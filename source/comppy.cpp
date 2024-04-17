@@ -7,7 +7,7 @@
 namespace nb = nanobind;
 using namespace nb::literals;
 
-const char* load_toxDoc = 
+static const char* load_toxDoc = 
 R"(Loads a .tox file, creates and initializes a TouchEngine Instance
 Args:
 	path (str) : the path to the .tox file
