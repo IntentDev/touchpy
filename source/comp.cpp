@@ -4,6 +4,9 @@
 #include <iomanip>
 #include <thread>
 #include <array>
+
+#include "logging.h"
+
 //#include <bitset>
 
 Comp::Comp()
@@ -14,8 +17,16 @@ Comp::Comp()
 Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps) 
 	:	compFlags_(compFlags)
 {
+	spdlog::info("Creating Comp");
+
+	// use macros to log debug and trace messages so they can be turned off in release builds
+	//SPDLOG_DEBUG("debug message to touchpy_logger");
+	//SPDLOG_TRACE("trace message to touchpy_logger");
+
 	initComp();
 	loadTox(filePath, compFlags, fps);
+
+	spdlog::default_logger()->flush();
 }
 
 void
@@ -30,11 +41,14 @@ Comp::~Comp()
 {
 	// Calling unload here can cause python to deadlock if it doesn't finish before python is closed... 
 	// call unload() before destruction, or not at all but that will cause memory leaks if the object is the global scope
-	// unload();
+	//unload();
 
 	if (cudaStream_ && compFlags_ & CompFlagBits::CudaStreamInternal) CUDA_CHECK(cudaStreamDestroy(cudaStream_));
 
 	vkDestroyFence(device_, submitFence_, nullptr);
+
+	spdlog::info("Comp resources destroyed");
+	spdlog::default_logger()->flush();
 }
 
 void 
@@ -61,7 +75,7 @@ Comp::cudaInit()
 	if (compFlags_ & CompFlagBits::CudaStreamInternal) 
 	{
 		CUDA_CHECK(cudaStreamCreate(&cudaStream_));
-		std::cout << "CUDA stream created: " << cudaStream_ << std::endl;
+		spdlog::info("CUDA stream created: {}", static_cast<void*>(cudaStream_));
 	}
 }
 
@@ -90,8 +104,7 @@ Comp::setCudaDevice()
 			{
 				CUDA_CHECK(cudaSetDevice(device));
 				CUDA_CHECK(cudaGetDeviceProperties(&deviceProp, device));
-				std::cout << "CUDA device: " << device << " : " << deviceProp.name
-					<< " with compute " << deviceProp.major << deviceProp.minor << std::endl;
+				spdlog::info("Set CUDA device: {} : {} with compute {}", device, deviceProp.name, deviceProp.major, deviceProp.minor);
 
 				cudaDevice_ = device;
 				return;
@@ -118,10 +131,10 @@ bool
 Comp::initInstance()
 {
 	TE_CHECK(TEInstanceCreate(eventCallback, linkEventCallback, this, instance_.take()));
-	std::cout << "\t\tInstance created!" << std::endl;
+	spdlog::info("TouchEngine instance created");
 
 	TE_CHECK(TEInstanceAssociateGraphicsContext(instance_, renderer_->teContext()));
-	std::cout << "\t\tInstance associated with Graphics Context!" << std::endl;
+	spdlog::info("TouchEngine instance associated with Graphics Context");
 
 	return true;
 }
@@ -137,18 +150,19 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 	TE_CHECK(TEInstanceSetFrameRate(instance_, fps, 1));
 
 	filePath_ = filePath;
-	std::cout << "Loading tox: \t" << std::string(filePath_.begin(), filePath_.end()) << std::endl;
+	spdlog::info("Loading tox: {}", filePath_);
 
 	auto timeMode = TETimeInternal;
 	if (compFlags_ & CompFlagBits::ExternalTime) timeMode = TETimeExternal;
 
 	TE_CHECK(TEInstanceConfigure(instance_, filePath_.c_str(), timeMode));
-	std::cout << "\t\tInstance configured!" << std::endl;
+	spdlog::info("Instance configured");
 
 	std::unique_lock<std::mutex> lock(mutex_);
 	TE_CHECK(TEInstanceLoad(instance_));
-	std::cout << "\t\tInstance loading..." << std::endl;
+	spdlog::info("Instance loading...");
 
+	spdlog::default_logger()->flush();
 	// wait for instance to load
 	cv_.wait(lock, [this] { return ssReady_; });
 
@@ -165,7 +179,7 @@ Comp::unload()
 	std::unique_lock<std::mutex> lock(mutex_);
 	if (ssLoaded_)
 	{
-		std::cout << "Unloading TouchEngine instance..." << std::endl;
+		spdlog::info("Unloading TouchEngine instance...");
 
 		ssUnloading_ = true;
 		onFrameCallbackUserData_ = nullptr;
@@ -182,6 +196,7 @@ Comp::unload()
 		lock.lock();
 		cv_.wait(lock, [this] { return !ssLoaded_; });
 	}
+	//spdlog::default_logger()->flush();
 }
 
 
@@ -238,7 +253,7 @@ Comp::onEventInstanceReady(TEResult result, Comp* comp)
 	comp->ssReady_ = result == TEResultSuccess;
 	comp->cv_.notify_one(); // notify load() that instance is ready
 	lock.unlock();
-	std::cout << "\t\tInstance Ready: " << TEResultGetDescription(result) << std::endl;
+	spdlog::info("Instance Ready: {}", TEResultGetDescription(result));
 }
 
 void 
@@ -255,7 +270,7 @@ Comp::onEventInstanceDidUnload(TEResult result, Comp* comp)
 	ssLoaded_ = false;
 	ssReady_ = false;
 	comp->cv_.notify_one(); // notify unload() that instance is unloaded
-	std::cout << "Unloaded TouchEngine!" << std::endl;
+	spdlog::info("Instance Unloaded: {}", TEResultGetDescription(result));
 }
 
 void 
@@ -282,8 +297,7 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 				//std::string error = TEResultGetDescription(result);
 				//error = "Frame did not finish successfully: " + error;
 				//throw std::runtime_error("Frame did not finish successfully");
-
-				std::cout << "onEventFrameDidFinish result: " << TEResultGetDescription(result);
+				spdlog::error("Frame did not finish successfully: {}", TEResultGetDescription(result));
 				startNextFrame(prevTimeValue_, prevTimeScale_);
 			}
 
@@ -294,18 +308,13 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 void 
 Comp::onEventGeneral(TEResult result, uint64_t start_time, uint64_t end_time, Comp* comp)
 {
-	//std::cout << "General event: " << TEResultGetDescription(result)
-	//	<< " start_time: " << start_time
-	//	<< " end_time: " << end_time
-	//	<< std::endl;
+	//spdlog::info("General event: {}", TEResultGetDescription(result));
 }
 
 
 void 
 Comp::linkEventCallback(TEInstance* instance, TELinkEvent event, const char* identifier, void* info)
 {
-	//std::cout << "linkEventCallback thread id: " << std::this_thread::get_id() << std::endl;
-	//std::cout << "Link event: " << teutils::linkEventToString(event) << " identifier: " << identifier << std::endl;
 	Comp* comp = static_cast<Comp*>(info);
 	switch (event)
 	{
@@ -391,20 +400,6 @@ Comp::onLinkEventValueChange(const char* identifier)
 			break;
 		}
 	}
-}
-
-void Comp::printLinkInfo(TouchObject<TELinkInfo> info)
-{
-	std::cout << std::left
-		<< std::setw(6) << "Link:" << std::setw(16) << info->identifier
-		<< std::setw(6) << "name:" << std::setw(16) << info->name
-		<< std::setw(7) << "label:" << std::setw(16) << info->label
-		<< std::setw(7) << "scope:" << std::setw(16) << teutils::scopeToString(info->scope)
-		<< std::setw(8) << "intent:" << std::setw(28) << teutils::linkIntentToString(info->intent)
-		<< std::setw(8) << "domain:" << std::setw(24) << teutils::linkDomainToString(info->domain)
-		<< std::setw(7) << "count:" << std::setw(5) << info->count
-		<< std::setw(6) << "type:" << std::setw(16) << teutils::linkTypeToString(info->type)
-		<< std::endl;
 }
 
 void
@@ -610,12 +605,12 @@ void Comp::start()
 
 	if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AutoUpdate && !updateLoopRunning_)
 	{
-		std::cout << "Starting update loop" << std::endl;
-		update();
+		spdlog::info("Starting auto update");
+		autoUpdate();
 	}
 	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate && !asyncRunning_.load())
 	{
-		std::cout << "Starting async loop" << std::endl;
+		spdlog::info("Starting async update");
 		startAsync();
 	}
 }
@@ -625,18 +620,19 @@ void Comp::stop()
 	if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AutoUpdate)
 	{
 		stopUpdate();
+		spdlog::info("auto update stopped");
 	}
 	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate)
 	{
-		std::cout << "Stopping async loop" << std::endl;
 		stopAsync();
-		std::cout << "Async loop stopped" << std::endl;
+		spdlog::info("async update stopped");
 	}
 
 	TE_CHECK(TEInstanceSuspend(instance_));
+	spdlog::default_logger()->flush();
 }
 
-void Comp::update()
+void Comp::autoUpdate()
 {
 	updateLoopRunning_ = true;
 	while (updateLoopRunning_)
@@ -688,7 +684,9 @@ void Comp::stopAsync()
 
 void Comp::asyncUpdate()
 {
-	bool running { true };
+	SPDLOG_DEBUG("asyncUpdate() log in thread successfull");
+	SPDLOG_FLUSH_DEBUG
+	static uint64_t counter = 0;
 	while (asyncRunning_.load())
 	{
 		bool ready, loaded, linksLayoutChanged, inFrame;
@@ -699,11 +697,15 @@ void Comp::asyncUpdate()
 		if (linksLayoutChanged)
 		{
 			applyLayoutChange();
+			SPDLOG_DEBUG("layout changed");
+			SPDLOG_FLUSH_DEBUG
 			continue;
 		}
 		
 		if (!inFrame)
 		{
+			++counter;
+
 			applyValueChanges();
 
 			std::unique_lock<std::mutex> lock(asyncMutex_);
@@ -747,7 +749,7 @@ bool Comp::startNextFrame(int64_t timeValue, int32_t timeScale)
 	TEResult result = TEInstanceStartFrameAtTime(instance_, timeValue, timeScale, false);
 	if (result != TEResultSuccess)
 	{
-		std::cout << "TEInstanceStartFrameAtTime: " << timeValue << ", " << timeScale << " " << TEResultGetDescription(result) << std::endl;
+		spdlog::error("Frame did not start successfully: {}", TEResultGetDescription(result));
 		setInFrame(false);
 		return false;
 	}
@@ -845,7 +847,7 @@ Comp::applyLayoutChange()
 		asyncLayoutReadyCV_.notify_one();
 	}
 
-	std:: cout << "Applying layout change" << std::endl;
+	spdlog::info("Applying layout change");
 
 	inTopLinks_ = std::make_unique<InTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_, cudaStream_);
 	outTopLinks_ = std::make_unique<OutTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_, cudaStream_);
@@ -886,8 +888,8 @@ Comp::applyLayoutChange()
 						result = TEInstanceLinkGetInfo(instance_, children->strings[j], info.take());
 						if (result == TEResultSuccess)
 						{
-							printLinkInfo(info);
-							
+							spdlog::debug(getLinkInfoAsString(info));
+
 							if (info->type == TELinkTypeTexture)
 							{
 								if (info->scope == TEScopeInput)
@@ -946,5 +948,23 @@ Comp::applyLayoutChange()
 
 	callOnLayoutChangeCallback();
 
+	spdlog::default_logger()->flush();
 	if (updateLoopRunning_ || asyncRunning_.load()) startNextFrame(prevTimeValue_, prevTimeScale_);
+}
+
+std::string Comp::getLinkInfoAsString(TouchObject<TELinkInfo> info)
+{
+	std::stringstream ss;
+	ss << std::left
+		<< std::setw(6) << "Link:" << std::setw(16) << info->identifier
+		<< std::setw(6) << "name:" << std::setw(16) << info->name
+		<< std::setw(7) << "label:" << std::setw(16) << info->label
+		<< std::setw(7) << "scope:" << std::setw(16) << teutils::scopeToString(info->scope)
+		<< std::setw(8) << "intent:" << std::setw(28) << teutils::linkIntentToString(info->intent)
+		<< std::setw(8) << "domain:" << std::setw(24) << teutils::linkDomainToString(info->domain)
+		<< std::setw(7) << "count:" << std::setw(5) << info->count
+		<< std::setw(6) << "type:" << std::setw(16) << teutils::linkTypeToString(info->type)
+		;
+
+	return ss.str();
 }

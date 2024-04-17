@@ -1,4 +1,5 @@
 #include "renderer.h"
+#include "logging.h"
 
 
 const std::string Renderer::ConfigureError = "Vulkan is not supported or the selected GPU does not have the needed features.";
@@ -56,7 +57,8 @@ Renderer::init()
 	}
 	else
 	{
-		std::cout << "TEVulkanContext created" << std::endl;
+		spdlog::info("TEVulkanContext created");
+		SPDLOG_FLUSH
 	}
 
 	
@@ -85,7 +87,8 @@ Renderer::createInstance()
 				vContext_.instance, debugMessenger_, nullptr);
 
 		vkDestroyInstance(vContext_.instance, nullptr);
-		std::cout << "Vulkan instance destroyed" << std::endl;
+		spdlog::info("Vulkan instance destroyed");
+		SPDLOG_FLUSH
 		});
 }
 
@@ -101,7 +104,8 @@ Renderer::createPrimaryDevice()
 	vkGetPhysicalDeviceProperties(vContext_.physicalDevice,
 		&vContext_.physicalDeviceProperties);
 
-	std::cout << "Selected GPU: " << vContext_.physicalDeviceProperties.deviceName << std::endl;
+	spdlog::info("Selected GPU: {}", vContext_.physicalDeviceProperties.deviceName);
+	SPDLOG_FLUSH
 
 	vri::createDevice(vContext_, deviceExtensions_,
 		validationLayers_, enableValidationLayers_);

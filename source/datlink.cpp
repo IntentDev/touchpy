@@ -1,4 +1,5 @@
 #include "datlink.h"
+#include "logging.h"
 
 #include <iostream>
 
@@ -27,7 +28,10 @@ InDatLink::set(const DatTable& table)
 	}
 
 	if (result != TEResultSuccess)
-		std::cerr << "Failed to set table value: " << TEResultGetDescription(result) << std::endl;
+	{
+		spdlog::error("Failed to set table value: {}", TEResultGetDescription(result));
+		SPDLOG_FLUSH
+	}
 }
 
 void
@@ -36,7 +40,10 @@ InDatLink::set(const char* string)
 	type_ = DatLinkType::String;
 	TEResult result = TEInstanceLinkSetStringValue(instance_, identifier_.c_str(), string);
 	if (result != TEResultSuccess)
-		std::cerr << "Failed to set table value: " << TEResultGetDescription(result) << std::endl;
+	{
+		spdlog::error("Failed to set table value: {}", TEResultGetDescription(result));
+		SPDLOG_FLUSH
+	}
 }
 
 

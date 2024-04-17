@@ -12,6 +12,14 @@
 import touchpy as tp
 import numpy as np
 
+def redirect_logger_to_python(log_message):
+    try:
+        print(log_message)
+    except Exception as e:
+        print(f"Failed to log message: {e}")
+    
+tp.init_logging(redirect_logger_to_python)
+
 comp = tp.Comp('TopChopDatIO.tox', flags=tp.CompFlags.INTERNAL_TIME_ASYNC)
 
 def on_layout_change(comp, info):
