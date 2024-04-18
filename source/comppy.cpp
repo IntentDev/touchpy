@@ -37,13 +37,6 @@ Returns:
 	None
 )";
 
-static const char* frame_did_finishDoc =
-R"(Stops the TouchEngine instance.
-
-Returns:
-	None
-)";
-
 static const char* apply_value_changesDoc =
 R"(Stops the TouchEngine instance.
 
@@ -74,10 +67,6 @@ R"(True if the frame has finished, False otherwise.
 )";
 
 static const char* in_topsDoc =
-R"(The input TOPs.
-)";
-
-static const char* in_topsDoc =
 R"(The In TOPs of the currently loaded tox.
 )";
 
@@ -92,16 +81,13 @@ R"(The In CHOPs of the currently loaded tox.
 static const char* out_chopsDoc =
 R"(The Out CHOPs of the currently loaded tox.
 )";
+
 static const char* in_datsDoc =
 R"(The In DATs of the currently loaded tox.
 )";
 
 static const char* out_datsDoc =
 R"(The Out DATs of the currently loaded tox.
-)";
-
-static const char* out_datsDoc =
-R"(The parameters of the currently loaded tox.
 )";
 
 static const char* parDoc =
@@ -189,8 +175,8 @@ void initCompBindings(nb::module_& m)
 		.def("apply_value_changes",    &Comp::applyValueChanges, apply_value_changesDoc, nb::rv_policy::reference_internal)
 		.def("call_on_frame_callback", &Comp::callOnFrameCallback, call_on_frame_callbackDoc, nb::rv_policy::reference_internal)
 		.def("start_next_frame",       &Comp::startNextFrame, "time_value"_a = 0, "time_scale"_a = 0, start_next_frameDoc, nb::rv_policy::reference_internal)
-		.def("loaded",              &Comp::loaded, loadedDoc, nb::rv_policy::reference_internal)
-		.def("frame_did_finish",    &Comp::frameDidFinish, frame_did_finishDoc, nb::rv_policy::reference_internal)
+		.def("loaded",				   &Comp::loaded, loadedDoc, nb::rv_policy::reference_internal)
+		.def("frame_did_finish",       &Comp::frameDidFinish, frame_did_finishDoc, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_tops",        &Comp::inputTopLinks, in_topsDoc, nb::rv_policy::reference_internal)
 		.def_prop_ro("out_tops",       &Comp::outputTopLinks,out_topsDoc, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_chops",       &Comp::inChopLinks, in_chopsDoc, nb::rv_policy::reference_internal)
