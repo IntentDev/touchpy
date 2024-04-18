@@ -40,11 +40,11 @@ R"(////todokeith ?Returns a reference to a 2D NumPy array, with a width equal to
 )";
 
 static const char* countDocOutChop =
-R"(Returns the number of OutChop objects in the loaded tox.
+R"(Returns the number of Out CHOPS in the loaded tox.
 )";
 
 static const char* namesDocOutChop =
-R"(Returns a list of the names of the OutChop objects in the loaded tox.
+R"(Returns a list of names of all Out CHOPs in the loaded tox.
 )";
 
 
@@ -58,11 +58,11 @@ Args:
 
 
 static const char* countDocInChop =
-R"(Returns the number of InChop objects in the loaded tox.
+R"(Returns the number of In CHOPs in the loaded tox.
 )";	
 
 static const char* namesDocInChop =
-R"(Returns a list of the names of the InChop objects in the loaded tox.
+R"(Returns a list of names of all In CHOPs in the loaded tox.
 )";
 
 void fromNumpyToChopLink(
