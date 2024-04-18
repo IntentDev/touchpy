@@ -104,6 +104,50 @@ static const char* out_datsDoc =
 R"(The parameters of the currently loaded tox.
 )";
 
+static const char* clear_on_frame_callbackDoc =
+R"(Unsets any callback method set using set_on_frame_callback().
+
+Returns:
+	None
+)";
+
+static const char* set_on_frame_callbackDoc =
+R"(Sets the Python method to be called everytime a frame ends.
+
+Args:
+	callback (callable)	: a callable Python method
+	user_data (obj)		: a Python object for any userdata to be passed to the callback method
+
+Returns:
+	None
+)";
+
+static const char* clear_on_layout_change_callbackDoc =
+R"(Unsets any callback method set using: on_layout_change_callback().
+
+Returns:
+	None
+)";
+
+static const char* set_on_layout_change_callbackDoc =
+R"(Sets the Python method to be called everytime the tox layout changes.
+
+Args:
+	callback (callable)	: a callable Python method
+	user_data (obj)		: a Python object for any userdata to be passed to the callback method
+
+Returns:
+	None
+)";
+
+static const char* cuda_streamDoc =
+R"(Returns pointer to the CUDA stream handle used by TouchEngine.
+)";
+
+
+
+
+
 void initCompBindings(nb::module_& m)
 {
 	//Comp::setPrintInfoFunc(printInfo);
