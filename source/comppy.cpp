@@ -141,7 +141,7 @@ Returns:
 )";
 
 static const char* cuda_streamDoc =
-R"(Returns pointer to the CUDA stream handle used by TouchEngine.
+R"(Returns the CUDA stream handle used by TouchEngine.
 )";
 
 
@@ -179,25 +179,25 @@ void initCompBindings(nb::module_& m)
 		.def(nb::init<const std::string&, CompFlagBits, int64_t>(),
 			"tox_path"_a, "flags"_a = CompFlagBits::InternalTimeAuto, "fps"_a = 60, nb::rv_policy::take_ownership)
 		.def("load_tox", [](Comp& self, std::string path, int fps) { self.loadTox(path, fps); } , "path"_a, "fps"_a = 60, load_toxDoc)
-		.def("unload",                 &Comp::unload, nb::rv_policy::reference_internal)
-		.def("start",                  &Comp::start, nb::rv_policy::reference_internal)
-		.def("stop",                   &Comp::stop, nb::rv_policy::reference_internal)
-		.def("apply_value_changes",    &Comp::applyValueChanges, nb::rv_policy::reference_internal)
-		.def("call_on_frame_callback", &Comp::callOnFrameCallback, nb::rv_policy::reference_internal)
-		.def("start_next_frame",       &Comp::startNextFrame, "time_value"_a = 0, "time_scale"_a = 0, nb::rv_policy::reference_internal)
-		.def_ro("loaded",              &Comp::loaded, nb::rv_policy::reference_internal)
-		.def_ro("frame_did_finish",    &Comp::frameDidFinish, nb::rv_policy::reference_internal)
-		.def_prop_ro("in_tops",        &Comp::inputTopLinks, nb::rv_policy::reference_internal)
-		.def_prop_ro("out_tops",       &Comp::outputTopLinks, nb::rv_policy::reference_internal)
-		.def_prop_ro("in_chops",       &Comp::inChopLinks, nb::rv_policy::reference_internal)
-		.def_prop_ro("out_chops",      &Comp::outChopLinks, nb::rv_policy::reference_internal)
-		.def_prop_ro("in_dats",        &Comp::inDatLinks, nb::rv_policy::reference_internal)
-		.def_prop_ro("out_dats",       &Comp::outDatLinks, nb::rv_policy::reference_internal)
-		.def_prop_ro("par",            &Comp::parLinks, nb::rv_policy::reference_internal)
+		.def("unload",                 &Comp::unload, unloadDoc, nb::rv_policy::reference_internal)
+		.def("start",                  &Comp::start, startDoc, nb::rv_policy::reference_internal)
+		.def("stop",                   &Comp::stop, stopDoc, nb::rv_policy::reference_internal)
+		.def("apply_value_changes",    &Comp::applyValueChanges, apply_value_changesDoc, nb::rv_policy::reference_internal)
+		.def("call_on_frame_callback", &Comp::callOnFrameCallback, call_on_frame_callbackDoc, nb::rv_policy::reference_internal)
+		.def("start_next_frame",       &Comp::startNextFrame, "time_value"_a = 0, "time_scale"_a = 0, start_next_frameDoc, nb::rv_policy::reference_internal)
+		.def("loaded",              &Comp::loaded, loadedDoc, nb::rv_policy::reference_internal)
+		.def("frame_did_finish",    &Comp::frameDidFinish, frame_did_finishDoc, nb::rv_policy::reference_internal)
+		.def_prop_ro("in_tops",        &Comp::inputTopLinks, in_topsDoc, nb::rv_policy::reference_internal)
+		.def_prop_ro("out_tops",       &Comp::outputTopLinks,out_topsDoc, nb::rv_policy::reference_internal)
+		.def_prop_ro("in_chops",       &Comp::inChopLinks, in_chopsDoc, nb::rv_policy::reference_internal)
+		.def_prop_ro("out_chops",      &Comp::outChopLinks, out_chopsDoc, nb::rv_policy::reference_internal)
+		.def_prop_ro("in_dats",        &Comp::inDatLinks, in_datsDoc, nb::rv_policy::reference_internal)
+		.def_prop_ro("out_dats",       &Comp::outDatLinks, out_datsDoc, nb::rv_policy::reference_internal)
+		.def_prop_ro("par",            &Comp::parLinks, parDoc, nb::rv_policy::reference_internal)
 		;
 
-	comp.def("clear_on_frame_callback", &Comp::clearOnFrameCallback, nb::rv_policy::reference_internal);
-	comp.def("set_on_frame_callback", [](Comp& self, nb::callable pythonCallback, nb::object userData)
+	comp.def("clear_on_frame_callback", &Comp::clearOnFrameCallback, clear_on_frame_callbackDoc, nb::rv_policy::reference_internal);
+	comp.def("set_on_frame_callback", [](Comp& self, nb::callable pythonCallback, set_on_frame_callbackDoc, nb::object userData)
 		{
 			auto userDataPtr = std::make_shared<nb::object>(userData);
 			self.setOnFrameCallback([pythonCallback](Comp& comp, std::shared_ptr<void> userData)
@@ -218,7 +218,7 @@ void initCompBindings(nb::module_& m)
 		}
 	);
 
-	comp.def("clear_on_layout_change_callback", &Comp::clearOnLayoutChangeCallback, nb::rv_policy::reference_internal);
+	comp.def("clear_on_layout_change_callback", &Comp::clearOnLayoutChangeCallback, clear_on_layout_change_callbackDoc, nb::rv_policy::reference_internal);
 	comp.def("set_on_layout_change_callback", [](Comp& self, nb::callable pythonCallback, nb::object userData)
 		{
 			auto userDataPtr = std::make_shared<nb::object>(userData);
@@ -244,7 +244,7 @@ void initCompBindings(nb::module_& m)
 		{ 
 			return reinterpret_cast<uintptr_t>(self.cudaStream());
 		}
-	, nb::rv_policy::reference_internal);
+	,cuda_streamDoc, nb::rv_policy::reference_internal);
 
 	
 
