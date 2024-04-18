@@ -104,6 +104,10 @@ static const char* out_datsDoc =
 R"(The parameters of the currently loaded tox.
 )";
 
+static const char* parDoc =
+R"(The parameters of the currently loaded tox.
+)";
+
 static const char* clear_on_frame_callbackDoc =
 R"(Unsets any callback method set using set_on_frame_callback().
 
@@ -197,7 +201,7 @@ void initCompBindings(nb::module_& m)
 		;
 
 	comp.def("clear_on_frame_callback", &Comp::clearOnFrameCallback, clear_on_frame_callbackDoc, nb::rv_policy::reference_internal);
-	comp.def("set_on_frame_callback", [](Comp& self, nb::callable pythonCallback, set_on_frame_callbackDoc, nb::object userData)
+	comp.def("set_on_frame_callback", [](Comp& self, nb::callable pythonCallback, nb::object userData)
 		{
 			auto userDataPtr = std::make_shared<nb::object>(userData);
 			self.setOnFrameCallback([pythonCallback](Comp& comp, std::shared_ptr<void> userData)
@@ -215,8 +219,8 @@ void initCompBindings(nb::module_& m)
 					}
 				},
 				userDataPtr);
-		}
-	);
+		},
+		set_on_frame_callbackDoc);
 
 	comp.def("clear_on_layout_change_callback", &Comp::clearOnLayoutChangeCallback, clear_on_layout_change_callbackDoc, nb::rv_policy::reference_internal);
 	comp.def("set_on_layout_change_callback", [](Comp& self, nb::callable pythonCallback, nb::object userData)
@@ -237,14 +241,14 @@ void initCompBindings(nb::module_& m)
 					}
 				},
 				userDataPtr);
-		}
-	);
+		},
+		set_on_layout_change_callbackDoc);
 
 	comp.def("cuda_stream", [](Comp& self) -> uintptr_t
 		{ 
 			return reinterpret_cast<uintptr_t>(self.cudaStream());
-		}
-	,cuda_streamDoc, nb::rv_policy::reference_internal);
+		},
+		cuda_streamDoc, nb::rv_policy::reference_internal);
 
 	
 
