@@ -8,12 +8,100 @@ namespace nb = nanobind;
 using namespace nb::literals;
 
 static const char* load_toxDoc = 
-R"(Loads a .tox file, creates and initializes a TouchEngine Instance
+R"(Loads a .tox file, creates and initializes a TouchEngine Instance.
 Args:
 	path (str) : the path to the .tox file
 
 Returns:
 	True if the .tox file was loaded successfully, False otherwise
+)";
+
+static const char* unloadDoc =
+R"(Unloads TouchEngine instance.
+
+Returns:
+	True if the toxfile has unloaded, False if the toxfile is still loaded 
+)";
+
+static const char* startDoc =
+R"(Starts the TouchEngine instance.
+
+Returns:
+	None
+)";
+
+static const char* stopDoc =
+R"(Stops the TouchEngine instance.
+
+Returns:
+	None
+)";
+
+static const char* frame_did_finishDoc =
+R"(Stops the TouchEngine instance.
+
+Returns:
+	None
+)";
+
+static const char* apply_value_changesDoc =
+R"(Stops the TouchEngine instance.
+
+Returns:
+	None
+)";
+
+static const char* call_on_frame_callbackDoc =
+R"(calls the method set using: set_on_frame_callback()
+
+Returns:
+	None
+)";
+
+static const char* start_next_frameDoc =
+R"(Starts the next frame.
+
+Returns:
+	True if frame started succesfully, False otherwise
+)";
+
+static const char* loadedDoc =
+R"(True if the .tox file was loaded successfully, False otherwise.
+)";
+
+static const char* frame_did_finishDoc =
+R"(True if the frame has finished, False otherwise.
+)";
+
+static const char* in_topsDoc =
+R"(The input TOPs.
+)";
+
+static const char* in_topsDoc =
+R"(The In TOPs of the currently loaded tox.
+)";
+
+static const char* out_topsDoc =
+R"(The Out TOPs of the currently loaded tox.
+)";
+
+static const char* in_chopsDoc =
+R"(The In CHOPs of the currently loaded tox.
+)";
+
+static const char* out_chopsDoc =
+R"(The Out CHOPs of the currently loaded tox.
+)";
+static const char* in_datsDoc =
+R"(The In DATs of the currently loaded tox.
+)";
+
+static const char* out_datsDoc =
+R"(The Out DATs of the currently loaded tox.
+)";
+
+static const char* out_datsDoc =
+R"(The parameters of the currently loaded tox.
 )";
 
 void initCompBindings(nb::module_& m)
@@ -47,14 +135,14 @@ void initCompBindings(nb::module_& m)
 		.def(nb::init<const std::string&, CompFlagBits, int64_t>(),
 			"tox_path"_a, "flags"_a = CompFlagBits::InternalTimeAuto, "fps"_a = 60, nb::rv_policy::take_ownership)
 		.def("load_tox", [](Comp& self, std::string path, int fps) { self.loadTox(path, fps); } , "path"_a, "fps"_a = 60, load_toxDoc)
-		.def("loaded",                 &Comp::loaded, nb::rv_policy::reference_internal)
 		.def("unload",                 &Comp::unload, nb::rv_policy::reference_internal)
 		.def("start",                  &Comp::start, nb::rv_policy::reference_internal)
 		.def("stop",                   &Comp::stop, nb::rv_policy::reference_internal)
-		.def("frame_did_finish",       &Comp::frameDidFinish, nb::rv_policy::reference_internal)
 		.def("apply_value_changes",    &Comp::applyValueChanges, nb::rv_policy::reference_internal)
 		.def("call_on_frame_callback", &Comp::callOnFrameCallback, nb::rv_policy::reference_internal)
 		.def("start_next_frame",       &Comp::startNextFrame, "time_value"_a = 0, "time_scale"_a = 0, nb::rv_policy::reference_internal)
+		.def_ro("loaded",              &Comp::loaded, nb::rv_policy::reference_internal)
+		.def_ro("frame_did_finish",    &Comp::frameDidFinish, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_tops",        &Comp::inputTopLinks, nb::rv_policy::reference_internal)
 		.def_prop_ro("out_tops",       &Comp::outputTopLinks, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_chops",       &Comp::inChopLinks, nb::rv_policy::reference_internal)
