@@ -36,6 +36,10 @@
 *Backup
 *.dmp
 __pycache__
+
+/docs/build
+
+
 CMakeUserPresets.json
 CMakePresets.json
 example/touchpy.cp311-win_amd64.pyd
