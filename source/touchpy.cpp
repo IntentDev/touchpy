@@ -1,4 +1,7 @@
 #include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
+#include <nanobind/stl/vector.h>
+#include <nanobind/stl/string.h>
 #include "logging.h"
 
 namespace nb = nanobind;
@@ -10,6 +13,61 @@ void printInfo(const std::string& info)
     nb::gil_scoped_acquire acquire;
     nb::print(info.c_str());
 }
+
+std::string dtype_codeAsStr(uint8_t code)
+{
+	auto code_enum = static_cast<nb::dlpack::dtype_code>(code);
+	switch (code_enum)
+	{
+	case nb::dlpack::dtype_code::Int: return "Int";
+	case nb::dlpack::dtype_code::UInt: return "UInt";
+	case nb::dlpack::dtype_code::Float: return "Float";
+	case nb::dlpack::dtype_code::Bfloat: return "Bfloat";
+	case nb::dlpack::dtype_code::Complex: return "Complex";
+	default : return "Unknown";
+	}
+}
+
+nb::dict getDLPackCapsuleInfo(nb::ndarray<> array)
+{
+	nb::gil_scoped_acquire acquire;
+	nb::dict info;
+
+	info["device_type"] = array.device_type();
+	info["device_id"] = array.device_id();
+
+	auto dtype = array.dtype();
+	nb::dict info_dtype;
+	info_dtype["code"] = dtype.code;
+	info_dtype["code_str"] = dtype_codeAsStr(dtype.code);
+	info_dtype["bits"] = dtype.bits;
+	info_dtype["lanes"] = dtype.lanes;
+	info["dtype"] = info_dtype;
+
+
+	info["ndim"] = array.ndim();
+	info["nbytes"] = array.nbytes();
+	info["size"] = array.size();
+	info["itemsize"] = array.itemsize();
+
+	std::vector<int64_t> shape(array.ndim());
+	std::copy(array.shape_ptr(), array.shape_ptr() + array.ndim(), shape.begin());
+	info["shape"] = shape;
+
+	std::vector<int64_t> stride(array.ndim());
+	std::copy(array.stride_ptr(), array.stride_ptr() + array.ndim(), stride.begin());
+	info["stride"] = stride;
+
+	return info;
+}
+
+static const char* get_dlpack_capsule_infoDoc =
+R"(Get information about a DLPack capsule.
+
+Args:
+	array (ndarray): The array to get information about.
+)";
+
 
 
 extern void initCompBindings(nb::module_& m);
@@ -34,6 +92,9 @@ NB_MODULE(touchpy, m)
 	initLogging(spdlog::level::info);
 
 	m.def("set_log_level", &setLogLevel, "level"_a = spdlog::level::warn);
+
+	m.def("get_dlpack_capsule_info", &getDLPackCapsuleInfo, "array"_a, get_dlpack_capsule_infoDoc, nb::rv_policy::reference_internal);
+
 
 	initCompBindings(m);
 	initTopLinkBindings(m);
