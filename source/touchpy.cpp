@@ -24,16 +24,23 @@ std::string dtype_codeAsStr(uint8_t code)
 	case nb::dlpack::dtype_code::Float: return "Float";
 	case nb::dlpack::dtype_code::Bfloat: return "Bfloat";
 	case nb::dlpack::dtype_code::Complex: return "Complex";
+	case nb::dlpack::dtype_code::Bool: return "Bool";
 	default : return "Unknown";
 	}
 }
+
+
 
 nb::dict getDLPackCapsuleInfo(nb::ndarray<> array)
 {
 	nb::gil_scoped_acquire acquire;
 	nb::dict info;
 
-	info["device_type"] = array.device_type();
+	// see nanobind/ndarray.h for names of device types - could break if nanobind changes...
+	const char* device_names[] = {
+	"none", "cpu", "cuda", "cuda_host", "opencl", "vulkan", "metal", "rocm", "rocm_host", "cuda_managed", "oneapi" };
+
+	info["device_type"] = device_names[array.device_type()];
 	info["device_id"] = array.device_id();
 
 	auto dtype = array.dtype();
