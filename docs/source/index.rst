@@ -9,8 +9,11 @@ Welcome to TouchPy's documentation!
 Contents
 --------
 
+
 .. toctree::
-   :maxdepth: 100
+   :maxdepth: 2
+
+   overview
+   install
+   reference/index
    
-.. automodule:: touchpy
-   :members:
