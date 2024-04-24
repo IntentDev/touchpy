@@ -49,3 +49,5 @@ examples/yolov8/toe/yolo.*.toe
 examples/yolov8/models/
 install/examples/sdxl-turbo/toe/sdxl-turbo.*.toe
 *log.txt
+
+docs/source/reference/generated/
