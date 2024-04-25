@@ -38,6 +38,6 @@ Full Table Of Contents
    self
    install
    overview
-   reference/touchpy/index
+   reference
    license
 

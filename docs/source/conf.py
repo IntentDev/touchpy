@@ -76,7 +76,7 @@ autoapi_keep_files = True
 autodoc_typehints = "signature"
 autoapi_own_page_level = "class"
 autoapi_root = 'reference'
-autoapi_add_toctree_entry = False
+#autoapi_add_toctree_entry = False
 maximum_signature_line_length = 80
 
 rst_prolog = """
