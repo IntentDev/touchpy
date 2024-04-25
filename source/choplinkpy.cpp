@@ -52,7 +52,7 @@ static const char* from_numpyDoc =
 R"(Sets the data in this CHOP from a 2D NumPy array.
 
 Args:
-	array (ndarray) : the 2D NumPy array to set the data from
+	array (numpy.ndarray) : the 2D NumPy array to set the data from
 	names (list) : the names of the channels in the array (optional)
 )";
 
@@ -120,7 +120,8 @@ void initChopLinkBindings(nb::module_& m)
 			};
 			return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(self.data(), 2, shape);
 		},
-		nb::rv_policy::automatic);
+		nb::sig("def as_numpy()-> numpy.ndarray"),
+		as_numpyDoc, nb::rv_policy::automatic);
 
 	nb::class_<OutChopLink> outChop(m, "OutChop");
 	outChop.doc() = "An interface for an OutCHOP in a loaded TouchDesigner component";
@@ -136,8 +137,8 @@ void initChopLinkBindings(nb::module_& m)
 			};
 			return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(self.data(), 2, shape);
 		},
-		nb::sig("def as_numpy(self) -> array_like"),
-		nb::rv_policy::automatic);
+		nb::sig("def as_numpy()-> numpy.ndarray"),
+		as_numpyDoc, nb::rv_policy::automatic);
 
 	outChop.def("as_numpy_ref", [](OutChopLink& self)
 		{
@@ -148,6 +149,7 @@ void initChopLinkBindings(nb::module_& m)
 			};
 			return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(self.data(), 2, shape);
 		},
+		nb::sig("def as_numpy_ref()-> numpy.ndarray"),
 		as_numpy_refDoc, nb::rv_policy::reference_internal);
 
 
@@ -163,7 +165,8 @@ void initChopLinkBindings(nb::module_& m)
 	nb::class_<InChopLink> inChop(m, "InChop");
 	inChop.doc() = "An interface for an InCHOP in a loaded TouchDesigner component";
 	inChop.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
-		.def("from_numpy", &fromNumpyToChopLink, "array"_a, "names"_a = nb::list(), from_numpyDoc);
+		.def("from_numpy", &fromNumpyToChopLink, "array"_a, "names"_a = nb::list(), 
+			nb::sig("def from_numpy(self, array: numpy.ndarray, names: list)->None"), from_numpyDoc);
 
 	nb::class_<InChopLinks> inChops(m, "InChops", nb::dynamic_attr());
 	inChops.doc() = "A container of InChop objects.";

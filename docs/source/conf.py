@@ -65,11 +65,11 @@ extensions = ['sphinx.ext.autodoc',
           "sphinx.ext.intersphinx",
           'numpydoc']
 
-autoapi_dirs = ['../../install/modules']
+autoapi_dirs = ['../../out/build/x64-release']
 autoapi_type = "python"
 
 autoapi_template_dir = "_templates/autoapi"
-#autoapi_keep_files = True
+autoapi_keep_files = True
 autodoc_typehints = "signature"
 autoapi_own_page_level = "class"
 autoapi_root = 'reference'
@@ -91,6 +91,14 @@ def prepare_jinja_env(jinja_env) -> None:
     jinja_env.tests["contains"] = contains
 
 autoapi_prepare_jinja_env = prepare_jinja_env
+
+# napoleon options
+#napoleon_use_admonition_for_notes = True
+napoleon_preprocess_types = True
+napoleon_type_aliases = {
+    "Callable": "collections.abc.Callable"
+}
+
 
 
 # -- Intersphinx options
