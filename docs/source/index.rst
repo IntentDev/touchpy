@@ -1,19 +1,21 @@
-.. TouchPy documentation master file, created by
-   sphinx-quickstart on Fri Apr 19 02:40:57 2024.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+==================
+What is *TouchPy*?
+==================
 
-Welcome to TouchPy's documentation!
-===================================
+*TouchPy* is a Python library with which enables integration swith TouchDesigner.
+
+* **High Performance**: TouchPy has been written for speed and performance. TouchPy has a C++ backend, and uses Vulkan and CUDA.
+
 
 Contents
---------
-
+========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
-   overview
+   self
    install
+   overview
    reference/index
-   
+   license
+

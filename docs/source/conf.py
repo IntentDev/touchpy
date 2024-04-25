@@ -12,7 +12,6 @@ if str(localImportPath) not in sys.path:
 	sys.path.insert(0,str(localImportPath))	
 
 
-
 project = 'TouchPy'
 copyright = '2024'
 author = ''
@@ -62,15 +61,20 @@ release = '0.1'
 
 extensions = ['sphinx.ext.autodoc',
 		  'sphinx.ext.napoleon',
-		  'autoapi.extension']
+		  'autoapi.extension',
+          "sphinx.ext.intersphinx",
+          'numpydoc']
 
 autoapi_dirs = ['../../install/modules']
 autoapi_type = "python"
 
 autoapi_template_dir = "_templates/autoapi"
-autoapi_keep_files = True
+#autoapi_keep_files = True
 autodoc_typehints = "signature"
 autoapi_own_page_level = "class"
+autoapi_root = 'reference'
+
+maximum_signature_line_length = 80
 
 rst_prolog = """
 .. role:: summarylabel
@@ -87,6 +91,14 @@ def prepare_jinja_env(jinja_env) -> None:
     jinja_env.tests["contains"] = contains
 
 autoapi_prepare_jinja_env = prepare_jinja_env
+
+
+# -- Intersphinx options
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None)
+}
+
 
 #===== END autoapi variant ========================
 
