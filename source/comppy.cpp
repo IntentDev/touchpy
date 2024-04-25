@@ -90,7 +90,7 @@ R"(The parameters of the currently loaded tox.
 )";
 
 static const char* clear_on_frame_callbackDoc =
-R"(Unsets any callback method set using set_on_frame_callback().
+R"(Unsets any callback method set using :py:meth:`set_on_frame_callback`.
 
 Returns:
 	None
@@ -108,7 +108,7 @@ Returns:
 )";
 
 static const char* clear_on_layout_change_callbackDoc =
-R"(Unsets any callback method set using: on_layout_change_callback().
+R"(Unsets any callback method set using: :py:meth:`set_on_layout_change_callback`.
 )";
 
 static const char* set_on_layout_change_callbackDoc =
