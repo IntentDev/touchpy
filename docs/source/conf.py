@@ -68,12 +68,15 @@ extensions = ['sphinx.ext.autodoc',
 autoapi_dirs = ['../../out/build/x64-release']
 autoapi_type = "python"
 
+templates_path = ['_templates']
+exclude_patterns = []
 autoapi_template_dir = "_templates/autoapi"
+
 autoapi_keep_files = True
 autodoc_typehints = "signature"
 autoapi_own_page_level = "class"
 autoapi_root = 'reference'
-
+autoapi_add_toctree_entry = False
 maximum_signature_line_length = 80
 
 rst_prolog = """
@@ -110,8 +113,7 @@ intersphinx_mapping = {
 
 #===== END autoapi variant ========================
 
-templates_path = ['_templates']
-exclude_patterns = []
+
 
 
 
