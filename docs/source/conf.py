@@ -35,14 +35,60 @@ release = '0.1'
 
 #==== start cupy variant  ========================
 
-extensions = ['sphinx.ext.autodoc',
-		  'sphinx.ext.autosummary',
-		  'sphinx.ext.napoleon',
-		  'sphinx_copybutton']
+#extensions = ['sphinx.ext.autodoc',
+#		  'sphinx.ext.autosummary',
+#		  'sphinx.ext.napoleon',
+#		  'sphinx_copybutton']
 
-autosummary_generate = True
+#autosummary_generate = True
+
+#autodoc_member_order = 'groupwise'
+#autodoc_typehints = 'both'
+
+
+#autodoc_default_options = {
+#    'members': True,
+#    'member-order': 'groupwise',
+#    'special-members': '__init__',
+#    'undoc-members': True,
+#    'exclude-members': '__weakref__'
+#}
+
+
 # ===== end cupy variant ========================
 
+#==== start autoapi variant ========================
+# sewe https://bylr.info/articles/2022/05/10/api-doc-with-sphinx-autoapi/
+
+extensions = ['sphinx.ext.autodoc',
+		  'sphinx.ext.napoleon',
+		  'autoapi.extension']
+
+autoapi_dirs = ['../../install/modules']
+autoapi_type = "python"
+
+autoapi_template_dir = "_templates/autoapi"
+autoapi_keep_files = True
+autodoc_typehints = "signature"
+autoapi_own_page_level = "class"
+
+rst_prolog = """
+.. role:: summarylabel
+"""
+
+html_css_files = [
+    "css/touchpy.css",
+]
+
+def contains(seq, item):
+    return item in seq
+
+def prepare_jinja_env(jinja_env) -> None:
+    jinja_env.tests["contains"] = contains
+
+autoapi_prepare_jinja_env = prepare_jinja_env
+
+#===== END autoapi variant ========================
 
 templates_path = ['_templates']
 exclude_patterns = []
