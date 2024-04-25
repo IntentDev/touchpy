@@ -58,11 +58,15 @@ Args:
 
 
 static const char* countDocInChop =
-R"(Returns the number of In CHOPs in the loaded tox.
+R"(Returns:
+	int: number of In CHOPs in the loaded tox.
 )";	
 
 static const char* namesDocInChop =
-R"(Returns a list of names of all In CHOPs in the loaded tox.
+R"(Names of all In CHOPs.
+
+Returns: 
+	list: names of all In CHOPs in the loaded tox.
 )";
 
 void fromNumpyToChopLink(
@@ -102,11 +106,11 @@ void initChopLinkBindings(nb::module_& m)
 	nb::class_<ChopChannels> chopChannels(m, "ChopChannels");
 	chopChannels.doc() = "A container of CHOP channels";
 	chopChannels.def(nb::init<>())
-		.def_prop_ro("num_channels", &ChopChannels::channelCount, num_channelsDoc)
-		.def_prop_ro("num_samples", &ChopChannels::valueCount, num_samplesDoc)
-		.def_prop_ro("rate", &ChopChannels::rate, rateDoc)
-		.def_prop_ro("is_time_dependent", &ChopChannels::isTimeDependent, is_time_dependentDoc)
-		.def_prop_ro("channel_names", &ChopChannels::channelNames, chan_namesDoc, nb::rv_policy::reference_internal);
+		.def_ro("num_channels", &ChopChannels::channelCount, num_channelsDoc)
+		.def_ro("num_samples", &ChopChannels::valueCount, num_samplesDoc)
+		.def_ro("rate", &ChopChannels::rate, rateDoc)
+		.def_ro("is_time_dependent", &ChopChannels::isTimeDependent, is_time_dependentDoc)
+		.def_ro("channel_names", &ChopChannels::channelNames, chan_namesDoc, nb::rv_policy::reference_internal);
 
 	chopChannels.def("as_numpy", [](ChopChannels& self)
 		{
@@ -160,7 +164,7 @@ void initChopLinkBindings(nb::module_& m)
 	inChop.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("from_numpy", &fromNumpyToChopLink, "array"_a, "names"_a = nb::list(), from_numpyDoc);
 
-	nb::class_<InChopLinks> inChops(m, "InChops");
+	nb::class_<InChopLinks> inChops(m, "InChops", nb::dynamic_attr());
 	inChops.doc() = "A container of InChop objects.";
 	inChops.def(nb::init<>())
 		.def_prop_ro("count", [](InChopLinks& self) { return self.size(); }, countDocInChop)

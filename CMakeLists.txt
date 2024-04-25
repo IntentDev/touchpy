@@ -192,3 +192,11 @@ add_definitions(-DCMAKE_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
 install(TARGETS touchpy LIBRARY DESTINATION modules CONFIGURATIONS Release)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin/TouchEngine.dll DESTINATION modules CONFIGURATIONS Release)
 install(FILES ${cuda_runtime_dll} DESTINATION modules CONFIGURATIONS Release)
+
+nanobind_add_stub(
+  touchpy_stub
+  MODULE touchpy
+  OUTPUT touchpy.pyi
+  PYTHON_PATH $<TARGET_FILE_DIR:touchpy>
+  DEPENDS touchpy
+)
