@@ -3,7 +3,8 @@ API Reference
 
 {% if obj.display %}
    {% if is_own_page %}
-
+{{ obj.id }}
+{{ "=" * obj.id|length }}
 
 .. py:module:: {{ obj.name }}
 
@@ -100,8 +101,8 @@ Exceptions
             {% set visible_classes = visible_children|selectattr("type", "equalto", "class")|list %}
             {% if visible_classes %}
                {% if "class" in own_page_types or "show-module-summary" in autoapi_options %}
-TouchPy Classes
----------------
+Classes
+-------
 
                   {% if "class" in own_page_types %}
 .. toctree::

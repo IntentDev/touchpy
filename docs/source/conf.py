@@ -18,52 +18,13 @@ author = ''
 release = '0.1'
 
 
-# start autodocsumm version ========================
-
-#extensions = [
-#      'sphinx.ext.autodoc', 
-#      'sphinx.ext.napoleon', 
-#      'autodocsumm', 
-#      'sphinx.ext.coverage'
-#]
-
-# add in this line for the autosummary functionality
-#auto_doc_default_options = {'autoclass_content' : 'both', 'autosummary': True}
-
-# end autodocsumm version ========================
-
-#==== start cupy variant  ========================
-
-#extensions = ['sphinx.ext.autodoc',
-#		  'sphinx.ext.autosummary',
-#		  'sphinx.ext.napoleon',
-#		  'sphinx_copybutton']
-
-#autosummary_generate = True
-
-#autodoc_member_order = 'groupwise'
-#autodoc_typehints = 'both'
-
-
-#autodoc_default_options = {
-#    'members': True,
-#    'member-order': 'groupwise',
-#    'special-members': '__init__',
-#    'undoc-members': True,
-#    'exclude-members': '__weakref__'
-#}
-
-
-# ===== end cupy variant ========================
-
 #==== start autoapi variant ========================
 # sewe https://bylr.info/articles/2022/05/10/api-doc-with-sphinx-autoapi/
 
 extensions = ['sphinx.ext.autodoc',
 		  'sphinx.ext.napoleon',
 		  'autoapi.extension',
-          "sphinx.ext.intersphinx",
-          'numpydoc']
+          "sphinx.ext.intersphinx"]
 
 autoapi_dirs = ['../../out/build/x64-release']
 autoapi_type = "python"
@@ -76,8 +37,23 @@ autoapi_keep_files = True
 autodoc_typehints = "signature"
 autoapi_own_page_level = "class"
 autoapi_root = 'reference'
-#autoapi_add_toctree_entry = False
+#autoapi_member_order = 'groupwise'
+autoapi_add_toctree_entry = False
 maximum_signature_line_length = 80
+#autoapi_python_use_implicit_namespaces = True
+
+def skip_util_classes(app, what, name, obj, skip, options):
+    if what == "class" and "_Enum" in name:
+       skip = True
+    #elif what == "function" and "set_log_level" in name:
+    #  skip = True
+    return skip
+
+def setup(sphinx):
+   sphinx.connect("autoapi-skip-member", skip_util_classes)
+
+
+
 
 rst_prolog = """
 .. role:: summarylabel
