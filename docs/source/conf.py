@@ -32,7 +32,6 @@ autoapi_type = "python"
 templates_path = ['_templates']
 exclude_patterns = []
 autoapi_template_dir = "_templates/autoapi"
-
 autoapi_keep_files = True
 autodoc_typehints = "signature"
 autoapi_own_page_level = "class"
@@ -42,7 +41,15 @@ autoapi_add_toctree_entry = False
 maximum_signature_line_length = 80
 #autoapi_python_use_implicit_namespaces = True
 
-def skip_util_classes(app, what, name, obj, skip, options):
+def contains(seq, item):
+    return item in seq
+
+def prepare_jinja_env(jinja_env) -> None:
+    jinja_env.tests["contains"] = contains
+
+autoapi_prepare_jinja_env = prepare_jinja_env
+
+def skip_members(app, what, name, obj, skip, options):
     if what == "class" and "_Enum" in name:
        skip = True
     #elif what == "function" and "set_log_level" in name:
@@ -50,7 +57,7 @@ def skip_util_classes(app, what, name, obj, skip, options):
     return skip
 
 def setup(sphinx):
-   sphinx.connect("autoapi-skip-member", skip_util_classes)
+   sphinx.connect("autoapi-skip-member", skip_members)
 
 
 
@@ -63,13 +70,7 @@ html_css_files = [
     "css/touchpy.css",
 ]
 
-def contains(seq, item):
-    return item in seq
 
-def prepare_jinja_env(jinja_env) -> None:
-    jinja_env.tests["contains"] = contains
-
-autoapi_prepare_jinja_env = prepare_jinja_env
 
 # napoleon options
 #napoleon_use_admonition_for_notes = True
