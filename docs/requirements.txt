@@ -1,6 +1,4 @@
 sphinx==7.3.6 
-pydata-sphinx-theme==0.15.2
 sphinx-autoapi==3.1.0b0
 furo==2024.1.29
 sphinx-copybutton
-numpydoc
