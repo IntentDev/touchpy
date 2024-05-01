@@ -1,6 +1,6 @@
-==================
+=====================
 TouchPy Documentation
-==================
+=====================
 
 *TouchPy* is a Python framework for high-performance integration of any existing Python framework with TouchDesigner. By leveraging Vulkan, CUDA, and TouchEngine, TouchPy opens new pathways for integration, particularly with libraries such as PyTorch and Nvidia Warp. TouchPy supports GPU-to-GPU (zero-copy) data transfers, streamlining data exchange between standalone Python applications and Touchdesigner. 
 
@@ -8,7 +8,7 @@ The first public version of TouchPy was released during the TouchDesigner Event 
 
 
 Quickstart
------------
+==========
 | TouchPy supports Python 3.11 and TouchDesigner 2023. For now it runs on Windows only.  
 | A Vulkan & CUDA capable NVIDIA GPU and driver are required.
 

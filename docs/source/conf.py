@@ -29,6 +29,8 @@ extensions = ['sphinx.ext.autodoc',
 autoapi_dirs = ['../../out/build/x64-release']
 autoapi_type = "python"
 
+autoapi_options = [ 'members', 'undoc-members', 'private-members', 'show-module-summary', 'special-members', 'imported-members', ]
+
 templates_path = ['_templates']
 exclude_patterns = []
 autoapi_template_dir = "_templates/autoapi"
@@ -36,10 +38,10 @@ autoapi_keep_files = True
 autodoc_typehints = "signature"
 autoapi_own_page_level = "class"
 autoapi_root = 'reference'
-#autoapi_member_order = 'groupwise'
+autoapi_member_order = "alphabetical"
 autoapi_add_toctree_entry = False
 maximum_signature_line_length = 80
-#autoapi_python_use_implicit_namespaces = True
+
 
 def contains(seq, item):
     return item in seq
@@ -52,6 +54,9 @@ autoapi_prepare_jinja_env = prepare_jinja_env
 def skip_members(app, what, name, obj, skip, options):
     if what == "class" and "_Enum" in name:
        skip = True
+    
+    if name.endswith("__"):
+        skip = True
     #elif what == "function" and "set_log_level" in name:
     #  skip = True
     return skip
@@ -73,7 +78,7 @@ html_css_files = [
 
 
 # napoleon options
-#napoleon_use_admonition_for_notes = True
+napoleon_use_admonition_for_notes = True
 napoleon_preprocess_types = True
 napoleon_type_aliases = {
     "Callable": "collections.abc.Callable"

@@ -47,8 +47,8 @@
    {% set visible_attributes = visible_children|rejectattr("type", "equalto", "method")|list %}
 
    {% if visible_attributes %}
-   Attributes
-   ^^^^^^^^^^
+   .. rubric:: Attributes
+
 {% for attribute in visible_attributes %}
    {{ attribute.render()|indent(3) }}
 {% endfor %}
@@ -57,8 +57,8 @@
    {% if visible_methods %}
    
    
-   Methods
-   ^^^^^^^
+   .. rubric:: Methods
+   
 {% for method in visible_methods %}
    {{ method.render()|indent(3) }}
 {% endfor %}
