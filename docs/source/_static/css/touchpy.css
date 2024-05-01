@@ -9,3 +9,10 @@ span.summarylabel {
     padding-bottom: 2px;
     filter: opacity(40%);
 }
+
+dd p.rubric {
+    font-size:1.5em;
+    font-weight: 700;
+    text-transform: none;
+    margin-top: 1.75rem !important;
+}
