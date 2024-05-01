@@ -93,6 +93,10 @@ intersphinx_mapping = {
 }
 
 
+html_show_sphinx = False
+
+
+
 #===== END autoapi variant ========================
 
 
