@@ -46,7 +46,8 @@ class ExampleRunComp:
 		print('in dats:', comp.in_dats.count, comp.in_dats.names)
 		print('out dats:', comp.out_dats.count, comp.out_dats.names)
 		print('pars:', comp.par.count, comp.par.names)
-		comp.out_tops[1].set_cuda_flags(tp.CudaFlags.BGRA | tp.CudaFlags.HWC)
+		# comp.out_tops[1].set_cuda_flags(tp.CudaFlags.BGRA | tp.CudaFlags.HWC)
+		comp.out_tops[1].set_cuda_flags(tp.CudaFlags.RGB)
 
 		this.stream = torch.cuda.ExternalStream(comp.cuda_stream(), device=this.device)
 		# this.stream = CudaStream(comp.cuda_stream())
@@ -70,7 +71,7 @@ class ExampleRunComp:
 
 		# copy out_chop to in_chop with channel names. Only NumPy arrays are supported for now.
 		arr = comp.out_chops[0].as_numpy()
-		names = comp.out_chops[0].chan_names()
+		names = comp.out_chops[0].chan_names
 		arr *= 2
 		comp.in_chops[0].from_numpy(arr, names)
 		
@@ -81,7 +82,7 @@ class ExampleRunComp:
 		this.test_array += .01
 
 		chans2 = comp.out_chops[1].as_numpy()
-		chans2_names = comp.out_chops[1].chan_names()
+		chans2_names = comp.out_chops[1].chan_names
 		# print(chans2_names)
 
 		# retrieve by name and set as local variable
@@ -92,7 +93,7 @@ class ExampleRunComp:
 		chans3 = comp.out_chops[2]
 		arr = chans3.as_numpy()
 		# print(arr)
-		comp.in_chops[2].from_numpy(arr, chans3.chan_names())
+		comp.in_chops[2].from_numpy(arr, chans3.chan_names)
 
 		# set first in DAT with string (inDAT will be in text mode)
 		comp.in_dats[0].from_string(f"Hello World! frame: {this.frame}")
@@ -153,8 +154,8 @@ class ExampleRunComp:
 		comp.in_tops[0].copy_cuda_memory(cudamem)
 
 		# copy the cuda memory from out_top_link to in_top_link
-		cudamem = comp.out_tops[1].cuda_memory()
-		comp.in_tops[1].copy_cuda_memory(cudamem)
+		# cudamem = comp.out_tops[1].cuda_memory()
+		# comp.in_tops[1].copy_cuda_memory(cudamem)
 
 		with torch.cuda.stream(this.stream):	
 			with torch.no_grad():
@@ -162,7 +163,7 @@ class ExampleRunComp:
 				# tensor2 = tensor * 2 # do some work on the tensor
 				# comp.in_tops[0].from_tensor(tensor2)
 
-				tensor = comp.out_tops[2].as_tensor(sync_cuda_stream=True)
+				tensor = comp.out_tops[1].as_tensor(sync_cuda_stream=True)
 				if (this.frame == 2):
 					
 					print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.
@@ -171,7 +172,8 @@ class ExampleRunComp:
 
 				# filter tensor only works with 32bit float data (comp.out_tops[2] is 32bit float in this example)
 				# filter expects (b, c, h, w) layout
-				tensor2 = this.imag_filter(tensor.unsqueeze(0)).squeeze(0) 
+				# tensor2 = this.imag_filter(tensor.unsqueeze(0)).squeeze(0) 
+				tensor2 = tensor.clone()
 
 				if (this.frame == 2):
 					print("tensor2 shape: ", tensor2.shape, "tensor2 dtype: ", tensor2.dtype, 
@@ -179,7 +181,7 @@ class ExampleRunComp:
 					"tensor2 strides: ", tensor2.stride(), "tensor2 is_contiguous: ", tensor2.is_contiguous())
 				
 				# comp.in_tops[2].from_tensor(tensor2, this.stream)
-				comp.in_tops[2].from_tensor(tensor2)
+				comp.in_tops[1].from_tensor(tensor2, flags=tp.CudaFlags.RGB)
 				# comp.in_tops[2].from_tensor(tensor2)
 				pass
 

@@ -18,6 +18,8 @@ cudaDataTypeFromArray(nb::ndarray<> array)
 	{
 		if (dtype.bits == 8)
 			return CUDADataType::UInt8;
+		else if (dtype.bits == 16)
+			return CUDADataType::UInt16;
 	}
 	else if (dtype.code == static_cast<uint8_t>(nb::dlpack::dtype_code::Float))
 	{
@@ -36,6 +38,8 @@ cudaDataTypeFromDtype(nb::dlpack::dtype dtype)
 	{
 		if (dtype.bits == 8)
 			return CUDADataType::UInt8;
+		else if (dtype.bits == 16)
+			return CUDADataType::UInt16;
 	}
 	else if (dtype.code == static_cast<uint8_t>(nb::dlpack::dtype_code::Float))
 	{
@@ -64,6 +68,10 @@ dtypeFromCUDADataType(CUDADataType type)
 		break;
 	case CUDADataType::Float16:
 		dtype.code = static_cast<uint8_t>(nb::dlpack::dtype_code::Float);
+		dtype.bits = 16;
+		break;
+	case CUDADataType::UInt16:
+		dtype.code = static_cast<uint8_t>(nb::dlpack::dtype_code::UInt);
 		dtype.bits = 16;
 		break;
 	default:

@@ -83,20 +83,6 @@ Texture::Texture(
 	memoryAllocateInfo.memoryTypeIndex = memoryTypeIndex;
 	memoryAllocateInfo.pNext = &importMemoryInfo;
 
-	// Import the external memory into Vulkan
-	// causing validation error in Vulkan 1.3.275.0, need to figure this out but an ImageView is not needed
-	// for the texture to be used in CUDA
-	// 
-	// Validation Error: [ VUID-VkMemoryAllocateInfo-memoryTypeIndex-00645 ] | MessageID = 0xb4ec2301 | vkAllocateMemory(): 
-	// pAllocateInfo->memoryTypeIndex is 1 but VkMemoryWin32HandlePropertiesKHR::memoryTypeBits is 0x0. 
-	// The Vulkan spec states: If the parameters define an import operation and the external handle is an NT handle or a 
-	// global share handle created outside of the Vulkan API, the value of memoryTypeIndex must be one of those returned 
-	// by vkGetMemoryWin32HandlePropertiesKHR 
-	// (https://vulkan.lunarg.com/doc/view/1.3.275.0/windows/1.3-extensions/vkspec.html#VUID-VkMemoryAllocateInfo-memoryTypeIndex-00645)
-	// 
-	// This is a bug in Vulkan 1.3.275.0, the memoryTypeIndex is correct!!! Need to update to the next release of Vulkan
-	// when it becomes available then uncomment the code below so the texture can be used in Vulkan as well as CUDA
-	// 
 	VkDeviceMemory externalMemory;
 	VK_CHECK(vkAllocateMemory(device_, &memoryAllocateInfo, nullptr, &externalMemory));
 	VK_CHECK(vkBindImageMemory(device_, image_, externalMemory, 0));
@@ -252,8 +238,6 @@ Texture::Texture(
 	SPDLOG_DEBUG("Texture Created, width: {}, height: {}, format: {}, Size: {}, Memory Type Index: {}", 
 		extent_.width, extent_.height, string_VkFormat(format_), memRequirements.size, memoryTypeIndex);
 	SPDLOG_FLUSH_DEBUG
-
-
 }
 
 Texture::~Texture()
@@ -687,6 +671,24 @@ void Texture::setCudaCopySurfaceFunc(CudaFlags flags)
 			else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
 			return;
 		}
+		case VK_FORMAT_R16G16B16A16_UNORM:
+		{
+			if (flags & CudaFlagBits::RGBA)		 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<ushort4, short, 0, 1, 2, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<ushort4, short, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGRA) copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<ushort4, short, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<ushort4, short, 2, 1, 0>(dst, width, height, src, stream); };
+			else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<ushort4, short, 0, 1, 2, 3>(dst, width, height, src, stream); };
+			return;
+		}
+		case VK_FORMAT_R16G16B16A16_SFLOAT:
+		{
+			if (flags & CudaFlagBits::RGBA)		 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<Half4, half, 0, 1, 2, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<Half4, half, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGRA) copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<Half4, half, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<Half4, half, 2, 1, 0>(dst, width, height, src, stream); };
+			else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<Half4, half, 0, 1, 2, 3>(dst, width, height, src, stream); };
+			return;
+		}
 		case VK_FORMAT_R32G32B32A32_SFLOAT:
 		{
 			if (flags & CudaFlagBits::RGBA)		 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<float4, float, 0, 1, 2, 3>(dst, width, height, src, stream); };
@@ -696,19 +698,28 @@ void Texture::setCudaCopySurfaceFunc(CudaFlags flags)
 			else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<float4, float, 0, 1, 2, 3>(dst, width, height, src, stream); };
 			return;
 		}
+		case VK_FORMAT_R8G8_UNORM:
+		{
+			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<uchar2, uint8_t, 0, 1>(dst, width, height, src, stream); };
+			return;
+		}
+		case VK_FORMAT_R16G16_UNORM:
+		{
+			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<ushort2, short, 0, 1>(dst, width, height, src, stream); };
+			return;
+		}
+		case VK_FORMAT_R16G16_SFLOAT:
+		{
+			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<half2, half, 0, 1>(dst, width, height, src, stream); };
+			return;
+		}
 		case VK_FORMAT_R32G32_SFLOAT:
 		{
 			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurfaceToPlanar<float2, float, 0, 1>(dst, width, height, src, stream); };
 			return;
 		}
-		case VK_FORMAT_R32_SFLOAT:
-		{
-			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) {return memCopySurface<float>(dst, width, height, src, stream); };
-			return;
-		}
 		default:
-			copySurfaceFunc_ = nullptr;
-			return;
+			break;
 		}
 	}
 	else
@@ -724,6 +735,24 @@ void Texture::setCudaCopySurfaceFunc(CudaFlags flags)
 			else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<uchar4, uint8_t, 2, 1, 0, 3>(dst, width, height, src, stream); };
 			return;
 		}
+		case VK_FORMAT_R16G16B16A16_UNORM:
+		{
+			if (flags & CudaFlagBits::RGBA)		 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<ushort4>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<ushort4, short, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGRA) copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<ushort4, short, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<ushort4, short, 2, 1, 0>(dst, width, height, src, stream); };
+			else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<ushort4>(dst, width, height, src, stream); };
+			return;
+		}
+		case VK_FORMAT_R16G16B16A16_SFLOAT:
+		{
+			if (flags & CudaFlagBits::RGBA)		 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<Half4>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<Half4, half, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGRA) copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<Half4, half, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<Half4, half, 2, 1, 0>(dst, width, height, src, stream); };
+			else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<Half4>(dst, width, height, src, stream); };
+			return;
+		}
 		case VK_FORMAT_R32G32B32A32_SFLOAT:
 		{
 			if (flags & CudaFlagBits::RGBA)		 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<float4>(dst, width, height, src, stream); };
@@ -733,22 +762,57 @@ void Texture::setCudaCopySurfaceFunc(CudaFlags flags)
 			else								 copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<float4>(dst, width, height, src, stream); };
 			return;
 		}
+		case VK_FORMAT_R8G8_UNORM:
+		{
+			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<uchar2>(dst, width, height, src, stream); };
+			return;
+		}
+		case VK_FORMAT_R16G16_UNORM:
+		{
+			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<ushort2>(dst, width, height, src, stream); };
+			return;
+		}
+		case VK_FORMAT_R16G16_SFLOAT:
+		{
+			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<half2>(dst, width, height, src, stream); };
+			return;
+		}
 		case VK_FORMAT_R32G32_SFLOAT:
 		{
 			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<float2>(dst, width, height, src, stream); };
 			return;
 		}
-		case VK_FORMAT_R32_SFLOAT:
-		{
-			copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<float>(dst, width, height, src, stream); };
-			return;
-		}
 		default:
-			copySurfaceFunc_ = nullptr;
-			return;
+			break;
 		}
 	}
 
+	switch (format_)
+	{
+	case VK_FORMAT_R8_UNORM:
+	{
+		copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<uint8_t>(dst, width, height, src, stream); };
+		return;
+	}
+	case VK_FORMAT_R16_UNORM:
+	{
+		copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<short>(dst, width, height, src, stream); };
+		return;
+	}
+	case VK_FORMAT_R16_SFLOAT:
+	{
+		copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<half>(dst, width, height, src, stream); };
+		return;
+	}
+	case VK_FORMAT_R32_SFLOAT:
+	{
+		copySurfaceFunc_ = [](void* dst, int width, int height, cudaSurfaceObject_t src, cudaStream_t stream) { return memCopySurface<float>(dst, width, height, src, stream); };
+		return;
+	}
+	default:
+		copySurfaceFunc_ = nullptr;
+		return;
+	}
 }
 
 void Texture::setCudaCopyToSurfaceFunc()
@@ -778,6 +842,32 @@ void Texture::setCudaCopyToSurfaceFunc()
 			}
 			return;
 		}
+		case VK_FORMAT_R16G16B16A16_UNORM:
+		{
+			if (flags & CudaFlagBits::RGBA)		 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<ushort4, short, 0, 1, 2, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<ushort4, short, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGRA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<ushort4, short, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<ushort4, short, 2, 1, 0>(dst, width, height, src, stream); };
+			else
+			{
+				if (numComponents == 4)			 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<ushort4, short, 0, 1, 2, 3>(dst, width, height, src, stream); };
+				else if (numComponents == 3)	 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<ushort4, short, 0, 1, 2>(dst, width, height, src, stream); };
+			}
+		 return;
+		}
+		case VK_FORMAT_R16G16B16A16_SFLOAT:
+		{
+			if (flags & CudaFlagBits::RGBA)		 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<Half4, half, 0, 1, 2, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<Half4, half, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGRA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<Half4, half, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<Half4, half, 2, 1, 0>(dst, width, height, src, stream); };
+			else
+			{
+				if (numComponents == 4)			 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<Half4, half, 0, 1, 2, 3>(dst, width, height, src, stream); };
+				else if (numComponents == 3)	 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<Half4, half, 0, 1, 2>(dst, width, height, src, stream); };
+			}
+			return;
+		}
 		case VK_FORMAT_R32G32B32A32_SFLOAT: // default is RGBA
 		{
 			if (flags & CudaFlagBits::RGBA)      copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<float4, float, 0, 1, 2, 3>(dst, width, height, src, stream); };
@@ -792,19 +882,28 @@ void Texture::setCudaCopyToSurfaceFunc()
 
 			return;
 		}
+		case VK_FORMAT_R8G8_UNORM:
+		{
+			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<uchar2, uint8_t, 0, 1>(dst, width, height, src, stream); };
+			return;
+		}
+		case VK_FORMAT_R16G16_UNORM:
+		{
+			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<ushort2, short, 0, 1>(dst, width, height, src, stream); };
+			return;
+		}
+		case VK_FORMAT_R16G16_SFLOAT:
+		{
+			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<half2, half, 0, 1>(dst, width, height, src, stream); };
+			return;
+		}
 		case VK_FORMAT_R32G32_SFLOAT:
 		{
 			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyPlanarToSurface<float2, float, 0, 1>(dst, width, height, src, stream); };
 			return;
 		}
-		case VK_FORMAT_R32_SFLOAT:
-		{
-			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<float>(dst, width, height, src, stream); };
-			return;
-		}
 		default:
-			copyToSurfaceFunc_ = nullptr;
-			return;
+			break;
 		}
 	}
 	else // HWC - interleaved functions
@@ -828,6 +927,32 @@ void Texture::setCudaCopyToSurfaceFunc()
 			}
 			return;
 		}
+		case VK_FORMAT_R16G16B16A16_UNORM:
+		{
+			if		(flags & CudaFlagBits::RGBA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<ushort4>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<ushort4, short, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGRA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<ushort4, short, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<ushort4, short, 2, 1, 0>(dst, width, height, src, stream); };
+			else
+			{
+				if (numComponents == 4)			 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<ushort4>(dst, width, height, src, stream); };
+				else if (numComponents == 3)	 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<ushort4, short, 0, 1, 2>(dst, width, height, src, stream); };
+			}
+			return;
+		}
+		case VK_FORMAT_R16G16B16A16_SFLOAT:
+		{
+			if		(flags & CudaFlagBits::RGBA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<Half4>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::RGB)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<Half4, half, 0, 1, 2>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGRA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<Half4, half, 2, 1, 0, 3>(dst, width, height, src, stream); };
+			else if (flags & CudaFlagBits::BGR)  copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<Half4, half, 2, 1, 0>(dst, width, height, src, stream); };
+			else
+			{
+				if (numComponents == 4)			 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<Half4>(dst, width, height, src, stream); };
+				else if (numComponents == 3)	 copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<Half4, half, 0, 1, 2>(dst, width, height, src, stream); };
+			}
+			return;
+		}
 		case VK_FORMAT_R32G32B32A32_SFLOAT: // default is RGBA
 		{
 			if		(flags & CudaFlagBits::RGBA) copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<float4>(dst, width, height, src, stream); };
@@ -841,21 +966,56 @@ void Texture::setCudaCopyToSurfaceFunc()
 			}
 			return;
 		}
+		case VK_FORMAT_R8G8_UNORM:
+		{
+			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<uchar2>(dst, width, height, src, stream); };
+			return;
+		}
+		case VK_FORMAT_R16G16_UNORM:
+		{
+			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<ushort2>(dst, width, height, src, stream); };
+			return;
+		}
+		case VK_FORMAT_R16G16_SFLOAT:
+		{
+			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<half2>(dst, width, height, src, stream); };
+			return;
+		}
 		case VK_FORMAT_R32G32_SFLOAT:
 		{
 			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<float2>(dst, width, height, src, stream); };
 			return;
 		}
-		case VK_FORMAT_R32_SFLOAT:
-		{
-			copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<float>(dst, width, height, src, stream); };
-			return;
-		}
 		default:
-			copyToSurfaceFunc_ = nullptr;
-			return;
+			break;
 		}
-		
+	}
+
+	switch (format_)
+	{
+	case VK_FORMAT_R8_UNORM:
+	{
+		copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<uint8_t>(dst, width, height, src, stream); };
+		return;
+	}
+	case VK_FORMAT_R16_UNORM:
+	{
+		copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<short>(dst, width, height, src, stream); };
+		return;
+	}
+	case VK_FORMAT_R16_SFLOAT:
+	{
+		copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<half>(dst, width, height, src, stream); };
+		return;
+	}
+	case VK_FORMAT_R32_SFLOAT:
+	{
+		copyToSurfaceFunc_ = [](cudaSurfaceObject_t dst, int width, int height, const void* src, cudaStream_t stream) { return memCopyToSurface<float>(dst, width, height, src, stream); };
+		return;
+	}
+	default:
+		copyToSurfaceFunc_ = nullptr;
+		return;
 	}
 
 }
@@ -869,8 +1029,7 @@ void Texture::configureCudaMemory(CudaFlags flags)
 	cudaDeviceSynchronize();
 
 	auto numComponents = numComponents_;
-	if ((flags & CudaFlagBits::BGR || flags & CudaFlagBits::RGB) &&
-		(format_ == VK_FORMAT_B8G8R8A8_UNORM || format_ == VK_FORMAT_R32G32B32A32_SFLOAT))
+	if ((flags & CudaFlagBits::BGR || flags & CudaFlagBits::RGB) && numComponents_ == 4)
 	{
 		numComponents = 3;
 	}
