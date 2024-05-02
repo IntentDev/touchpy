@@ -9,11 +9,13 @@ using namespace nb::literals;
 
 static const char* load_toxDoc = 
 R"(Loads a .tox file, creates and initializes a TouchEngine Instance.
+
 Args:
-	path (str) : the path to the .tox file
+	tox_path (str) : the path to the .tox file
+	fps (int) : the frames per second of the TouchEngine instance
 
 Returns:
-	True if the .tox file was loaded successfully, False otherwise
+	bool: True if the .tox file was loaded successfully, False otherwise
 )";
 
 static const char* unloadDoc =
@@ -25,45 +27,38 @@ Returns:
 
 static const char* startDoc =
 R"(Starts the TouchEngine instance.
-
-Returns:
-	None
 )";
 
 static const char* stopDoc =
 R"(Stops the TouchEngine instance.
-
-Returns:
-	None
 )";
 
 static const char* apply_value_changesDoc =
 R"(Stops the TouchEngine instance.
-
-Returns:
-	None
 )";
 
 static const char* call_on_frame_callbackDoc =
 R"(calls the method set using: set_on_frame_callback()
 
 Returns:
-	None
+	bool: True if the callback was succesfully called, False otherwise
 )";
 
 static const char* start_next_frameDoc =
 R"(Starts the next frame.
 
 Returns:
-	True if frame started succesfully, False otherwise
+	bool: True if frame started succesfully, False otherwise
 )";
 
 static const char* loadedDoc =
-R"(True if the .tox file was loaded successfully, False otherwise.
+R"(Returns:
+	bool: True if the .tox file was loaded successfully, False otherwise.
 )";
 
 static const char* frame_did_finishDoc =
-R"(True if the frame has finished, False otherwise.
+R"(Returns:
+	bool: True if the frame has finished, False otherwise.
 )";
 
 static const char* in_topsDoc =
@@ -95,7 +90,7 @@ R"(The parameters of the currently loaded tox.
 )";
 
 static const char* clear_on_frame_callbackDoc =
-R"(Unsets any callback method set using set_on_frame_callback().
+R"(Unsets any callback method set using :py:meth:`set_on_frame_callback`.
 
 Returns:
 	None
@@ -105,26 +100,23 @@ static const char* set_on_frame_callbackDoc =
 R"(Sets the Python method to be called everytime a frame ends.
 
 Args:
-	callback (callable)	: a callable Python method
-	user_data (obj)		: a Python object for any userdata to be passed to the callback method
+	callback (Callable)	: a callable Python method
+	user_data (object)	: a Python object for any userdata to be passed to the callback method
 
 Returns:
 	None
 )";
 
 static const char* clear_on_layout_change_callbackDoc =
-R"(Unsets any callback method set using: on_layout_change_callback().
-
-Returns:
-	None
+R"(Unsets any callback method set using: :py:meth:`set_on_layout_change_callback`.
 )";
 
 static const char* set_on_layout_change_callbackDoc =
 R"(Sets the Python method to be called everytime the tox layout changes.
 
 Args:
-	callback (callable)	: a callable Python method
-	user_data (obj)		: a Python object for any userdata to be passed to the callback method
+	callback (Callable)	: a callable Python method
+	user_data (object)	: a Python object for any userdata to be passed to the callback method
 
 Returns:
 	None
@@ -168,7 +160,7 @@ void initCompBindings(nb::module_& m)
 	comp.def(nb::init<>())
 		.def(nb::init<const std::string&, CompFlagBits, int64_t>(),
 			"tox_path"_a, "flags"_a = CompFlagBits::InternalTimeAuto, "fps"_a = 60, nb::rv_policy::take_ownership)
-		.def("load_tox", [](Comp& self, std::string path, int fps) { self.loadTox(path, fps); } , "path"_a, "fps"_a = 60, load_toxDoc)
+		.def("load_tox", [](Comp& self, std::string path, int fps) { self.loadTox(path, fps); } , "tox_path"_a, "fps"_a = 60, load_toxDoc)
 		.def("unload",                 &Comp::unload, unloadDoc, nb::rv_policy::reference_internal)
 		.def("start",                  &Comp::start, startDoc, nb::rv_policy::reference_internal)
 		.def("stop",                   &Comp::stop, stopDoc, nb::rv_policy::reference_internal)

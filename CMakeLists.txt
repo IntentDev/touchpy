@@ -185,6 +185,18 @@ target_include_directories(touchpygtest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/exte
 
 add_definitions(-DCMAKE_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
 
+
+# generate stub file to enable Sphinx to generate docs
+#################################################################################################
+nanobind_add_stub(
+  touchpy_stub
+  MODULE touchpy
+  OUTPUT touchpy.pyi
+  PYTHON_PATH $<TARGET_FILE_DIR:touchpy>
+  DEPENDS touchpy
+)
+
+
 # install
 #################################################################################################
 #################################################################################################
@@ -192,3 +204,5 @@ add_definitions(-DCMAKE_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
 install(TARGETS touchpy LIBRARY DESTINATION modules CONFIGURATIONS Release)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin/TouchEngine.dll DESTINATION modules CONFIGURATIONS Release)
 install(FILES ${cuda_runtime_dll} DESTINATION modules CONFIGURATIONS Release)
+#install(FILES py.typed touchpy.pyi LIBRARY DESTINATION modules)
+
