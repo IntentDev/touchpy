@@ -35,29 +35,29 @@ public:
 
 	~Texture();
 
-	bool                           isValid() const          { return image_ != VK_NULL_HANDLE; }
-	VkExtent2D                     extent() const           { return extent_; }
-	uint32_t                       width() const            { return extent_.width; }
-	uint32_t                       height() const           { return extent_.height; }
-	VkFormat                       format() const           { return format_; }
-	bool                           flipped() const          { return flipped_; }
-	VkImage                        image() const            { return image_; }
-	VkImageView                    imageView() const        { return imageView_; }
-	TEVulkanTexture*               teVkTexture() const      { return teVkTexture_; }
-	VkImageLayout				   imageLayout() const      { return imageLayout_; }
+	bool                           isValid() const                { return image_ != VK_NULL_HANDLE; }
+	VkExtent2D                     extent() const                 { return extent_; }
+	uint32_t                       width() const                  { return extent_.width; }
+	uint32_t                       height() const                 { return extent_.height; }
+	VkFormat                       format() const                 { return format_; }
+	bool                           flipped() const                { return flipped_; }
+	VkImage                        image() const                  { return image_; }
+	VkImageView                    imageView() const              { return imageView_; }
+	TEVulkanTexture*               teVkTexture() const            { return teVkTexture_; }
+	VkImageLayout                  imageLayout() const            { return imageLayout_; }
 
-	HANDLE                         textureHandle() const    { return textureHandle_; }
-	HANDLE                         semaphoreHandle() const  { return semaphoreHandle_; }
-	VkSemaphore                    semaphore() const        { return semaphore_; }
-	uint64_t                       waitValue() const        { return waitValue_; }
-	uint64_t                       signalValue() const      { return signalValue_; }
-	TouchObject<TEVulkanSemaphore> teVkSemaphore() const    { return teVkSemaphore_; }
-	cudaExternalSemaphore_t        cudaExtSemaphore() const { return cudaExtSemaphore_; }
+	HANDLE                         textureHandle() const          { return textureHandle_; }
+	HANDLE                         semaphoreHandle() const        { return semaphoreHandle_; }
+	VkSemaphore                    semaphore() const              { return semaphore_; }
+	uint64_t                       waitValue() const              { return waitValue_; }
+	uint64_t                       signalValue() const            { return signalValue_; }
+	TouchObject<TEVulkanSemaphore> teVkSemaphore() const          { return teVkSemaphore_; }
+	cudaExternalSemaphore_t        cudaExtSemaphore() const       { return cudaExtSemaphore_; }
 
-	void                     setSignalValue(uint64_t value) { signalValue_ = value; }
+	void                           setSignalValue(uint64_t value) { signalValue_ = value; }
 
-	uint8_t 				numComponents() const  { return numComponents_; }
-	size_t					componentSize() const  { return componentSize_; }
+	uint8_t                        numComponents() const          { return numComponents_; }
+	size_t                         componentSize() const          { return componentSize_; }
 
 	void importSemaphore(TEInstance* teInstance, TETexture* teTexture);
 	void cmdTransitionImageLayout(
@@ -125,7 +125,24 @@ private:
 	VkDeviceMemory                        memory_              { VK_NULL_HANDLE };
 	VkImageView                           imageView_           { VK_NULL_HANDLE };
 	TouchObject<TEVulkanTexture>          teVkTexture_         { nullptr };
-	VkImageLayout						  imageLayout_         { VK_IMAGE_LAYOUT_UNDEFINED };
+	VkImageLayout                         imageLayout_         { VK_IMAGE_LAYOUT_UNDEFINED };
+
+	size_t                                imagePitch_          { 0 };
+	size_t                                imageSize_           { 0 };
+
+	cudaExternalSemaphore_t               cudaExtSemaphore_    { nullptr };
+
+	cudaExternalMemory_t                  cudaExtImageMemory_  { nullptr };
+	cudaSurfaceObject_t                   cudaSurface_         { 0 };
+	cudaMipmappedArray_t                  cudaMipmappedArray_  { nullptr };
+	cudaArray_t                           cudaArray_           { nullptr };
+	void*                                 cudaBuffer_          { nullptr };
+	size_t                                cudaBufferSize_      { 0 };
+	cudaStream_t*                         cudaStreamPtr_       { nullptr };
+
+	CUDAMemory                            cudaMemory_          { };
+	bool                                  requiresCudaMemLock_ { false };
+	mutable                               std::mutex mutex_;
 
 	HANDLE getVkSemaphoreHandle(
 		VkExternalSemaphoreHandleTypeFlagBitsKHR externalSemaphoreHandleType,
@@ -134,23 +151,6 @@ private:
 	HANDLE getVkMemoryHandle(
 		VkExternalMemoryHandleTypeFlagBitsKHR externalMemoryHandleType,
 		VkDeviceMemory& memory);
-
-	size_t                  imagePitch_                   { 0 };
-	size_t                  imageSize_                    { 0 };
-
-	cudaExternalSemaphore_t cudaExtSemaphore_ { nullptr };
-
-	cudaExternalMemory_t cudaExtImageMemory_  { nullptr };
-	cudaSurfaceObject_t  cudaSurface_         { 0 };
-	cudaMipmappedArray_t cudaMipmappedArray_  { nullptr };
-	cudaArray_t          cudaArray_           { nullptr };
-	void*                cudaBuffer_          { nullptr };
-	size_t               cudaBufferSize_      { 0 };
-	cudaStream_t*		 cudaStreamPtr_          { nullptr };
-
-	CUDAMemory           cudaMemory_          { };
-	bool                 requiresCudaMemLock_ { false };
-	mutable              std::mutex mutex_;
 
 	std::function<cudaError_t(void*, int, int, cudaSurfaceObject_t, cudaStream_t)> copySurfaceFunc_ { nullptr };
 	std::function<cudaError_t(cudaSurfaceObject_t, int, int, const void*, cudaStream_t)> copyToSurfaceFunc_ { nullptr };
