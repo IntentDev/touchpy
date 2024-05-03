@@ -25,16 +25,27 @@ public:
 	uint32_t valueCount() const      { return valueCount_; }
 	double   rate() const            { return rate_; }
 	bool     isTimeDependent() const { return isTimeDependent_; }
+	int64_t  startTime() const       { return startTime_; }
+	int64_t  endTime() const         { return endTime_; }
 
 protected:
 	ChopChannelsBase() = default;
-	ChopChannelsBase(int32_t channelCount, uint32_t capacity, uint32_t valueCount, double rate, bool isTimeDependent);
+	ChopChannelsBase(
+		int32_t channelCount, 
+		uint32_t capacity, 
+		uint32_t valueCount, 
+		double rate, 
+		bool isTimeDependent, 
+		int64_t startTime = 0,
+		int64_t endTime = 0);
 
 	int32_t  channelCount_    { 0 };
 	uint32_t capacity_        { 0 };
 	uint32_t valueCount_      { 0 };
 	double   rate_            { -1.0 };
 	bool     isTimeDependent_ { false };
+	int64_t  startTime_       { 0 };
+	int64_t  endTime_         { 0 };
 
 	std::vector<const float*> channels_;
 	std::vector<const char*> names_;
@@ -44,42 +55,47 @@ protected:
 	friend class OutChopLink;
 };
 
-class ChopChannelsReference : public ChopChannelsBase
-{
-public:
-	ChopChannelsReference() = default;
-	ChopChannelsReference(
-		std::vector<const float*>&& channels,
-		int32_t channelCount, 
-		uint32_t capacity, 
-		uint32_t valueCount, 
-		double rate, 
-		bool isTimeDependent,
-		std::vector<const char*>&& names = {});
-
-	~ChopChannelsReference() { }
-
-private:
-
-	friend class InChopLink;
-
-};
-
 class ChopChannels : public ChopChannelsBase
 {
 public:
 	ChopChannels() = default;
-	ChopChannels(const float* const* data, int32_t channelCount, uint32_t capacity, 
-		uint32_t valueCount, double rate, bool isTimeDependent, const char* const* names = nullptr);
+	ChopChannels(
+		const float* const* data,
+		int32_t channelCount,
+		uint32_t capacity,
+		uint32_t valueCount,
+		double rate,
+		bool isTimeDependent,
+		int64_t startTime = 0,
+		int64_t endTime = 0,
+		const char* const* names = nullptr);
 
 	~ChopChannels() { }
 
-	const float* data() const { return channelData_.data(); }
-	const std::vector<float>& channelData() const { return channelData_; }
-	const std::vector<std::string>& channelNames() const { return channelNames_; }
+	const float* valuesArray() const { return channelsBuffer_.data(); }
+	const std::vector<float>& channelsBuffer() const { return channelsBuffer_; }
+	const std::vector<std::string>& namesBuffer() const { return namesBuffer_; }
 
-	void setChannels(const float* const* data, int32_t channelCount, uint32_t capacity, 
-		uint32_t valueCount, double rate, bool isTimeDependent, const char* const* names = nullptr);
+	void setChannels(
+		const float* const* data,
+		int32_t channelCount,
+		uint32_t capacity,
+		uint32_t valueCount,
+		double rate,
+		bool isTimeDependent,
+		int64_t startTime = 0,
+		int64_t endTime = 0,
+		const char* const* names = nullptr);
+
+	void setChannels(
+		const float* data,
+		int32_t channelCount,
+		uint32_t valueCount,
+		double rate,
+		bool isTimeDependent,
+		int64_t startTime,
+		int64_t endTime,
+		const std::vector<std::string>& names);
 
 
 	// not implemented, need to make tests for each of these... 
@@ -97,10 +113,35 @@ public:
 
 
 private:
-	std::vector<float> channelData_;
-	std::vector<std::string> channelNames_;
+	std::vector<float> channelsBuffer_;
+	std::vector<std::string> namesBuffer_;
 
+	friend class ChopChannelsView;
 	friend class OutChopLink;
 };
+
+
+class ChopChannelsView : public ChopChannelsBase
+{
+public:
+	ChopChannelsView() = default;
+	ChopChannelsView(
+		std::vector<const float*>&& channels,
+		int32_t channelCount, 
+		uint32_t capacity, 
+		uint32_t valueCount, 
+		double rate, 
+		bool isTimeDependent,
+		std::vector<const char*>&& names = {});
+
+	ChopChannelsView(ChopChannels& chopChannels);
+
+	~ChopChannelsView() { }
+
+private:
+
+	friend class InChopLink;
+};
+
 
 

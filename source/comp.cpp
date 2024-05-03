@@ -297,7 +297,7 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 				//std::string error = TEResultGetDescription(result);
 				//error = "Frame did not finish successfully: " + error;
 				//throw std::runtime_error("Frame did not finish successfully");
-				spdlog::error("Frame did not finish successfully: {}", TEResultGetDescription(result));
+				spdlog::error("Frame did not finish successfully: {} {}", static_cast<int>(result), TEResultGetDescription(result));
 				startNextFrame(prevTimeValue_, prevTimeScale_);
 			}
 

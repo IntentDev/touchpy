@@ -11,7 +11,7 @@
 namespace nb = nanobind;
 using namespace nb::literals;
 
-static const char* num_channelsDoc =
+static const char* num_chansDoc =
 R"(The number of channels in the CHOP.
 )";
 
@@ -24,7 +24,7 @@ R"(The sample rate of the CHOP.
 )";
 
 static const char* is_time_dependentDoc =
-R"(////todokeith ?
+R"(Refers to whether the corresponding CHOP is time dependent or not. i.e. audio chops are time dependent. 
 )";
 
 static const char* as_numpyDoc =
@@ -35,8 +35,13 @@ static const char* chan_namesDoc =
 R"(Returns a list of the  channel names in this CHOP.
 )";
 
+static const char* channelsDoc =
+R"(Returns the ChopChannels object.
+)";
+
+
 static const char* as_numpy_refDoc =
-R"(////todokeith ?Returns a reference to a 2D NumPy array, with a width equal to the channel length (the number of samples) and a height equal to the number of channels.
+R"(Returns a reference to a 2D NumPy array, with a width equal to the channel length (the number of samples) and a height equal to the number of channels. The data contained in this array is read-only must explicitly be copied if values need to be manipulated. For very large arrays this will be faster than as_numpy().
 )";
 
 static const char* countDocOutChop =
@@ -85,7 +90,7 @@ void fromNumpyToChopLink(
 		for (int32_t i = 0; i < channelCount; ++i)
 			channels[i] = view.data() + i * valueCount;
 
-		ChopChannelsReference channels(std::move(channels), channelCount, valueCount, valueCount, -1.0, false);
+		ChopChannelsView channels(std::move(channels), channelCount, valueCount, valueCount, -1.0, false);
 		inChopLink.set(std::move(channels));
 	}
 	else
@@ -96,9 +101,18 @@ void fromNumpyToChopLink(
 			channels[i] = view.data() + i * valueCount;
 			names[i] = channelNames[i].c_str();
 		}
-		ChopChannelsReference channels(std::move(channels), channelCount, valueCount, valueCount, -1.0, false, std::move(names));
+		ChopChannelsView channels(std::move(channels), channelCount, valueCount, valueCount, -1.0, false, std::move(names));
 		inChopLink.set(std::move(channels));
 	}
+}
+
+nb::ndarray<nb::numpy, const float, nb::ndim<2>> asNumpy(ChopChannels& chopChannels)
+{
+	size_t shape[2] = {
+		static_cast<size_t>(chopChannels.channelCount()),
+		static_cast<size_t>(chopChannels.valueCount())
+	};
+	return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(chopChannels.valuesArray(), 2, shape);
 }
 
 void initChopLinkBindings(nb::module_& m)
@@ -106,27 +120,30 @@ void initChopLinkBindings(nb::module_& m)
 	nb::class_<ChopChannels> chopChannels(m, "ChopChannels");
 	chopChannels.doc() = "A container of CHOP channels";
 	chopChannels.def(nb::init<>())
-		.def_prop_ro("num_channels", &ChopChannels::channelCount, num_channelsDoc)
-		.def_prop_ro("num_samples", &ChopChannels::valueCount, num_samplesDoc)
-		.def_prop_ro("rate", &ChopChannels::rate, rateDoc)
-		.def_prop_ro("is_time_dependent", &ChopChannels::isTimeDependent, is_time_dependentDoc)
-		.def_prop_ro("channel_names", &ChopChannels::channelNames, chan_namesDoc, nb::rv_policy::reference_internal);
-
-	chopChannels.def("as_numpy", [](ChopChannels& self)
+		.def("set_from_numpy", [](ChopChannels& self, nb::ndarray<float, nb::ndim<2>, nb::device::cpu> array, double rate, bool isTimeDependent, int64_t startTime, int64_t endTime, const std::vector<std::string>& channelNames)
 		{
-			size_t shape[2] = {
-				static_cast<size_t>(self.channelCount()),
-				static_cast<size_t>(self.valueCount())
-			};
-			return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(self.data(), 2, shape);
-		},
-		nb::sig("def as_numpy()-> numpy.ndarray"),
-		as_numpyDoc, nb::rv_policy::automatic);
+			auto view = array.view();
+			int32_t channelCount = static_cast<int32_t>(view.shape(0));
+			uint32_t valueCount = static_cast<uint32_t>(view.shape(1));
+			self.setChannels(view.data(), channelCount, valueCount, rate, isTimeDependent, startTime, endTime, channelNames);
+			
+		})
+		.def_prop_ro("num_chans", [](ChopChannels& self) { return self.channelCount(); }, num_chansDoc)
+		.def_prop_ro("num_samples", [](ChopChannels& self) { return self.valueCount(); }, num_samplesDoc)
+		.def_prop_ro("rate", [](ChopChannels& self) { return self.rate(); }, rateDoc)
+		.def_prop_ro("is_time_dependent", [](ChopChannels& self) { return self.isTimeDependent(); }, is_time_dependentDoc)
+		.def_prop_ro("start_time", [](ChopChannels& self) { return self.startTime(); })
+		.def_prop_ro("end_time", [](ChopChannels& self) { return self.endTime(); })
+		.def_prop_ro("chan_names", &ChopChannels::namesBuffer, chan_namesDoc, nb::rv_policy::reference_internal)
+		.def("as_numpy", [](ChopChannels& self) { return asNumpy(self); }, as_numpyDoc, nb::rv_policy::automatic)
+		.def("as_numpy_ref", [](ChopChannels& self) { return asNumpy(self); }, as_numpy_refDoc, nb::rv_policy::reference_internal);
+
 
 	nb::class_<OutChopLink> outChop(m, "OutChop");
 	outChop.doc() = "An interface for an OutCHOP in a loaded TouchDesigner component";
 	outChop.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
 	outChop.def_prop_ro("chan_names", &OutChopLink::channelNames, chan_namesDoc, nb::rv_policy::reference_internal);
+	outChop.def("channels", &OutChopLink::chopChannels, "The CHOP channels object.", nb::rv_policy::reference_internal);
 
 	outChop.def("as_numpy", [](OutChopLink& self)
 		{
@@ -135,7 +152,7 @@ void initChopLinkBindings(nb::module_& m)
 				static_cast<size_t>(chans.channelCount()),
 				static_cast<size_t>(chans.valueCount())
 			};
-			return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(self.data(), 2, shape);
+			return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(self.valuesArray(), 2, shape);
 		},
 		nb::sig("def as_numpy()-> numpy.ndarray"),
 		as_numpyDoc, nb::rv_policy::automatic);
@@ -147,7 +164,7 @@ void initChopLinkBindings(nb::module_& m)
 				static_cast<size_t>(chans.channelCount()),
 				static_cast<size_t>(chans.valueCount())
 			};
-			return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(self.data(), 2, shape);
+			return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(self.valuesArray(), 2, shape);
 		},
 		nb::sig("def as_numpy_ref()-> numpy.ndarray"),
 		as_numpy_refDoc, nb::rv_policy::reference_internal);
@@ -164,6 +181,14 @@ void initChopLinkBindings(nb::module_& m)
 
 	nb::class_<InChopLink> inChop(m, "InChop");
 	inChop.doc() = "An interface for an InCHOP in a loaded TouchDesigner component";
+
+	inChop.def("from_channels", [](InChopLink& self, ChopChannels& channels)
+		{
+			self.set(ChopChannelsView(channels));
+		},
+		nb::sig("def from_channels(self, channels: ChopChannels)->None"),
+		"channels"_a, "The CHOP channels object.");
+
 	inChop.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("from_numpy", &fromNumpyToChopLink, "array"_a, "names"_a = nb::list(), 
 			nb::sig("def from_numpy(self, array: numpy.ndarray, names: list)->None"), from_numpyDoc);

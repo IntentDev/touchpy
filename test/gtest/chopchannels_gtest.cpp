@@ -31,7 +31,7 @@ TEST(ChopChannelsTest, chopChannelsReference)
 		}
 	}
 
-	ChopChannelsReference chopChannels(std::move(channels), channelCount, valueCount, valueCount, -1.0, false, std::move(names));
+	ChopChannelsView chopChannels(std::move(channels), channelCount, valueCount, valueCount, -1.0, false, std::move(names));
 
 	EXPECT_EQ(chopChannels.channelCount(), channelCount);
 	EXPECT_EQ(chopChannels.capacity(), valueCount);
@@ -77,7 +77,7 @@ TEST(ChopChannelsTest, chopChannels)
 		}
 	}
 
-	ChopChannels chopChannels(channels.data(), channelCount, valueCount, valueCount, -1.0, false, names.data());
+	ChopChannels chopChannels(channels.data(), channelCount, valueCount, valueCount, -1.0, false, 0, 0, names.data());
 
 	EXPECT_EQ(chopChannels.channelCount(), channelCount);
 	EXPECT_EQ(chopChannels.capacity(), valueCount);
@@ -125,7 +125,7 @@ TEST(ChopChannelsTest, setChannels)
 	}
 
 	ChopChannels chopChannels;
-	chopChannels.setChannels(channels.data(), channelCount, valueCount, valueCount, -1.0, false, names.data());
+	chopChannels.setChannels(channels.data(), channelCount, valueCount, valueCount, -1.0, false, 0, 0, names.data());
 
 	EXPECT_EQ(chopChannels.channelCount(), channelCount);
 	EXPECT_EQ(chopChannels.capacity(), valueCount);
