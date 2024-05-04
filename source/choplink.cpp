@@ -59,7 +59,7 @@ InChopLink::set(ChopChannelsView&& chopChannels)
 		result = TEFloatBufferSetValues(buffer, chopChannels_.channels_.data(), chopChannels_.valueCount_);
 
 		if (result == TEResultSuccess && chopChannels.isTimeDependent_)
-			result = TEFloatBufferSetStartTime(buffer, chopChannels_.startTime_);
+			result = TEFloatBufferSetStartTime(buffer, chopChannels_.endTime_);
 	
 
 		if (result == TEResultSuccess)

@@ -159,15 +159,15 @@ ChopChannelsView::ChopChannelsView(ChopChannels& chopChannels)
 	startTime_ = chopChannels.startTime_;
 	endTime_ = chopChannels.endTime_;
 
-	std::cout
-		<< "isTimeDependent: " << isTimeDependent_
-		<< " channelCount: " << channelCount_
-		<< " capacity: " << capacity_
-		<< " valueCount: " << valueCount_
-		<< " rate: " << rate_
-		<< " startTime: " << startTime_
-		<< " endTime: " << endTime_
-		<< std::endl;
+	//std::cout
+	//	<< "isTimeDependent: " << isTimeDependent_
+	//	<< " channelCount: " << channelCount_
+	//	<< " capacity: " << capacity_
+	//	<< " valueCount: " << valueCount_
+	//	<< " rate: " << rate_
+	//	<< " startTime: " << startTime_
+	//	<< " endTime: " << endTime_
+	//	<< std::endl;
 
 	channels_.resize(channelCount_);
 	if (chopChannels.names_.size() > 0)

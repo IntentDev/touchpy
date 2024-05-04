@@ -288,17 +288,31 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 		{
 			if (result == TEResultComponentErrors || result == TEResultComponentWarnings) comp->setInFrame(false);
 
-
 			else
 			{
 				// need go through all possible results and handle them accordingly... 
-				// create switch...
-				// 
-				//std::string error = TEResultGetDescription(result);
-				//error = "Frame did not finish successfully: " + error;
-				//throw std::runtime_error("Frame did not finish successfully");
-				spdlog::error("Frame did not finish successfully: {} {}", static_cast<int>(result), TEResultGetDescription(result));
-				startNextFrame(prevTimeValue_, prevTimeScale_);
+				auto severity = TEResultGetSeverity(result);
+
+				if (severity == TESeverityWarning)
+				{
+					spdlog::warn("Warning frame did not finish successfully: {} {}", static_cast<int>(result), TEResultGetDescription(result));
+					comp->setInFrame(false);
+				}
+				else if (severity == TESeverityError)
+				{
+					std::string error = TEResultGetDescription(result);
+					error = "Frame did not finish successfully: " + error;
+					spdlog::error(error.c_str());
+
+					throw std::runtime_error(error.c_str());
+				}
+				else
+				{
+					spdlog::info("Frame did not finish successfully: {} {}", static_cast<int>(result), TEResultGetDescription(result));
+					comp->setInFrame(false);
+				}
+
+				//startNextFrame(prevTimeValue_, prevTimeScale_);
 			}
 
 		}
