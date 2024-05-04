@@ -119,8 +119,45 @@ void initChopLinkBindings(nb::module_& m)
 {
 	nb::class_<ChopChannels> chopChannels(m, "ChopChannels");
 	chopChannels.doc() = "A container of CHOP channels";
-	chopChannels.def(nb::init<>())
-		.def("set_from_numpy", [](ChopChannels& self, nb::ndarray<float, nb::ndim<2>, nb::device::cpu> array, double rate, bool isTimeDependent, int64_t startTime, int64_t endTime, const std::vector<std::string>& channelNames)
+	chopChannels.def(nb::init<>());
+
+	chopChannels.def("__init__", [](
+		ChopChannels* chopChannels, 
+		nb::ndarray<float, nb::ndim<2>, nb::device::cpu> array, 
+		double rate = -1.0, 
+		bool isTimeDependent = false, 
+		int64_t startTime = 0, 
+		int64_t endTime = 0, 
+		const std::vector<std::string>& channelNames = {})
+		{
+			auto view = array.view();
+			int32_t channelCount = static_cast<int32_t>(view.shape(0));
+			uint32_t valueCount = static_cast<uint32_t>(view.shape(1));
+			new (chopChannels) ChopChannels(view.data(), channelCount, valueCount, rate, isTimeDependent, startTime, endTime, channelNames);
+		}, "array"_a, "rate"_a = -1.0, "is_time_dependent"_a = false, "start_time"_a = 0, "end_time"_a = 0, "channel_names"_a = nb::list()
+	);
+
+	chopChannels.def("__init__", [](
+		ChopChannels* chopChannels,
+		uint32_t numSamples,
+		double rate = -1.0,
+		bool isTimeDependent = false,
+		int64_t startTime = 0,
+		int64_t endTime = 0,
+		const std::vector<std::string>& channelNames = {})
+		{
+			new (chopChannels) ChopChannels(numSamples, rate, isTimeDependent, startTime, endTime, channelNames);
+		}, "num_samples"_a, "rate"_a = -1.0, "is_time_dependent"_a = false, "start_time"_a = 0, "end_time"_a = 0, "channel_names"_a = nb::list()
+	);
+
+	chopChannels.def("set_from_numpy", 
+		[](ChopChannels& self, nb::ndarray<float, nb::ndim<2>, 
+			nb::device::cpu> array, 
+			double rate, 
+			bool isTimeDependent, 
+			int64_t startTime, 
+			int64_t endTime, 
+			const std::vector<std::string>& channelNames)
 		{
 			auto view = array.view();
 			int32_t channelCount = static_cast<int32_t>(view.shape(0));

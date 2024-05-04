@@ -64,11 +64,29 @@ public:
 		int32_t channelCount,
 		uint32_t capacity,
 		uint32_t valueCount,
-		double rate,
-		bool isTimeDependent,
+		double rate = -1.0,
+		bool isTimeDependent = false,
 		int64_t startTime = 0,
 		int64_t endTime = 0,
 		const char* const* names = nullptr);
+
+	ChopChannels(
+		const float* data,
+		int32_t channelCount,
+		uint32_t valueCount,
+		double rate = -1.0,
+		bool isTimeDependent = false,
+		int64_t startTime = 0,
+		int64_t endTime = 0,
+		const std::vector<std::string>& names = {});
+
+	ChopChannels(
+		uint32_t valueCount,
+		double rate = -1.0,
+		bool isTimeDependent = false,
+		int64_t startTime = 0,
+		int64_t endTime = 0,
+		const std::vector<std::string>& names = {});
 
 	~ChopChannels() { }
 

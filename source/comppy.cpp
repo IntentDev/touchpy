@@ -61,6 +61,17 @@ R"(Returns:
 	bool: True if the frame has finished, False otherwise.
 )";
 
+static const char* time_doc =
+R"(This method is best called at most once per frame, as it i an asynchronous call to the TouchEngine instance.
+
+Usage:
+	time_info = comp.time()
+
+Returns:
+	Time: a struct containing the time information of the currently loaded component.
+
+)";
+
 static const char* in_topsDoc =
 R"(The In TOPs of the currently loaded tox.
 )";
@@ -155,6 +166,24 @@ void initCompBindings(nb::module_& m)
 		.def(nb::self != nb::self)
 		;
 
+	nb::class_ <Comp::Time> time(m, "Time");
+	time.doc() = "A struct containing the time information of the currently loaded component.";
+	time.def("__repr__", [](const Comp::Time& self) -> std::string
+		{
+			return
+				"Time{rate: "	+ std::to_string(self.rate) +
+				", frame: "		+ std::to_string(self.frame) +
+				", seconds: "	+ std::to_string(self.seconds) +
+				", value: "		+ std::to_string(self.value) +
+				", scale: "		+ std::to_string(self.scale) + "}";
+		})
+		.def_ro("rate", &Comp::Time::rate)
+		.def_ro("frame", &Comp::Time::frame)
+		.def_ro("seconds", &Comp::Time::seconds)
+		.def_ro("value", &Comp::Time::value)
+		.def_ro("scale", &Comp::Time::scale)
+	;
+
 	nb::class_<Comp> comp(m, "Comp");
 	comp.doc() = "A TouchDesigner component loaded in a TouchEngine instance.";
 	comp.def(nb::init<>())
@@ -169,6 +198,7 @@ void initCompBindings(nb::module_& m)
 		.def("start_next_frame",       &Comp::startNextFrame, "time_value"_a = 0, "time_scale"_a = 0, start_next_frameDoc, nb::rv_policy::reference_internal)
 		.def("loaded",				   &Comp::loaded, loadedDoc, nb::rv_policy::reference_internal)
 		.def("frame_did_finish",       &Comp::frameDidFinish, frame_did_finishDoc, nb::rv_policy::reference_internal)
+		.def("time",                   &Comp::time, time_doc, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_tops",        &Comp::inputTopLinks, in_topsDoc, nb::rv_policy::reference_internal)
 		.def_prop_ro("out_tops",       &Comp::outputTopLinks,out_topsDoc, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_chops",       &Comp::inChopLinks, in_chopsDoc, nb::rv_policy::reference_internal)
@@ -227,6 +257,8 @@ void initCompBindings(nb::module_& m)
 			return reinterpret_cast<uintptr_t>(self.cudaStream());
 		},
 		cuda_streamDoc, nb::rv_policy::reference_internal);
+
+	comp.def_prop_ro("rate", [](Comp& self) -> float { return self.frameRate(); });
 
 	
 

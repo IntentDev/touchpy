@@ -52,6 +52,69 @@ ChopChannels::ChopChannels(
 	setChannels(data, channelCount, capacity, valueCount, rate, isTimeDependent, startTime, endTime, names);
 }
 
+ChopChannels::ChopChannels(const float* data, int32_t channelCount, uint32_t valueCount, double rate, bool isTimeDependent, int64_t startTime, int64_t endTime, const std::vector<std::string>& names)
+{
+	channelCount_ = channelCount;
+	capacity_ = valueCount;
+	valueCount_ = valueCount;
+	rate_ = rate;
+	isTimeDependent_ = isTimeDependent;
+	startTime_ = startTime;
+	endTime_ = endTime;
+	channelsBuffer_.resize(channelCount * valueCount);
+	channels_.resize(channelCount);
+
+	std::copy(data, data + channelCount * valueCount, channelsBuffer_.begin());
+
+
+	if (names.size() > 0)
+	{
+		namesBuffer_.resize(channelCount);
+		names_.resize(channelCount);
+
+		for (int32_t i = 0; i < channelCount; ++i)
+		{
+			channels_[i] = &channelsBuffer_[i * capacity_];
+			namesBuffer_[i] = names[i];
+			names_[i] = namesBuffer_[i].c_str();
+		}
+	}
+	else
+	{
+		for (int32_t i = 0; i < channelCount; ++i)
+		{
+			channels_[i] = &channelsBuffer_[i * capacity_];
+		}
+	}
+}
+
+ChopChannels::ChopChannels(uint32_t valueCount, double rate, bool isTimeDependent, int64_t startTime, int64_t endTime, const std::vector<std::string>& names)
+{
+	channelCount_ = names.size();
+	capacity_ = valueCount;
+	valueCount_ = valueCount;
+	rate_ = rate;
+	isTimeDependent_ = isTimeDependent;
+	startTime_ = startTime;
+	endTime_ = endTime;
+	channelsBuffer_.resize(channelCount_ * valueCount);
+	channels_.resize(channelCount_);
+
+	if (names.size() > 0)
+	{
+		std::fill(channelsBuffer_.begin(), channelsBuffer_.end(), 0.0f);
+		namesBuffer_.resize(channelCount_);
+		names_.resize(channelCount_);
+
+		for (int32_t i = 0; i < channelCount_; ++i)
+		{
+			channels_[i] = &channelsBuffer_[i * capacity_];
+			namesBuffer_[i] = names[i];
+			names_[i] = namesBuffer_[i].c_str();
+		}
+	}
+}
+
 void ChopChannels::setChannels(
 	const float* const* data, 
 	int32_t channelCount, 
