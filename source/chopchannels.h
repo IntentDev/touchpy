@@ -144,10 +144,7 @@ public:
 	void removeChannel(const char* name);
 	void removeChannel(const std::string& name);
 
-
-	//void clear();
-
-
+	void clear();
 
 private:
 	std::vector<float> channelsBuffer_;

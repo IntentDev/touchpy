@@ -487,8 +487,21 @@ ChopChannels::removeChannel(const char* name)
 	}
 }
 
-
-
+void
+ChopChannels::clear()
+{
+	channelsBuffer_.clear();
+	channels_.clear();
+	namesBuffer_.clear();
+	names_.clear();
+	channelCount_ = 0;
+	capacity_ = 0;
+	valueCount_ = 0;
+	rate_ = 0.0;
+	isTimeDependent_ = false;
+	startTime_ = 0;
+	endTime_ = 0;
+}
 
 
 

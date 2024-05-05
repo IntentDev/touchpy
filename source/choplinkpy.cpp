@@ -23,7 +23,6 @@ static const char* chan_namesDoc =
 R"((get) List of the  channel names in this CHOP.
 )";
 
-
 static const char* rateDoc =
 R"((set, get) The sample rate of the CHOP.
 )";
@@ -52,16 +51,29 @@ static const char* set_nameDoc =
 R"(Sets the name of a channel.
 )";
 
+static const char* append_channelDoc =
+R"(Appends a channel to the CHOP.
+)";
+
+static const char* insert_channelDoc =
+R"(Inserts a channel at the specified index.
+)";
+
+static const char* remove_channelDoc =
+R"(Removes a channel by name or at the specified index.
+)";
+
+static const char* clearDoc =
+R"(Remove all the channels and their data.
+)";
 
 static const char* as_numpyDoc =
 R"(Returns all of the channels in this CHOP as 2D NumPy array with a width equal to the channel length (the number of samples) and a height equal to the number of channels.
 )";
 
-
 static const char* chansDoc =
 R"((get) The ChopChannels member.
 )";
-
 
 static const char* as_numpy_refDoc =
 R"(Returns a reference to a 2D NumPy array, with a width equal to the channel length (the number of samples) and a height equal to the number of channels. The data contained in this array is read-only must explicitly be copied if values need to be manipulated. For very large arrays this will be faster than as_numpy().
@@ -74,7 +86,6 @@ R"(Returns the number of Out CHOPS in the loaded tox.
 static const char* namesDocOutChop =
 R"(Returns a list of names of all Out CHOPs in the loaded tox.
 )";
-
 
 static const char* from_numpyDoc =
 R"(Sets the data in this CHOP from a 2D NumPy array.
@@ -258,20 +269,21 @@ void initChopLinkBindings(nb::module_& m)
 
 		.def("append_channel", [](ChopChannels& self, const std::string& name = {}, const std::vector<float>& values = {}) {
 				self.appendChannel(name, values);
-			}, "name"_a = "", "values"_a = nb::list())
+			}, "name"_a = "", "values"_a = nb::list(), append_channelDoc)
 
 		.def("insert_channel", [](ChopChannels& self, int32_t index, const std::string& name = {}, const std::vector<float>& values = {}) {
 				self.insertChannel(index, name.c_str(), values);
-			}, "index"_a, "name"_a = "", "values"_a = nb::list())
+			}, "index"_a, "name"_a = "", "values"_a = nb::list(), insert_channelDoc)
 
 		.def("remove_channel", [](ChopChannels& self, int32_t index) {
 				self.removeChannel(index);
-			}, "index"_a)
+			}, "index"_a, remove_channelDoc)
 
 		.def("remove_channel", [](ChopChannels& self, const std::string& name) {
 				self.removeChannel(name.c_str());
-			}, "name"_a)
+			}, "name"_a, remove_channelDoc)
 
+		.def("clear", &ChopChannels::clear, clearDoc)
 
 
 		.def("as_numpy", [](ChopChannels& self) { return asNumpy(self); }, as_numpyDoc, nb::rv_policy::automatic)
