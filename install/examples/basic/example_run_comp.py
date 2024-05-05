@@ -155,8 +155,10 @@ class ExampleRunComp:
 				
 		# create a DatTable and fill it with a list of data
 		datTable = tp.DatTable()
-		testList = [['g', 'b', 'c'], ['g', 'h', 'i'], ['t', 'w', 'a']]
+		testList = [['a', 'b', 'c'], ['g', 'h', 'i'], ['t', 'w', 'a']]
 		datTable.from_list(testList)
+
+		# print(datTable.row(0))
 
 		# set second in DAT with table
 		# comp.in_dats['datIn2'].from_table(datTable)

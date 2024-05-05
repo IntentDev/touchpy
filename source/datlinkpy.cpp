@@ -5,15 +5,21 @@
 
 #include "datlink.h"
 
+#include <iostream>
+
 namespace nb = nanobind;
 using namespace nb::literals;
 
+static const char* DatTableDoc =
+R"(A table of data in a DAT link.
+)";
+
 static const char* num_rowsDoc =
-R"(The number of rows in the table.
+R"((set, get) The number of rows in the table.
 )";
 
 static const char* num_colsDoc =
-R"(The number of columns in the table.
+R"((set, get) The number of columns in the table.
 )";
 
 static const char* rowDoc =
@@ -37,6 +43,115 @@ R"(Returns the value at the row and column index.
 Args:
 	row (int) : the index of the row
 	col (int) : the index of the column
+)";
+
+static const char* reseizeDoc =
+R"(Resizes the table to the specified number of rows and columns.
+
+Args:
+	numRows (int) : the number of rows
+	numCols (int) : the number of columns
+)";
+
+static const char* set_num_rowsDoc =
+R"(Sets the number of rows in the table.
+
+Args:
+	numRows (int) : the number of rows
+)";
+
+static const char* set_num_colsDoc =
+R"(Sets the number of columns in the table.
+
+Args:
+	numCols (int) : the number of columns
+)";
+
+static const char* set_cellDoc =
+R"(Sets the value at the row and column index.
+
+Args:
+	row (int) : the index of the row
+	col (int) : the index of the column
+	value (str) : the value to set
+)";
+
+static const char* set_rowDoc =
+R"(Sets the values of the row at the index.
+
+Lists smaller than the number of columns will be padded with empty strings.
+Lists larger than the number of columns will be truncated.
+
+Args:
+	i (int) : the index of the row
+	row (list) : the values to set 
+)";
+
+static const char* set_colDoc =
+R"(Sets the values of the column at the index.
+
+Lists smaller than the number of rows will be padded with empty strings.
+Lists larger than the number of rows will be truncated.
+
+Args:
+	i (int) : the index of the column
+	col (list) : the values to set 
+)";
+
+static const char* append_rowDoc =
+R"(Appends a row to the table.
+
+Lists smaller or larger than the number of columns will be padded or truncated respectively.
+
+Args:
+	row (list) : the values to append (optional)
+)";
+
+static const char* append_colDoc =
+R"(Appends a column to the table.
+
+Lists smaller or larger than the number of rows will be padded or truncated respectively.
+
+Args:
+	col (list) : the values to append (optional)
+)";
+
+static const char* insert_rowDoc =
+R"(Inserts a row at the index.
+
+Lists smaller or larger than the number of columns will be padded or truncated respectively.
+
+Args:
+	i (int) : the index to insert the row
+	row (list) : the values to insert (optional)
+)";
+
+static const char* insert_colDoc =
+R"(Inserts a column at the index.
+
+Lists smaller or larger than the number of rows will be padded or truncated respectively.
+
+Args:
+	i (int) : the index to insert the column
+	col (list) : the values to insert (optional)
+)";
+
+static const char* remove_rowDoc =
+R"(Removes the row at the index.
+
+Args:
+	i (int) : the index of the row to remove
+)";
+
+static const char* remove_colDoc =
+R"(Removes the column at the index.
+
+Args:
+	i (int) : the index of the column to remove
+)";
+
+static const char* clearDoc =
+R"(Removes all rows and columns from the table.
 )";
 
 static const char* as_listDoc =
@@ -98,9 +213,7 @@ DatTable tableFromList(const nb::list& list, bool cast = false)
 		if (numCols == 0)
 			return table;
 
-		table.values.resize(numRows * numCols);
-		table.numRows = numRows;
-		table.numCols = numCols;
+		table.resize(numRows, numCols);
 
 		if (cast)
 		{
@@ -109,13 +222,13 @@ DatTable tableFromList(const nb::list& list, bool cast = false)
 				auto row = nb::cast<nb::list>(list[i]);
 				for (size_t j = 0; j < numCols; ++j)
 					if (nb::isinstance<nb::int_>(row[j]))
-						table.values[i * numCols + j] = std::to_string(nb::cast<int>(row[j]));
+						table.setCell(i, j, std::to_string(nb::cast<int>(row[j])));
 					else if (nb::isinstance<nb::float_>(row[j]))
-						table.values[i * numCols + j] = std::to_string(nb::cast<float>(row[j]));
+						table.setCell(i, j, std::to_string(nb::cast<float>(row[j])));
 					else if (nb::isinstance<nb::str>(row[j]))
-						table.values[i * numCols + j] = nb::cast<std::string>(row[j]);
+						table.setCell(i, j, nb::cast<std::string>(row[j]));
 					else
-						table.values[i * numCols + j] = "";
+						table.setCell(i, j, "");
 			}
 		}
 		else
@@ -124,7 +237,7 @@ DatTable tableFromList(const nb::list& list, bool cast = false)
 			{
 				auto row = nb::cast<nb::list>(list[i]);
 				for (size_t j = 0; j < numCols; ++j)
-					table.values[i * numCols + j] = nb::cast<std::string>(row[j]);
+					table.setCell(i, j, nb::cast<std::string>(row[j]));
 			}
 		}
 	}
@@ -134,33 +247,60 @@ DatTable tableFromList(const nb::list& list, bool cast = false)
 void initDatLinkBindings(nb::module_& m)
 {
 	nb::class_<DatTable> datTable(m, "DatTable");
-	datTable.doc() = "A table of data in a DAT link";
+	datTable.doc() = DatTableDoc;
 	datTable.def(nb::init<>())
-		.def_prop_ro("num_rows", [](DatTable& self) { return self.numRows; })
-		.def_prop_ro("num_cols", [](DatTable& self) { return self.numCols; })
-		.def("row", &DatTable::row, "index"_a, rowDoc, nb::rv_policy::reference_internal)
-		.def("col", &DatTable::col, "index"_a, colDoc, nb::rv_policy::reference_internal)
-		.def("cell", &DatTable::cell, "row"_a, "col"_a, cellDoc, nb::rv_policy::reference_internal);
 
-	datTable.def("as_list", [](DatTable& self)
-		{
-			std::vector<std::vector<std::string_view>> table;
-			for (size_t i = 0; i < self.numRows; ++i)
-			{
-				std::vector<std::string_view> row;
-				for (size_t j = 0; j < self.numCols; ++j)
-					row.push_back(self.values[i * self.numCols + j]);
-				table.push_back(row);
-			}
-			return table;
-		},
-		as_listDoc, nb::rv_policy::reference_internal);
+		.def(nb::init<uint32_t, uint32_t>(), "numRows"_a, "numCols"_a, DatTableDoc)
+		.def(nb::init<const std::vector<std::string>&, uint32_t, uint32_t>(), "values"_a, "numRows"_a, "numCols"_a, DatTableDoc)
+		.def(nb::init<const std::vector<std::vector<std::string>>&>(), "values"_a, DatTableDoc)
 
-	datTable.def("from_list", [](DatTable& self, const nb::list& list, bool cast = false)
-		{
-			self = tableFromList(list, cast);
-		}, "list"_a, "cast"_a = false,
-		from_listDoc);
+		.def_prop_rw("num_rows", 
+			[](DatTable& self) { return self.numRows(); }, 
+			[](DatTable& self, uint32_t numRows) { self.setNumRows(numRows); }, 
+			num_rowsDoc)
+		.def_prop_rw("num_cols", 
+			[](DatTable& self) { return self.numCols(); }, 
+			[](DatTable& self, uint32_t numCols) { self.setNumCols(numCols); }, 
+			num_colsDoc)
+
+		.def("row",          &DatTable::row, "index"_a, rowDoc, nb::rv_policy::reference_internal)
+		.def("col",          &DatTable::col, "index"_a, colDoc, nb::rv_policy::reference_internal)
+		.def("cell",         &DatTable::cell, "row"_a, "col"_a, cellDoc, nb::rv_policy::reference_internal)
+		.def("resize",       &DatTable::resize, "numRows"_a, "numCols"_a, reseizeDoc)
+		.def("set_num_rows", &DatTable::setNumRows, "numRows"_a, set_num_rowsDoc)
+		.def("set_num_cols", &DatTable::setNumCols, "numCols"_a, set_num_colsDoc)
+		.def("set_cell",     &DatTable::setCell, "i"_a, "j"_a, "value"_a, set_cellDoc)
+		.def("set_row",      &DatTable::setRow, "i"_a, "row"_a, set_rowDoc)
+		.def("set_col",      &DatTable::setCol, "i"_a, "col"_a, set_colDoc)
+		.def("append_row",   &DatTable::appendRow, "row"_a        = nb::list { }, append_rowDoc)
+		.def("append_col",   &DatTable::appendCol, "col"_a        = nb::list { }, append_colDoc)
+		.def("insert_row",   &DatTable::insertRow, "i"_a, "row"_a = nb::list { }, insert_rowDoc)
+		.def("insert_col",   &DatTable::insertCol, "i"_a, "col"_a = nb::list { }, insert_colDoc)
+		.def("remove_row",   &DatTable::removeRow, "i"_a, remove_rowDoc)
+		.def("remove_col",   &DatTable::removeCol, "i"_a, remove_colDoc)
+		.def("clear",        &DatTable::clear, clearDoc)
+
+		.def("as_list", 
+			[](DatTable& self) {
+				std::vector<std::vector<std::string_view>> list;
+				for (size_t i = 0; i < self.numRows(); ++i)
+				{
+					std::vector<std::string_view> row;
+					for (size_t j = 0; j < self.numCols(); ++j)
+						row.push_back(self.cell(i, j));
+					list.push_back(row);
+				}
+				return list;
+			},
+			as_listDoc, nb::rv_policy::reference_internal)
+
+		.def("as_string", &DatTable::asString, as_stringDoc, nb::rv_policy::reference_internal)
+
+		.def("from_list", 
+			[](DatTable& self, const nb::list& list, bool cast = false) {
+				self = tableFromList(list, cast);
+			}, 
+			"list"_a, "cast"_a = false, from_listDoc);
 
 	nb::class_<OutDatLink> outDat(m, "OutDat");
 	outDat.doc() = "An interface for an OutDAT in a loaded TouchDesigner component";
