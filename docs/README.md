@@ -14,5 +14,11 @@ cd docs
 make html
 ```
 
+or in PowerShell run
+```bash
+cd docs
+.\make html
+```
+
 generated website will be in docs/build/html
 
