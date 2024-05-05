@@ -80,8 +80,8 @@ class ExampleRunComp:
 		# set in_chops[0] with local data
 		# comp.in_chops[0].from_numpy(this.test_array, this.test_array_chan_names)
 
-		temp = comp.out_chops[0].channels()
-		# audioChannels = comp.out_chops[0].channels()
+		temp = comp.out_chops[0].chans()
+		# audioChannels = comp.out_chops[0].chans()
 		# print("audio channels - num_channels:", audioChannels.num_chans, "numSamples:", audioChannels.num_samples, "is_time_dependent:", audioChannels.is_time_dependent, "sample_rate:", audioChannels.rate, "start_time:", audioChannels.start_time, "end_time:", audioChannels.end_time)
   
 		# audioChannels = tp.ChopChannels(arr, temp.rate, temp.is_time_dependent, temp.start_time, temp.end_time, names)
@@ -102,6 +102,8 @@ class ExampleRunComp:
 		# 	comp.in_chops[0].from_channels(audioChannels)
 
 		empty_chans = tp.ChopChannels(10, channel_names=['a', 'b', 'c', 'd'])
+
+
 		# print(empty_chans)
 		# empty_chans.is_time_dependent = True
 		# empty_chans.rate = 60
@@ -109,7 +111,7 @@ class ExampleRunComp:
 		# empty_chans.end_time = int(empty_chans.start_time + 10)
 		# print(empty_chans)
   
-		empty_chans.set_values(0, [1, 2, 1, 2, 3, 0, 1, 2, 1, 1])
+		# empty_chans.set_values(0, [1, 2, 1, 2, 3, 0, 1, 2, 1, 1])
 		# empty_chans.set_values('b', [4, 2, 4, 2, 3, 0, 1, 2, 1, 1])
 		# empty_chans.set_values('c', [0, 1, 2, 1, 1])
 		# empty_chans.set_values('d', [0, 1, 2, 1, 1], 4)
@@ -121,6 +123,13 @@ class ExampleRunComp:
 		# empty_chans['c'][0] = 5 
 		# print(empty_chans['c'])
 
+		empty_chans.append_channel('e', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+		empty_chans.append_channel()
+		empty_chans.remove_channel('b')
+		# empty_chans.remove_channel(2)
+		empty_chans.insert_channel(3, 'f', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+		# print(empty_chans.chan_names)
 
 		comp.in_chops[1].from_channels(empty_chans)
 

@@ -198,6 +198,35 @@ ChopChannels::setChannels(const float* data, int32_t channelCount, uint32_t valu
 	}
 }
 
+void
+ChopChannels::removeChannel(const std::string& name)
+{
+	removeChannel(name.c_str());
+}
+
+float* 
+ChopChannels::mutableChan(uint32_t index)
+{
+	if (index < channelCount_)
+	{
+		return channelsBuffer_.data() + index * capacity_;
+	}
+	return nullptr;
+}
+
+float* 
+ChopChannels::mutableChan(const char* name)
+{
+	for (uint32_t i = 0; i < channelCount_; ++i)
+	{
+		if (strcmp(names_[i], name) == 0)
+		{
+			return channelsBuffer_.data() + i * capacity_;
+		}
+	}
+	return nullptr;
+}
+
 void 
 ChopChannels::setChannelValues(int32_t channelIndex, const float* data, uint32_t size, uint32_t offset)
 {
@@ -311,35 +340,42 @@ ChopChannels::appendChannel(const float* data, uint32_t size, const char* name)
 		
 	channels_[channelCount_] = &channelsBuffer_[channelCount_ * capacity_];
 
-	if (name)
+	auto nameCount = namesBuffer_.size();
+	if (name || nameCount > 0)
 	{
-		if (namesBuffer_.size() != channelCount_)
+		if (nameCount != channelCount_)
 		{
 			namesBuffer_.resize(channelCount_ + 1);
-			names_.resize(channelCount_ + 1);
 			for (uint32_t i = 0; i < channelCount_; ++i)
 			{
-				namesBuffer_[i] = "chan " + std::to_string(i + 1);
-				names_[i] = namesBuffer_[i].c_str();
+				namesBuffer_[i] = "chan" + std::to_string(i + 1);
 			}
 		}
 		else
-		{
 			namesBuffer_.resize(channelCount_ + 1);
-			names_.resize(channelCount_ + 1);
-		}
 
-		namesBuffer_[channelCount_] = name;
-		names_[channelCount_] = namesBuffer_[channelCount_].c_str();
+		if (name)
+			namesBuffer_[channelCount_] = name;
+		else
+			namesBuffer_[channelCount_] = "chan" + std::to_string(channelCount_ + 1);
+	
+		names_.resize(channelCount_ + 1);
+		for (uint32_t i = 0; i < channelCount_; ++i)
+		{
+			names_[i] = namesBuffer_[i].c_str();
+		}
 	}
 
 	++channelCount_;
 }
 
 void 
-ChopChannels::appendChannel(const std::vector<float>& data, const std::string& name)
+ChopChannels::appendChannel(const std::string& name, const std::vector<float>& data)
 {
-	appendChannel(data.data(), data.size(), name.c_str());
+	if (!name.empty())
+		appendChannel(data.data(), data.size(), name.c_str());
+	else
+		appendChannel(data.data(), data.size(), nullptr);
 }
 
 void 
@@ -349,7 +385,7 @@ ChopChannels::insertChannel(uint32_t index, const float* data, uint32_t size, co
 	{
 		channelsBuffer_.resize((channelCount_ + 1) * capacity_);
 		
-		if (size < capacity_)
+		if (size <= capacity_)
 		{
 			std::copy_backward(
 				channelsBuffer_.begin() + index * capacity_, 
@@ -388,7 +424,7 @@ ChopChannels::insertChannel(uint32_t index, const float* data, uint32_t size, co
 				for (uint32_t i = 0; i < channelCount_; ++i)
 				{
 					channels_[i] = &channelsBuffer_[i * capacity_];
-					namesBuffer_[i] = "chan " + std::to_string(i + 1);
+					namesBuffer_[i] = "chan" + std::to_string(i + 1);
 					names_[i] = namesBuffer_[i].c_str();
 				}
 				namesBuffer_[index] = name;
@@ -412,12 +448,16 @@ ChopChannels::insertChannel(uint32_t index, const float* data, uint32_t size, co
 }
 
 void 
-ChopChannels::insertChannel(uint32_t index, const std::vector<float>& data, const std::string& name)
+ChopChannels::insertChannel(uint32_t index, const std::string& name, const std::vector<float>& data)
 {
-	insertChannel(index, data.data(), data.size(), name.c_str());
+	if (!name.empty())
+		insertChannel(index, data.data(), data.size(), name.c_str());
+	else
+		insertChannel(index, data.data(), data.size(), nullptr);
 }
 
-void ChopChannels::removeChannel(uint32_t index)
+void 
+ChopChannels::removeChannel(uint32_t index)
 {
 	if (index < channelCount_)
 	{
@@ -446,34 +486,6 @@ ChopChannels::removeChannel(const char* name)
 		}
 	}
 }
-
-void 
-ChopChannels::removeChannel(const std::string& name)
-{
-	removeChannel(name.c_str());
-}
-
-float* ChopChannels::mutableChan(uint32_t index)
-{
-	if (index < channelCount_)
-	{
-		return channelsBuffer_.data() + index * capacity_;
-	}
-	return nullptr;
-}
-
-float* ChopChannels::mutableChan(const char* name)
-{
-	for (uint32_t i = 0; i < channelCount_; ++i)
-	{
-		if (strcmp(names_[i], name) == 0)
-		{
-			return channelsBuffer_.data() + i * capacity_;
-		}
-	}
-	return nullptr;
-}
-
 
 
 

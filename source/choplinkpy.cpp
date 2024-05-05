@@ -58,8 +58,8 @@ R"(Returns all of the channels in this CHOP as 2D NumPy array with a width equal
 )";
 
 
-static const char* channelsDoc =
-R"(Returns the ChopChannels object.
+static const char* chansDoc =
+R"((get) The ChopChannels member.
 )";
 
 
@@ -142,70 +142,86 @@ void initChopLinkBindings(nb::module_& m)
 {
 	nb::class_<ChopChannels> chopChannels(m, "ChopChannels");
 	chopChannels.doc() = "A container of CHOP channels";
-	chopChannels.def(nb::init<>());
+	chopChannels.def(nb::init<>())
+		.def("__init__", [](
+			ChopChannels* chopChannels, 
+			nb::ndarray<float, nb::ndim<2>, nb::device::cpu> array, 
+			double rate = -1.0, 
+			bool isTimeDependent = false, 
+			int64_t startTime = 0, 
+			int64_t endTime = 0, 
+			const std::vector<std::string>& channelNames = {})
+			{
+				auto view = array.view();
+				int32_t channelCount = static_cast<int32_t>(view.shape(0));
+				uint32_t valueCount = static_cast<uint32_t>(view.shape(1));
+				new (chopChannels) ChopChannels(view.data(), channelCount, valueCount, rate, isTimeDependent, startTime, endTime, channelNames);
+			}, "array"_a, "rate"_a = -1.0, "is_time_dependent"_a = false, "start_time"_a = 0, "end_time"_a = 0, "channel_names"_a = nb::list()
+		)
 
-	chopChannels.def("__init__", [](
-		ChopChannels* chopChannels, 
-		nb::ndarray<float, nb::ndim<2>, nb::device::cpu> array, 
-		double rate = -1.0, 
-		bool isTimeDependent = false, 
-		int64_t startTime = 0, 
-		int64_t endTime = 0, 
-		const std::vector<std::string>& channelNames = {})
-		{
-			auto view = array.view();
-			int32_t channelCount = static_cast<int32_t>(view.shape(0));
-			uint32_t valueCount = static_cast<uint32_t>(view.shape(1));
-			new (chopChannels) ChopChannels(view.data(), channelCount, valueCount, rate, isTimeDependent, startTime, endTime, channelNames);
-		}, "array"_a, "rate"_a = -1.0, "is_time_dependent"_a = false, "start_time"_a = 0, "end_time"_a = 0, "channel_names"_a = nb::list()
-	);
+		.def("__init__", [](
+			ChopChannels* chopChannels,
+			uint32_t numSamples,
+			double rate = -1.0,
+			bool isTimeDependent = false,
+			int64_t startTime = 0,
+			int64_t endTime = 0,
+			const std::vector<std::string>& channelNames = {})
+			{
+				new (chopChannels) ChopChannels(numSamples, rate, isTimeDependent, startTime, endTime, channelNames);
+			}, "num_samples"_a, "rate"_a = -1.0, "is_time_dependent"_a = false, "start_time"_a = 0, "end_time"_a = 0, "channel_names"_a = nb::list())
 
-	chopChannels.def("__init__", [](
-		ChopChannels* chopChannels,
-		uint32_t numSamples,
-		double rate = -1.0,
-		bool isTimeDependent = false,
-		int64_t startTime = 0,
-		int64_t endTime = 0,
-		const std::vector<std::string>& channelNames = {})
-		{
-			new (chopChannels) ChopChannels(numSamples, rate, isTimeDependent, startTime, endTime, channelNames);
-		}, "num_samples"_a, "rate"_a = -1.0, "is_time_dependent"_a = false, "start_time"_a = 0, "end_time"_a = 0, "channel_names"_a = nb::list()
-	);
+		.def("__repr__", [](ChopChannels& self)
+			{
+				std::string repr =
+					"ChopChannels(channels: " + std::to_string(self.channelCount())
+					+ " samples: " + std::to_string(self.valueCount())
+					+ " rate: " + std::to_string(self.rate())
+					+ " time dependent: " + std::to_string(self.isTimeDependent())
+					+ " start time: " + std::to_string(self.startTime())
+					+ " end time: " + std::to_string(self.endTime())
+					+ ")";
 
-	chopChannels
+				return repr;
+			})
+
 		.def("__getitem__", [](ChopChannels& self, int32_t index)
 			{
 				auto array = nb::ndarray<nb::numpy, float, nb::ndim<1>, nb::device::cpu>(
 					static_cast<void*>(self.mutableChan(index)),
-					{ self.valueCount() }, 
-					nb::handle(), 
-					{1} );
-			
+					{ self.valueCount() },
+					nb::handle(),
+					{ 1 });
+
 				return array;
 			}, "index"_a, nb::rv_policy::reference_internal)
+
 		.def("__getitem__", [](ChopChannels& self, const std::string name)
 			{
 				auto array = nb::ndarray<nb::numpy, float, nb::ndim<1>, nb::device::cpu>(
 					static_cast<void*>(self.mutableChan(name.c_str())),
 					{ self.valueCount() },
 					nb::handle(),
-					{1});
+					{ 1 });
 				return array;
 			}, "name"_a, nb::rv_policy::reference_internal)
 		
 		.def_prop_ro("num_chans", [](ChopChannels& self) { return self.channelCount(); }, num_chansDoc)
 		.def_prop_ro("num_samples", [](ChopChannels& self) { return self.valueCount(); }, num_samplesDoc)
 		.def_prop_ro("chan_names", &ChopChannels::namesBuffer, chan_namesDoc, nb::rv_policy::reference_internal)
+
 		.def_prop_rw("rate", 
 			[](ChopChannels& self) { return self.rate(); },
 			[](ChopChannels& self, double value) { self.setRate(value); }, rateDoc)
+
 		.def_prop_rw("is_time_dependent", 
 			[](ChopChannels& self) { return self.isTimeDependent(); }, 
 			[](ChopChannels& self, bool value) { self.setIsTimeDependent(value); }, is_time_dependentDoc)
+
 		.def_prop_rw("start_time", 
 			[](ChopChannels& self) { return self.startTime(); }, 
 			[](ChopChannels& self, int64_t value) { self.setStartTime(value); }, start_timeDoc)
+
 		.def_prop_rw("end_time", 
 			[](ChopChannels& self) { return self.endTime(); },
 			[](ChopChannels& self, int64_t value) { self.setEndTime(value); }, end_timeDoc)
@@ -240,8 +256,27 @@ void initChopLinkBindings(nb::module_& m)
 			},
 			"chan_index"_a, "name"_a)
 
+		.def("append_channel", [](ChopChannels& self, const std::string& name = {}, const std::vector<float>& values = {}) {
+				self.appendChannel(name, values);
+			}, "name"_a = "", "values"_a = nb::list())
+
+		.def("insert_channel", [](ChopChannels& self, int32_t index, const std::string& name = {}, const std::vector<float>& values = {}) {
+				self.insertChannel(index, name.c_str(), values);
+			}, "index"_a, "name"_a = "", "values"_a = nb::list())
+
+		.def("remove_channel", [](ChopChannels& self, int32_t index) {
+				self.removeChannel(index);
+			}, "index"_a)
+
+		.def("remove_channel", [](ChopChannels& self, const std::string& name) {
+				self.removeChannel(name.c_str());
+			}, "name"_a)
+
+
+
 		.def("as_numpy", [](ChopChannels& self) { return asNumpy(self); }, as_numpyDoc, nb::rv_policy::automatic)
 		.def("as_numpy_ref", [](ChopChannels& self) { return asNumpy(self); }, as_numpy_refDoc, nb::rv_policy::reference_internal)
+
 		.def("from_numpy",
 			[](ChopChannels& self, nb::ndarray<float, nb::ndim<2>,
 				nb::device::cpu> array,
@@ -257,26 +292,16 @@ void initChopLinkBindings(nb::module_& m)
 				self.setChannels(view.data(), channelCount, valueCount, rate, isTimeDependent, startTime, endTime, channelNames);
 
 			})
-		.def("__repr__", [](ChopChannels& self)
-			{
-				std::string repr = 
-					"ChopChannels(channels: " + std::to_string(self.channelCount())
-					+ " samples: " + std::to_string(self.valueCount())
-					+ " rate: " + std::to_string(self.rate())
-					+ " time dependent: " + std::to_string(self.isTimeDependent())
-					+ " start time: " + std::to_string(self.startTime())
-					+ " end time: " + std::to_string(self.endTime())
-					+ ")";
-		
-				return repr;
-			})
+
+
+
 		;
 
 	nb::class_<OutChopLink> outChop(m, "OutChop");
 	outChop.doc() = "An interface for an OutCHOP in a loaded TouchDesigner component";
 	outChop.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
 	outChop.def_prop_ro("chan_names", &OutChopLink::channelNames, chan_namesDoc, nb::rv_policy::reference_internal);
-	outChop.def("channels", &OutChopLink::chopChannels, "The CHOP channels object.", nb::rv_policy::reference_internal);
+	outChop.def("chans", &OutChopLink::chopChannels, chansDoc, nb::rv_policy::reference_internal);
 
 	outChop.def("as_numpy", [](OutChopLink& self)
 		{
