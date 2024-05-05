@@ -117,15 +117,33 @@ public:
 
 
 	// not implemented, need to make tests for each of these... 
-	//void setCapacity(uint32_t capacity);
-	//void setRate(double rate);
-	//void setIsTimeDependent(bool isTimeDependent);
-	//void appendChannel(const float* data = nullptr, uint32_t size = 0, const char* name = nullptr);
-	//void appendChannel(const float* data, const std::string& name);
-	//void appendChannel(const std::vector<float>& data, const std::string& name);
-	//void appendChannel(const std::string& name);
-	//void removeChannel(const std::string& name);
-	//void removeChannel(uint32_t index);
+	void setChannelValues(int32_t channelIndex, const float* data, uint32_t size, uint32_t offset = 0);
+	void setChannelValues(int32_t channelIndex, const std::vector<float>& data, uint32_t offset = 0);
+	void setChannelValues(const std::string& channelName, const float* data, uint32_t size, uint32_t offset = 0);
+	void setChannelValues(const std::string& channelName, const std::vector<float>& data, uint32_t offset = 0);
+
+	void setChannelValue(int32_t channelIndex, uint32_t valueIndex, float value);
+	void setChannelValue(const std::string& channelName, uint32_t valueIndex, float value);
+
+	void setChannelName(uint32_t index, const char* name);
+
+	void setRate(double rate);
+	void setIsTimeDependent(bool isTimeDependent);
+	void setStartTime(int64_t startTime);
+	void setEndTime(int64_t endTime);
+	
+	void appendChannel(const float* data = nullptr, uint32_t size = 0, const char* name = nullptr);
+	void appendChannel(const std::vector<float>& data, const std::string& name);
+	void insertChannel(uint32_t index, const float* data = nullptr, uint32_t size = 0, const char* name = nullptr);
+	void insertChannel(uint32_t index, const std::vector<float>& data, const std::string& name);
+
+	void removeChannel(uint32_t index);
+	void removeChannel(const char* name);
+	void removeChannel(const std::string& name);
+
+	float* mutableChan(uint32_t index);
+	float* mutableChan(const char* name);
+
 	//void clear();
 
 
