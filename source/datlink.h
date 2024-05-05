@@ -23,7 +23,7 @@ struct DatTable
 	std::vector<std::string_view> col(uint32_t i) 
 	{ 
 		std::vector<std::string_view> column;
-		for (uint32_t j = 0; j < numRows; ++j)
+		for (size_t j = 0; j < numRows; ++j)
 		{
 			column.push_back(values[j * numCols + i]);
 		}
@@ -41,9 +41,9 @@ struct DatTable
 		auto lastRow = numRows - 1;
 		auto lastCol = numCols - 1;
 
-		for (uint32_t i = 0; i < numRows; ++i)
+		for (size_t i = 0; i < numRows; ++i)
 		{
-			for (uint32_t j = 0; j < numCols; ++j)
+			for (size_t j = 0; j < numCols; ++j)
 			{
 				str += values[i * numCols + j];
 				if (j < lastCol) str += "\t";

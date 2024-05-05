@@ -52,7 +52,15 @@ ChopChannels::ChopChannels(
 	setChannels(data, channelCount, capacity, valueCount, rate, isTimeDependent, startTime, endTime, names);
 }
 
-ChopChannels::ChopChannels(const float* data, int32_t channelCount, uint32_t valueCount, double rate, bool isTimeDependent, int64_t startTime, int64_t endTime, const std::vector<std::string>& names)
+ChopChannels::ChopChannels(
+	const float* data, 
+	int32_t channelCount, 
+	uint32_t valueCount, 
+	double rate, 
+	bool isTimeDependent, 
+	int64_t startTime, 
+	int64_t endTime, 
+	const std::vector<std::string>& names)
 {
 	channelCount_ = channelCount;
 	capacity_ = valueCount;
@@ -61,7 +69,7 @@ ChopChannels::ChopChannels(const float* data, int32_t channelCount, uint32_t val
 	isTimeDependent_ = isTimeDependent;
 	startTime_ = startTime;
 	endTime_ = endTime;
-	channelsBuffer_.resize(channelCount * valueCount);
+	channelsBuffer_.resize(static_cast<size_t>(channelCount) * valueCount);
 	channels_.resize(channelCount);
 
 	std::copy(data, data + channelCount * valueCount, channelsBuffer_.begin());
@@ -72,7 +80,7 @@ ChopChannels::ChopChannels(const float* data, int32_t channelCount, uint32_t val
 		namesBuffer_.resize(channelCount);
 		names_.resize(channelCount);
 
-		for (int32_t i = 0; i < channelCount; ++i)
+		for (size_t i = 0; i < channelCount; ++i)
 		{
 			channels_[i] = &channelsBuffer_[i * capacity_];
 			namesBuffer_[i] = names[i];
@@ -81,14 +89,20 @@ ChopChannels::ChopChannels(const float* data, int32_t channelCount, uint32_t val
 	}
 	else
 	{
-		for (int32_t i = 0; i < channelCount; ++i)
+		for (size_t i = 0; i < channelCount; ++i)
 		{
 			channels_[i] = &channelsBuffer_[i * capacity_];
 		}
 	}
 }
 
-ChopChannels::ChopChannels(uint32_t valueCount, double rate, bool isTimeDependent, int64_t startTime, int64_t endTime, const std::vector<std::string>& names)
+ChopChannels::ChopChannels(
+	uint32_t valueCount, 
+	double rate, 
+	bool isTimeDependent, 
+	int64_t startTime, 
+	int64_t endTime, 
+	const std::vector<std::string>& names)
 {
 	channelCount_ = names.size();
 	capacity_ = valueCount;
@@ -97,7 +111,7 @@ ChopChannels::ChopChannels(uint32_t valueCount, double rate, bool isTimeDependen
 	isTimeDependent_ = isTimeDependent;
 	startTime_ = startTime;
 	endTime_ = endTime;
-	channelsBuffer_.resize(channelCount_ * valueCount);
+	channelsBuffer_.resize(static_cast<size_t>(channelCount_ * capacity_));
 	channels_.resize(channelCount_);
 
 	if (names.size() > 0)
@@ -106,7 +120,7 @@ ChopChannels::ChopChannels(uint32_t valueCount, double rate, bool isTimeDependen
 		namesBuffer_.resize(channelCount_);
 		names_.resize(channelCount_);
 
-		for (int32_t i = 0; i < channelCount_; ++i)
+		for (size_t i = 0; i < channelCount_; ++i)
 		{
 			channels_[i] = &channelsBuffer_[i * capacity_];
 			namesBuffer_[i] = names[i];
@@ -135,7 +149,7 @@ ChopChannels::setChannels(
 	isTimeDependent_ = isTimeDependent;
 	startTime_ = startTime;
 	endTime_ = endTime;
-	channelsBuffer_.resize(channelCount * capacity);
+	channelsBuffer_.resize(static_cast<size_t>(channelCount_ * capacity_));
 	channels_.resize(channelCount);
 
 	if (names)
@@ -143,7 +157,7 @@ ChopChannels::setChannels(
 		namesBuffer_.resize(channelCount);
 		names_.resize(channelCount);
 
-		for (int32_t i = 0; i < channelCount; ++i)
+		for (size_t i = 0; i < channelCount; ++i)
 		{
 			std::copy(data[i], data[i] + valueCount_, channelsBuffer_.begin() + i * valueCount_);
 			channels_[i] = &channelsBuffer_[i * capacity_];
@@ -154,7 +168,7 @@ ChopChannels::setChannels(
 	}
 	else
 	{
-		for (int32_t i = 0; i < channelCount; ++i)
+		for (size_t i = 0; i < channelCount; ++i)
 		{
 			std::copy(data[i], data[i] + valueCount_, channelsBuffer_.begin() + i * valueCount_);
 			channels_[i] = &channelsBuffer_[i * capacity_];
@@ -163,7 +177,15 @@ ChopChannels::setChannels(
 }
 
 void
-ChopChannels::setChannels(const float* data, int32_t channelCount, uint32_t valueCount, double rate, bool isTimeDependent, int64_t startTime, int64_t endTime, const std::vector<std::string>& names)
+ChopChannels::setChannels(
+	const float* data, 
+	int32_t channelCount, 
+	uint32_t valueCount, 
+	double rate, 
+	bool isTimeDependent, 
+	int64_t startTime, 
+	int64_t endTime, 
+	const std::vector<std::string>& names)
 {
 	channelCount_ = channelCount;
 	capacity_ = valueCount;
@@ -172,7 +194,7 @@ ChopChannels::setChannels(const float* data, int32_t channelCount, uint32_t valu
 	isTimeDependent_ = isTimeDependent;
 	startTime_ = startTime;
 	endTime_ = endTime;
-	channelsBuffer_.resize(channelCount * valueCount);
+	channelsBuffer_.resize(static_cast<size_t>(channelCount_ * capacity_));
 	channels_.resize(channelCount);
 
 	std::copy(data, data + channelCount * valueCount, channelsBuffer_.begin());
@@ -182,7 +204,7 @@ ChopChannels::setChannels(const float* data, int32_t channelCount, uint32_t valu
 		namesBuffer_.resize(channelCount);
 		names_.resize(channelCount);
 
-		for (int32_t i = 0; i < channelCount; ++i)
+		for (size_t i = 0; i < channelCount; ++i)
 		{
 			channels_[i] = &channelsBuffer_[i * capacity_];
 			namesBuffer_[i] = names[i];
@@ -191,7 +213,7 @@ ChopChannels::setChannels(const float* data, int32_t channelCount, uint32_t valu
 	}
 	else
 	{
-		for (int32_t i = 0; i < channelCount; ++i)
+		for (size_t i = 0; i < channelCount; ++i)
 		{
 			channels_[i] = &channelsBuffer_[i * capacity_];
 		}
@@ -234,7 +256,7 @@ ChopChannels::setChannelValues(int32_t channelIndex, const float* data, uint32_t
 	{
 		if (size + offset <= capacity_)
 		{
-			std::copy(data, data + size, channelsBuffer_.begin() + channelIndex * capacity_ + offset);
+			std::copy(data, data + size, channelsBuffer_.begin() + static_cast<size_t>(channelIndex * capacity_ + offset));
 		}
 		else
 			throw std::runtime_error("size + offset out of range");
@@ -251,7 +273,7 @@ ChopChannels::setChannelValues(int32_t channelIndex, const std::vector<float>& d
 void 
 ChopChannels::setChannelValues(const std::string& channelName, const float* data, uint32_t size, uint32_t offset)
 {
-	for (uint32_t i = 0; i < channelCount_; ++i)
+	for (size_t i = 0; i < channelCount_; ++i)
 	{
 		if (strcmp(names_[i], channelName.c_str()) == 0)
 		{
@@ -275,7 +297,7 @@ ChopChannels::setChannelValue(int32_t channelIndex, uint32_t valueIndex, float v
 {
 	if (channelIndex < channelCount_ && valueIndex < valueCount_)
 	{
-		channelsBuffer_[channelIndex * capacity_ + valueIndex] = value;
+		channelsBuffer_[static_cast<size_t>(channelIndex * capacity_ + valueIndex)] = value;
 	}
 	else
 		throw std::runtime_error("channelIndex or valueIndex out of range");
@@ -284,7 +306,7 @@ ChopChannels::setChannelValue(int32_t channelIndex, uint32_t valueIndex, float v
 void 
 ChopChannels::setChannelValue(const std::string& channelName, uint32_t valueIndex, float value)
 {
-	for (uint32_t i = 0; i < channelCount_; ++i)
+	for (size_t i = 0; i < channelCount_; ++i)
 	{
 		if (strcmp(names_[i], channelName.c_str()) == 0)
 		{
@@ -325,41 +347,45 @@ ChopChannels::setEndTime(int64_t endTime) { endTime_ = endTime; }
 void 
 ChopChannels::appendChannel(const float* data, uint32_t size, const char* name)
 {
-	channelsBuffer_.resize((channelCount_ + 1) * capacity_);
-	channels_.resize(channelCount_ + 1);
+	size_t newSize = static_cast<size_t>(channelCount_ + 1);
+
+	channelsBuffer_.resize(newSize * capacity_);
+	channels_.resize(newSize);
 	
 	if (data)
 	{
 		if (size <= capacity_)
-			std::copy(data, data + size, channelsBuffer_.begin() + channelCount_ * capacity_);
+			std::copy(data, data + size, channelsBuffer_.begin() + static_cast<size_t>(channelCount_ * capacity_));
 		else
 			throw std::runtime_error("size out of range");
 	}
 	else
-		std::fill(channelsBuffer_.begin() + channelCount_ * capacity_, channelsBuffer_.begin() + (channelCount_ + 1) * capacity_, 0.0f);
+		std::fill(
+			channelsBuffer_.begin() + static_cast<size_t>(channelCount_ * capacity_), 
+			channelsBuffer_.begin() + newSize * capacity_, 0.0f);
 		
-	channels_[channelCount_] = &channelsBuffer_[channelCount_ * capacity_];
+	channels_[channelCount_] = &channelsBuffer_[static_cast<size_t>(channelCount_ * capacity_)];
 
 	auto nameCount = namesBuffer_.size();
 	if (name || nameCount > 0)
 	{
 		if (nameCount != channelCount_)
 		{
-			namesBuffer_.resize(channelCount_ + 1);
+			namesBuffer_.resize(newSize);
 			for (uint32_t i = 0; i < channelCount_; ++i)
 			{
 				namesBuffer_[i] = "chan" + std::to_string(i + 1);
 			}
 		}
 		else
-			namesBuffer_.resize(channelCount_ + 1);
+			namesBuffer_.resize(newSize);
 
 		if (name)
 			namesBuffer_[channelCount_] = name;
 		else
-			namesBuffer_[channelCount_] = "chan" + std::to_string(channelCount_ + 1);
+			namesBuffer_[channelCount_] = "chan" + std::to_string(newSize);
 	
-		names_.resize(channelCount_ + 1);
+		names_.resize(newSize);
 		for (uint32_t i = 0; i < channelCount_; ++i)
 		{
 			names_[i] = namesBuffer_[i].c_str();
@@ -383,14 +409,15 @@ ChopChannels::insertChannel(uint32_t index, const float* data, uint32_t size, co
 {
 	if (index < channelCount_)
 	{
-		channelsBuffer_.resize((channelCount_ + 1) * capacity_);
+		size_t newSize = static_cast<size_t>(channelCount_ + 1);
+		channelsBuffer_.resize(newSize * capacity_);
 		
 		if (size <= capacity_)
 		{
 			std::copy_backward(
-				channelsBuffer_.begin() + index * capacity_, 
-				channelsBuffer_.begin() + (channelCount_) * capacity_,
-				channelsBuffer_.begin() + (channelCount_ + 1) * capacity_
+				channelsBuffer_.begin() + static_cast<size_t>(index * capacity_),
+				channelsBuffer_.begin() + static_cast<size_t>(channelCount_) * capacity_,
+				channelsBuffer_.begin() + newSize * capacity_
 			);
 		}
 		else
@@ -398,18 +425,20 @@ ChopChannels::insertChannel(uint32_t index, const float* data, uint32_t size, co
 
 		if (data)
 		{
-			std::copy(data, data + size, channelsBuffer_.begin() + index * capacity_);
+			std::copy(data, data + size, channelsBuffer_.begin() + static_cast<size_t>(index * capacity_));
 		}
 		else
 		{
-			std::fill(channelsBuffer_.begin() + index * capacity_, channelsBuffer_.begin() + (index + 1) * capacity_, 0.0f);
+			std::fill(
+				channelsBuffer_.begin() + static_cast<size_t>(index * capacity_), 
+				channelsBuffer_.begin() + static_cast<size_t>((index + 1) * capacity_), 0.0f);
 		}
 
-		channels_.resize(channelCount_ + 1);
+		channels_.resize(newSize);
 
 		if (namesBuffer_.size() == 0 && !name)
 		{
-			for (uint32_t i = 0; i < index; ++i)
+			for (size_t i = 0; i < index; ++i)
 			{
 				channels_[i] = &channelsBuffer_[i * capacity_];
 			}
@@ -418,10 +447,10 @@ ChopChannels::insertChannel(uint32_t index, const float* data, uint32_t size, co
 		{
 			if (namesBuffer_.size() != channelCount_)
 			{
-				namesBuffer_.resize(channelCount_ + 1);
-				names_.resize(channelCount_ + 1);
+				namesBuffer_.resize(newSize);
+				names_.resize(newSize);
 
-				for (uint32_t i = 0; i < channelCount_; ++i)
+				for (size_t i = 0; i < channelCount_; ++i)
 				{
 					channels_[i] = &channelsBuffer_[i * capacity_];
 					namesBuffer_[i] = "chan" + std::to_string(i + 1);
@@ -433,9 +462,9 @@ ChopChannels::insertChannel(uint32_t index, const float* data, uint32_t size, co
 			else
 			{
 				namesBuffer_.insert(namesBuffer_.begin() + index, name);
-				names_.resize(channelCount_ + 1);
+				names_.resize(newSize);
 
-				for (uint32_t i = 0; i < channelCount_; ++i)
+				for (size_t i = 0; i < channelCount_; ++i)
 				{
 					channels_[i] = &channelsBuffer_[i * capacity_];
 					names_[i] = namesBuffer_[i].c_str();
@@ -462,7 +491,9 @@ ChopChannels::removeChannel(uint32_t index)
 	if (index < channelCount_)
 	{
 		channels_.erase(channels_.begin() + index);
-		channelsBuffer_.erase(channelsBuffer_.begin() + index * capacity_, channelsBuffer_.begin() + (index + 1) * capacity_);
+		channelsBuffer_.erase(
+			channelsBuffer_.begin() + static_cast<size_t>(index * capacity_), 
+			channelsBuffer_.begin() + static_cast<size_t>((index + 1) * capacity_));
 
 		if (namesBuffer_.size() == channelCount_)
 		{
