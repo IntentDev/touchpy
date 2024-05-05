@@ -12,6 +12,10 @@
 # rigid body mesh using the wp.sim.ModelBuilder().
 #
 ###########################################################################
+import time
+
+
+
 
 import math
 import numpy as np
@@ -42,9 +46,14 @@ class IntegratorType(Enum):
 class Example:
 	def __init__(self, stage, integrator=IntegratorType.EULER):
 		self.integrator_type = integrator
-
-		self.sim_width = 50
-		self.sim_height = 50
+		self.profiler = {}
+		self.reset()
+		
+	def reset(self):	
+		
+		
+		self.sim_width = 49
+		self.sim_height = 49
 
 		self.sim_fps = 60.0
 		self.sim_substeps = 32
@@ -53,11 +62,32 @@ class Example:
 		self.frame_dt = 1.0 / self.sim_fps
 		self.sim_dt = self.frame_dt / self.sim_substeps
 		self.sim_time = 0.0
-		self.profiler = {}
+		
+		
 
+		
 		builder = wp.sim.ModelBuilder()
 
+		
+		
+
 		if self.integrator_type == IntegratorType.EULER:
+			builder.add_cloth_grid(
+				pos=wp.vec3(0, 7.0, 0),
+				rot=wp.quat_from_axis_angle(wp.vec3(1.0, 0.0, 0.0), math.pi * 0.5),
+				vel=wp.vec3(0.0, 0.0, 0.0),
+				dim_x=self.sim_width,
+				dim_y=self.sim_height,
+				cell_x=0.1,
+				cell_y=0.1,
+				mass=0.1,
+				tri_ke=1.0e3,
+				tri_ka=1.01e3,
+				tri_kd=1.e1,
+				tri_drag=0.8,
+				edge_ke=0.2
+			)
+		else:
 			builder.add_cloth_grid(
 				pos=wp.vec3(0.0, 7.0, 0.0),
 				rot=wp.quat_from_axis_angle(wp.vec3(1.0, 0.0, 0.0), math.pi * 0.5),
@@ -67,44 +97,33 @@ class Example:
 				cell_x=0.15,
 				cell_y=0.15,
 				mass=0.2,
-				tri_ke=3.0e3,
-				tri_ka=5.e3,
-				tri_kd=1.0e1,
-				tri_drag=0.7,
-			)
-		else:
-			builder.add_cloth_grid(
-				pos=wp.vec3(1.0, 1.0, 1.0),
-				rot=wp.quat_from_axis_angle(wp.vec3(1.0, 0.0, 0.0), math.pi * 0.5),
-				vel=wp.vec3(0.0, 0.0, 0.0),
-				dim_x=self.sim_width,
-				dim_y=self.sim_height,
-				cell_x=0.2,
-				cell_y=0.2,
-				mass=0.1,
-				edge_ke=1.0e2,
+				edge_ke=2.0e2,
 				add_springs=True,
-				spring_ke=1.0e3,
-				spring_kd=0.0,
+				spring_ke=0.5e3,
+				spring_kd=1.0,
+				tri_drag=1.0
 			)
 
 	  
 		
-
+		
 
 		builder.add_shape_sphere(
 			body=-1, 
-			pos=(3.0, 5.0, 3.0), 
+			pos=(2.5, 5.0, 2.5), 
 			rot=(0.0, 0.0, 0.0, 1.0), 
-			radius=1.0, 
+			radius=0.75, 
 			density=None, 
 			ke=1.0e2, 
 			kd=1.0e2, 
-			kf=3.0e1
-			
+			kf=100.0e6,
+			mu=0.1,
 			)	
 
 
+		#end_time = time.time()
+		#elapsed_time = end_time - start_time
+		#print(elapsed_time)
 
 
 
@@ -121,15 +140,15 @@ class Example:
 		self.state_0 = self.model.state()
 		self.state_1 = self.model.state()
 
-		self.renderer = None
-		#if stage:
-		#	self.renderer = wp.sim.render.SimRenderer(self.model, stage, scaling=40.0)
-
+	
+		
 		self.use_graph = wp.get_device().is_cuda
 		if self.use_graph:
 			with wp.ScopedCapture() as capture:
 				self.simulate()
 			self.graph = capture.graph
+
+
 
 	def simulate(self):
 		wp.sim.collide(self.model, self.state_0)
@@ -143,23 +162,16 @@ class Example:
 			(self.state_0, self.state_1) = (self.state_1, self.state_0)
 
 	def step(self):
-		with wp.ScopedTimer("step", dict=self.profiler):
-			if self.use_graph:
-				wp.capture_launch(self.graph)
-			else:
-				self.simulate()
+		#with wp.ScopedTimer("step", dict=self.profiler):
+		if self.use_graph:
+			wp.capture_launch(self.graph)
+		else:
+			self.simulate()
 		
 		self.sim_time += self.frame_dt
-		print(self.state_0.particle_q.shape)
 
-	def render(self):
-		if self.renderer is None:
-			return
 
-		with wp.ScopedTimer("render", active=True):
-			self.renderer.begin_frame(self.sim_time)
-			self.renderer.render(self.state_0)
-			self.renderer.end_frame()
+
 
 	def runComp(self, tox_path):
 		comp = tp.Comp(tox_path, flags=tp.CompFlags.INTERNAL_TIME_AUTO | tp.CompFlags.CUDA_STREAM_INTERNAL)
@@ -186,23 +198,16 @@ class Example:
 			return
 		
 		if (keyboard.is_pressed('r')):
-			this.reset_particles()
+			this.reset()
 		
 			
-		# if this.frameTD == 300:
-		# 	print(this.positions.shape, this.positions.strides, this.positions.dtype)
-		# 	y = this.positions.reshape((100, 100))
-		# 	print(y.shape, y.strides, y.dtype)
-		# 	comp.stop()
-
-
+	
 		######### Process and Copy for next frame (Fast) ###################
 		comp.start_next_frame()	
 
 		this.step()
 		y = this.state_0.particle_q
-		#print(y.shape)
-		y = this.state_0.particle_q.reshape((51, 51))
+		y = this.state_0.particle_q.reshape((this.sim_width+1, this.sim_height+1))
 		comp.in_tops[0].from_dlpack(wp.to_dlpack(y), tp.CudaFlags.RGB)
 
 		
