@@ -169,7 +169,7 @@ void OutDatLink::writeBuffer()
 	TEResult result = TEInstanceLinkGetObjectValue(instance_, identifier().c_str(), TELinkValueCurrent, value.take());
 	if (result == TEResultSuccess)
 	{
-		DatLinkType tmpType;
+		DatLinkType tmpType { DatLinkType::Table };
 		int nextBufferIndex = activeBuffer_.load(std::memory_order_acquire) ^ 1;
 		if (value && TEGetType(value) == TEObjectTypeTable)
 		{

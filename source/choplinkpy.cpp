@@ -285,7 +285,6 @@ void initChopLinkBindings(nb::module_& m)
 
 		.def("clear", &ChopChannels::clear, clearDoc)
 
-
 		.def("as_numpy", [](ChopChannels& self) { return asNumpy(self); }, as_numpyDoc, nb::rv_policy::automatic)
 		.def("as_numpy_ref", [](ChopChannels& self) { return asNumpy(self); }, as_numpy_refDoc, nb::rv_policy::reference_internal)
 
@@ -304,8 +303,6 @@ void initChopLinkBindings(nb::module_& m)
 				self.setChannels(view.data(), channelCount, valueCount, rate, isTimeDependent, startTime, endTime, channelNames);
 
 			})
-
-
 
 		;
 
