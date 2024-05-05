@@ -28,14 +28,13 @@ public:
 	InChopLink(TouchObject<TEInstance> instance, TouchObject<TELinkInfo> linkInfo) : ChopLink(instance, linkInfo) { }
 	~InChopLink() { }
 
-	void set(ChopChannelsReference&& channels);
+	void set(ChopChannelsView&& chopChannels);
 
 private:
-	ChopChannelsReference chopChannels_;
+	ChopChannelsView chopChannels_;
 
-	bool bufferCopyable(TouchObject<TEFloatBuffer> buffer, const ChopChannelsReference& channels) const;
+	bool bufferCopyable(TouchObject<TEFloatBuffer> buffer, const ChopChannelsView& channels) const;
 };
-
 
 class InChopLinks : public Links<InChopLinks, InChopLink>
 {
@@ -56,17 +55,9 @@ public:
 	void moveBuffer();
 	void setUsingSwapBuffer(bool usingSwapBuffer) { usingSwapBuffer_ = usingSwapBuffer; }
 
-	const float* data();
+	const float* valuesArray();
 	const std::vector<std::string>& channelNames();
 	ChopChannels& chopChannels();
-
-	//int32_t channelCount() const { return chopChannels_.channelCount_; }
-	//uint32_t capacity() const { return chopChannels_.capacity_; }
-	//uint32_t valueCount() const { return chopChannels_.valueCount_; }
-	//double rate () const { return chopChannels_.rate_; }
-	//bool isTimeDependent() const { return chopChannels_.isTimeDependent_; }
-
-
 
 private:
 	void update();

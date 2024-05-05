@@ -69,25 +69,80 @@ class ExampleRunComp:
 			comp.stop() # stop running the comp
 			return
 
-		# copy out_chop to in_chop with channel names. Only NumPy arrays are supported for now.
+		time_info = comp.time()
+		# print('time_info:', time_info)
+		# copy out_chop to in_chop with channel names. 
 		arr = comp.out_chops[0].as_numpy()
 		names = comp.out_chops[0].chan_names
-		arr *= 2
-		comp.in_chops[0].from_numpy(arr, names)
+		# arr *= 2
+		# comp.in_chops[0].from_numpy(arr, names)
 		
 		# set in_chops[0] with local data
 		# comp.in_chops[0].from_numpy(this.test_array, this.test_array_chan_names)
 
+		temp = comp.out_chops[0].chans()
+		# audioChannels = comp.out_chops[0].chans()
+		# print("audio channels - num_channels:", audioChannels.num_chans, "numSamples:", audioChannels.num_samples, "is_time_dependent:", audioChannels.is_time_dependent, "sample_rate:", audioChannels.rate, "start_time:", audioChannels.start_time, "end_time:", audioChannels.end_time)
+  
+		# audioChannels = tp.ChopChannels(arr, temp.rate, temp.is_time_dependent, temp.start_time, temp.end_time, names)
+  
+		samples_per_frame = temp.rate / time_info.rate
+		start_time = int(time_info.frame * samples_per_frame)
+		end_time = int(start_time + samples_per_frame)
+
+		# print("sameples_per_frame:", samples_per_frame, "start_time:", start_time, "end_time:", end_time)
+		audioChannels = tp.ChopChannels(arr, temp.rate, temp.is_time_dependent, start_time, end_time, names)
+
+
+		# audioChannels = tp.ChopChannels()
+		# audioChannels.from_numpy(arr, temp.rate, temp.is_time_dependent, temp.start_time, temp.end_time, names)
+
+		# comp.in_chops[0].from_numpy(audioChannels.as_numpy(), audioChannels.chan_names)
+		# if this.frame > 100:
+		# 	comp.in_chops[0].from_channels(audioChannels)
+
+		empty_chans = tp.ChopChannels(10, channel_names=['a', 'b', 'c', 'd'])
+
+
+		# print(empty_chans)
+		# empty_chans.is_time_dependent = True
+		# empty_chans.rate = 60
+		# empty_chans.start_time = int(time_info.frame * 10)
+		# empty_chans.end_time = int(empty_chans.start_time + 10)
+		# print(empty_chans)
+  
+		# empty_chans.set_values(0, [1, 2, 1, 2, 3, 0, 1, 2, 1, 1])
+		# empty_chans.set_values('b', [4, 2, 4, 2, 3, 0, 1, 2, 1, 1])
+		# empty_chans.set_values('c', [0, 1, 2, 1, 1])
+		# empty_chans.set_values('d', [0, 1, 2, 1, 1], 4)
+  
+		# empty_chans.set_value(0, 1, 4)
+		# empty_chans.set_value('c', 4, 2)
+		# empty_chans[0][0] = 3 
+		# print(empty_chans[0])
+		# empty_chans['c'][0] = 5 
+		# print(empty_chans['c'])
+
+		empty_chans.append_channel('e', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+		empty_chans.append_channel()
+		empty_chans.remove_channel('b')
+		# empty_chans.remove_channel(2)
+		empty_chans.insert_channel(3, 'f', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+		# print(empty_chans.chan_names)
+
+		comp.in_chops[1].from_channels(empty_chans)
+
 		# update the local data
 		this.test_array += .01
 
-		chans2 = comp.out_chops[1].as_numpy()
-		chans2_names = comp.out_chops[1].chan_names
-		# print(chans2_names)
+		# chans2 = comp.out_chops[1].as_numpy()
+		# chans2_names = comp.out_chops[1].chan_names
+		# # print(chans2_names)
 
-		# retrieve by name and set as local variable
-		in_chop2 = comp.in_chops['chopIn2']
-		in_chop2.from_numpy(chans2, chans2_names)
+		# # retrieve by name and set as local variable
+		# in_chop2 = comp.in_chops['chopIn2']
+		# in_chop2.from_numpy(chans2, chans2_names)
 
 		# # print some channel data
 		chans3 = comp.out_chops[2]
