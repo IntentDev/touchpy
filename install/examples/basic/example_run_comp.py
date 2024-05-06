@@ -177,6 +177,10 @@ class ExampleRunComp:
 		table['g', 'b'] = 'x'
 		table[3, 2] = 'y'
 		
+		table.append_row()
+		table.append_col()
+		# table.insert_row(3, ('a', 'b', 'c'))
+		# table.insert_col(3, ('a', 'b', 'c', 'd'))
 		# table.remove_row(0)
 		# table.remove_col(1)
 
