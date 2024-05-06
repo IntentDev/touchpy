@@ -12,17 +12,6 @@ InChopLink::set(ChopChannelsView&& chopChannels)
 
 	chopChannels_ = std::move(chopChannels);
 
-	//std::cout 
-	//	<< "isTimeDependent: " << chopChannels_.isTimeDependent_
-	//	<< " channelCount: " << chopChannels_.channelCount_
-	//	<< " capacity: " << chopChannels_.capacity_
-	//	<< " valueCount: " << chopChannels_.valueCount_
-	//	<< " rate: " << chopChannels_.rate_
-	//	<< " startTime: " << chopChannels_.startTime_
-	//	<< " endTime: " << chopChannels_.endTime_
-	//	<< std::endl;
-
-
 	TouchObject<TEFloatBuffer> buffer;
 	TEResult result = TEInstanceLinkGetFloatBufferValue(instance_, identifier_.c_str(), TELinkValueCurrent, buffer.take());
 	if (result == TEResultSuccess)
@@ -38,11 +27,6 @@ InChopLink::set(ChopChannelsView&& chopChannels)
 		}
 		else
 
-			//buffer.take(TEFloatBufferCreate(
-			//	chopChannels.rate_,
-			//	chopChannels.channelCount_,
-			//	chopChannels.capacity_,
-			//	chopChannels.names_.data()));
 			if (!chopChannels.isTimeDependent_)
 				buffer.take(TEFloatBufferCreate(
 					chopChannels.rate_,

@@ -101,37 +101,37 @@ class ExampleRunComp:
 		# if this.frame > 100:
 		# 	comp.in_chops[0].from_channels(audioChannels)
 
-		empty_chans = tp.ChopChannels(10, channel_names=['a', 'b', 'c', 'd'])
+		chans = tp.ChopChannels(10, channel_names=['a', 'b', 'c', 'd'])
 
 
-		# print(empty_chans)
-		# empty_chans.is_time_dependent = True
-		# empty_chans.rate = 60
-		# empty_chans.start_time = int(time_info.frame * 10)
-		# empty_chans.end_time = int(empty_chans.start_time + 10)
-		# print(empty_chans)
+		# print(chans)
+		# chans.is_time_dependent = True
+		# chans.rate = 60
+		# chans.start_time = int(time_info.frame * 10)
+		# chans.end_time = int(chans.start_time + 10)
+		# print(chans)
   
-		# empty_chans.set_values(0, [1, 2, 1, 2, 3, 0, 1, 2, 1, 1])
-		# empty_chans.set_values('b', [4, 2, 4, 2, 3, 0, 1, 2, 1, 1])
-		# empty_chans.set_values('c', [0, 1, 2, 1, 1])
-		# empty_chans.set_values('d', [0, 1, 2, 1, 1], 4)
+		# chans.set_values(0, [1, 2, 1, 2, 3, 0, 1, 2, 1, 1])
+		# chans.set_values('b', [4, 2, 4, 2, 3, 0, 1, 2, 1, 1])
+		# chans.set_values('c', [0, 1, 2, 1, 1])
+		# chans.set_values('d', [0, 1, 2, 1, 1], 4)
   
-		# empty_chans.set_value(0, 1, 4)
-		# empty_chans.set_value('c', 4, 2)
-		# empty_chans[0][0] = 3 
-		# print(empty_chans[0])
-		# empty_chans['c'][0] = 5 
-		# print(empty_chans['c'])
+		# chans.set_value(0, 1, 4)
+		# chans.set_value('c', 4, 2)
+		# chans[0][0] = 3 
+		# print(chans[0])
+		# chans['c'][0] = 5 
+		# print(chans['c'])
 
-		empty_chans.append_channel('e', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-		empty_chans.append_channel()
-		empty_chans.remove_channel('b')
-		# empty_chans.remove_channel(2)
-		empty_chans.insert_channel(3, 'f', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+		chans.append_channel('e', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+		chans.append_channel()
+		chans.remove_channel('b')
+		# chans.remove_channel(2)
+		chans.insert_channel(3, 'f', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
-		# print(empty_chans.chan_names)
+		# print(chans.chan_names)
 
-		comp.in_chops[1].from_channels(empty_chans)
+		comp.in_chops[1].from_channels(chans)
 
 		# update the local data
 		this.test_array += .01
@@ -154,15 +154,43 @@ class ExampleRunComp:
 		comp.in_dats[0].from_string(f"Hello World! frame: {this.frame}")
 				
 		# create a DatTable and fill it with a list of data
-		datTable = tp.DatTable()
-		testList = [['g', 'b', 'c'], ['g', 'h', 'i'], ['t', 'w', 'a']]
-		datTable.from_list(testList)
+		# table = tp.DatTable()
+		# testList = [['a', 'b', 'c'], ['g', 'h', 'i'], ['t', 'w', 'a']]
+		# table.from_list(testList)
+
+		table = tp.DatTable(4, 3)
+		# table = tp.DatTable(['a', 'b', 'c', 'g', 'h', 'i'], 2, 3)
+		# table = tp.DatTable([['a', 'b', 'c'], ['g', 'h', 'i'], ['t', 'w', 'a']])
+  
+		table.set_row(0, ['a', 'b', 'c'])
+		table.set_row(1, ['g', 'h', 'i', 'j'])
+		table.set_col(2, ['t', 'a'])
+
+		table.set_cell(2, 1, 'z')
+		# table.append_row(['1', '2', '3'])
+		# table.insert_row(2, ['4', '5', '6'])
+		table.append_col(['4', '5', '6', '7'])
+		# table.insert_col(2, ['4', '5', '6', '7'])
+		
+		# numCols_ * i + j
+  
+		table['g', 'b'] = 'x'
+		table[3, 2] = 'y'
+		
+		table.append_row()
+		table.append_col()
+		# table.insert_row(3, ('a', 'b', 'c'))
+		# table.insert_col(3, ('a', 'b', 'c', 'd'))
+		# table.remove_row(0)
+		# table.remove_col(1)
+
+		# print(table.row(0))
 
 		# set second in DAT with table
-		# comp.in_dats['datIn2'].from_table(datTable)
+		comp.in_dats['datIn2'].from_table(table)
 
 		# set second in DAT with list
-		comp.in_dats['datIn2'].from_list(testList)
+		# comp.in_dats['datIn2'].from_list(testList)
 
 		# print some outDat data
 		datOut1 = comp.out_dats['datOut1']

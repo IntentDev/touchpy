@@ -2,6 +2,8 @@
 
 #include <TouchEngine/TouchEngine.h>
 #include "links.h"
+#include "dattable.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -9,50 +11,6 @@
 #include <condition_variable>
 #include <mutex>
 
-struct DatTable
-{
-	std::vector<std::string> values;
-	uint32_t numRows{ 0 };
-	uint32_t numCols{ 0 };
-
-	std::vector<std::string_view> row(uint32_t i)
-	{ 
-		return std::vector<std::string_view>(values.begin() + i * numCols, values.begin() + (i + 1) * numCols);
-	}
-
-	std::vector<std::string_view> col(uint32_t i) 
-	{ 
-		std::vector<std::string_view> column;
-		for (size_t j = 0; j < numRows; ++j)
-		{
-			column.push_back(values[j * numCols + i]);
-		}
-		return column;
-	}
-
-	std::string_view cell(uint32_t i, uint32_t j) 
-	{
-		return values[i * numCols + j]; 
-	}
-
-	std::string asString() const
-	{
-		std::string str;
-		auto lastRow = numRows - 1;
-		auto lastCol = numCols - 1;
-
-		for (size_t i = 0; i < numRows; ++i)
-		{
-			for (size_t j = 0; j < numCols; ++j)
-			{
-				str += values[i * numCols + j];
-				if (j < lastCol) str += "\t";
-			}
-			if (i < lastRow) str += "\n";
-		}
-		return str;
-	}
-};
 
 class DatLink : public Link<DatLink>
 {
@@ -70,7 +28,7 @@ public:
 
 protected:
 
-	DatLinkType	type_ { DatLinkType::Table };
+	DatLinkType	type_{ DatLinkType::Table };
 
 };
 
