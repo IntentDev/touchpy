@@ -255,15 +255,23 @@ void initDatLinkBindings(nb::module_& m)
 		.def(nb::init<const std::vector<std::string>&, uint32_t, uint32_t>(), "values"_a, "numRows"_a, "numCols"_a, DatTableDoc)
 		.def(nb::init<const std::vector<std::vector<std::string>>&>(), "values"_a, DatTableDoc)
 
-		.def("__getitem__", [](DatTable& self, std::pair<uint32_t, uint32_t> index) { return self.cell(index.first, index.second); }, cellDoc)
-		.def("__getitem__", [](DatTable& self, std::pair<const std::string&, uint32_t> index) { return self.cell(index.first, index.second); }, cellDoc)
-		.def("__getitem__", [](DatTable& self, std::pair<uint32_t, const std::string&> index) { return self.cell(index.first, index.second); }, cellDoc)
-		.def("__getitem__", [](DatTable& self, std::pair<const std::string&, const std::string&> index) { return self.cell(index.first, index.second); }, cellDoc)
+		.def("__getitem__", [](DatTable& self, std::pair<uint32_t, uint32_t> index) 
+			{ return self.cell(index.first, index.second); }, cellDoc)
+		.def("__getitem__", [](DatTable& self, std::pair<const std::string&, uint32_t> index) 
+			{ return self.cell(index.first, index.second); }, cellDoc)
+		.def("__getitem__", [](DatTable& self, std::pair<uint32_t, const std::string&> index) 
+			{ return self.cell(index.first, index.second); }, cellDoc)
+		.def("__getitem__", [](DatTable& self, std::pair<const std::string&, const std::string&> index) 
+			{ return self.cell(index.first, index.second); }, cellDoc)
 
-		.def("__setitem__", [](DatTable& self, std::pair<uint32_t, uint32_t> index, const std::string& value) { self.setCell(index.first, index.second, value); }, set_cellDoc)
-		.def("__setitem__", [](DatTable& self, std::pair<const std::string&, uint32_t> index, const std::string& value) { self.setCell(index.first, index.second, value); }, set_cellDoc)
-		.def("__setitem__", [](DatTable& self, std::pair<uint32_t, const std::string&> index, const std::string& value) { self.setCell(index.first, index.second, value); }, set_cellDoc)
-		.def("__setitem__", [](DatTable& self, std::pair<const std::string&, const std::string&> index, const std::string& value) { self.setCell(index.first, index.second, value); }, set_cellDoc)
+		.def("__setitem__", [](DatTable& self, std::pair<uint32_t, uint32_t> index, const std::string& value) 
+			{ self.setCell(index.first, index.second, value); }, set_cellDoc)
+		.def("__setitem__", [](DatTable& self, std::pair<const std::string&, uint32_t> index, const std::string& value) 
+			{ self.setCell(index.first, index.second, value); }, set_cellDoc)
+		.def("__setitem__", [](DatTable& self, std::pair<uint32_t, const std::string&> index, const std::string& value) 
+			{ self.setCell(index.first, index.second, value); }, set_cellDoc)
+		.def("__setitem__", [](DatTable& self, std::pair<const std::string&, const std::string&> index, const std::string& value) 
+			{ self.setCell(index.first, index.second, value); }, set_cellDoc)
 
 		.def_prop_rw("num_rows", 
 			[](DatTable& self) { return self.numRows(); }, 
@@ -280,25 +288,37 @@ void initDatLinkBindings(nb::module_& m)
 		.def("col", nb::overload_cast<uint32_t>(&DatTable::col), "index"_a, colDoc, nb::rv_policy::reference_internal)
 		.def("col", nb::overload_cast<const std::string&>(&DatTable::col), "name"_a, colDoc, nb::rv_policy::reference_internal)
 
-		.def("cell", nb::overload_cast<uint32_t, uint32_t>(&DatTable::cell), "row"_a, "col"_a, cellDoc, nb::rv_policy::reference_internal)
-		.def("cell", nb::overload_cast<const std::string&, uint32_t>(&DatTable::cell), "rowName"_a, "col"_a, cellDoc, nb::rv_policy::reference_internal)
-		.def("cell", nb::overload_cast<uint32_t, const std::string&>(&DatTable::cell), "row"_a, "colName"_a, cellDoc, nb::rv_policy::reference_internal)
-		.def("cell", nb::overload_cast<const std::string&, const std::string&>(&DatTable::cell), "rowName"_a, "colName"_a, cellDoc, nb::rv_policy::reference_internal)
+		.def("cell", nb::overload_cast<uint32_t, uint32_t>(&DatTable::cell), 
+			"row"_a, "col"_a, cellDoc, nb::rv_policy::reference_internal)
+		.def("cell", nb::overload_cast<const std::string&, uint32_t>(&DatTable::cell), 
+			"rowName"_a, "col"_a, cellDoc, nb::rv_policy::reference_internal)
+		.def("cell", nb::overload_cast<uint32_t, const std::string&>(&DatTable::cell), 
+			"row"_a, "colName"_a, cellDoc, nb::rv_policy::reference_internal)
+		.def("cell", nb::overload_cast<const std::string&, const std::string&>(&DatTable::cell), 
+			"rowName"_a, "colName"_a, cellDoc, nb::rv_policy::reference_internal)
 
 		.def("resize",       &DatTable::resize, "numRows"_a, "numCols"_a, reseizeDoc)
 		.def("set_num_rows", &DatTable::setNumRows, "numRows"_a, set_num_rowsDoc)
 		.def("set_num_cols", &DatTable::setNumCols, "numCols"_a, set_num_colsDoc)
 
-		.def("set_cell", nb::overload_cast<size_t, size_t, const std::string&>(&DatTable::setCell), "i"_a, "j"_a, "value"_a, set_cellDoc)
-		.def("set_cell", nb::overload_cast<const std::string&, size_t, const std::string&>(&DatTable::setCell), "rowName"_a, "j"_a, "value"_a, set_cellDoc)
-		.def("set_cell", nb::overload_cast<size_t, const std::string&, const std::string&>(&DatTable::setCell), "i"_a, "colName"_a, "value"_a, set_cellDoc)
-		.def("set_cell", nb::overload_cast<const std::string&, const std::string&, const std::string&>(&DatTable::setCell), "rowName"_a, "colName"_a, "value"_a, set_cellDoc)
+		.def("set_cell", nb::overload_cast<size_t, size_t, const std::string&>(&DatTable::setCell), 
+			"i"_a, "j"_a, "value"_a, set_cellDoc)
+		.def("set_cell", nb::overload_cast<const std::string&, size_t, const std::string&>(&DatTable::setCell), 
+			"rowName"_a, "j"_a, "value"_a, set_cellDoc)
+		.def("set_cell", nb::overload_cast<size_t, const std::string&, const std::string&>(&DatTable::setCell), 
+			"i"_a, "colName"_a, "value"_a, set_cellDoc)
+		.def("set_cell", nb::overload_cast<const std::string&, const std::string&, const std::string&>(&DatTable::setCell), 
+			"rowName"_a, "colName"_a, "value"_a, set_cellDoc)
 
-		.def("set_row", nb::overload_cast<size_t, const std::vector<            std::string> &>(&DatTable::setRow), "i"_a, "row"_a, set_rowDoc)
-		.def("set_row", nb::overload_cast<const std::string&, const std::vector<std::string> &>(&DatTable::setRow), "name"_a, "row"_a, set_rowDoc)
+		.def("set_row", nb::overload_cast<size_t, const std::vector<            std::string> &>(&DatTable::setRow), 
+			"i"_a, "row"_a, set_rowDoc)
+		.def("set_row", nb::overload_cast<const std::string&, const std::vector<std::string> &>(&DatTable::setRow), 
+			"name"_a, "row"_a, set_rowDoc)
 
-		.def("set_col", nb::overload_cast<size_t, const std::vector<            std::string> &>(&DatTable::setCol), "i"_a, "col"_a, set_colDoc)
-		.def("set_col", nb::overload_cast<const std::string&, const std::vector<std::string> &>(&DatTable::setCol), "name"_a, "col"_a, set_colDoc)
+		.def("set_col", nb::overload_cast<size_t, const std::vector<            std::string> &>(&DatTable::setCol), 
+			"j"_a, "col"_a, set_colDoc)
+		.def("set_col", nb::overload_cast<const std::string&, const std::vector<std::string> &>(&DatTable::setCol), 
+			"name"_a, "col"_a, set_colDoc)
 
 		.def("append_row", &DatTable::appendRow, "row"_a        = nb::list { }, append_rowDoc)
 		.def("append_col", &DatTable::appendCol, "col"_a        = nb::list { }, append_colDoc)
@@ -347,8 +367,10 @@ void initDatLinkBindings(nb::module_& m)
 	outDats.def(nb::init<>())
 		.def_prop_ro("count", [](OutDatLinks& self) { return self.size(); }, countDocOutDat )
 		.def_prop_ro("names", [](OutDatLinks& self) { return self.getLinkNames(); }, namesDocOutDat)
-		.def("__getitem__", [](OutDatLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
-		.def("__getitem__", [](OutDatLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](OutDatLinks& self, const std::string& name) 
+			{ return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](OutDatLinks& self, size_t index) 
+			{ return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
 
 	nb::class_<InDatLink> inDat(m, "InDat");
@@ -369,7 +391,9 @@ void initDatLinkBindings(nb::module_& m)
 	inDats.def(nb::init<>())
 		.def_prop_ro("count", [](InDatLinks& self) { return self.size(); }, countDocInDat )
 		.def_prop_ro("names", [](InDatLinks& self) { return self.getLinkNames(); }, namesDocInDat)
-		.def("__getitem__", [](InDatLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
-		.def("__getitem__", [](InDatLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](InDatLinks& self, const std::string& name) 
+			{ return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](InDatLinks& self, size_t index) 
+			{ return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
 }

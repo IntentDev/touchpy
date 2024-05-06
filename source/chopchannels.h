@@ -115,11 +115,10 @@ public:
 		int64_t endTime,
 		const std::vector<std::string>& names);
 
-
+	// need to make tests for each of these... 
 	float* mutableChan(uint32_t index);
 	float* mutableChan(const char* name);
 
-	// not implemented, need to make tests for each of these... 
 	void setChannelValues(int32_t channelIndex, const float* data, uint32_t size, uint32_t offset = 0);
 	void setChannelValues(int32_t channelIndex, const std::vector<float>& data, uint32_t offset = 0);
 	void setChannelValues(const std::string& channelName, const float* data, uint32_t size, uint32_t offset = 0);
@@ -137,10 +136,9 @@ public:
 	
 	void appendChannel(const float* data = nullptr, uint32_t size = 0, const char* name = nullptr);
 	void appendChannel(const std::string& name, const std::vector<float>& data);
-	//void appendChannel();
+
 	void insertChannel(uint32_t index, const float* data = nullptr, uint32_t size = 0, const char* name = nullptr);
 	void insertChannel(uint32_t index, const std::string& name, const std::vector<float>& data);
-	//void insertChannel(uint32_t index);
 
 	void removeChannel(uint32_t index);
 	void removeChannel(const char* name);

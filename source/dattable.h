@@ -20,7 +20,6 @@ public:
 	std::vector<std::string>& values() { return values_; }
 	void setValues(const std::vector<std::string>& values);
 	void setValue(size_t valueIndex, const std::string& value);
-	//void setValue(size_t valueIndex, std::string&& value);
 
 	uint32_t numRows() const { return numRows_; }
 	uint32_t numCols() const { return numCols_; }
@@ -45,8 +44,6 @@ public:
 	void setCell(size_t i, const std::string& colName, const std::string& value);
 	void setCell(const std::string& rowName, const std::string& colName, const std::string& value);
 
-	//void setCell(size_t i, size_t j, std::string&& value);
-
 	void setRow(size_t i, const std::vector<std::string>& row);
 	void setRow(const std::string& name, const std::vector<std::string>& row);
 	void setCol(size_t i, const std::vector<std::string>& col);
@@ -64,9 +61,6 @@ public:
 	void removeCol(const std::string& name);
 
 	void clear();
-
-
-
 
 protected:
 	uint32_t numRows_{ 0 };

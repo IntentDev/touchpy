@@ -404,12 +404,6 @@ ChopChannels::appendChannel(const std::string& name, const std::vector<float>& d
 		appendChannel(data.data(), data.size(), nullptr);
 }
 
-//void
-//ChopChannels::appendChannel()
-//{
-//	appendChannel(nullptr, 0, nullptr);
-//}
-
 void 
 ChopChannels::insertChannel(uint32_t index, const float* data, uint32_t size, const char* name)
 {
@@ -572,16 +566,6 @@ ChopChannelsView::ChopChannelsView(ChopChannels& chopChannels)
 	isTimeDependent_ = chopChannels.isTimeDependent_;
 	startTime_ = chopChannels.startTime_;
 	endTime_ = chopChannels.endTime_;
-
-	//std::cout
-	//	<< "isTimeDependent: " << isTimeDependent_
-	//	<< " channelCount: " << channelCount_
-	//	<< " capacity: " << capacity_
-	//	<< " valueCount: " << valueCount_
-	//	<< " rate: " << rate_
-	//	<< " startTime: " << startTime_
-	//	<< " endTime: " << endTime_
-	//	<< std::endl;
 
 	channels_.resize(channelCount_);
 	if (chopChannels.names_.size() > 0)

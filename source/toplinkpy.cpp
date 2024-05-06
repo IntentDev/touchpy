@@ -235,8 +235,10 @@ initTopLinkBindings(nb::module_& m)
 	outTops.def(nb::init<>())
 		.def_prop_ro("count", [](OutTopLinks& self) { return self.size(); })
 		.def_prop_ro("names", [](OutTopLinks& self) { return self.getLinkNames(); }, nb::rv_policy::reference_internal)
-		.def("__getitem__", [](OutTopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
-		.def("__getitem__", [](OutTopLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](OutTopLinks& self, const std::string& name) 
+			{ return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](OutTopLinks& self, size_t index) 
+			{ return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
 		;
 
 	nb::class_<InTopLink> inTop(m, "InTop");

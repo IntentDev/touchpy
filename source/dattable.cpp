@@ -55,8 +55,6 @@ DatTable::setValues(const std::vector<std::string>& values)
 void 
 DatTable::setValue(size_t valueIndex, const std::string& value) { values_[valueIndex] = value; }
 
-//void DatTable::setValue(size_t valueIndex, std::string&& value) { values_[valueIndex] = std::move(value); }
-
 std::vector<std::string_view> 
 DatTable::row(uint32_t i)
 {
