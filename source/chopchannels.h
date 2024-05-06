@@ -137,8 +137,10 @@ public:
 	
 	void appendChannel(const float* data = nullptr, uint32_t size = 0, const char* name = nullptr);
 	void appendChannel(const std::string& name, const std::vector<float>& data);
+	//void appendChannel();
 	void insertChannel(uint32_t index, const float* data = nullptr, uint32_t size = 0, const char* name = nullptr);
 	void insertChannel(uint32_t index, const std::string& name, const std::vector<float>& data);
+	//void insertChannel(uint32_t index);
 
 	void removeChannel(uint32_t index);
 	void removeChannel(const char* name);

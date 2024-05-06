@@ -2,6 +2,7 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/string_view.h>
 #include <nanobind/stl/vector.h>
+#include <nanobind/stl/pair.h>
 
 #include "datlink.h"
 
@@ -254,6 +255,16 @@ void initDatLinkBindings(nb::module_& m)
 		.def(nb::init<const std::vector<std::string>&, uint32_t, uint32_t>(), "values"_a, "numRows"_a, "numCols"_a, DatTableDoc)
 		.def(nb::init<const std::vector<std::vector<std::string>>&>(), "values"_a, DatTableDoc)
 
+		.def("__getitem__", [](DatTable& self, std::pair<uint32_t, uint32_t> index) { return self.cell(index.first, index.second); }, cellDoc)
+		.def("__getitem__", [](DatTable& self, std::pair<const std::string&, uint32_t> index) { return self.cell(index.first, index.second); }, cellDoc)
+		.def("__getitem__", [](DatTable& self, std::pair<uint32_t, const std::string&> index) { return self.cell(index.first, index.second); }, cellDoc)
+		.def("__getitem__", [](DatTable& self, std::pair<const std::string&, const std::string&> index) { return self.cell(index.first, index.second); }, cellDoc)
+
+		.def("__setitem__", [](DatTable& self, std::pair<uint32_t, uint32_t> index, const std::string& value) { self.setCell(index.first, index.second, value); }, set_cellDoc)
+		.def("__setitem__", [](DatTable& self, std::pair<const std::string&, uint32_t> index, const std::string& value) { self.setCell(index.first, index.second, value); }, set_cellDoc)
+		.def("__setitem__", [](DatTable& self, std::pair<uint32_t, const std::string&> index, const std::string& value) { self.setCell(index.first, index.second, value); }, set_cellDoc)
+		.def("__setitem__", [](DatTable& self, std::pair<const std::string&, const std::string&> index, const std::string& value) { self.setCell(index.first, index.second, value); }, set_cellDoc)
+
 		.def_prop_rw("num_rows", 
 			[](DatTable& self) { return self.numRows(); }, 
 			[](DatTable& self, uint32_t numRows) { self.setNumRows(numRows); }, 
@@ -263,21 +274,43 @@ void initDatLinkBindings(nb::module_& m)
 			[](DatTable& self, uint32_t numCols) { self.setNumCols(numCols); }, 
 			num_colsDoc)
 
-		.def("row",          &DatTable::row, "index"_a, rowDoc, nb::rv_policy::reference_internal)
-		.def("col",          &DatTable::col, "index"_a, colDoc, nb::rv_policy::reference_internal)
-		.def("cell",         &DatTable::cell, "row"_a, "col"_a, cellDoc, nb::rv_policy::reference_internal)
+		.def("row", nb::overload_cast<uint32_t>(&DatTable::row), "index"_a, rowDoc, nb::rv_policy::reference_internal)
+		.def("row", nb::overload_cast<const std::string&>(&DatTable::row), "name"_a, rowDoc, nb::rv_policy::reference_internal)
+
+		.def("col", nb::overload_cast<uint32_t>(&DatTable::col), "index"_a, colDoc, nb::rv_policy::reference_internal)
+		.def("col", nb::overload_cast<const std::string&>(&DatTable::col), "name"_a, colDoc, nb::rv_policy::reference_internal)
+
+		.def("cell", nb::overload_cast<uint32_t, uint32_t>(&DatTable::cell), "row"_a, "col"_a, cellDoc, nb::rv_policy::reference_internal)
+		.def("cell", nb::overload_cast<const std::string&, uint32_t>(&DatTable::cell), "rowName"_a, "col"_a, cellDoc, nb::rv_policy::reference_internal)
+		.def("cell", nb::overload_cast<uint32_t, const std::string&>(&DatTable::cell), "row"_a, "colName"_a, cellDoc, nb::rv_policy::reference_internal)
+		.def("cell", nb::overload_cast<const std::string&, const std::string&>(&DatTable::cell), "rowName"_a, "colName"_a, cellDoc, nb::rv_policy::reference_internal)
+
 		.def("resize",       &DatTable::resize, "numRows"_a, "numCols"_a, reseizeDoc)
 		.def("set_num_rows", &DatTable::setNumRows, "numRows"_a, set_num_rowsDoc)
 		.def("set_num_cols", &DatTable::setNumCols, "numCols"_a, set_num_colsDoc)
-		.def("set_cell",     &DatTable::setCell, "i"_a, "j"_a, "value"_a, set_cellDoc)
-		.def("set_row",      &DatTable::setRow, "i"_a, "row"_a, set_rowDoc)
-		.def("set_col",      &DatTable::setCol, "i"_a, "col"_a, set_colDoc)
-		.def("append_row",   &DatTable::appendRow, "row"_a        = nb::list { }, append_rowDoc)
-		.def("append_col",   &DatTable::appendCol, "col"_a        = nb::list { }, append_colDoc)
-		.def("insert_row",   &DatTable::insertRow, "i"_a, "row"_a = nb::list { }, insert_rowDoc)
-		.def("insert_col",   &DatTable::insertCol, "i"_a, "col"_a = nb::list { }, insert_colDoc)
-		.def("remove_row",   &DatTable::removeRow, "i"_a, remove_rowDoc)
-		.def("remove_col",   &DatTable::removeCol, "i"_a, remove_colDoc)
+
+		.def("set_cell", nb::overload_cast<size_t, size_t, const std::string&>(&DatTable::setCell), "i"_a, "j"_a, "value"_a, set_cellDoc)
+		.def("set_cell", nb::overload_cast<const std::string&, size_t, const std::string&>(&DatTable::setCell), "rowName"_a, "j"_a, "value"_a, set_cellDoc)
+		.def("set_cell", nb::overload_cast<size_t, const std::string&, const std::string&>(&DatTable::setCell), "i"_a, "colName"_a, "value"_a, set_cellDoc)
+		.def("set_cell", nb::overload_cast<const std::string&, const std::string&, const std::string&>(&DatTable::setCell), "rowName"_a, "colName"_a, "value"_a, set_cellDoc)
+
+		.def("set_row", nb::overload_cast<size_t, const std::vector<            std::string> &>(&DatTable::setRow), "i"_a, "row"_a, set_rowDoc)
+		.def("set_row", nb::overload_cast<const std::string&, const std::vector<std::string> &>(&DatTable::setRow), "name"_a, "row"_a, set_rowDoc)
+
+		.def("set_col", nb::overload_cast<size_t, const std::vector<            std::string> &>(&DatTable::setCol), "i"_a, "col"_a, set_colDoc)
+		.def("set_col", nb::overload_cast<const std::string&, const std::vector<std::string> &>(&DatTable::setCol), "name"_a, "col"_a, set_colDoc)
+
+		.def("append_row", &DatTable::appendRow, "row"_a        = nb::list { }, append_rowDoc)
+		.def("append_col", &DatTable::appendCol, "col"_a        = nb::list { }, append_colDoc)
+		.def("insert_row", &DatTable::insertRow, "i"_a, "row"_a = nb::list { }, insert_rowDoc)
+		.def("insert_col", &DatTable::insertCol, "j"_a, "col"_a = nb::list { }, insert_colDoc)
+
+		.def("remove_row", nb::overload_cast<size_t>(&DatTable::removeRow), "i"_a, remove_rowDoc)
+		.def("remove_row", nb::overload_cast<const std::string&>(&DatTable::removeRow), "name"_a, remove_rowDoc)
+
+		.def("remove_col", nb::overload_cast<size_t>(&DatTable::removeCol), "j"_a, remove_colDoc)
+		.def("remove_col", nb::overload_cast<const std::string&>(&DatTable::removeCol), "name"_a, remove_colDoc)
+
 		.def("clear",        &DatTable::clear, clearDoc)
 
 		.def("as_list", 

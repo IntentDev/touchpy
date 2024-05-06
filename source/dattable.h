@@ -26,8 +26,13 @@ public:
 	uint32_t numCols() const { return numCols_; }
 	
 	std::vector<std::string_view> row(uint32_t i);
+	std::vector<std::string_view> row(const std::string& name);
 	std::vector<std::string_view> col(uint32_t i);
+	std::vector<std::string_view> col(const std::string& name);
 	std::string_view cell(uint32_t i, uint32_t j);
+	std::string_view cell(const std::string& rowName, uint32_t j);
+	std::string_view cell(uint32_t i, const std::string& colName);
+	std::string_view cell(const std::string& rowName, const std::string& colName);
 
 	std::string asString() const;
 
@@ -36,19 +41,27 @@ public:
 	void setNumCols(uint32_t numCols);
 
 	void setCell(size_t i, size_t j, const std::string& value);
+	void setCell(const std::string& rowName, size_t j, const std::string& value);
+	void setCell(size_t i, const std::string& colName, const std::string& value);
+	void setCell(const std::string& rowName, const std::string& colName, const std::string& value);
+
 	//void setCell(size_t i, size_t j, std::string&& value);
 
 	void setRow(size_t i, const std::vector<std::string>& row);
+	void setRow(const std::string& name, const std::vector<std::string>& row);
 	void setCol(size_t i, const std::vector<std::string>& col);
+	void setCol(const std::string& name, const std::vector<std::string>& col);
 
 	void appendRow(const std::vector<std::string>& row = {});
 	void appendCol(const std::vector<std::string>& col = {});
 
 	void insertRow(size_t i, const std::vector<std::string>& row = {});
-	void insertCol(size_t i, const std::vector<std::string>& col = {});
+	void insertCol(size_t j, const std::vector<std::string>& col = {});
 
 	void removeRow(size_t i);
-	void removeCol(size_t i);
+	void removeRow(const std::string& name);
+	void removeCol(size_t j);
+	void removeCol(const std::string& name);
 
 	void clear();
 
@@ -63,4 +76,8 @@ protected:
 	friend class DatLink;
 	friend class OutDatLink;
 	friend class InDatLink;
+
+private:
+	uint32_t getRowIndex(const std::string& name);
+	uint32_t getColIndex(const std::string& name);
 };

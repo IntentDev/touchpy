@@ -19,8 +19,8 @@ InDatLink::set(const DatTable& table)
 			teTable.take(TETableCreate());
 
 		TETableResize(teTable, table.numRows_, table.numCols_);
-		for (int32_t col = 0; col < table.numRows_; ++col)
-			for (int32_t row = 0; row < table.numCols_; ++row)
+		for (int32_t col = 0; col < table.numCols_; ++col)
+			for (int32_t row = 0; row < table.numRows_; ++row)
 				TETableSetStringValue(teTable, row, col, table.values_[static_cast<size_t>(row * table.numCols_ + col)].c_str());
 
 		result = TEInstanceLinkSetTableValue(instance_, identifier_.c_str(), teTable);

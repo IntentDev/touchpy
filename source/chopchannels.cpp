@@ -404,6 +404,12 @@ ChopChannels::appendChannel(const std::string& name, const std::vector<float>& d
 		appendChannel(data.data(), data.size(), nullptr);
 }
 
+//void
+//ChopChannels::appendChannel()
+//{
+//	appendChannel(nullptr, 0, nullptr);
+//}
+
 void 
 ChopChannels::insertChannel(uint32_t index, const float* data, uint32_t size, const char* name)
 {
@@ -484,6 +490,12 @@ ChopChannels::insertChannel(uint32_t index, const std::string& name, const std::
 	else
 		insertChannel(index, data.data(), data.size(), nullptr);
 }
+
+//void
+//ChopChannels::insertChannel(uint32_t index)
+//{
+//	insertChannel(index, nullptr, 0, nullptr);
+//}
 
 void 
 ChopChannels::removeChannel(uint32_t index)

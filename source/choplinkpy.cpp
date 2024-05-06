@@ -217,8 +217,8 @@ void initChopLinkBindings(nb::module_& m)
 				return array;
 			}, "name"_a, nb::rv_policy::reference_internal)
 		
-		.def_prop_ro("num_chans", [](ChopChannels& self) { return self.channelCount(); }, num_chansDoc)
-		.def_prop_ro("num_samples", [](ChopChannels& self) { return self.valueCount(); }, num_samplesDoc)
+		.def_prop_ro("num_chans", &ChopChannels::channelCount, num_chansDoc)
+		.def_prop_ro("num_samples", &ChopChannels::valueCount, num_samplesDoc)
 		.def_prop_ro("chan_names", &ChopChannels::namesBuffer, chan_namesDoc, nb::rv_policy::reference_internal)
 
 		.def_prop_rw("rate", 
@@ -237,51 +237,17 @@ void initChopLinkBindings(nb::module_& m)
 			[](ChopChannels& self) { return self.endTime(); },
 			[](ChopChannels& self, int64_t value) { self.setEndTime(value); }, end_timeDoc)
 
-		.def("set_values", 
-			[](ChopChannels& self, int32_t chanIndex, const std::vector<float>& values, uint32_t startIndex = 0) { 
-				self.setChannelValues(chanIndex, values, startIndex);
-			}, 
-			"chan_index"_a, "values"_a, "start_index"_a = 0, set_valuesDoc)
+		.def("set_values", nb::overload_cast<int32_t, const std::vector<float>&, uint32_t>(&ChopChannels::setChannelValues), "chan_index"_a, "values"_a, "start_index"_a = 0, set_valuesDoc)
+		.def("set_values", nb::overload_cast<const std::string&, const std::vector<float>&, uint32_t>(&ChopChannels::setChannelValues), "chan_name"_a, "values"_a, "start_index"_a = 0, set_valuesDoc)
 
-		.def("set_values",
-			[](ChopChannels& self, std::string chanName, const std::vector<float>& values, uint32_t startIndex = 0) {
-				self.setChannelValues(chanName, values, startIndex);
-			},
-			"chan_name"_a, "values"_a, "start_index"_a = 0, set_valuesDoc)
+		.def("set_value", nb::overload_cast<int32_t, uint32_t, float>(&ChopChannels::setChannelValue), "chan_index"_a, "sample_index"_a, "value"_a, set_valueDoc)
+		.def("set_value", nb::overload_cast<const std::string&, uint32_t, float>(&ChopChannels::setChannelValue), "chan_name"_a, "sample_index"_a, "value"_a, set_valueDoc)
+		.def("set_name", &ChopChannels::setChannelName, "index"_a, "name"_a, set_nameDoc)
 
-		.def("set_value", 
-			[](ChopChannels& self, int32_t chanIndex, uint32_t sampleIndex, float value) { 
-				self.setChannelValue(chanIndex, sampleIndex, value);
-			},
-			"chan_index"_a, "sample_index"_a, "value"_a, set_valueDoc)
-
-		.def("set_value",
-			[](ChopChannels& self, std::string chanName, uint32_t sampleIndex, float value) {
-				self.setChannelValue(chanName, sampleIndex, value);
-			},
-			"chan_name"_a, "sample_index"_a, "value"_a, set_valueDoc)
-
-		.def("set_name",
-			[](ChopChannels& self, int32_t chanIndex, const std::string& name) { 
-				self.setChannelName(chanIndex, name.c_str());
-			},
-			"chan_index"_a, "name"_a)
-
-		.def("append_channel", [](ChopChannels& self, const std::string& name = {}, const std::vector<float>& values = {}) {
-				self.appendChannel(name, values);
-			}, "name"_a = "", "values"_a = nb::list(), append_channelDoc)
-
-		.def("insert_channel", [](ChopChannels& self, int32_t index, const std::string& name = {}, const std::vector<float>& values = {}) {
-				self.insertChannel(index, name.c_str(), values);
-			}, "index"_a, "name"_a = "", "values"_a = nb::list(), insert_channelDoc)
-
-		.def("remove_channel", [](ChopChannels& self, int32_t index) {
-				self.removeChannel(index);
-			}, "index"_a, remove_channelDoc)
-
-		.def("remove_channel", [](ChopChannels& self, const std::string& name) {
-				self.removeChannel(name.c_str());
-			}, "name"_a, remove_channelDoc)
+		.def("append_channel", nb::overload_cast<const std::string&, const std::vector<float>&>(&ChopChannels::appendChannel), "name"_a = "", "values"_a = nb::list(), append_channelDoc)
+		.def("insert_channel", nb::overload_cast<uint32_t, const std::string&, const std::vector<float>&>(&ChopChannels::insertChannel), "index"_a, "name"_a = "", "values"_a = nb::list(), insert_channelDoc)
+		.def("remove_channel", nb::overload_cast<uint32_t>(&ChopChannels::removeChannel), "index"_a, remove_channelDoc)
+		.def("remove_channel", nb::overload_cast<const std::string&>(&ChopChannels::removeChannel), "name"_a, remove_channelDoc)
 
 		.def("clear", &ChopChannels::clear, clearDoc)
 
