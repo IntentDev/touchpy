@@ -155,7 +155,7 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 	auto timeMode = TETimeInternal;
 	if (compFlags_ & CompFlagBits::ExternalTime) timeMode = TETimeExternal;
 
-	TE_CHECK(TEInstanceConfigure(instance_, filePath_.c_str(), timeMode));
+	TE_CHECK(TEInstanceConfigure(instance_, filePath_.c_str(), timeMode, TEUIWindows));
 	spdlog::info("Instance configured");
 
 	std::unique_lock<std::mutex> lock(mutex_);
@@ -218,7 +218,9 @@ Comp::eventCallback(TEInstance* instance,
 	int32_t end_time_scale,
 	void* info)
 {
-	// std::cout << "eventCallback: " << teutils::eventToString(event) << " result: " << TEResultGetDescription(result) << std::endl;
+	if (event != TEEventFrameDidFinish)
+		std::cout << "eventCallback: " << teutils::eventToString(event) << " result: " << TEResultGetDescription(result) << std::endl;
+
 	Comp* comp = static_cast<Comp*>(info);
 
 	switch (event)

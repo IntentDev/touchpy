@@ -34,6 +34,8 @@ class ExampleRunComp:
 		self.test_array = np.array([[1],[2],[3],[4],[5],[6],[7],[8],[9],[10]], dtype=np.float32)
 		self.test_array_chan_names = [f"chn{i}" for i in range(10)]
 
+		self.window_opened = False
+
 		self.stream = None
 	
 	@staticmethod
@@ -104,6 +106,14 @@ class ExampleRunComp:
 		chans = tp.ChopChannels(10, channel_names=['a', 'b', 'c', 'd'])
 
 
+		if this.window_opened == False:
+			open_window = comp.par['Openwindow']
+			open_window.set(True)
+			this.window_opened = True
+
+		# open_window = comp.par['Openwindow']
+		# open_window.set(False)
+  
 		# print(chans)
 		# chans.is_time_dependent = True
 		# chans.rate = 60
