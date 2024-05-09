@@ -93,7 +93,6 @@ intersphinx_mapping = {
 }
 
 
-html_show_sphinx = False
 
 
 
@@ -110,3 +109,5 @@ html_show_sphinx = False
 #html_theme = 'sphinx_rtd_theme'
 html_theme = "furo"
 html_static_path = ['_static']
+html_show_sphinx = False
+html_permalinks_icon = "🔗"
