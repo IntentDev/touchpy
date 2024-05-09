@@ -155,7 +155,7 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 	auto timeMode = TETimeInternal;
 	if (compFlags_ & CompFlagBits::ExternalTime) timeMode = TETimeExternal;
 
-	TE_CHECK(TEInstanceConfigure(instance_, filePath_.c_str(), timeMode));
+	TE_CHECK(TEInstanceConfigure(instance_, filePath_.c_str(), timeMode, TEUIWindows));
 	spdlog::info("Instance configured");
 
 	std::unique_lock<std::mutex> lock(mutex_);
@@ -218,7 +218,9 @@ Comp::eventCallback(TEInstance* instance,
 	int32_t end_time_scale,
 	void* info)
 {
-	// std::cout << "eventCallback: " << teutils::eventToString(event) << " result: " << TEResultGetDescription(result) << std::endl;
+	if (event != TEEventFrameDidFinish)
+		std::cout << "eventCallback: " << teutils::eventToString(event) << " result: " << TEResultGetDescription(result) << std::endl;
+
 	Comp* comp = static_cast<Comp*>(info);
 
 	switch (event)
@@ -277,30 +279,40 @@ void
 Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale, 
 	int64_t end_time_value, int32_t end_time_scale, Comp* comp)
 {
-	
 	if (result == TEResultSuccess && start_time_value >= 0)
 	{
-		comp->setInFrame(false);
+		comp->setInFrame(false, true, end_time_value, end_time_scale);
 	}
 	else
 	{
 		if(result != TEResultCancelled)
 		{
-			if (result == TEResultComponentErrors || result == TEResultComponentWarnings) comp->setInFrame(false);
-
+			if (result == TEResultComponentErrors || result == TEResultComponentWarnings) comp->setInFrame(false, true, end_time_value, end_time_scale);
 
 			else
 			{
 				// need go through all possible results and handle them accordingly... 
-				// create switch...
-				// 
-				//std::string error = TEResultGetDescription(result);
-				//error = "Frame did not finish successfully: " + error;
-				//throw std::runtime_error("Frame did not finish successfully");
-				spdlog::error("Frame did not finish successfully: {}", TEResultGetDescription(result));
-				startNextFrame(prevTimeValue_, prevTimeScale_);
-			}
+				auto severity = TEResultGetSeverity(result);
 
+				if (severity == TESeverityWarning)
+				{
+					spdlog::warn("Warning frame did not finish successfully: {} {}", static_cast<int>(result), TEResultGetDescription(result));
+					comp->setInFrame(false, true, end_time_value, end_time_scale);
+				}
+				else if (severity == TESeverityError)
+				{
+					std::string error = TEResultGetDescription(result);
+					error = "Frame did not finish successfully: " + error;
+					spdlog::error(error.c_str());
+
+					throw std::runtime_error(error.c_str());
+				}
+				else
+				{
+					spdlog::info("Frame did not finish successfully: {} {}", static_cast<int>(result), TEResultGetDescription(result));
+					comp->setInFrame(false, true, end_time_value, end_time_scale);
+				}
+			}
 		}
 	}
 }
@@ -422,10 +434,27 @@ Comp::getState(bool& ready, bool& loaded, bool& linksLayoutChanged, bool& inFram
 }
 
 void 
-Comp::setInFrame(bool inFrame)
+Comp::setInFrame(bool inFrame, bool setTime, int64_t timeValue, int32_t timeScale)
 {
+	auto rate = frameRate();
+	int64_t currentFrame = 0;
+	double seconds = 0.0;
+	if (timeScale > 0 && rate > 0)
+	{
+		currentFrame = static_cast<int64_t>(timeValue / (static_cast<float>(timeScale) / rate));
+		seconds = static_cast<double>(currentFrame) / rate;
+	}
+
 	std::unique_lock<std::mutex> lock(mutex_);
 	ssInFrame_ = inFrame;
+	if (setTime)
+	{
+		ssTime.rate = rate;
+		ssTime.frame = currentFrame;
+		ssTime.seconds = seconds;
+		ssTime.value = timeValue;
+		ssTime.scale = timeScale;
+	}
 
 	if (asyncActive_) cv_.notify_one();
 	lock.unlock();
@@ -594,6 +623,35 @@ bool Comp::callOnLayoutChangeCallback()
 	return false;
 }
 
+Comp::Time 
+Comp::time() const
+{	
+	Time time__;
+	{
+		std::lock_guard<std::mutex> guard(mutex_);
+		time__ = ssTime;
+	}
+
+	return time__;
+}
+
+float Comp::frameRate() const
+{
+	float rate = 0.0f;
+	auto result = TEInstanceGetFloatFrameRate(instance_, &rate);
+	if (result != TEResultSuccess)
+	{
+		auto severity = TEResultGetSeverity(result);
+		if (severity == TESeverityError)
+			spdlog::error("Failed to get frame rate: {}", TEResultGetDescription(result));
+		else if (severity == TESeverityWarning)
+			spdlog::warn("Failed to get frame rate: {}", TEResultGetDescription(result));
+		else
+			spdlog::info("Failed to get frame rate: {}", TEResultGetDescription(result));
+	}
+	return rate;
+}
+
 void Comp::start()
 {
 	TE_CHECK(TEInstanceResume(instance_));
@@ -641,7 +699,7 @@ void Comp::autoUpdate()
 		{
 			applyValueChanges();
 			
-			if (!callOnFrameCallback() && updateLoopRunning_) startNextFrame(prevTimeValue_, prevTimeScale_);
+			if (!callOnFrameCallback() && updateLoopRunning_) startNextFrame();
 		}
 	}
 }
@@ -742,9 +800,6 @@ Comp::frameDidFinish()
 
 bool Comp::startNextFrame(int64_t timeValue, int32_t timeScale)
 {
-	prevTimeValue_ = timeValue;
-	prevTimeScale_ = timeScale;
-
 	setInFrame(true);
 	TEResult result = TEInstanceStartFrameAtTime(instance_, timeValue, timeScale, false);
 	if (result != TEResultSuccess)
@@ -949,7 +1004,7 @@ Comp::applyLayoutChange()
 	callOnLayoutChangeCallback();
 
 	spdlog::default_logger()->flush();
-	if (updateLoopRunning_ || asyncRunning_.load()) startNextFrame(prevTimeValue_, prevTimeScale_);
+	if (updateLoopRunning_ || asyncRunning_.load()) startNextFrame();
 }
 
 std::string Comp::getLinkInfoAsString(TouchObject<TELinkInfo> info)

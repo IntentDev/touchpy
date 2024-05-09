@@ -38,10 +38,12 @@
 __pycache__
 
 /docs/build
+/docs/source/reference
 
 
 CMakeUserPresets.json
 CMakePresets.json
+vcpkg.json
 example/touchpy.cp311-win_amd64.pyd
 /example/__pycache__
 

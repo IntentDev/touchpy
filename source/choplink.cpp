@@ -5,7 +5,7 @@
 #include <algorithm>
 
 void 
-InChopLink::set(ChopChannelsReference&& chopChannels)
+InChopLink::set(ChopChannelsView&& chopChannels)
 {
 
 	if (chopChannels.channelCount_ <= 0 || chopChannels.capacity_ == 0 || chopChannels.valueCount_ == 0) return;
@@ -26,13 +26,26 @@ InChopLink::set(ChopChannelsReference&& chopChannels)
 			buffer = newBuffer;
 		}
 		else
-			buffer.take(TEFloatBufferCreate(
-				chopChannels_.rate_,
-				chopChannels_.channelCount_,
-				chopChannels_.capacity_,
-				chopChannels_.names_.data()));
+
+			if (!chopChannels.isTimeDependent_)
+				buffer.take(TEFloatBufferCreate(
+					chopChannels.rate_,
+					chopChannels.channelCount_,
+					chopChannels.capacity_,
+					chopChannels.names_.data()));
+			else
+				buffer.take(TEFloatBufferCreateTimeDependent(
+					chopChannels.rate_,
+					chopChannels.channelCount_,
+					chopChannels.capacity_,
+					chopChannels.names_.data()));
 
 		result = TEFloatBufferSetValues(buffer, chopChannels_.channels_.data(), chopChannels_.valueCount_);
+
+		if (result == TEResultSuccess && chopChannels.isTimeDependent_)
+			result = TEFloatBufferSetStartTime(buffer, chopChannels_.endTime_);
+	
+
 		if (result == TEResultSuccess)
 			result = TEInstanceLinkSetFloatBufferValue(instance_, identifier_.c_str(), buffer);
 	}
@@ -43,8 +56,9 @@ InChopLink::set(ChopChannelsReference&& chopChannels)
 	}
 }
 
+
 bool 
-InChopLink::bufferCopyable(TouchObject<TEFloatBuffer> buffer, const ChopChannelsReference& chopChannels) const
+InChopLink::bufferCopyable(TouchObject<TEFloatBuffer> buffer, const ChopChannelsView& chopChannels) const
 {
 	auto newChannelCount = TEFloatBufferGetChannelCount(buffer);
 	if (newChannelCount != chopChannels.channelCount()
@@ -80,11 +94,13 @@ OutChopLink::setChannelsFromBuffer(ChopChannels& chopChannels, TouchObject<TEFlo
 	auto valueCount = TEFloatBufferGetValueCount(buffer);
 	auto rate = TEFloatBufferGetRate(buffer);
 	auto isTimeDependent = TEFloatBufferIsTimeDependent(buffer);
+	auto startTime = TEFloatBufferGetStartTime(buffer);
+	auto endTime = TEFloatBufferGetEndTime(buffer);
 
 	const float* const* data = TEFloatBufferGetValues(buffer);
 	const char* const* names = TEFloatBufferGetChannelNames(buffer);
 
-	chopChannels.setChannels(data, channelCount, capacity, valueCount, rate, isTimeDependent, names);
+	chopChannels.setChannels(data, channelCount, capacity, valueCount, rate, isTimeDependent, startTime, endTime, names);
 }
 
 void
@@ -102,17 +118,17 @@ OutChopLink::update()
 }
 
 const float* 
-OutChopLink::data() 
+OutChopLink::valuesArray()
 { 
 	if (!usingSwapBuffer_)
 	{
 		if (!updated_) update();
-		return chopChannels_.data();
+		return chopChannels_.valuesArray();
 	}
 	else
 	{
 		std::unique_lock<std::mutex> lock(mutex_);
-		return chopChannels_.data();
+		return chopChannels_.valuesArray();
 	}
 }
 
@@ -122,19 +138,23 @@ OutChopLink::channelNames()
 	if (!usingSwapBuffer_)
 	{
 		if (!updated_) update();
-		return chopChannels_.channelNames();
+		return chopChannels_.namesBuffer();
 	}
 	else
 	{
 		std::unique_lock<std::mutex> lock(mutex_);
-		return chopChannels_.channelNames();
+		return chopChannels_.namesBuffer();
 	}
 }
 
 ChopChannels& 
 OutChopLink::chopChannels() 
 { 
-	if (!usingSwapBuffer_) return chopChannels_;
+	if (!usingSwapBuffer_) 
+	{
+		if (!updated_) update();
+		return chopChannels_;
+	}
 
 	std::unique_lock<std::mutex> lock(mutex_);
 	return chopChannels_; 

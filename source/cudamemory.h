@@ -2,14 +2,18 @@
 
 #include <vulkan/vulkan.h>
 #include <cuda_runtime.h>
+#include <cuda_fp16.h>
 #include <memory>
 #include <array>
 #include <string>
+
 #include "cudaflags.h"
+#include "cudadatatypes.h"
 
 enum class CUDADataType : uint8_t
 {
 	UInt8,
+	UInt16,
 	Float16,
 	Float32,
 

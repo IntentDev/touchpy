@@ -34,6 +34,8 @@ class ExampleRunComp:
 		self.test_array = np.array([[1],[2],[3],[4],[5],[6],[7],[8],[9],[10]], dtype=np.float32)
 		self.test_array_chan_names = [f"chn{i}" for i in range(10)]
 
+		self.window_opened = False
+
 		self.stream = None
 	
 	@staticmethod
@@ -46,7 +48,8 @@ class ExampleRunComp:
 		print('in dats:', comp.in_dats.count, comp.in_dats.names)
 		print('out dats:', comp.out_dats.count, comp.out_dats.names)
 		print('pars:', comp.par.count, comp.par.names)
-		comp.out_tops[1].set_cuda_flags(tp.CudaFlags.BGRA | tp.CudaFlags.HWC)
+		# comp.out_tops[1].set_cuda_flags(tp.CudaFlags.BGRA | tp.CudaFlags.HWC)
+		comp.out_tops[1].set_cuda_flags(tp.CudaFlags.RGB)
 
 		this.stream = torch.cuda.ExternalStream(comp.cuda_stream(), device=this.device)
 		# this.stream = CudaStream(comp.cuda_stream())
@@ -68,45 +71,136 @@ class ExampleRunComp:
 			comp.stop() # stop running the comp
 			return
 
-		# copy out_chop to in_chop with channel names. Only NumPy arrays are supported for now.
+		time_info = comp.time()
+		# print('time_info:', time_info)
+		# copy out_chop to in_chop with channel names. 
 		arr = comp.out_chops[0].as_numpy()
-		names = comp.out_chops[0].chan_names()
-		arr *= 2
-		comp.in_chops[0].from_numpy(arr, names)
+		names = comp.out_chops[0].chan_names
+		# arr *= 2
+		# comp.in_chops[0].from_numpy(arr, names)
 		
 		# set in_chops[0] with local data
 		# comp.in_chops[0].from_numpy(this.test_array, this.test_array_chan_names)
 
+		temp = comp.out_chops[0].chans()
+		# audioChannels = comp.out_chops[0].chans()
+		# print("audio channels - num_channels:", audioChannels.num_chans, "numSamples:", audioChannels.num_samples, "is_time_dependent:", audioChannels.is_time_dependent, "sample_rate:", audioChannels.rate, "start_time:", audioChannels.start_time, "end_time:", audioChannels.end_time)
+  
+		# audioChannels = tp.ChopChannels(arr, temp.rate, temp.is_time_dependent, temp.start_time, temp.end_time, names)
+  
+		samples_per_frame = temp.rate / time_info.rate
+		start_time = int(time_info.frame * samples_per_frame)
+		end_time = int(start_time + samples_per_frame)
+
+		# print("sameples_per_frame:", samples_per_frame, "start_time:", start_time, "end_time:", end_time)
+		audioChannels = tp.ChopChannels(arr, temp.rate, temp.is_time_dependent, start_time, end_time, names)
+
+
+		# audioChannels = tp.ChopChannels()
+		# audioChannels.from_numpy(arr, temp.rate, temp.is_time_dependent, temp.start_time, temp.end_time, names)
+
+		# comp.in_chops[0].from_numpy(audioChannels.as_numpy(), audioChannels.chan_names)
+		# if this.frame > 100:
+		# 	comp.in_chops[0].from_channels(audioChannels)
+
+		chans = tp.ChopChannels(10, channel_names=['a', 'b', 'c', 'd'])
+
+
+		if this.window_opened == False:
+			open_window = comp.par['Openwindow']
+			open_window.set(True)
+			this.window_opened = True
+
+		# open_window = comp.par['Openwindow']
+		# open_window.set(False)
+  
+		# print(chans)
+		# chans.is_time_dependent = True
+		# chans.rate = 60
+		# chans.start_time = int(time_info.frame * 10)
+		# chans.end_time = int(chans.start_time + 10)
+		# print(chans)
+  
+		# chans.set_values(0, [1, 2, 1, 2, 3, 0, 1, 2, 1, 1])
+		# chans.set_values('b', [4, 2, 4, 2, 3, 0, 1, 2, 1, 1])
+		# chans.set_values('c', [0, 1, 2, 1, 1])
+		# chans.set_values('d', [0, 1, 2, 1, 1], 4)
+  
+		# chans.set_value(0, 1, 4)
+		# chans.set_value('c', 4, 2)
+		# chans[0][0] = 3 
+		# print(chans[0])
+		# chans['c'][0] = 5 
+		# print(chans['c'])
+
+		chans.append_channel('e', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+		chans.append_channel()
+		chans.remove_channel('b')
+		# chans.remove_channel(2)
+		chans.insert_channel(3, 'f', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+		# print(chans.chan_names)
+
+		comp.in_chops[1].from_channels(chans)
+
 		# update the local data
 		this.test_array += .01
 
-		chans2 = comp.out_chops[1].as_numpy()
-		chans2_names = comp.out_chops[1].chan_names()
-		# print(chans2_names)
+		# chans2 = comp.out_chops[1].as_numpy()
+		# chans2_names = comp.out_chops[1].chan_names
+		# # print(chans2_names)
 
-		# retrieve by name and set as local variable
-		in_chop2 = comp.in_chops['chopIn2']
-		in_chop2.from_numpy(chans2, chans2_names)
+		# # retrieve by name and set as local variable
+		# in_chop2 = comp.in_chops['chopIn2']
+		# in_chop2.from_numpy(chans2, chans2_names)
 
 		# # print some channel data
 		chans3 = comp.out_chops[2]
 		arr = chans3.as_numpy()
 		# print(arr)
-		comp.in_chops[2].from_numpy(arr, chans3.chan_names())
+		comp.in_chops[2].from_numpy(arr, chans3.chan_names)
 
 		# set first in DAT with string (inDAT will be in text mode)
 		comp.in_dats[0].from_string(f"Hello World! frame: {this.frame}")
 				
 		# create a DatTable and fill it with a list of data
-		datTable = tp.DatTable()
-		testList = [['g', 'b', 'c'], ['g', 'h', 'i'], ['t', 'w', 'a']]
-		datTable.from_list(testList)
+		# table = tp.DatTable()
+		# testList = [['a', 'b', 'c'], ['g', 'h', 'i'], ['t', 'w', 'a']]
+		# table.from_list(testList)
+
+		table = tp.DatTable(4, 3)
+		# table = tp.DatTable(['a', 'b', 'c', 'g', 'h', 'i'], 2, 3)
+		# table = tp.DatTable([['a', 'b', 'c'], ['g', 'h', 'i'], ['t', 'w', 'a']])
+  
+		table.set_row(0, ['a', 'b', 'c'])
+		table.set_row(1, ['g', 'h', 'i', 'j'])
+		table.set_col(2, ['t', 'a'])
+
+		table.set_cell(2, 1, 'z')
+		# table.append_row(['1', '2', '3'])
+		# table.insert_row(2, ['4', '5', '6'])
+		table.append_col(['4', '5', '6', '7'])
+		# table.insert_col(2, ['4', '5', '6', '7'])
+		
+		# numCols_ * i + j
+  
+		table['g', 'b'] = 'x'
+		table[3, 2] = 'y'
+		
+		table.append_row()
+		table.append_col()
+		# table.insert_row(3, ('a', 'b', 'c'))
+		# table.insert_col(3, ('a', 'b', 'c', 'd'))
+		# table.remove_row(0)
+		# table.remove_col(1)
+
+		# print(table.row(0))
 
 		# set second in DAT with table
-		# comp.in_dats['datIn2'].from_table(datTable)
+		comp.in_dats['datIn2'].from_table(table)
 
 		# set second in DAT with list
-		comp.in_dats['datIn2'].from_list(testList)
+		# comp.in_dats['datIn2'].from_list(testList)
 
 		# print some outDat data
 		datOut1 = comp.out_dats['datOut1']
@@ -153,8 +247,8 @@ class ExampleRunComp:
 		comp.in_tops[0].copy_cuda_memory(cudamem)
 
 		# copy the cuda memory from out_top_link to in_top_link
-		cudamem = comp.out_tops[1].cuda_memory()
-		comp.in_tops[1].copy_cuda_memory(cudamem)
+		# cudamem = comp.out_tops[1].cuda_memory()
+		# comp.in_tops[1].copy_cuda_memory(cudamem)
 
 		with torch.cuda.stream(this.stream):	
 			with torch.no_grad():
@@ -162,7 +256,7 @@ class ExampleRunComp:
 				# tensor2 = tensor * 2 # do some work on the tensor
 				# comp.in_tops[0].from_tensor(tensor2)
 
-				tensor = comp.out_tops[2].as_tensor(sync_cuda_stream=True)
+				tensor = comp.out_tops[1].as_tensor(sync_cuda_stream=True)
 				if (this.frame == 2):
 					
 					print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.
@@ -171,7 +265,8 @@ class ExampleRunComp:
 
 				# filter tensor only works with 32bit float data (comp.out_tops[2] is 32bit float in this example)
 				# filter expects (b, c, h, w) layout
-				tensor2 = this.imag_filter(tensor.unsqueeze(0)).squeeze(0) 
+				# tensor2 = this.imag_filter(tensor.unsqueeze(0)).squeeze(0) 
+				tensor2 = tensor.clone()
 
 				if (this.frame == 2):
 					print("tensor2 shape: ", tensor2.shape, "tensor2 dtype: ", tensor2.dtype, 
@@ -179,7 +274,7 @@ class ExampleRunComp:
 					"tensor2 strides: ", tensor2.stride(), "tensor2 is_contiguous: ", tensor2.is_contiguous())
 				
 				# comp.in_tops[2].from_tensor(tensor2, this.stream)
-				comp.in_tops[2].from_tensor(tensor2)
+				comp.in_tops[1].from_tensor(tensor2, flags=tp.CudaFlags.RGB)
 				# comp.in_tops[2].from_tensor(tensor2)
 				pass
 

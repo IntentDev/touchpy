@@ -27,6 +27,7 @@ class Example:
 	def __init__(self, stage):
 		self.frame_dt = 1.0 / 60
 		self.frame_count = 1
+		self.frameTD = 0
 
 		self.sim_substeps = 64
 		self.sim_dt = self.frame_dt / self.sim_substeps
@@ -124,14 +125,17 @@ class Example:
 			comp.stop() # stop running the comp
 			return
 		
-		if (keyboard.is_pressed('r')):
-			this.reset_particles()
+		# if (keyboard.is_pressed('r')):
+		# 	this.reset_particles()
 		
 			
-		# if this.frameTD == 300:
-		# 	print(this.positions.shape, this.positions.strides, this.positions.dtype)
-		# 	y = this.positions.reshape((100, 100))
+		# if this.frameTD == 10:
+		# 	y = this.state_0.particle_q.reshape((128, 64))
 		# 	print(y.shape, y.strides, y.dtype)
+		# 	dl = wp.to_dlpack(y)
+		# 	info = tp.get_dlpack_capsule_info(dl)
+		# 	print(info)
+
 		# 	comp.stop()
 
 
@@ -142,6 +146,7 @@ class Example:
 		y = this.state_0.particle_q.reshape((128, 64))
 		comp.in_tops[0].from_dlpack(wp.to_dlpack(y), tp.CudaFlags.RGB)
 
+		this.frameTD += 1
 
 if __name__ == "__main__":
 	stage_path = "example_granular.usd"

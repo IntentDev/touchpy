@@ -61,7 +61,19 @@ public:
 	void clearOnLayoutChangeCallback();
 	bool callOnLayoutChangeCallback();
 
+	struct Time
+	{
+		float rate { 0.0f };
+		int64_t frame { 0 };
+		double seconds { 0.0 };
+		int64_t value { 0 };
+		int32_t scale { 0 };
+	};
+
 	cudaStream_t cudaStream() const { return cudaStream_; }
+
+	Time time() const;
+	float frameRate() const;
 
 	// for internal use only, not for python bindings
 	//-----------------------------------------------------------------------------------------------------------------
@@ -80,12 +92,13 @@ private:
 	bool                     ssUnloading_                { false };
 	bool                     ssReady_                    { false };
 	bool                     ssInFrame_                  { false };
+	Time					 ssTime						 { };
 	std::vector<std::string> ssPendingOutputTextures_;
 	std::vector<std::string> ssPendingOutputFloatBuffers;
 	std::vector<std::string> ssPendingOutputStringData;
 
 	void getState(bool& configured, bool& loaded, bool& linksChanged, bool& inFrame);
-	void setInFrame(bool inFrame);
+	void setInFrame(bool inFrame, bool setTime = false, int64_t timeValue = 0, int32_t timeScale = 0);
 
 	// free running 
 	//-----------------------------------------------------------------------------------------------------------------
@@ -109,8 +122,6 @@ private:
 	std::string               filePath_;
 	CompFlags                 compFlags_         { CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault };
 	TouchObject<TEInstance>   instance_          { nullptr };
-	int64_t                   prevTimeValue_     { 0 };
-	int32_t                   prevTimeScale_     { 0 };
 
 	std::unique_ptr<Renderer> renderer_;
 	VkDevice                  device_            { VK_NULL_HANDLE };
@@ -138,7 +149,6 @@ private:
 
 	
 	bool											  updateLoopRunning_	{ false };
-	uint64_t 										  frameCount_          { 0 };
 	std::shared_ptr<void>							  onFrameCallbackUserData_ { nullptr };
 	std::function<void(Comp&, std::shared_ptr<void>)> onFrameCallback_ { nullptr };
 	std::shared_ptr<void>							  onLayoutChangeCallbackUserData_{ nullptr };
