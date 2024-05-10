@@ -130,12 +130,23 @@ Comp::setCudaDevice()
 bool 
 Comp::initInstance()
 {
-	TE_CHECK(TEInstanceCreate(eventCallback, linkEventCallback, this, instance_.take()));
-	spdlog::info("TouchEngine instance created");
+	TEResult result = TEInstanceCreate(eventCallback, linkEventCallback, this, instance_.take());
+	if (result == TEResultSuccess)
+		spdlog::info("TEInstance created");
+	else
+	{
+		spdlog::error("Failed to create TEInstance: {}", TEResultGetDescription(result));
+		throw std::runtime_error("Failed to create TEInstance");
+	}
 
-	TE_CHECK(TEInstanceAssociateGraphicsContext(instance_, renderer_->teContext()));
-	spdlog::info("TouchEngine instance associated with Graphics Context");
-
+	result = TEInstanceAssociateGraphicsContext(instance_, renderer_->teContext());
+	if (result == TEResultSuccess)
+		spdlog::info("TEInstance associated with Vulkan Graphics Context");
+	else
+	{
+		spdlog::error("Failed to associate TEInstance with Graphics Context: {}", TEResultGetDescription(result));
+		throw std::runtime_error("Failed to associate TEInstance with Graphics Context");
+	}
 	return true;
 }
 
@@ -147,7 +158,12 @@ bool Comp::loadTox(const std::string& filePath, int64_t fps)
 bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps)
 {
 	compFlags_ = compFlags;
-	TE_CHECK(TEInstanceSetFrameRate(instance_, fps, 1));
+	TEResult result = TEInstanceSetFrameRate(instance_, fps, 1);
+	if (result != TEResultSuccess)
+	{
+		spdlog::error("Failed to set frame rate: {}", TEResultGetDescription(result));
+		throw std::runtime_error("Failed to set frame rate");
+	}
 
 	filePath_ = filePath;
 	spdlog::info("Loading tox: {}", filePath_);
@@ -155,12 +171,23 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 	auto timeMode = TETimeInternal;
 	if (compFlags_ & CompFlagBits::ExternalTime) timeMode = TETimeExternal;
 
-	TE_CHECK(TEInstanceConfigure(instance_, filePath_.c_str(), timeMode, TEUIWindows));
-	spdlog::info("Instance configured");
+	result = TEInstanceConfigure(instance_, filePath_.c_str(), timeMode, TEUIWindows);
+	if (result != TEResultSuccess)
+	{
+		spdlog::error("Failed to configured TEInstance: {}", TEResultGetDescription(result));
+		throw std::runtime_error("Failed to configured TEInstance");
+	}
+	
 
 	std::unique_lock<std::mutex> lock(mutex_);
-	TE_CHECK(TEInstanceLoad(instance_));
-	spdlog::info("Instance loading...");
+	result = TEInstanceLoad(instance_);
+	if (result == TEResultSuccess)
+		spdlog::info("Instance loading...");
+	else
+	{
+		spdlog::error("Failed to initiate loading of TEInstance: {}", TEResultGetDescription(result));
+		throw std::runtime_error("Failed to initiate loading of TEInstance");
+	}
 
 	spdlog::default_logger()->flush();
 	// wait for instance to load
@@ -179,7 +206,7 @@ Comp::unload()
 	std::unique_lock<std::mutex> lock(mutex_);
 	if (ssLoaded_)
 	{
-		spdlog::info("Unloading TouchEngine instance...");
+		spdlog::info("Unloading TEInstance...");
 
 		ssUnloading_ = true;
 		onFrameCallbackUserData_ = nullptr;
@@ -191,7 +218,12 @@ Comp::unload()
 
 
 		lock.unlock();
-		TE_CHECK(TEInstanceUnload(instance_));
+		TEResult result = TEInstanceUnload(instance_);
+		if (result != TEResultSuccess)
+		{
+			spdlog::error("Failed to initiate unloading of TEInstance: {}", TEResultGetDescription(result));
+			throw std::runtime_error("Failed to initiate unloading of TEInstance");
+		}
 
 		lock.lock();
 		cv_.wait(lock, [this] { return !ssLoaded_; });
@@ -218,8 +250,8 @@ Comp::eventCallback(TEInstance* instance,
 	int32_t end_time_scale,
 	void* info)
 {
-	if (event != TEEventFrameDidFinish)
-		std::cout << "eventCallback: " << teutils::eventToString(event) << " result: " << TEResultGetDescription(result) << std::endl;
+	//if (event != TEEventFrameDidFinish)
+	//	SPDLOG_DEBUG("eventCallback: {} result: {}", teutils::eventToString(event), TEResultGetDescription(result));
 
 	Comp* comp = static_cast<Comp*>(info);
 
@@ -255,7 +287,7 @@ Comp::onEventInstanceReady(TEResult result, Comp* comp)
 	comp->ssReady_ = result == TEResultSuccess;
 	comp->cv_.notify_one(); // notify load() that instance is ready
 	lock.unlock();
-	spdlog::info("Instance Ready: {}", TEResultGetDescription(result));
+	spdlog::info("Instance ready: {}", TEResultGetDescription(result));
 }
 
 void 
@@ -263,6 +295,7 @@ Comp::onEventInstanceDidLoad(TEResult result, Comp* comp)
 {
 	std::lock_guard<std::mutex> lock(comp->mutex_);
 	comp->ssLoaded_ = true;
+	spdlog::info("Instance loaded: {}", TEResultGetDescription(result));
 }
 
 void 
@@ -272,7 +305,7 @@ Comp::onEventInstanceDidUnload(TEResult result, Comp* comp)
 	ssLoaded_ = false;
 	ssReady_ = false;
 	comp->cv_.notify_one(); // notify unload() that instance is unloaded
-	spdlog::info("Instance Unloaded: {}", TEResultGetDescription(result));
+	spdlog::info("Instance unloaded: {}", TEResultGetDescription(result));
 }
 
 void 
@@ -654,7 +687,12 @@ float Comp::frameRate() const
 
 void Comp::start()
 {
-	TE_CHECK(TEInstanceResume(instance_));
+	TEResult result = TEInstanceResume(instance_);
+	if (result != TEResultSuccess)
+	{
+		spdlog::error("Failed to resume TEInstance: {}", TEResultGetDescription(result));
+		throw std::runtime_error("Failed to resume TEInstance");
+	}
 
 	// print out the flags as bits
 	//std::cout << "Comp flags: " << std::bitset<32>(compFlags_()) << std::endl;
@@ -678,15 +716,20 @@ void Comp::stop()
 	if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AutoUpdate)
 	{
 		stopUpdate();
-		spdlog::info("auto update stopped");
+		spdlog::info("Auto update stopped");
 	}
 	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate)
 	{
 		stopAsync();
-		spdlog::info("async update stopped");
+		spdlog::info("Async update stopped");
 	}
 
-	TE_CHECK(TEInstanceSuspend(instance_));
+	TEResult result = TEInstanceSuspend(instance_);
+	if (result != TEResultSuccess)
+	{
+		spdlog::error("Failed to suspend TEInstance: {}", TEResultGetDescription(result));
+		throw std::runtime_error("Failed to suspend TEInstance");
+	}
 	spdlog::default_logger()->flush();
 }
 

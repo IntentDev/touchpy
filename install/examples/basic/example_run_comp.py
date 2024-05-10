@@ -6,6 +6,8 @@ from image_filter import ImageFilter
 
 import touchpy as tp
 
+tp.init_logging(level=tp.LogLevel.INFO, console=True, file=True)
+
 # # interface class to pass a cuda stream pointer to torch
 # class CudaStream:
 # 	def __init__(self, stream, device=torch.device('cuda'), device_index=0):
@@ -40,14 +42,14 @@ class ExampleRunComp:
 	
 	@staticmethod
 	def on_layout_change(comp, this):
-		print('layout changed:')
-		print('in tops:', comp.in_tops.count, comp.in_tops.names)
-		print('out tops:', comp.out_tops.count, comp.out_tops.names)
-		print('in chops:', comp.in_chops.count, comp.in_chops.names)
-		print('out chops:', comp.out_chops.count, comp.out_chops.names)
-		print('in dats:', comp.in_dats.count, comp.in_dats.names)
-		print('out dats:', comp.out_dats.count, comp.out_dats.names)
-		print('pars:', comp.par.count, comp.par.names)
+		# print('layout changed:')
+		# print('in tops:', comp.in_tops.count, comp.in_tops.names)
+		# print('out tops:', comp.out_tops.count, comp.out_tops.names)
+		# print('in chops:', comp.in_chops.count, comp.in_chops.names)
+		# print('out chops:', comp.out_chops.count, comp.out_chops.names)
+		# print('in dats:', comp.in_dats.count, comp.in_dats.names)
+		# print('out dats:', comp.out_dats.count, comp.out_dats.names)
+		# print('pars:', comp.par.count, comp.par.names)
 		# comp.out_tops[1].set_cuda_flags(tp.CudaFlags.BGRA | tp.CudaFlags.HWC)
 		comp.out_tops[1].set_cuda_flags(tp.CudaFlags.RGB)
 
@@ -257,21 +259,21 @@ class ExampleRunComp:
 				# comp.in_tops[0].from_tensor(tensor2)
 
 				tensor = comp.out_tops[1].as_tensor(sync_cuda_stream=True)
-				if (this.frame == 2):
-					
-					print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.
-					dtype, "tensor device: ", tensor.device, "tensor layout: ", tensor.layout, 
-					"tensor strides: ", tensor.stride(), "tensor is_contiguous: ", tensor.is_contiguous())
+
+				# if (this.frame == 2):
+				# 	print("tensor shape: ", tensor.shape, "tensor dtype: ", tensor.
+				# 	dtype, "tensor device: ", tensor.device, "tensor layout: ", tensor.layout, 
+				# 	"tensor strides: ", tensor.stride(), "tensor is_contiguous: ", tensor.is_contiguous())
 
 				# filter tensor only works with 32bit float data (comp.out_tops[2] is 32bit float in this example)
 				# filter expects (b, c, h, w) layout
 				# tensor2 = this.imag_filter(tensor.unsqueeze(0)).squeeze(0) 
 				tensor2 = tensor.clone()
 
-				if (this.frame == 2):
-					print("tensor2 shape: ", tensor2.shape, "tensor2 dtype: ", tensor2.dtype, 
-					"tensor2 device: ", tensor2.device, "tensor2 layout: ", tensor2.layout, 
-					"tensor2 strides: ", tensor2.stride(), "tensor2 is_contiguous: ", tensor2.is_contiguous())
+				# if (this.frame == 2):
+				# 	print("tensor2 shape: ", tensor2.shape, "tensor2 dtype: ", tensor2.dtype, 
+				# 	"tensor2 device: ", tensor2.device, "tensor2 layout: ", tensor2.layout, 
+				# 	"tensor2 strides: ", tensor2.stride(), "tensor2 is_contiguous: ", tensor2.is_contiguous())
 				
 				# comp.in_tops[2].from_tensor(tensor2, this.stream)
 				comp.in_tops[1].from_tensor(tensor2, flags=tp.CudaFlags.RGB)
