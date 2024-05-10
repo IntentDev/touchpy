@@ -1,13 +1,26 @@
 #include "logging.h"
 
-void initLogging(spdlog::level::level_enum level)
+void initLogging(spdlog::level::level_enum level, bool logToConsole, bool logToFile)
 {
     spdlog::set_level(spdlog::level::trace);
 
     try
     {
-        auto logger = spdlog::basic_logger_mt("file_logger_", "logs/touchpy-log.txt");
-        logger->set_pattern("[%D:%H:%M:%S] [%t] [%l]: %v");
+        //auto logger = spdlog::basic_logger_mt("file_logger_", "logs/touchpy-log.txt");
+        std::vector<spdlog::sink_ptr> sinks; 
+        if (logToConsole)
+        {
+            sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+            sinks.back()->set_pattern("[%H:%M:%S.%e] [%t] [%^%l%$]: %v");
+        }
+        if (logToFile)
+        {
+            sinks.push_back(std::make_shared < spdlog::sinks::basic_file_sink_mt >("logs/touchpy-log.txt"));
+            sinks.back()->set_pattern("[%D %H:%M:%S.%e] [%t] [%^%l%$]: %v");
+        }
+
+        auto logger = std::make_shared<spdlog::logger>("logger", begin(sinks), end(sinks));
+
         logger->flush_on(level);
         spdlog::set_default_logger(logger);
         //spdlog::register_logger(logger);

@@ -6,6 +6,7 @@
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/base_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
 #include <string>
@@ -16,7 +17,7 @@ using Logger = std::shared_ptr<spdlog::logger>;
 // implemented in touchpy.cpp for Python and in logging_gtest.cpp for GTest
 void printInfo(const std::string& info);
 
-void initLogging(spdlog::level::level_enum level = spdlog::level::warn);
+void initLogging(spdlog::level::level_enum level = spdlog::level::warn, bool logToConsole = true, bool logToFile = false);
 void setLogLevel(spdlog::level::level_enum level = spdlog::level::info);
 
 #define SPDLOG_FLUSH spdlog::default_logger()->flush();

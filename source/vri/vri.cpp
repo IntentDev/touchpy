@@ -10,6 +10,8 @@
 #include <optional>
 #include <set>
 
+#include "logging.h"
+
 //template<>
 //void colorSetTo<VkClearColorValue>(const Color& color, VkClearColorValue& vkColor) {
 //	vkColor.float32[0] = color.r;
@@ -56,9 +58,9 @@ VkSampleCountFlagBits getMaxUsableSampleCount(const VkPhysicalDevice& physicalDe
 {
 	VkPhysicalDeviceProperties physicalDeviceProperties;
 	vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-	std::cout << "Device Name: " << physicalDeviceProperties.deviceName << std::endl;
-	std::cout << "Max sample count: " << string_VkSampleCountFlags(physicalDeviceProperties.limits.framebufferColorSampleCounts) << std::endl;
-	std::cout << "Max depth sample count: " << string_VkSampleCountFlags(physicalDeviceProperties.limits.framebufferDepthSampleCounts) << std::endl;
+	spdlog::info("Device Name: {}", physicalDeviceProperties.deviceName);
+	//spdlog::info("Max sample count: {}", string_VkSampleCountFlags(physicalDeviceProperties.limits.framebufferColorSampleCounts));
+	//spdlog::info("Max depth sample count: {}", string_VkSampleCountFlags(physicalDeviceProperties.limits.framebufferDepthSampleCounts));
 
 	VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
 	if (counts & VK_SAMPLE_COUNT_64_BIT)
@@ -701,8 +703,7 @@ void createInstance(VContext& vContext,
 			&debugMessenger)
 		);
 
-	std::cout << "Successfully created a Vulkan Instance!" << std::endl;
-
+	spdlog::info("Successfully created a Vulkan Instance");
 }
 
 SwapchainSupport getSwapchainSupport(VkPhysicalDevice device, VkSurfaceKHR windowSurface)
@@ -752,12 +753,12 @@ bool deviceSuitable(
 	VkPhysicalDeviceFeatures supportedFeatures;
 	vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
 
-	std::cout << "Device Name: " << physicalDevice << std::endl
-		<< "\tExtensions Supported: " << std::boolalpha << extensionsSupported << std::endl
-		<< "\tQueue Family Indices: " << std::boolalpha << resultQueueFamilyIndices << std::endl
-		<< "\tSwapchain Adequate: " << std::boolalpha << swapchainAdequate << std::endl
-		<< "\tAnisotropy Supported: " << std::boolalpha << supportedFeatures.samplerAnisotropy << std::endl
-		;
+	spdlog::info("Vulkan Device Name: {}", static_cast<void*>(physicalDevice));
+	spdlog::info("Vulkan Extensions Supported: {}", extensionsSupported);
+	spdlog::info("Vulkan Queue Family Indices available: {}", resultQueueFamilyIndices);
+	//spdlog::info("\tSwapchain Adequate: {}", swapchainAdequate);
+	//spdlog::info("\tAnisotropy Supported: {}", supportedFeatures.samplerAnisotropy);
+
 
 	return	extensionsSupported && 
 			resultQueueFamilyIndices &&
@@ -778,10 +779,9 @@ bool deviceSuitable(
 	VkPhysicalDeviceFeatures supportedFeatures;
 	vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
 
-	std::cout << "Device Name: " << physicalDevice << std::endl
-		<< "\tExtensions Supported: " << std::boolalpha << extensionsSupported << std::endl
-		<< "\tQueue Family Indices: " << std::boolalpha << resultQueueFamilyIndices << std::endl
-		;
+	spdlog::info("Vulkan Device Name: {}", static_cast<void*>(physicalDevice));
+	spdlog::info("Vulkan Extensions Supported: {}", extensionsSupported);
+	spdlog::info("Vulkan Queue Family Indices available: {}", resultQueueFamilyIndices);
 
 	return	extensionsSupported &&
 		resultQueueFamilyIndices &&
@@ -818,11 +818,11 @@ void setPrimaryPhysicalDevice(
 
 	for (auto device : physicalDevices)
 	{
-		std::cout << "checking device: " << device << std::endl;
+		//std::cout << "checking device: " << device << std::endl;
 
 		if (deviceSuitable(device, requiredDeviceExtensions, surface, queueFlags))
 		{	
-			std::cout << "found suitable device: " << device << std::endl;
+			//std::cout << "found suitable device: " << device << std::endl;
 			vContext.physicalDevice = device;
 			break;
 		}
@@ -839,11 +839,9 @@ void setPrimaryPhysicalDevice(
 
 	for (auto device : physicalDevices)
 	{
-		std::cout << "checking device: " << device << std::endl;
-
 		if (deviceSuitable(device, requiredDeviceExtensions, queueFlags))
 		{
-			std::cout << "found suitable device: " << device << std::endl;
+			spdlog::info("Found suitable Vulkan device: {}", static_cast<void*>(device));
 			vContext.physicalDevice = device;
 			break;
 		}
@@ -856,7 +854,7 @@ bool checkDeviceQueueFamilySupport(
 {
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
-	std::cout << "Queue family count: " << queueFamilyCount << std::endl;
+	//spdlog::info("Queue family count: {}", queueFamilyCount);
 
 	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
@@ -881,9 +879,8 @@ bool checkDeviceQueueFamilySupport(
 			}
 			if (!flagSupported)
 			{
-				std::cout << "GPU Device: " << physicalDevice 
-					<< " does not support required operation : "
-					<< string_VkQueueFlags(flag) << std::endl;
+				spdlog::error("GPU Device: {} does not support required operation : {}", 
+					static_cast<void*>(physicalDevice), string_VkQueueFlags(flag));
 				return false;
 			}
 		}
