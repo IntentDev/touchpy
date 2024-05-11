@@ -4,7 +4,7 @@
     {
       "name": "default",
       "cacheVariables": {
-          "CMAKE_TOOLCHAIN_FILE": "c:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+          "CMAKE_TOOLCHAIN_FILE": "<VCPKG_ROOT_PATH_HERE>/scripts/buildsystems/vcpkg.cmake"
       }
     },
     {
@@ -16,7 +16,7 @@
       "cacheVariables": {
         "CMAKE_C_COMPILER": "cl.exe",
         "CMAKE_CXX_COMPILER": "cl.exe",
-        "CMAKE_TOOLCHAIN_FILE": "c:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        "CMAKE_TOOLCHAIN_FILE": "<VCPKG_ROOT_PATH_HERE>/scripts/buildsystems/vcpkg.cmake"
       },
       "condition": {
         "type": "equals",
@@ -33,52 +33,35 @@
         "strategy": "external"
       },
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "TDPY_BUILD_DIR": "${sourceDir}/out/build/${presetName}"
       }
     },
     {
-      "name": "x64-release-py39",
-      "displayName": "x64 Release Python 3.9",
+      "name": "x64-release",
+      "displayName": "x64 Release",
       "inherits": "windows-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "python_version": "3.9"
+        "TDPY_BUILD_DIR": "${sourceDir}/out/build/${presetName}"
       }
     },
     {
-      "name": "x64-release-py310",
-      "displayName": "x64 Release Python 3.10",
+      "name": "x64-installrelease",
+      "displayName": "x64 Install Release",
       "inherits": "windows-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "python_version": "3.10"
+        "CMAKE_BUILD_TYPE": "InstallRelease",
+        "TDPY_BUILD_DIR": "${sourceDir}/out/build/${presetName}"
       }
     },
     {
-      "name": "x64-release-py311",
-      "displayName": "x64 Release Python 3.11",
-      "inherits": "windows-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "python_version": "3.11"
-      }
-    },
-    {
-      "name": "x64-release-py312",
-      "displayName": "x64 Release Python 3.12",
-      "inherits": "windows-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "python_version": "3.12"
-      }
-    },
-    {
-      "name": "x64-relwithdebuginfo-py311",
+      "name": "x64-relwithdebuginfo",
       "displayName": "x64 RelWithDebInfo",
       "inherits": "windows-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "python_version": "3.11"
+        "TDPY_BUILD_DIR": "${sourceDir}/out/build/${presetName}"
       }
     }
   ]

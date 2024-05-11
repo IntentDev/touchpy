@@ -29,8 +29,6 @@ std::string dtype_codeAsStr(uint8_t code)
 	}
 }
 
-
-
 nb::dict getDLPackCapsuleInfo(nb::ndarray<> array)
 {
 	nb::gil_scoped_acquire acquire;
@@ -74,7 +72,6 @@ R"(Get information about a DLPack capsule.
 Args:
 	array (ndarray): The array to get information about.
 )";
-
 
 
 extern void initCompBindings(nb::module_& m);
