@@ -27,3 +27,4 @@ void setLogLevel(spdlog::level::level_enum level = spdlog::level::info);
 #else
 #define SPDLOG_FLUSH_DEBUG
 #endif
+

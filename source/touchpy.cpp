@@ -29,8 +29,6 @@ std::string dtype_codeAsStr(uint8_t code)
 	}
 }
 
-
-
 nb::dict getDLPackCapsuleInfo(nb::ndarray<> array)
 {
 	nb::gil_scoped_acquire acquire;
@@ -76,7 +74,6 @@ Args:
 )";
 
 
-
 extern void initCompBindings(nb::module_& m);
 extern void initTopLinkBindings(nb::module_& m);
 extern void initChopLinkBindings(nb::module_& m);
@@ -110,3 +107,4 @@ NB_MODULE(touchpy, m)
 	initDatLinkBindings(m);
 	initParLinkBindings(m);
 }
+
