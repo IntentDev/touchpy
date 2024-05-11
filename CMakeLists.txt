@@ -2,6 +2,25 @@
 #
 cmake_minimum_required (VERSION 3.21)
 
+function(add_copy_file_cmds target_name file_list dest_dir)
+    foreach(file IN LISTS file_list)
+        add_custom_command(TARGET ${target_name} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${file} ${dest_dir}
+        )
+    endforeach()
+endfunction()
+
+function(add_copy_dir_cmds target_name dir_list dest_dir)
+    foreach(dir IN LISTS dir_list)
+        add_custom_command(TARGET ${target_name} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${dir} ${dest_dir}
+        )
+    endforeach()
+endfunction()
+
+
 # Enable Hot Reload for MSVC compilers if supported.
 if (POLICY CMP0141)
   cmake_policy(SET CMP0141 NEW)
@@ -40,16 +59,6 @@ if(PRINT_SOURCE_FILES)
     endforeach()
 endif()
 
-# Google Test
-#################################################################################################
-#################################################################################################
-# set(GTEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/gtest)
-# file(GLOB_RECURSE TEST_SOURCES "${GTEST_SOURCE_DIR}/*gtest*.cpp")
-
-# set(TOUCHPY_TEST_SOURCES ${ALL_TPY_SOURCES})
-# list(FILTER TOUCHPY_TEST_SOURCES EXCLUDE REGEX ".*py\\.cpp$")
-
-
 # Compile definitions
 if (WIN32)
     list(APPEND COMPILE_DEFINITIONS 
@@ -62,72 +71,24 @@ if (WIN32)
     )
 endif ()
 
-
-# Vulkan
 # .\vcpkg install vulkan ### haven't tested this, probably best to just install the SDK
-#################################################################################################
 find_package(Vulkan REQUIRED)
 message(STATUS Vulkan_INCLUDE_DIR=${Vulkan_INCLUDE_DIR})
 
 ### not used atm but vri includes it... 
-# VMA
 # .\vcpkg install vulkan-memory-allocator 
-#################################################################################################
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 
-# CUDA
-#################################################################################################
 find_package(CUDAToolkit REQUIRED)
 message(STATUS CUDAToolkit_INCLUDE_DIRS=${CUDAToolkit_INCLUDE_DIRS})
 
-# spdlog
 # .\vcpkg install spdlog
-#################################################################################################
 find_package(spdlog REQUIRED)
 
-# Google Test
 # .\vcpkg install gtest
-#################################################################################################
 find_package(GTest CONFIG REQUIRED)
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
-
-
-# touchpygtest
-#################################################################################################
-set(GTEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/gtest)
-file(GLOB_RECURSE TEST_SOURCES "${GTEST_SOURCE_DIR}/*gtest*.cpp")
-
-set(TOUCHPY_TEST_SOURCES ${ALL_TPY_SOURCES})
-list(FILTER TOUCHPY_TEST_SOURCES EXCLUDE REGEX ".*py\\.cpp$")
-add_executable (touchpygtest ${TEST_SOURCES} ${TOUCHPY_TEST_SOURCES})
-
-target_compile_definitions(touchpygtest PRIVATE ${COMPILE_DEFINITIONS})
-
-target_include_directories(touchpygtest PRIVATE 
-    ${SOURCE_DIR}
-    ${CUDAToolkit_INCLUDE_DIRS}
-    "${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/include"
-)
-
-target_link_directories(touchpygtest PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/lib
-)
-
-target_link_libraries(touchpygtest PRIVATE 
-    GTest::gtest_main
-    TouchEngine
-    Vulkan::Vulkan
-    GPUOpen::VulkanMemoryAllocator
-    CUDA::cudart
-    spdlog::spdlog
-)
-
-include(GoogleTest)
-gtest_discover_tests(touchpygtest)
-add_definitions(-DCMAKE_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
-
 
 # touchpy
 #################################################################################################
@@ -173,47 +134,67 @@ add_custom_command(TARGET touchpy POST_BUILD
     $<TARGET_FILE:touchpy> "${CMAKE_CURRENT_SOURCE_DIR}/install/modules"
 )
 
-add_custom_command(TARGET touchpy POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:spdlog::spdlog> "${CMAKE_CURRENT_SOURCE_DIR}/install/modules"
+# copy dlls to the build directory
+set(target_dependencies
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin/TouchEngine.dll"
+    "${CUDAToolkit_BIN_DIR}/cudart64_110.dll"
+    $<TARGET_FILE:spdlog::spdlog>
+    $<TARGET_FILE:fmt::fmt>
 )
 
-add_custom_command(TARGET touchpy POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:fmt::fmt> "${CMAKE_CURRENT_SOURCE_DIR}/install/modules"
-)
-
-set(cuda_runtime_dll "${CUDAToolkit_BIN_DIR}/cudart64_110.dll")
-add_custom_command(TARGET touchpy POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${cuda_runtime_dll} $<TARGET_FILE_DIR:touchpy>
-)
-
-add_custom_command(TARGET touchpy POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin $<TARGET_FILE_DIR:touchpy>
-)
-
-add_custom_command(TARGET touchpy POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin "${CMAKE_CURRENT_SOURCE_DIR}/install/modules"
-)
-
-
+add_copy_file_cmds(touchpy "${target_dependencies}" "${CMAKE_CURRENT_SOURCE_DIR}/install/modules")
 
 # generate stub file to enable Sphinx to generate docs
 #################################################################################################
-# if (Python_VERSION_MAJOR EQUAL 3 AND Python_VERSION_MINOR EQUAL 11)
-#     message(STATUS "Python version 3.11 detected. Generating stubs.")
-#     nanobind_add_stub(
-#         touchpy_stub
-#         MODULE touchpy
-#         OUTPUT touchpy.pyi
-#         PYTHON_PATH $<TARGET_FILE_DIR:touchpy>
-#         DEPENDS touchpy
-#     )
-# endif()
+if (Python_VERSION_MAJOR EQUAL 3 AND Python_VERSION_MINOR EQUAL 11)
+    
+    # copy dlls to the build directory for the module to work
+    add_copy_file_cmds(touchpy "${target_dependencies}" $<TARGET_FILE_DIR:touchpy>)
 
+    message(STATUS "Python version 3.11 detected. Generating stubs.")
+    nanobind_add_stub(
+        touchpy_stub
+        MODULE touchpy
+        OUTPUT touchpy.pyi
+        PYTHON_PATH $<TARGET_FILE_DIR:touchpy>
+        DEPENDS touchpy
+    )
+
+endif()
+
+# touchpygtest
+#################################################################################################
+set(GTEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/gtest)
+file(GLOB_RECURSE TEST_SOURCES "${GTEST_SOURCE_DIR}/*gtest*.cpp")
+
+set(TOUCHPY_TEST_SOURCES ${ALL_TPY_SOURCES})
+list(FILTER TOUCHPY_TEST_SOURCES EXCLUDE REGEX ".*py\\.cpp$")
+add_executable (touchpygtest ${TEST_SOURCES} ${TOUCHPY_TEST_SOURCES})
+
+target_compile_definitions(touchpygtest PRIVATE ${COMPILE_DEFINITIONS})
+
+target_include_directories(touchpygtest PRIVATE 
+    ${SOURCE_DIR}
+    ${CUDAToolkit_INCLUDE_DIRS}
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/include"
+)
+
+target_link_directories(touchpygtest PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/lib
+)
+
+target_link_libraries(touchpygtest PRIVATE 
+    GTest::gtest_main
+    TouchEngine
+    Vulkan::Vulkan
+    GPUOpen::VulkanMemoryAllocator
+    CUDA::cudart
+    spdlog::spdlog
+)
+
+include(GoogleTest)
+gtest_discover_tests(touchpygtest)
+add_definitions(-DCMAKE_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
 
 # install - needs work
 #################################################################################################
