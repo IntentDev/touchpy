@@ -35,6 +35,18 @@ import keyboard
 wp.init()
 
 
+
+
+@wp.kernel(enable_backward=False)
+def update_cloth_kernel(
+	input_points: wp.array(dtype=wp.vec3),
+	out_points: wp.array(dtype=wp.vec3),
+	
+):
+	tid = wp.tid()
+	point = input_points[tid]
+	out_points[tid] = point
+
 class IntegratorType(Enum):
 	EULER = "euler"
 	XPBD = "xpbd"
@@ -47,11 +59,9 @@ class Example:
 	def __init__(self, stage, integrator=IntegratorType.EULER):
 		self.integrator_type = integrator
 		self.profiler = {}
-		self.reset()
+		self.initialize()
 		
-	def reset(self):	
-		
-		
+	def initialize(self):	
 		self.sim_width = 49
 		self.sim_height = 49
 
@@ -62,18 +72,12 @@ class Example:
 		self.frame_dt = 1.0 / self.sim_fps
 		self.sim_dt = self.frame_dt / self.sim_substeps
 		self.sim_time = 0.0
-		
-		
 
-		
 		builder = wp.sim.ModelBuilder()
-
-		
-		
 
 		if self.integrator_type == IntegratorType.EULER:
 			builder.add_cloth_grid(
-				pos=wp.vec3(0, 7.0, 0),
+				pos=wp.vec3(0, 7.5, 0),
 				rot=wp.quat_from_axis_angle(wp.vec3(1.0, 0.0, 0.0), math.pi * 0.5),
 				vel=wp.vec3(0.0, 0.0, 0.0),
 				dim_x=self.sim_width,
@@ -81,15 +85,15 @@ class Example:
 				cell_x=0.1,
 				cell_y=0.1,
 				mass=0.1,
-				tri_ke=1.0e3,
-				tri_ka=1.01e3,
+				tri_ke=1.01e3,
+				tri_ka=15000,
 				tri_kd=1.e1,
 				tri_drag=0.8,
-				edge_ke=0.2
+				edge_ke=0.1
 			)
 		else:
 			builder.add_cloth_grid(
-				pos=wp.vec3(0.0, 7.0, 0.0),
+				pos=wp.vec3(0.0, 7.5, 0.0),
 				rot=wp.quat_from_axis_angle(wp.vec3(1.0, 0.0, 0.0), math.pi * 0.5),
 				vel=wp.vec3(0.0, 0.0, 0.0),
 				dim_x=self.sim_width,
@@ -104,9 +108,6 @@ class Example:
 				tri_drag=1.0
 			)
 
-	  
-		
-		
 
 		builder.add_shape_sphere(
 			body=-1, 
@@ -121,27 +122,21 @@ class Example:
 			)	
 
 
-		#end_time = time.time()
-		#elapsed_time = end_time - start_time
-		#print(elapsed_time)
-
-
-
 		if self.integrator_type == IntegratorType.EULER:
 			self.integrator = wp.sim.SemiImplicitIntegrator()
 		else:
 			self.integrator = wp.sim.XPBDIntegrator(iterations=1)
 
 		self.model = builder.finalize()
+		
+		self.startPoints = self.model.state().particle_q
+
 		self.model.ground = True
 		self.model.soft_contact_ke = 1.0e4
 		self.model.soft_contact_kd = 1.0e2
 
 		self.state_0 = self.model.state()
 		self.state_1 = self.model.state()
-
-	
-		
 		self.use_graph = wp.get_device().is_cuda
 		if self.use_graph:
 			with wp.ScopedCapture() as capture:
@@ -170,8 +165,17 @@ class Example:
 		
 		self.sim_time += self.frame_dt
 
-
-
+	def restart(self):
+		wp.launch(
+		kernel=update_cloth_kernel,
+			dim=len(self.state_0.particle_q),
+			inputs=[
+				self.startPoints,
+			],
+			outputs=[
+				self.state_0.particle_q
+			],
+		)
 
 	def runComp(self, tox_path):
 		comp = tp.Comp(tox_path, flags=tp.CompFlags.INTERNAL_TIME_AUTO | tp.CompFlags.CUDA_STREAM_INTERNAL)
@@ -197,8 +201,13 @@ class Example:
 			comp.stop() # stop running the comp
 			return
 		
+		if (keyboard.is_pressed('i')):
+			this.initialize()
+
+
 		if (keyboard.is_pressed('r')):
-			this.reset()
+			this.restart()
+		
 		
 			
 	
