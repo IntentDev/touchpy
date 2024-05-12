@@ -14,7 +14,7 @@ if str(localImportPath) not in sys.path:
 
 project = 'TouchPy'
 copyright = '2024'
-author = ''
+author = 'IntentDev'
 release = '0.1'
 
 
@@ -26,7 +26,7 @@ extensions = ['sphinx.ext.autodoc',
 		  'autoapi.extension',
           "sphinx.ext.intersphinx"]
 
-autoapi_dirs = ['../../out/build/x64-release']
+autoapi_dirs = ['../../out/install_build/py312']
 autoapi_type = "python"
 
 autoapi_options = [ 'members', 'undoc-members', 'private-members', 'show-module-summary', 'special-members', 'imported-members', ]

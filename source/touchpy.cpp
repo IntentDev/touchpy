@@ -107,4 +107,3 @@ NB_MODULE(touchpy, m)
 	initDatLinkBindings(m);
 	initParLinkBindings(m);
 }
-

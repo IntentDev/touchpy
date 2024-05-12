@@ -146,12 +146,13 @@ add_copy_file_cmds(touchpy "${target_dependencies}" "${CMAKE_CURRENT_SOURCE_DIR}
 
 # generate stub file to enable Sphinx to generate docs
 #################################################################################################
-if (Python_VERSION_MAJOR EQUAL 3 AND Python_VERSION_MINOR EQUAL 11)
-    
+if (Python_VERSION_MAJOR EQUAL 3 AND Python_VERSION_MINOR EQUAL 12)
+
+    message(STATUS "Python version 3.12 detected. Generating stubs.")
+
     # copy dlls to the build directory for the module to work
     add_copy_file_cmds(touchpy "${target_dependencies}" $<TARGET_FILE_DIR:touchpy>)
 
-    message(STATUS "Python version 3.11 detected. Generating stubs.")
     nanobind_add_stub(
         touchpy_stub
         MODULE touchpy
@@ -196,10 +197,4 @@ include(GoogleTest)
 gtest_discover_tests(touchpygtest)
 add_definitions(-DCMAKE_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
 
-# install - needs work
-#################################################################################################
-install(TARGETS touchpy LIBRARY DESTINATION modules CONFIGURATIONS Release)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin/TouchEngine.dll DESTINATION modules CONFIGURATIONS Release)
-install(FILES ${cuda_runtime_dll} DESTINATION modules CONFIGURATIONS Release)
-#install(FILES py.typed touchpy.pyi LIBRARY DESTINATION modules)
 

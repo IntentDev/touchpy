@@ -40,16 +40,15 @@ __pycache__
 /docs/build
 /docs/source/reference
 
+/install/docs
+/install/modules
 
 CMakeUserPresets.json
 CMakePresets.json
 vcpkg.json
-example/touchpy.cp311-win_amd64.pyd
-/example/__pycache__
 
-examples/yolov8/toe/yolo.*.toe
-examples/yolov8/models/
-install/examples/sdxl-turbo/toe/sdxl-turbo.*.toe
+*.*.toe
+*/models
 *log.txt
 
-docs/source/reference/generated/
+
