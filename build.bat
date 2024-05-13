@@ -1,5 +1,11 @@
 @echo off
 
+@REM build_release.bat package upload 		@REM will build the package and upload it to PyPi
+@REM build_release.bat package test_upload 	@REM will build the package and upload it to TestPyPi
+@REM build_release.bat 						@REM will compile the files and copy them only to install/modules
+@REM build_release.bat path\to\destination 	@REM will compile the files and copy them to the specified directory
+
+
 setlocal
 
 cmake -S . -B out/install_build/py39 -G "Ninja" --preset x64-release-py39
@@ -83,6 +89,22 @@ xcopy /E /Y /Q install\docs\ %DEST_DIR%\docs\
 echo Copying install\examples to: %DEST_DIR%\examples\
 xcopy /E /Y /Q install\examples\ %DEST_DIR%\examples\
 
+@REM if the destination directory is the subdirectory package run the build_package.bat script
+if "%DEST_DIR%" == "package" (
+
+	@REM set the current directory to the package directory
+	pushd package
+
+	@REM if there is a second arg pass it to the build_package.bat script
+	if not "%~2" == "" (
+		call build_package.bat %~2
+	) else (
+		call build_package.bat
+	)
+
+	@REM return to the original directory
+	popd
+)
 
 
 endlocal
