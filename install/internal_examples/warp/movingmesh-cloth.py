@@ -5,13 +5,7 @@
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 
-###########################################################################
-# Example Sim Cloth
-#
-# Shows a simulation of an FEM cloth model colliding against a static
-# rigid body mesh using the wp.sim.ModelBuilder().
-#
-###########################################################################
+
 import time
 
 
@@ -61,18 +55,43 @@ class Example:
 		self.profiler = {}
 		self.initialize()
 		
-	def initialize(self):	
+	def initialize(self):
+
+		self.substepCount = 32
+		self.gravity = [0.0, -980, 0.0]
+		self.globalScale = 100.0
+		self.contactElasticStiffness = 500000.0
+		self.contactFrictionStiffness = 500000.0
+		self.contactFrictionCoeff = 500000.0
+		self.contactDampingStiffness = 10000.0
+		self.clothDensity = 100.0
+		self.clothTriElasticStiffness = 1000000.0
+		self.clothTriAreaStiffness = 1000000.0
+		self.clothTriDampingStiffness = 100.0
+		self.clotTriDrag = 0.0
+		self.clothTriLift = 0.0
+		self.clothEdgeBendingStiffness = 0.01
+		self.clothEdgeDampingStiffness = 0.0
+		self.colliderContactDistance = 5.0
+		self.colliderContactQueryRange = 100.0
+		self.springElasticStiffness = 1000.0
+		self.springDampingStiffness = 1.0
+		self.groundEnabled = True
+		self.groundAltitude = 0.0
+
+		#################################
+		
 		self.sim_width = 100
 		self.sim_height = 100
 
 		self.sim_fps = 60.0
-		self.sim_substeps = 32
+		self.sim_substeps = self.substepCount
 		self.sim_duration = 5.0
 		self.sim_frames = int(self.sim_duration * self.sim_fps)
 		self.frame_dt = 1.0 / self.sim_fps
 		self.sim_dt = self.frame_dt / self.sim_substeps
 		self.sim_time = 0.0
-
+		
 		builder = wp.sim.ModelBuilder()
 
 		if self.integrator_type == IntegratorType.EULER:
@@ -85,9 +104,9 @@ class Example:
 				cell_x=0.05,
 				cell_y=0.05,
 				mass=0.1,
-				tri_ke=1.0e3,
-                tri_ka=1.0e3,
-                tri_kd=1,
+				tri_ke=1.0e4,
+				tri_ka=3.0e3,
+				tri_kd=10,
 				edge_ke=1
 			)
 		else:
@@ -156,6 +175,7 @@ class Example:
 		self.model = builder.finalize()
 		
 		self.startPoints = self.model.state().particle_q
+		self.model.particle_max_velocity = 3
 
 		self.model.ground = True
 		self.model.soft_contact_ke = 1.0e4
