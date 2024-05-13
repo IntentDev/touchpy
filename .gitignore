@@ -52,3 +52,7 @@ vcpkg.json
 *log.txt
 
 
+package/docs/
+package/build/
+package/dist/
+package/*egg-info*
