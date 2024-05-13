@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "touchpy"
+version = "0.0.10"
+authors = [
+  { name="Keith Lostracco", email="keith@intentdev.io" },
+  { name="Idzard Kwadijk", email="idzard@intentdev.io" },
+]
+description = "Tools to make working with TouchDesigner and Python easier."
+readme = "README.md"
+license.file = "LICENSE"
+requires-python = ">=3.9,<3.13"
+classifiers = [
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: Microsoft :: Windows",
+]
