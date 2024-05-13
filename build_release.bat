@@ -6,7 +6,7 @@ cmake -S . -B out/install_build/py39 -G "Ninja" --preset x64-release-py39
 ninja -C out/install_build/py39
 
 cmake -S . -B out/install_build/py310 -G "Ninja" --preset x64-release-py310
-ninja -C out/install_build/install/py310
+ninja -C out/install_build/py310
 
 cmake -S . -B out/install_build/py311 -G "Ninja" --preset x64-release-py311
 ninja -C out/install_build/py311
@@ -14,7 +14,6 @@ ninja -C out/install_build/py311
 cmake -S . -B out/install_build/py312 -G "Ninja" --preset x64-release-py312
 ninja -C out/install_build/py312
 
-endlocal
 
 pushd %~dp0
 
@@ -70,8 +69,13 @@ if not exist "%DEST_DIR%\" (
     )
 )
 
-echo Copying install\modules to: %DEST_DIR%\modules\
-xcopy /E /Y /Q install\modules\ %DEST_DIR%\modules\
+@REM copy all files other than .pyd files
+echo Copying install\modules to: %DEST_DIR%\touchpy\
+xcopy /E /Y /Q install\modules\ %DEST_DIR%\touchpy\ /exclude:install\modules\*.pyd
+
+@REM copy all .pyd files
+echo Copying install\modules\*.pyd to: %DEST_DIR%\pyd_files\
+xcopy /Y /Q install\modules\*.pyd %DEST_DIR%\pyd_files\
 
 echo Copying install\docs to: %DEST_DIR%\docs\
 xcopy /E /Y /Q install\docs\ %DEST_DIR%\docs\
@@ -80,14 +84,5 @@ echo Copying install\examples to: %DEST_DIR%\examples\
 xcopy /E /Y /Q install\examples\ %DEST_DIR%\examples\
 
 
-@REM I think these files will be edited and maintained in release project
-@REM so they should not be copied to the destination directory
 
-@REM echo Copying LICENSE.txt to: %DEST_DIR%
-@REM xcopy /Y /Q install\LICENSE.txt %DEST_DIR%
-
-@REM echo Copying README.md to: %DEST_DIR%
-@REM xcopy /Y /Q install\README.md %DEST_DIR%
-
-@REM echo Copying pyproject.toml to: %DEST_DIR%
-@REM xcopy /Y /Q install\pyproject.toml %DEST_DIR%
+endlocal
