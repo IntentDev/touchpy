@@ -2,16 +2,32 @@ import subprocess
 import shutil
 import os
 
+
+required_python_folders = ["py39", "py310", "py311", "py312"]
+python_paths = {}
+
+def set_python_paths():
+    # search through PATH entries for suitable python executable
+    for path in os.environ["PATH"].split(";"):
+        # remove last forward or backslash if present
+        path = path.rstrip("\\").rstrip("/")
+        last_folder = os.path.basename(path)
+        if last_folder.startswith("py"):
+            python_paths[last_folder] = os.path.join(path, "python.exe")
+
+    # check if all required python versions are found
+    for folder in required_python_folders:
+        if folder not in python_paths:
+            msg = f"Could not find Python installation named: {folder}"
+            raise FileNotFoundError(msg)
+
+    
+
 def build_wheel(python_version, pyd_file, output_dir="dist"):
     """Builds a wheel for the given Python version."""
     
-	# get user path
-    user_path = os.environ.get("USERPROFILE")
-    
-    # get TOUCHPY_BUILD_ENVS environment variable
-    build_envs = os.environ.get("TOUCHPY_BUILD_ENVS")
-	
-    python_executable = f"{build_envs}\\py{python_version}\\python.exe"
+    py_folder = f"py{python_version}"
+    python_executable = python_paths.get(py_folder, None)
 
     # Copy the appropriate .pyd file to the touchpy folder
     pyd_filename = os.path.basename(pyd_file)
@@ -59,4 +75,5 @@ if __name__ == "__main__":
     ]
 
     for version, pyd in zip(python_versions, pyd_files):
+        set_python_paths()
         build_wheel(version, pyd)
