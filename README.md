@@ -9,22 +9,26 @@ conda create -n py311 python=3.11
 conda create -n py312 python=3.12
 ```
 
-Make sure paths to Python 3.9, 3.10, 3.11 and 3.12 are all in PATH (preferred Python version - 3.11 should be located before the others so it still gets run when using python command in the command prompt)
+- Make sure paths to Python 3.9, 3.10, 3.11 and 3.12 are all in PATH (preferred Python version - 3.11 should be located before the others so it still gets run when using python command in the command prompt)
+- To build packages each Python environment needs `build` installed: `pip install build`
+- When building packages the version number must manually be set in `package/pyproject.toml`
 
-
-### To build the modules and documentationn (builds to install directory):
+### Build the modules and documentation, package distribution and upload
 - Open the Visual Studio Developer Command Prompt and run:
 ```bash
 # build compile all configs and copy to install
 build_release.bat
 
-# additionally copy all file specified directory
-build_release.bat path/to/release/directory
-
-# additionally build package (TOUCHPY_BUILD_ENVS environment variable needs to be set to Python envs location)
-# each Python environment needs build installed (pip install build)
+# additionally build package
 build_release.bat package
 
-# additionally build package and upload to PyPI (need to manually set new version # in package/pyproject.toml)
+# additionally upload to TestPyPI
+build_release.bat package test_upload
+
+# or additionally upload to PyPI
 build_release.bat package upload
+
+# additionally copy all files to specified directory (deprecated?)
+build_release.bat path/to/release/directory
+
 ```
