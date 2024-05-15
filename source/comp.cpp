@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <thread>
 #include <array>
+#include <fstream>
 
 #include "logging.h"
 
@@ -152,11 +153,25 @@ Comp::initInstance()
 
 bool Comp::loadTox(const std::string& filePath, int64_t fps)
 {
+	std::ifstream file(filePath, std::ios::in | std::ios::binary);
+	if (!file.is_open())
+	{
+		spdlog::error("Failed to open tox file: {}", filePath);
+		throw std::runtime_error("Failed to open tox file");
+	}
+
 	return loadTox(filePath, compFlags_, fps);
 }
 
 bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps)
 {
+	std::ifstream file(filePath, std::ios::in | std::ios::binary);
+	if (!file.is_open())
+	{
+		spdlog::error("Failed to open tox file: {}", filePath);
+		throw std::runtime_error("Failed to open tox file");
+	}
+
 	compFlags_ = compFlags;
 	TEResult result = TEInstanceSetFrameRate(instance_, fps, 1);
 	if (result != TEResultSuccess)
@@ -174,8 +189,8 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 	result = TEInstanceConfigure(instance_, filePath_.c_str(), timeMode, TEUIWindows);
 	if (result != TEResultSuccess)
 	{
-		spdlog::error("Failed to configured TEInstance: {}", TEResultGetDescription(result));
-		throw std::runtime_error("Failed to configured TEInstance");
+		spdlog::error("Failed to configure TEInstance: {}", TEResultGetDescription(result));
+		throw std::runtime_error("Failed to configure TEInstance");
 	}
 	
 
