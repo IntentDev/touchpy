@@ -2,8 +2,6 @@
 
 void initLogging(spdlog::level::level_enum level, bool logToConsole, bool logToFile)
 {
-    spdlog::set_level(spdlog::level::trace);
-
     try
     {
         //auto logger = spdlog::basic_logger_mt("file_logger_", "logs/touchpy-log.txt");
@@ -32,6 +30,8 @@ void initLogging(spdlog::level::level_enum level, bool logToConsole, bool logToF
     {
         std::cout << "Log init failed: " << ex.what() << std::endl;
     }
+
+    spdlog::set_level(level);
 }
 
 void setLogLevel(spdlog::level::level_enum level)
