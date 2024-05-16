@@ -83,9 +83,11 @@ OutTopLink::onOutputTextureChange()
 
 		currentTextureHandle_ = handle;
 	}
-	else
-		spdlog::error("onOutputTextureChange {}, {}", name_, TEResultGetDescription(result));
-		spdlog::default_logger()->flush();
+	else if(result != TEResultSuccess)
+	{
+			spdlog::error("onOutputTextureChange {}, {}", name_, TEResultGetDescription(result));
+			spdlog::default_logger()->flush();
+	}
 
 }
 

@@ -17,6 +17,7 @@ enum class CompFlagBits : Type
 
 	CudaStreamDefault = 1 << 5,
 	CudaStreamInternal = 1 << 6,
+	CudaDisable = 1 << 7,
 };
 
 using CompFlags = Flags<CompFlagBits>;

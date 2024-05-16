@@ -51,8 +51,11 @@ vcpkg.json
 */models
 *log.txt
 
-
 package/docs/
 package/build/
 package/dist/
 package/*egg-info*
+
+# bypass general rules
+!external/TouchEngine-Windows/bin/*.dll
+!external/TouchEngine-Windows/lib/*.lib

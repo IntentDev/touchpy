@@ -19,7 +19,7 @@ struct QueueFamilyInfo
     {
         if (queueIndex <= queuesAllocated)
         {
-            queuePriorities.resize(queueIndex + 1);
+            queuePriorities.resize(static_cast<size_t>(queueIndex) + 1);
         }
         queuePriorities[queueIndex] = priority;
         setNormalizedPriorities();
@@ -78,8 +78,13 @@ public:
 		{
             return deviceQueueInfoUtil(queueFamilyIndex.value(), queue, priority);
 		}
+        
+        //return std::make_tuple(std::nullopt, 0, queue);
 
-		return std::make_tuple(std::nullopt, 0, queue);
+        // this should not need to be here! Need to fix logic for getting different 
+        // queue families for different flags, this assumes the flag required is 
+        // supported by family 0 which should be the case
+		return std::make_tuple(0, 0, queue);
 	}
 
     deviceQueueInfo setPresentQueueInfo(VkQueue* queue,
@@ -93,7 +98,7 @@ public:
         return std::make_tuple(std::nullopt, 0, queue);
 	}
 
-    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos()
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos() const
     {
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos_;
         for (auto& queueFamilyInfo : queueFamilyInfos())
@@ -129,7 +134,7 @@ private:
             usedFamilyIndices_.push_back(familyIndex);
 		}
 
-        auto familyInfo = familyInfos_[familyIndex];
+        auto& familyInfo = familyInfos_[familyIndex];
         auto queueIndex = familyInfo.queuesAllocated - 1;
         familyInfos_[familyIndex].setQueuePrioriy(queueIndex, priority);
 		return std::make_tuple(familyIndex, queueIndex, queue);

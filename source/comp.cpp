@@ -12,29 +12,27 @@
 
 Comp::Comp()
 {
-	initComp();
+	initComp(CompFlagBits::InternalTimeAuto);
 }
 
 Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps) 
 	:	compFlags_(compFlags)
 {
 	spdlog::info("Creating Comp");
-
-	// use macros to log debug and trace messages so they can be turned off in release builds
-	//SPDLOG_DEBUG("debug message to touchpy_logger");
-	//SPDLOG_TRACE("trace message to touchpy_logger");
-
-	initComp();
+	
+	initComp(compFlags);
 	loadTox(filePath, compFlags, fps);
 
 	spdlog::default_logger()->flush();
 }
 
 void
-Comp::initComp()
+Comp::initComp(CompFlags compFlags)
 {
 	createRenderer();
-	cudaInit();
+
+	if (!(compFlags & CompFlagBits::CudaDisable)) cudaInit();
+
 	initInstance();
 }
 
@@ -72,7 +70,12 @@ Comp::createRenderer()
 void 
 Comp::cudaInit()
 {
-	setCudaDevice();
+	if (!setCudaDevice())
+	{
+		spdlog::warn("No capable CUDA device set, texture IO is not available");
+		return;
+	}
+
 	if (compFlags_ & CompFlagBits::CudaStreamInternal) 
 	{
 		CUDA_CHECK(cudaStreamCreate(&cudaStream_));
@@ -80,15 +83,15 @@ Comp::cudaInit()
 	}
 }
 
-void 
+bool
 Comp::setCudaDevice()
 {
 	int deviceCount;
 	CUDA_CHECK(cudaGetDeviceCount(&deviceCount));
 	if (deviceCount == 0)
 	{
-		std::cerr << "No CUDA devices found" << std::endl;
-		exit(1);
+		spdlog::warn("No CUDA devices found");
+		return false;
 	}
 
 	int device = 0;
@@ -108,7 +111,7 @@ Comp::setCudaDevice()
 				spdlog::info("Set CUDA device: {} : {} with compute {}", device, deviceProp.name, deviceProp.major, deviceProp.minor);
 
 				cudaDevice_ = device;
-				return;
+				return true;
 			}
 		}
 		else
@@ -120,12 +123,12 @@ Comp::setCudaDevice()
 
 	if (devicesProhibited == deviceCount)
 	{
-		std::cerr << "No Vulkan/CUDA interop capable device found" << std::endl;
-		exit(1);
+		spdlog::warn("No Vulkan/CUDA interop capable device found");
+		return false;
 	}
 
-	std::cerr << "No CUDA device found with matching UUID" << std::endl;
-	exit(1);
+	spdlog::warn("No CUDA device found with Vulkan device UUID");
+	return false;
 }
 
 bool 
@@ -327,7 +330,8 @@ void
 Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale, 
 	int64_t end_time_value, int32_t end_time_scale, Comp* comp)
 {
-	if (result == TEResultSuccess && start_time_value >= 0)
+	//if (result == TEResultSuccess && start_time_value >= 0)
+	if (result == TEResultSuccess)
 	{
 		comp->setInFrame(false, true, end_time_value, end_time_scale);
 	}
@@ -986,7 +990,7 @@ Comp::applyLayoutChange()
 				result = TEInstanceLinkGetInfo(instance_, groups->strings[i], group.take());
 				if (result == TEResultSuccess)
 				{
-					// Use group info here
+					SPDLOG_DEBUG(getLinkInfoAsString(group));
 				}
 				TouchObject<TEStringArray> children;
 				if (result == TEResultSuccess)
@@ -1001,7 +1005,7 @@ Comp::applyLayoutChange()
 						result = TEInstanceLinkGetInfo(instance_, children->strings[j], info.take());
 						if (result == TEResultSuccess)
 						{
-							spdlog::debug(getLinkInfoAsString(info));
+							SPDLOG_DEBUG(getLinkInfoAsString(info));
 
 							if (info->type == TELinkTypeTexture)
 							{
