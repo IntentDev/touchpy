@@ -1016,7 +1016,7 @@ Comp::applyLayoutChange()
 						{
 							SPDLOG_DEBUG(getLinkInfoAsString(info));
 
-							if (info->type == TELinkTypeTexture && cudaDevice_ != -1)
+							if (info->type == TELinkTypeTexture)
 							{
 								if (info->scope == TEScopeInput)
 									inTopLinks_->addLink(info);
