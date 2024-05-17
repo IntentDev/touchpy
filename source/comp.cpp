@@ -29,10 +29,12 @@ Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps)
 void
 Comp::initComp(CompFlags compFlags)
 {
+	std::cout << "renderer_ : " << renderer_.get() << std::endl;
+	
 	createRenderer();
 
 	if (!(compFlags & CompFlagBits::CudaDisable)) cudaInit();
-
+	
 	initInstance();
 }
 
@@ -67,7 +69,7 @@ Comp::createRenderer()
 	vkCreateFence(device_, &fenceCreateInfo, nullptr, &submitFence_);
 }
 
-void 
+void
 Comp::cudaInit()
 {
 	if (!setCudaDevice())
@@ -81,6 +83,8 @@ Comp::cudaInit()
 		CUDA_CHECK(cudaStreamCreate(&cudaStream_));
 		spdlog::info("CUDA stream created: {}", static_cast<void*>(cudaStream_));
 	}
+
+	return;
 }
 
 bool
@@ -91,6 +95,7 @@ Comp::setCudaDevice()
 	if (deviceCount == 0)
 	{
 		spdlog::warn("No CUDA devices found");
+		spdlog::default_logger()->flush();
 		return false;
 	}
 
@@ -124,10 +129,12 @@ Comp::setCudaDevice()
 	if (devicesProhibited == deviceCount)
 	{
 		spdlog::warn("No Vulkan/CUDA interop capable device found");
+		spdlog::default_logger()->flush();
 		return false;
 	}
 
 	spdlog::warn("No CUDA device found with Vulkan device UUID");
+	spdlog::default_logger()->flush();
 	return false;
 }
 
@@ -140,6 +147,7 @@ Comp::initInstance()
 	else
 	{
 		spdlog::error("Failed to create TEInstance: {}", TEResultGetDescription(result));
+		spdlog::default_logger()->flush();
 		throw std::runtime_error("Failed to create TEInstance");
 	}
 
@@ -149,6 +157,7 @@ Comp::initInstance()
 	else
 	{
 		spdlog::error("Failed to associate TEInstance with Graphics Context: {}", TEResultGetDescription(result));
+		spdlog::default_logger()->flush();
 		throw std::runtime_error("Failed to associate TEInstance with Graphics Context");
 	}
 	return true;
@@ -1007,7 +1016,7 @@ Comp::applyLayoutChange()
 						{
 							SPDLOG_DEBUG(getLinkInfoAsString(info));
 
-							if (info->type == TELinkTypeTexture)
+							if (info->type == TELinkTypeTexture && cudaDevice_ != -1)
 							{
 								if (info->scope == TEScopeInput)
 									inTopLinks_->addLink(info);
