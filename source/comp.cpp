@@ -29,8 +29,6 @@ Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps)
 void
 Comp::initComp(CompFlags compFlags)
 {
-	std::cout << "renderer_ : " << renderer_.get() << std::endl;
-	
 	createRenderer();
 
 	if (!(compFlags & CompFlagBits::CudaDisable)) cudaInit();
