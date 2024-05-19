@@ -1,3 +1,13 @@
+##########################################################################
+# Example DEM
+#
+# Shows how to implement a DEM (Discrete Element Method)  particle simulation with cohesion between
+# particles. Neighbors are found using the wp.HashGrid class, and
+# wp.hash_grid_query(), wp.hash_grid_query_next() kernel methods.
+#
+###########################################################################
+
+
 
 # imports
 import numpy as np
@@ -18,6 +28,25 @@ wp.init()
 
 
 torch.set_printoptions(precision=10, sci_mode=False)
+
+
+@wp.kernel(enable_backward=False)
+def set_particle_positions(
+	input_points: wp.array(dtype=wp.vec3),
+	input_velocities: wp.array(dtype=wp.vec3),
+	input_forces: wp.array(dtype=wp.vec3),
+	out_points: wp.array(dtype=wp.vec3),
+	out_velocities: wp.array(dtype=wp.vec3),
+	out_forces: wp.array(dtype=wp.vec3),
+	
+):
+	tid = wp.tid()
+	out_points[tid] = input_points[tid]
+	out_velocities[tid] = input_velocities[tid]
+	out_forces[tid] = input_forces[tid]	
+
+
+
 
 @wp.func
 def contact_force(n: wp.vec3, v: wp.vec3, c: float, k_n: float, k_d: float, k_f: float, k_mu: float):
@@ -69,7 +98,7 @@ def apply_forces(
 	c = wp.dot(n, x)
 
 	cohesion_ground = 0.02
-	cohesion_particle = 0.0055
+	cohesion_particle = 0.0075
 
 	if c < cohesion_ground:
 		f = f + contact_force(n, v, c, k_contact, k_damp, 100.0, 0.5)
@@ -117,9 +146,9 @@ class Example:
 		self.buffer = None
 		self.frameTD = 0
 		self.frame_dt = 1.0 / 60
-		self.frame_count = 1000
+		self.frame_count = 10000
 
-		self.sim_substeps = 64
+		self.sim_substeps = 32
 		self.sim_dt = self.frame_dt / self.sim_substeps
 		self.sim_steps = self.frame_count * self.sim_substeps
 		self.sim_time = 0.0
@@ -138,14 +167,9 @@ class Example:
 		self.grid_cell_size = self.point_radius * 5.0
 
 		
-		self.reset_particles()
+		self.create_particles()
 
-		
-		#self.renderer = wp.render.OpenGLRenderer(screen_width=1024, screen_height=768,camera_pos=(-10.0, 2.0, 40.0), camera_front=(-1.0, 0.0, 1.0),vsync=False)
-		#self.renderer.render_ground()
-
-		#self.fig = plt.figure(1)
-		#self.pixels = wp.zeros((self.renderer.screen_height, self.renderer.screen_width, 3), dtype=wp.float32)
+	
 
 		self.use_graph = wp.get_device().is_cuda
 		if self.use_graph:
@@ -153,12 +177,15 @@ class Example:
 				self.simulate()
 			self.graph = capture.graph
 
-	def reset_particles(self):
-		self.points = self.particle_grid(10, 100, 10, (0.0, 0.5, 0.0), self.point_radius, 0.1)
+	def create_particles(self):
+		self.points = self.particle_grid(32, 64, 32, (-15.0, 0.5, -6.0), self.point_radius, 0.1)
 
 		self.x = wp.array(self.points, dtype=wp.vec3)
-		self.v = wp.array(np.ones([len(self.x), 3]) * np.array([0.0, 0.0, 1.0]), dtype=wp.vec3)
+		self.v = wp.array(np.ones([len(self.x), 3]) * np.array([6.0, 0.0, 0.0]), dtype=wp.vec3)
 		self.f = wp.zeros_like(self.v)
+		self.start_points = self.x
+		self.start_v = self.v
+		self.start_f = self.f
 		self.sim_time = 0.0
 
 
@@ -172,6 +199,23 @@ class Example:
 		return points_t.reshape((-1, 3))
 	
 
+	def restart(self):
+		wp.launch(
+		kernel=set_particle_positions,
+			dim=len(self.x),
+			inputs=[
+				self.start_points,
+				self.start_v,
+				self.start_f
+			],
+			outputs=[
+				self.x,
+				self.v,
+				self.f
+			],
+		)
+		self.sim_time = 0.0
+		print("Restarted")
 	
 	
 	
@@ -200,21 +244,14 @@ class Example:
 			return
 		
 		if (keyboard.is_pressed('r')):
-			this.reset_particles()
+			this.restart()
 		
-			
-		if this.frameTD == 300:
-			print(this.x.shape, this.x.strides, this.x.dtype)
-			y = this.x.reshape((100, 100))
-			print(y.shape, y.strides, y.dtype)
-			comp.stop()
-
 
 		######### Process and Copy for next frame (Fast) ###################
 		comp.start_next_frame()	
 
 		this.step()
-		y = this.x.reshape((100, 100))
+		y = this.x.reshape((256, 256))
 		comp.in_tops[0].from_dlpack(wp.to_dlpack(y), tp.CudaFlags.RGB)
 
 		this.frameTD += 1
