@@ -156,7 +156,7 @@ private:
 
 	//static std::function<void(std::string)> printInfo;
 
-	void initComp();
+	void initComp(CompFlags compFlags);
 	bool initInstance();
 	bool loadTox(const std::string& filePath, CompFlags compFlags = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
 	void autoUpdate();
@@ -168,7 +168,7 @@ private:
 
 	void createRenderer();
 	void cudaInit();
-	void setCudaDevice();
+	bool setCudaDevice();
 
 	// TouchEngine thread only
 	//-----------------------------------------------------------------------------------------------------------------

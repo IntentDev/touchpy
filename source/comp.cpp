@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <thread>
 #include <array>
+#include <fstream>
 
 #include "logging.h"
 
@@ -11,29 +12,27 @@
 
 Comp::Comp()
 {
-	initComp();
+	initComp(CompFlagBits::InternalTimeAuto);
 }
 
 Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps) 
 	:	compFlags_(compFlags)
 {
 	spdlog::info("Creating Comp");
-
-	// use macros to log debug and trace messages so they can be turned off in release builds
-	//SPDLOG_DEBUG("debug message to touchpy_logger");
-	//SPDLOG_TRACE("trace message to touchpy_logger");
-
-	initComp();
+	
+	initComp(compFlags);
 	loadTox(filePath, compFlags, fps);
 
 	spdlog::default_logger()->flush();
 }
 
 void
-Comp::initComp()
+Comp::initComp(CompFlags compFlags)
 {
 	createRenderer();
-	cudaInit();
+
+	if (!(compFlags & CompFlagBits::CudaDisable)) cudaInit();
+	
 	initInstance();
 }
 
@@ -68,26 +67,34 @@ Comp::createRenderer()
 	vkCreateFence(device_, &fenceCreateInfo, nullptr, &submitFence_);
 }
 
-void 
+void
 Comp::cudaInit()
 {
-	setCudaDevice();
+	if (!setCudaDevice())
+	{
+		spdlog::warn("No capable CUDA device set, texture IO is not available");
+		return;
+	}
+
 	if (compFlags_ & CompFlagBits::CudaStreamInternal) 
 	{
 		CUDA_CHECK(cudaStreamCreate(&cudaStream_));
 		spdlog::info("CUDA stream created: {}", static_cast<void*>(cudaStream_));
 	}
+
+	return;
 }
 
-void 
+bool
 Comp::setCudaDevice()
 {
 	int deviceCount;
 	CUDA_CHECK(cudaGetDeviceCount(&deviceCount));
 	if (deviceCount == 0)
 	{
-		std::cerr << "No CUDA devices found" << std::endl;
-		exit(1);
+		spdlog::warn("No CUDA devices found");
+		spdlog::default_logger()->flush();
+		return false;
 	}
 
 	int device = 0;
@@ -107,7 +114,7 @@ Comp::setCudaDevice()
 				spdlog::info("Set CUDA device: {} : {} with compute {}", device, deviceProp.name, deviceProp.major, deviceProp.minor);
 
 				cudaDevice_ = device;
-				return;
+				return true;
 			}
 		}
 		else
@@ -119,12 +126,14 @@ Comp::setCudaDevice()
 
 	if (devicesProhibited == deviceCount)
 	{
-		std::cerr << "No Vulkan/CUDA interop capable device found" << std::endl;
-		exit(1);
+		spdlog::warn("No Vulkan/CUDA interop capable device found");
+		spdlog::default_logger()->flush();
+		return false;
 	}
 
-	std::cerr << "No CUDA device found with matching UUID" << std::endl;
-	exit(1);
+	spdlog::warn("No CUDA device found with Vulkan device UUID");
+	spdlog::default_logger()->flush();
+	return false;
 }
 
 bool 
@@ -136,6 +145,7 @@ Comp::initInstance()
 	else
 	{
 		spdlog::error("Failed to create TEInstance: {}", TEResultGetDescription(result));
+		spdlog::default_logger()->flush();
 		throw std::runtime_error("Failed to create TEInstance");
 	}
 
@@ -145,6 +155,7 @@ Comp::initInstance()
 	else
 	{
 		spdlog::error("Failed to associate TEInstance with Graphics Context: {}", TEResultGetDescription(result));
+		spdlog::default_logger()->flush();
 		throw std::runtime_error("Failed to associate TEInstance with Graphics Context");
 	}
 	return true;
@@ -152,11 +163,25 @@ Comp::initInstance()
 
 bool Comp::loadTox(const std::string& filePath, int64_t fps)
 {
+	std::ifstream file(filePath, std::ios::in | std::ios::binary);
+	if (!file.is_open())
+	{
+		spdlog::error("Failed to open tox file: {}", filePath);
+		throw std::runtime_error("Failed to open tox file");
+	}
+
 	return loadTox(filePath, compFlags_, fps);
 }
 
 bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps)
 {
+	std::ifstream file(filePath, std::ios::in | std::ios::binary);
+	if (!file.is_open())
+	{
+		spdlog::error("Failed to open tox file: {}", filePath);
+		throw std::runtime_error("Failed to open tox file");
+	}
+
 	compFlags_ = compFlags;
 	TEResult result = TEInstanceSetFrameRate(instance_, fps, 1);
 	if (result != TEResultSuccess)
@@ -174,8 +199,8 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 	result = TEInstanceConfigure(instance_, filePath_.c_str(), timeMode, TEUIWindows);
 	if (result != TEResultSuccess)
 	{
-		spdlog::error("Failed to configured TEInstance: {}", TEResultGetDescription(result));
-		throw std::runtime_error("Failed to configured TEInstance");
+		spdlog::error("Failed to configure TEInstance: {}", TEResultGetDescription(result));
+		throw std::runtime_error("Failed to configure TEInstance");
 	}
 	
 
@@ -312,7 +337,8 @@ void
 Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale, 
 	int64_t end_time_value, int32_t end_time_scale, Comp* comp)
 {
-	if (result == TEResultSuccess && start_time_value >= 0)
+	//if (result == TEResultSuccess && start_time_value >= 0)
+	if (result == TEResultSuccess)
 	{
 		comp->setInFrame(false, true, end_time_value, end_time_scale);
 	}
@@ -971,7 +997,7 @@ Comp::applyLayoutChange()
 				result = TEInstanceLinkGetInfo(instance_, groups->strings[i], group.take());
 				if (result == TEResultSuccess)
 				{
-					// Use group info here
+					SPDLOG_DEBUG(getLinkInfoAsString(group));
 				}
 				TouchObject<TEStringArray> children;
 				if (result == TEResultSuccess)
@@ -986,7 +1012,7 @@ Comp::applyLayoutChange()
 						result = TEInstanceLinkGetInfo(instance_, children->strings[j], info.take());
 						if (result == TEResultSuccess)
 						{
-							spdlog::debug(getLinkInfoAsString(info));
+							SPDLOG_DEBUG(getLinkInfoAsString(info));
 
 							if (info->type == TELinkTypeTexture)
 							{

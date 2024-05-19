@@ -2,7 +2,7 @@ import keyboard # optional, used to quit the loop
 import numpy as np
 import torch
 
-from image_filter import ImageFilter
+# from image_filter import ImageFilter
 
 import touchpy as tp
 
@@ -29,7 +29,7 @@ class ExampleRunComp:
 	def __init__(self):
 		self.running = True # used to gracefully exit the loop
 		self.device = torch.device('cuda')
-		self.imag_filter = ImageFilter().to(self.device)
+		# self.imag_filter = ImageFilter().to(self.device)
 
 		# used to test InChopLink
 		self.frame = 0
@@ -302,5 +302,5 @@ class ExampleRunComp:
 example = ExampleRunComp()
 
 # run the comp
-example.runComp('TopChopDatIO.tox')
+example.runComp('D:/touchpy/install/internal_examples/basic/TopChopDatIO.tox')
 

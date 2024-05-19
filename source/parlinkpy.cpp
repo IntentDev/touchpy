@@ -50,6 +50,7 @@ void initParLinkBindings(nb::module_& m)
 	par.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("set", &ParLink::set)
 		.def("get", &ParLink::get)
+		.def("pulse", &PulseParLink::pulse)
 		.def_prop_rw("val", &ParLink::get, &ParLink::set)
 		;
 
@@ -245,6 +246,13 @@ void initParLinkBindings(nb::module_& m)
 				self.set(val);
 			})
 				;
+
+	nb::class_ <PulseParLink> pulsePar(m, "PulsePar");
+	pulsePar.doc() = "A pulse parameter in a TouchDesigner component";
+	pulsePar.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
+		.def("set", &PulseParLink::set)
+		.def("pulse", &PulseParLink::pulse)
+		;
 
 	nb::class_<ParLinkCollection> parCollection(m, "ParCollection");
 	parCollection.doc() = "A collection of par Par objects";
