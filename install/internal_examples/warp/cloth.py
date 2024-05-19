@@ -62,6 +62,7 @@ class Example:
 		self.initialize()
 		
 	def initialize(self):	
+		print("Initializing cloth simulation")
 		self.sim_width = 100
 		self.sim_height = 100
 
@@ -73,11 +74,15 @@ class Example:
 		self.sim_dt = self.frame_dt / self.sim_substeps
 		self.sim_time = 0.0
 
+		self.colliderContactDistance = 0.12
+		self.colliderContactQueryRange = 1.0
+		self.particle_max_velocity = 10.0
+
 		builder = wp.sim.ModelBuilder()
 
 		if self.integrator_type == IntegratorType.EULER:
 			builder.add_cloth_grid(
-				pos=wp.vec3(2.9, 5., 0),
+				pos=wp.vec3(2.85, 5.5, 0),
 				rot=wp.quat_from_axis_angle(wp.vec3(1.0, 0.0, 0.0), math.pi * 0.5),
 				vel=wp.vec3(0.0, 0.0, 0.0),
 				dim_x=self.sim_width,
@@ -86,8 +91,8 @@ class Example:
 				cell_y=0.05,
 				mass=0.1,
 				tri_ke=1.0e3,
-                tri_ka=1.0e3,
-                tri_kd=1,
+				tri_ka=1.0e3,
+				tri_kd=1,
 				edge_ke=1
 			)
 		else:
@@ -108,7 +113,7 @@ class Example:
 			)
 
 
-		usd_stage = Usd.Stage.Open("dragon.usd")
+		usd_stage = Usd.Stage.Open("assets_warp/dragon.usd")
 		usd_geom = UsdGeom.Mesh(usd_stage.GetPrimAtPath("/dragon/dragon"))
 
 		self.mesh_points = np.array(usd_geom.GetPointsAttr().Get())
@@ -160,6 +165,10 @@ class Example:
 		self.model.ground = True
 		self.model.soft_contact_ke = 1.0e4
 		self.model.soft_contact_kd = 1.0e2
+		self.model.particle_max_velocity = self.particle_max_velocity
+
+		self.model.soft_contact_margin = self.colliderContactDistance * self.colliderContactQueryRange
+		self.model.particle_radius.fill_(self.colliderContactDistance)
 
 		self.state_0 = self.model.state()
 		self.state_1 = self.model.state()

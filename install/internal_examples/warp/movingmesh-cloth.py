@@ -8,9 +8,6 @@
 
 import time
 
-
-
-
 import math
 import numpy as np
 import os
@@ -78,6 +75,7 @@ class Example:
 		self.springDampingStiffness = 1.0
 		self.groundEnabled = True
 		self.groundAltitude = 0.0
+		self.particle_max_velocity = 3.0
 
 		#################################
 		
@@ -126,7 +124,7 @@ class Example:
 				tri_drag=1.0
 			)
 
-
+		#collider mesh
 		usd_stage = Usd.Stage.Open("dragon.usd")
 		usd_geom = UsdGeom.Mesh(usd_stage.GetPrimAtPath("/dragon/dragon"))
 
@@ -148,38 +146,39 @@ class Example:
 		
 		
 		
-		
-		
-		
-		
-		"""
-		builder.add_shape_sphere(
-			body=-1, 
-			pos=(2.5, 5.0, 2.5), 
-			rot=(0.0, 0.0, 0.0, 1.0), 
-			radius=0.75, 
-			density=None, 
-			ke=1.0e2, 
-			kd=1.0e2, 
-			kf=100.0e6,
-			mu=0.1,
-			)	
 
-		"""	
+		# Register the ground.
+		builder.set_ground_plane(
+			offset=-self.groundAltitude + self.colliderContactDistance,
+			ke=self.contactElasticStiffness * self.globalScale,
+			kd=self.contactDampingStiffness * self.globalScale,
+			kf=self.contactFrictionStiffness * self.globalScale,
+			mu=self.contactFrictionCoeff,
+		)
 
-		if self.integrator_type == IntegratorType.EULER:
-			self.integrator = wp.sim.SemiImplicitIntegrator()
-		else:
-			self.integrator = wp.sim.XPBDIntegrator(iterations=1)
 
 		self.model = builder.finalize()
-		
-		self.startPoints = self.model.state().particle_q
-		self.model.particle_max_velocity = 3
+		self.integrator = wp.sim.SemiImplicitIntegrator()
+		self.model.particle_max_velocity = self.particle_max_velocity
 
-		self.model.ground = True
-		self.model.soft_contact_ke = 1.0e4
-		self.model.soft_contact_kd = 1.0e2
+		#save cloth start position
+		self.startPoints = self.model.state().particle_q
+
+		# Allocate a single contact per particle.
+		self.model.allocate_soft_contacts(self.model.particle_count)
+
+		# Initialize the integrator.
+		integrator = wp.sim.SemiImplicitIntegrator()
+
+		# Set the model properties.
+		self.model.ground = self.groundEnabled
+		self.model.gravity = self.gravity
+		self.model.soft_contact_ke = self.contactElasticStiffness * self.globalScale
+		self.model.soft_contact_kf = self.contactFrictionStiffness * self.globalScale
+		self.model.soft_contact_mu = self.contactFrictionCoeff
+		self.model.soft_contact_kd = self.contactDampingStiffness * self.globalScale
+		self.model.soft_contact_margin = self.colliderContactDistance * self.colliderContactQueryRange
+		self.model.particle_radius.fill_(self.colliderContactDistance)
 
 		self.state_0 = self.model.state()
 		self.state_1 = self.model.state()
