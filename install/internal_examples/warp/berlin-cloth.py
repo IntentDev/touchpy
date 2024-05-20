@@ -82,7 +82,7 @@ class Example:
 
 		if self.integrator_type == IntegratorType.EULER:
 			builder.add_cloth_grid(
-				pos=wp.vec3(2.85, 5.5, 0),
+				pos=wp.vec3(2.8, 5.5, 0),
 				rot=wp.quat_from_axis_angle(wp.vec3(1.0, 0.0, 0.0), math.pi * 0.5),
 				vel=wp.vec3(0.0, 0.0, 0.0),
 				dim_x=self.sim_width,

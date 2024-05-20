@@ -19,7 +19,7 @@ class ExampleRunComp:
 	def __init__(self):
 		self.running = True # used to gracefully exit the loop
 		self.frame = 0
-		self.model = YOLO("models/yolov8n-pose.engine", verbose=False)
+		self.model = YOLO("G:\Shared drives\Projects\TouchPy\yolov8\models\yolov8n-pose-idz.engine", verbose=False)
 		self.inputBuffer = None
 		self.outBuffer = None
 
@@ -52,8 +52,8 @@ class ExampleRunComp:
 
 		comp.in_chops[0].from_numpy(keypoints)
 
-		# fps = 1000 / ( result.speed["preprocess"]+result.speed["inference"]+result.speed["postprocess"])
-		# print(f"{fps} maxfps")
+		fps = 1000 / ( result.speed["preprocess"]+result.speed["inference"]+result.speed["postprocess"])
+		#print(f"{fps} maxfps")
 		
 		#plot opencv annotations in a numpy array
 		annotatedArray = result.plot()
