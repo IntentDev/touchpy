@@ -19,13 +19,14 @@ class ExampleRunComp:
 	def __init__(self):
 		self.running = True # used to gracefully exit the loop
 		self.frame = 0
-		self.model = YOLO("G:\Shared drives\Projects\TouchPy\yolov8\models\yolov8n-pose-idz.engine", verbose=False)
+		self.model = YOLO("yolov8x.pt")
+		#self.model = YOLO("G:\Shared drives\Projects\TouchPy\yolov8\models\yolov8x-seg.engine", verbose=False)
 		self.inputBuffer = None
 		self.outBuffer = None
 
 	@staticmethod
 	def on_layout_change(comp, info):
-		comp.out_tops[0].set_cuda_flags(tp.CudaFlags.BGR)
+		comp.out_tops[0].set_cuda_flags(tp.CudaFlags.RGB)
 
 	@staticmethod
 	def on_frame(comp, this):
@@ -44,23 +45,16 @@ class ExampleRunComp:
 		results = this.model(this.inputBuffer.unsqueeze(0),stream=True, device=0)
 		result = next(results)
 
-		#write pose points to input CHOP
-		keypoints = result.keypoints.data.cpu().numpy()
-		keypoints = keypoints.astype(np.float32)
-		#reshape keypoints to 3 channels with 17 samples]
-		keypoints = keypoints.reshape(3,-1)
-
-		comp.in_chops[0].from_numpy(keypoints)
-
+		
 		fps = 1000 / ( result.speed["preprocess"]+result.speed["inference"]+result.speed["postprocess"])
 		#print(f"{fps} maxfps")
 		
 		#plot opencv annotations in a numpy array
 		annotatedArray = result.plot()
-			
+		print(annotatedArray.dtype, annotatedArray.shape)	
 		this.outBuffer = torch.from_numpy(annotatedArray).cuda()
-		comp.in_tops[0].from_tensor(this.outBuffer, flags=tp.CudaFlags.BGR)
-		comp.in_chops[0].from_numpy(keypoints)
+		comp.in_tops[0].from_tensor(this.outBuffer, flags=tp.CudaFlags.RGB)
+		#comp.in_chops[0].from_numpy(keypoints)
 		this.frame += 1
 
 	def runComp(self, tox_path):
