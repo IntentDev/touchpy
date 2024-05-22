@@ -1,0 +1,107 @@
+touchpy.ChopChannels
+====================
+
+.. py:class:: touchpy.ChopChannels
+              ChopChannels(array: Annotated[numpy.typing.ArrayLike, dict(dtype='float32', shape=(None, None), device='cpu')], rate: float = -1.0, is_time_dependent: bool = False, start_time: int = 0, end_time: int = 0, channel_names: collections.abc.Sequence[str] = [])
+              ChopChannels(num_samples: int, rate: float = -1.0, is_time_dependent: bool = False, start_time: int = 0, end_time: int = 0, channel_names: collections.abc.Sequence[str] = [])
+
+   A container of CHOP channels
+
+   
+   
+
+   .. rubric:: Attributes
+
+   .. py:property:: chan_names
+      :type: list[str]
+
+      (get) List of the  channel names in this CHOP.
+
+   .. py:property:: end_time
+      :type: int
+
+      (set, get) The end time of the CHOP, in frame number * chop rate.
+
+   .. py:property:: is_time_dependent
+      :type: bool
+
+      (set, get) Refers to whether the corresponding CHOP is time dependent or not. i.e. audio chops are time dependent.
+
+   .. py:property:: num_chans
+      :type: int
+
+      (get) The number of channels in the CHOP.
+
+   .. py:property:: num_samples
+      :type: int
+
+      (get) The number of samples in the CHOP.
+
+   .. py:property:: rate
+      :type: float
+
+      (set, get) The sample rate of the CHOP.
+
+   .. py:property:: start_time
+      :type: int
+
+      (set, get) The start time of the CHOP, in frame number * chop rate.
+
+
+   
+   
+   .. rubric:: Methods
+   
+   .. py:method:: append_channel(name: str = '', values: collections.abc.Sequence[float] = []) -> None
+
+      Appends a channel to the CHOP.
+
+
+   .. py:method:: as_numpy() -> Annotated[numpy.typing.ArrayLike, dict(dtype='float32', writable=False, shape=(None, None))]
+
+      Returns all of the channels in this CHOP as 2D NumPy array with a width equal to the channel length (the number of samples) and a height equal to the number of channels.
+
+
+   .. py:method:: as_numpy_ref() -> Annotated[numpy.typing.ArrayLike, dict(dtype='float32', writable=False, shape=(None, None))]
+
+      Returns a reference to a 2D NumPy array, with a width equal to the channel length (the number of samples) and a height equal to the number of channels. The data contained in this array is read-only must explicitly be copied if values need to be manipulated. For very large arrays this will be faster than as_numpy().
+
+
+   .. py:method:: clear() -> None
+
+      Remove all the channels and their data.
+
+
+   .. py:method:: from_numpy(arg0: Annotated[numpy.typing.ArrayLike, dict(dtype='float32', shape=(None, None), device='cpu')], arg1: float, arg2: bool, arg3: int, arg4: int, arg5: collections.abc.Sequence[str], /) -> None
+
+
+   .. py:method:: insert_channel(index: int, name: str = '', values: collections.abc.Sequence[float] = []) -> None
+
+      Inserts a channel at the specified index.
+
+
+   .. py:method:: remove_channel(index: int) -> None
+                  remove_channel(name: str) -> None
+
+      Removes a channel by name or at the specified index.
+
+
+   .. py:method:: set_name(index: int, name: str) -> None
+
+      Sets the name of a channel.
+
+
+   .. py:method:: set_value(chan_index: int, sample_index: int, value: float) -> None
+                  set_value(chan_name: str, sample_index: int, value: float) -> None
+
+      Sets the value of a channel at a specific sample index.
+
+
+   .. py:method:: set_values(chan_index: int, values: collections.abc.Sequence[float], start_index: int = 0) -> None
+                  set_values(chan_name: str, values: collections.abc.Sequence[float], start_index: int = 0) -> None
+
+      Sets the values of a channel in the CHOP.
+
+
+
+

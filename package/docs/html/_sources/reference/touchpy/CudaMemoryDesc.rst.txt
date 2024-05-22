@@ -1,0 +1,28 @@
+touchpy.CudaMemoryDesc
+======================
+
+.. py:class:: touchpy.CudaMemoryDesc
+   
+   
+
+   .. rubric:: Attributes
+
+   .. py:property:: component_size
+      :type: int
+
+
+   .. py:property:: data_type
+      :type: CUDADataType
+
+
+   .. py:property:: shape
+      :type: std::array<unsigned int,3>
+
+
+   .. py:property:: strides
+      :type: std::array<unsigned int,3>
+
+
+
+
+

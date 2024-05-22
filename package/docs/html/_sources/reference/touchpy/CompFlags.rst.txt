@@ -1,0 +1,64 @@
+touchpy.CompFlags
+=================
+
+.. py:class:: touchpy.CompFlags(arg: object, /)
+
+
+   
+   
+
+   .. rubric:: Attributes
+
+   .. py:attribute:: ASYNC_UPDATE
+      :type: CompFlags
+
+      
+
+   .. py:attribute:: AUTO_UPDATE
+      :type: CompFlags
+
+      
+
+   .. py:attribute:: CUDA_DISABLE
+      :type: CompFlags
+
+      
+
+   .. py:attribute:: CUDA_STREAM_DEFAULT
+      :type: CompFlags
+
+      
+
+   .. py:attribute:: CUDA_STREAM_INTERNAL
+      :type: CompFlags
+
+      
+
+   .. py:attribute:: EXTERNAL_TIME
+      :type: CompFlags
+
+      
+
+   .. py:attribute:: INTERNAL_TIME
+      :type: CompFlags
+
+      
+
+   .. py:attribute:: INTERNAL_TIME_ASYNC
+      :type: CompFlags
+
+      
+
+   .. py:attribute:: INTERNAL_TIME_AUTO
+      :type: CompFlags
+
+      
+
+   .. py:attribute:: REALTIME
+      :type: CompFlags
+
+      
+
+
+
+

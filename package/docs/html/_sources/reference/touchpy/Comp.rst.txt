@@ -1,0 +1,174 @@
+touchpy.Comp
+============
+
+.. py:class:: touchpy.Comp
+              Comp(tox_path: str, flags: CompFlags = CompFlags.INTERNAL_TIME_AUTO, fps: int = 60)
+
+   A TouchDesigner component loaded in a TouchEngine instance.
+
+   
+   
+
+   .. rubric:: Attributes
+
+   .. py:property:: in_chops
+      :type: InChops
+
+      The In CHOPs of the currently loaded tox.
+
+   .. py:property:: in_dats
+      :type: InDats
+
+      The In DATs of the currently loaded tox.
+
+   .. py:property:: in_tops
+      :type: InTops
+
+      The In TOPs of the currently loaded tox.
+
+   .. py:property:: out_chops
+      :type: OutChops
+
+      The Out CHOPs of the currently loaded tox.
+
+   .. py:property:: out_dats
+      :type: OutDats
+
+      The Out DATs of the currently loaded tox.
+
+   .. py:property:: out_tops
+      :type: OutTops
+
+      The Out TOPs of the currently loaded tox.
+
+   .. py:property:: par
+      :type: ParCollection
+
+      The parameters of the currently loaded tox.
+
+   .. py:property:: rate
+      :type: float
+
+
+
+   
+   
+   .. rubric:: Methods
+   
+   .. py:method:: apply_value_changes() -> None
+
+      Stops the TouchEngine instance.
+
+
+   .. py:method:: call_on_frame_callback() -> bool
+
+      calls the method set using: set_on_frame_callback()
+
+      :returns: True if the callback was succesfully called, False otherwise
+      :rtype: bool
+
+
+   .. py:method:: clear_on_frame_callback() -> None
+
+      Unsets any callback method set using :py:meth:`set_on_frame_callback`.
+
+      :returns: None
+
+
+   .. py:method:: clear_on_layout_change_callback() -> None
+
+      Unsets any callback method set using: :py:meth:`set_on_layout_change_callback`.
+
+
+   .. py:method:: cuda_stream() -> int
+
+      Returns the CUDA stream handle used by TouchEngine.
+
+
+   .. py:method:: frame_did_finish() -> bool
+
+      :returns: True if the frame has finished, False otherwise.
+      :rtype: bool
+
+
+   .. py:method:: load_tox(tox_path: str, fps: int = 60) -> None
+
+      Loads a .tox file, creates and initializes a TouchEngine Instance.
+
+      :param tox_path: the path to the .tox file
+      :type tox_path: :py:class:`str`
+      :param fps: the frames per second of the TouchEngine instance
+      :type fps: :py:class:`int`
+
+      :returns: True if the .tox file was loaded successfully, False otherwise
+      :rtype: bool
+
+
+   .. py:method:: loaded() -> bool
+
+      :returns: True if the .tox file was loaded successfully, False otherwise.
+      :rtype: bool
+
+
+   .. py:method:: set_on_frame_callback(arg0: collections.abc.Callable, arg1: object, /) -> None
+
+      Sets the Python method to be called everytime a frame ends.
+
+      :param callback: a callable Python method
+      :type callback: collections.abc.Callable
+      :param user_data: a Python object for any userdata to be passed to the callback method
+      :type user_data: :py:class:`object`
+
+      :returns: None
+
+
+   .. py:method:: set_on_layout_change_callback(arg0: collections.abc.Callable, arg1: object, /) -> None
+
+      Sets the Python method to be called everytime the tox layout changes.
+
+      :param callback: a callable Python method
+      :type callback: collections.abc.Callable
+      :param user_data: a Python object for any userdata to be passed to the callback method
+      :type user_data: :py:class:`object`
+
+      :returns: None
+
+
+   .. py:method:: start() -> None
+
+      Starts the TouchEngine instance.
+
+
+   .. py:method:: start_next_frame(time_value: int = 0, time_scale: int = 0) -> bool
+
+      Starts the next frame.
+
+      :returns: True if frame started succesfully, False otherwise
+      :rtype: bool
+
+
+   .. py:method:: stop() -> None
+
+      Stops the TouchEngine instance.
+
+
+   .. py:method:: time() -> Time
+
+      This method is best called at most once per frame, as it i an asynchronous call to the TouchEngine instance.
+
+      Usage:
+              time_info = comp.time()
+
+      :returns: a struct containing the time information of the currently loaded component.
+      :rtype: Time
+
+
+   .. py:method:: unload() -> None
+
+      Unloads TouchEngine instance.
+
+      :returns: True if the toxfile has unloaded, False if the toxfile is still loaded
+
+
+
+

@@ -1,0 +1,219 @@
+touchpy.DatTable
+================
+
+.. py:class:: touchpy.DatTable
+              DatTable(numRows: int, numCols: int)
+              DatTable(values: collections.abc.Sequence[str], numRows: int, numCols: int)
+              DatTable(values: collections.abc.Sequence[collections.abc.Sequence[str]])
+
+   A table of data in a DAT link.
+
+   
+   
+
+   .. rubric:: Attributes
+
+   .. py:property:: num_cols
+      :type: int
+
+      (set, get) The number of columns in the table.
+
+   .. py:property:: num_rows
+      :type: int
+
+      (set, get) The number of rows in the table.
+
+
+   
+   
+   .. rubric:: Methods
+   
+   .. py:method:: append_col(col: collections.abc.Sequence[str] = []) -> None
+
+      Appends a column to the table.
+
+      Lists smaller or larger than the number of rows will be padded or truncated respectively.
+
+      :param col: the values to append (optional)
+      :type col: :py:class:`list`
+
+
+   .. py:method:: append_row(row: collections.abc.Sequence[str] = []) -> None
+
+      Appends a row to the table.
+
+      Lists smaller or larger than the number of columns will be padded or truncated respectively.
+
+      :param row: the values to append (optional)
+      :type row: :py:class:`list`
+
+
+   .. py:method:: as_list() -> list[list[str]]
+
+      Returns the table as a list of lists.
+
+
+   .. py:method:: as_string() -> str
+
+      Returns the Out DAT in string format.
+
+
+   .. py:method:: cell(row: int, col: int) -> str
+                  cell(rowName: str, col: int) -> str
+                  cell(row: int, colName: str) -> str
+                  cell(rowName: str, colName: str) -> str
+
+      Returns the value at the row and column index.
+
+      :param row: the index of the row
+      :type row: :py:class:`int`
+      :param col: the index of the column
+      :type col: :py:class:`int`
+
+
+   .. py:method:: clear() -> None
+
+      Removes all rows and columns from the table.
+
+
+   .. py:method:: col(index: int) -> list[str]
+                  col(name: str) -> list[str]
+
+      Returns a list of values from the column matching the index.
+
+      :param index: the index of the column to return
+      :type index: :py:class:`int`
+
+
+   .. py:method:: from_list(list: DatTable.from_list.list, cast: bool = False) -> None
+
+      Fills the table from a list of lists.
+
+      :param list: the list of lists to fill the table from
+      :type list: :py:class:`list`
+      :param cast: if True, casts the values to strings (optional)
+      :type cast: :py:class:`bool`
+
+
+   .. py:method:: insert_col(j: int, col: collections.abc.Sequence[str] = []) -> None
+
+      Inserts a column at the index.
+
+      Lists smaller or larger than the number of rows will be padded or truncated respectively.
+
+      :param i: the index to insert the column
+      :type i: :py:class:`int`
+      :param col: the values to insert (optional)
+      :type col: :py:class:`list`
+
+
+   .. py:method:: insert_row(i: int, row: collections.abc.Sequence[str] = []) -> None
+
+      Inserts a row at the index.
+
+      Lists smaller or larger than the number of columns will be padded or truncated respectively.
+
+      :param i: the index to insert the row
+      :type i: :py:class:`int`
+      :param row: the values to insert (optional)
+      :type row: :py:class:`list`
+
+
+   .. py:method:: remove_col(j: int) -> None
+                  remove_col(name: str) -> None
+
+      Removes the column at the index.
+
+      :param i: the index of the column to remove
+      :type i: :py:class:`int`
+
+
+   .. py:method:: remove_row(i: int) -> None
+                  remove_row(name: str) -> None
+
+      Removes the row at the index.
+
+      :param i: the index of the row to remove
+      :type i: :py:class:`int`
+
+
+   .. py:method:: resize(numRows: int, numCols: int) -> None
+
+      Resizes the table to the specified number of rows and columns.
+
+      :param numRows: the number of rows
+      :type numRows: :py:class:`int`
+      :param numCols: the number of columns
+      :type numCols: :py:class:`int`
+
+
+   .. py:method:: row(index: int) -> list[str]
+                  row(name: str) -> list[str]
+
+      Returns a list of values from the row matching the index.
+
+      :param index: the index of the row to return
+      :type index: :py:class:`int`
+
+
+   .. py:method:: set_cell(i: int, j: int, value: str) -> None
+                  set_cell(rowName: str, j: int, value: str) -> None
+                  set_cell(i: int, colName: str, value: str) -> None
+                  set_cell(rowName: str, colName: str, value: str) -> None
+
+      Sets the value at the row and column index.
+
+      :param row: the index of the row
+      :type row: :py:class:`int`
+      :param col: the index of the column
+      :type col: :py:class:`int`
+      :param value: the value to set
+      :type value: :py:class:`str`
+
+
+   .. py:method:: set_col(j: int, col: collections.abc.Sequence[str]) -> None
+                  set_col(name: str, col: collections.abc.Sequence[str]) -> None
+
+      Sets the values of the column at the index.
+
+      Lists smaller than the number of rows will be padded with empty strings.
+      Lists larger than the number of rows will be truncated.
+
+      :param i: the index of the column
+      :type i: :py:class:`int`
+      :param col: the values to set
+      :type col: :py:class:`list`
+
+
+   .. py:method:: set_num_cols(numCols: int) -> None
+
+      Sets the number of columns in the table.
+
+      :param numCols: the number of columns
+      :type numCols: :py:class:`int`
+
+
+   .. py:method:: set_num_rows(numRows: int) -> None
+
+      Sets the number of rows in the table.
+
+      :param numRows: the number of rows
+      :type numRows: :py:class:`int`
+
+
+   .. py:method:: set_row(i: int, row: collections.abc.Sequence[str]) -> None
+                  set_row(name: str, row: collections.abc.Sequence[str]) -> None
+
+      Sets the values of the row at the index.
+
+      Lists smaller than the number of columns will be padded with empty strings.
+      Lists larger than the number of columns will be truncated.
+
+      :param i: the index of the row
+      :type i: :py:class:`int`
+      :param row: the values to set
+      :type row: :py:class:`list`
+
+
+
+

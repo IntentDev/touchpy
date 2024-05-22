@@ -1,0 +1,49 @@
+touchpy.LogLevel
+================
+
+.. py:class:: touchpy.LogLevel(arg: object, /)
+
+
+   
+   
+
+   .. rubric:: Attributes
+
+   .. py:attribute:: CRITICAL
+      :type: LogLevel
+
+      
+
+   .. py:attribute:: DEBUG
+      :type: LogLevel
+
+      
+
+   .. py:attribute:: ERROR
+      :type: LogLevel
+
+      
+
+   .. py:attribute:: INFO
+      :type: LogLevel
+
+      
+
+   .. py:attribute:: OFF
+      :type: LogLevel
+
+      
+
+   .. py:attribute:: TRACE
+      :type: LogLevel
+
+      
+
+   .. py:attribute:: WARN
+      :type: LogLevel
+
+      
+
+
+
+
