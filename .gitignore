@@ -51,7 +51,7 @@ vcpkg.json
 */models
 *log.txt
 
-package/docs/
+# package/docs/
 package/build/
 package/dist/
 package/*egg-info*
