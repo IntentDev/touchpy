@@ -47,14 +47,21 @@ class ExampleRunComp:
 		if results.masks is not None:
 			# print(results.masks.data.shape, results.masks.data.device)
 
-			# make single tensor from all masks
-			masks = results.masks.data
+			# names = results.names
+			# print(names)
+			boxes = results.boxes
+			# print(boxes)
 			
 			this.outBuffer.fill_(0)
-			for i, mask in enumerate(masks):
-				val = (i + 1) / 22
-				mask = mask * val * 360
-				this.outBuffer += mask
+			for i, mask_data in enumerate(results.masks.data):
+				cls_id = int(results.boxes.cls[i].cpu())
+				print(cls_id)
+				val = (cls_id + 1) / 99
+				# val = (i + 1) / (results.masks.data.shape[0] + 1)
+				mask_data = mask_data * val
+				this.outBuffer += mask_data
+				# cls_ = results.names[int(results.boxes.cls[0].cpu())]
+
 			comp.in_tops[0].from_tensor(this.outBuffer.unsqueeze(0))
 			
 		this.frame += 1
