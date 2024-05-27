@@ -1,3 +1,8 @@
+[![PyPI version](https://badge.fury.io/py/touchpy.svg)](https://badge.fury.io/py/touchpy)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/touchpy?link=https%3A%2F%2Fpypi.org%2Fproject%2Ftouchpy%2F)
+
+
+
 # TouchPy
 TouchPy is a high-performance toolset to work with TouchDesigner components in Python.
 
