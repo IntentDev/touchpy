@@ -1,0 +1,1066 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="#" /><link rel="search" title="Search" href="search.html" />
+
+    <!-- Generated with Sphinx 7.3.6 and Furo 2024.01.29 --><title>Index - TouchPy 0.9.0 documentation</title>
+<link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
+    <link rel="stylesheet" type="text/css" href="_static/css/touchpy.css?v=a40a4ab4" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">TouchPy 0.9.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  
+  <span class="sidebar-brand-text">TouchPy 0.9.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">TouchPy Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="reference/touchpy/index.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of API Reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/CUDADataType.html">touchpy.CUDADataType</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/ChopChannels.html">touchpy.ChopChannels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Color.html">touchpy.Color</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/ColorPar.html">touchpy.ColorPar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Comp.html">touchpy.Comp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/CompFlags.html">touchpy.CompFlags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/CudaFlags.html">touchpy.CudaFlags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/CudaMemory.html">touchpy.CudaMemory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/CudaMemoryDesc.html">touchpy.CudaMemoryDesc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/DatTable.html">touchpy.DatTable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Double2Par.html">touchpy.Double2Par</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Double3Par.html">touchpy.Double3Par</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Double4Par.html">touchpy.Double4Par</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Float2.html">touchpy.Float2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Float3.html">touchpy.Float3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Float4.html">touchpy.Float4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/InChop.html">touchpy.InChop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/InChops.html">touchpy.InChops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/InDat.html">touchpy.InDat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/InDats.html">touchpy.InDats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/InTop.html">touchpy.InTop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/InTops.html">touchpy.InTops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Int2.html">touchpy.Int2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Int2Par.html">touchpy.Int2Par</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Int3.html">touchpy.Int3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Int3Par.html">touchpy.Int3Par</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Int4.html">touchpy.Int4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Int4Par.html">touchpy.Int4Par</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/LogLevel.html">touchpy.LogLevel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/OutChop.html">touchpy.OutChop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/OutChops.html">touchpy.OutChops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/OutDat.html">touchpy.OutDat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/OutDats.html">touchpy.OutDats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/OutTop.html">touchpy.OutTop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/OutTops.html">touchpy.OutTops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Par.html">touchpy.Par</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/ParCollection.html">touchpy.ParCollection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/PulsePar.html">touchpy.PulsePar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Time.html">touchpy.Time</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          
+<section class="genindex-section">
+  <h1 id="index">Index</h1>
+  <div class="genindex-jumpbox"><a href="#A"><strong>A</strong></a> | <a href="#B"><strong>B</strong></a> | <a href="#C"><strong>C</strong></a> | <a href="#D"><strong>D</strong></a> | <a href="#E"><strong>E</strong></a> | <a href="#F"><strong>F</strong></a> | <a href="#G"><strong>G</strong></a> | <a href="#H"><strong>H</strong></a> | <a href="#I"><strong>I</strong></a> | <a href="#L"><strong>L</strong></a> | <a href="#M"><strong>M</strong></a> | <a href="#N"><strong>N</strong></a> | <a href="#O"><strong>O</strong></a> | <a href="#P"><strong>P</strong></a> | <a href="#R"><strong>R</strong></a> | <a href="#S"><strong>S</strong></a> | <a href="#T"><strong>T</strong></a> | <a href="#U"><strong>U</strong></a> | <a href="#V"><strong>V</strong></a> | <a href="#W"><strong>W</strong></a> | <a href="#X"><strong>X</strong></a> | <a href="#Y"><strong>Y</strong></a> | <a href="#Z"><strong>Z</strong></a></div>
+</section>
+<section id="A" class="genindex-section">
+  <h2>A</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Color.html#touchpy.Color.a">a (touchpy.Color property)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/ColorPar.html#touchpy.ColorPar.a">(touchpy.ColorPar property)</a>
+</li>
+        </ul></li>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.append_channel">append_channel() (ChopChannels method)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.append_col">append_col() (DatTable method)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.append_row">append_row() (DatTable method)</a>
+</li>
+        <li><a href="reference/touchpy/Comp.html#Comp.apply_value_changes">apply_value_changes() (Comp method)</a>
+</li>
+        <li><a href="reference/touchpy/OutTop.html#touchpy.OutTop.as_dlpack">as_dlpack() (touchpy.OutTop method)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.as_list">as_list() (DatTable method)</a>
+</li>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.as_numpy">as_numpy() (ChopChannels method)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/OutChop.html#touchpy.OutChop.as_numpy">(touchpy.OutChop method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.as_numpy_ref">as_numpy_ref() (ChopChannels method)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/OutChop.html#touchpy.OutChop.as_numpy_ref">(touchpy.OutChop method)</a>
+</li>
+        </ul></li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.as_string">as_string() (DatTable method)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/OutDat.html#touchpy.OutDat.as_string">(touchpy.OutDat method)</a>
+</li>
+        </ul></li>
+        <li><a href="reference/touchpy/OutDat.html#touchpy.OutDat.as_table">as_table() (touchpy.OutDat method)</a>
+</li>
+        <li><a href="reference/touchpy/OutTop.html#touchpy.OutTop.as_tensor">as_tensor() (touchpy.OutTop method)</a>
+</li>
+        <li><a href="reference/touchpy/CompFlags.html#touchpy.CompFlags.ASYNC_UPDATE">ASYNC_UPDATE (touchpy.CompFlags attribute)</a>
+</li>
+        <li><a href="reference/touchpy/CompFlags.html#touchpy.CompFlags.AUTO_UPDATE">AUTO_UPDATE (touchpy.CompFlags attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="B" class="genindex-section">
+  <h2>B</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Color.html#touchpy.Color.b">b (touchpy.Color property)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/ColorPar.html#touchpy.ColorPar.b">(touchpy.ColorPar property)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/CudaFlags.html#touchpy.CudaFlags.BGR">BGR (touchpy.CudaFlags attribute)</a>
+</li>
+        <li><a href="reference/touchpy/CudaFlags.html#touchpy.CudaFlags.BGRA">BGRA (touchpy.CudaFlags attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="C" class="genindex-section">
+  <h2>C</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Comp.html#Comp.call_on_frame_callback">call_on_frame_callback() (Comp method)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.cell">cell() (DatTable method)</a>
+</li>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.chan_names">chan_names (ChopChannels property)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/OutChop.html#touchpy.OutChop.chan_names">(touchpy.OutChop property)</a>
+</li>
+        </ul></li>
+        <li><a href="reference/touchpy/OutChop.html#touchpy.OutChop.chans">chans() (touchpy.OutChop method)</a>
+</li>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels">ChopChannels (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/CudaFlags.html#touchpy.CudaFlags.CHW">CHW (touchpy.CudaFlags attribute)</a>
+</li>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.clear">clear() (ChopChannels method)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/DatTable.html#DatTable.clear">(DatTable method)</a>
+</li>
+        </ul></li>
+        <li><a href="reference/touchpy/Comp.html#Comp.clear_on_frame_callback">clear_on_frame_callback() (Comp method)</a>
+</li>
+        <li><a href="reference/touchpy/Comp.html#Comp.clear_on_layout_change_callback">clear_on_layout_change_callback() (Comp method)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.col">col() (DatTable method)</a>
+</li>
+        <li><a href="reference/touchpy/Comp.html#Comp">Comp (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/CudaMemoryDesc.html#touchpy.CudaMemoryDesc.component_size">component_size (touchpy.CudaMemoryDesc property)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/InTop.html#touchpy.InTop.copy_cuda_memory">copy_cuda_memory() (touchpy.InTop method)</a>
+</li>
+        <li><a href="reference/touchpy/InChops.html#touchpy.InChops.count">count (touchpy.InChops property)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/InDats.html#touchpy.InDats.count">(touchpy.InDats property)</a>
+</li>
+          <li><a href="reference/touchpy/InTops.html#touchpy.InTops.count">(touchpy.InTops property)</a>
+</li>
+          <li><a href="reference/touchpy/OutChops.html#touchpy.OutChops.count">(touchpy.OutChops property)</a>
+</li>
+          <li><a href="reference/touchpy/OutDats.html#touchpy.OutDats.count">(touchpy.OutDats property)</a>
+</li>
+          <li><a href="reference/touchpy/OutTops.html#touchpy.OutTops.count">(touchpy.OutTops property)</a>
+</li>
+          <li><a href="reference/touchpy/ParCollection.html#touchpy.ParCollection.count">(touchpy.ParCollection property)</a>
+</li>
+        </ul></li>
+        <li><a href="reference/touchpy/LogLevel.html#touchpy.LogLevel.CRITICAL">CRITICAL (touchpy.LogLevel attribute)</a>
+</li>
+        <li><a href="reference/touchpy/CompFlags.html#touchpy.CompFlags.CUDA_DISABLE">CUDA_DISABLE (touchpy.CompFlags attribute)</a>
+</li>
+        <li><a href="reference/touchpy/OutTop.html#touchpy.OutTop.cuda_memory">cuda_memory() (touchpy.OutTop method)</a>
+</li>
+        <li><a href="reference/touchpy/Comp.html#Comp.cuda_stream">cuda_stream() (Comp method)</a>
+</li>
+        <li><a href="reference/touchpy/CompFlags.html#touchpy.CompFlags.CUDA_STREAM_DEFAULT">CUDA_STREAM_DEFAULT (touchpy.CompFlags attribute)</a>
+</li>
+        <li><a href="reference/touchpy/CompFlags.html#touchpy.CompFlags.CUDA_STREAM_INTERNAL">CUDA_STREAM_INTERNAL (touchpy.CompFlags attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="D" class="genindex-section">
+  <h2>D</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/CudaMemoryDesc.html#touchpy.CudaMemoryDesc.data_type">data_type (touchpy.CudaMemoryDesc property)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable">DatTable (built-in class)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/LogLevel.html#touchpy.LogLevel.DEBUG">DEBUG (touchpy.LogLevel attribute)</a>
+</li>
+        <li><a href="reference/touchpy/CudaMemory.html#touchpy.CudaMemory.desc">desc (touchpy.CudaMemory property)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="E" class="genindex-section">
+  <h2>E</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.end_time">end_time (ChopChannels property)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/LogLevel.html#touchpy.LogLevel.ERROR">ERROR (touchpy.LogLevel attribute)</a>
+</li>
+        <li><a href="reference/touchpy/CompFlags.html#touchpy.CompFlags.EXTERNAL_TIME">EXTERNAL_TIME (touchpy.CompFlags attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="F" class="genindex-section">
+  <h2>F</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/CUDADataType.html#touchpy.CUDADataType.Float16">Float16 (touchpy.CUDADataType attribute)</a>
+</li>
+        <li><a href="reference/touchpy/CUDADataType.html#touchpy.CUDADataType.Float32">Float32 (touchpy.CUDADataType attribute)</a>
+</li>
+        <li><a href="reference/touchpy/Time.html#touchpy.Time.frame">frame (touchpy.Time property)</a>
+</li>
+        <li><a href="reference/touchpy/Comp.html#Comp.frame_did_finish">frame_did_finish() (Comp method)</a>
+</li>
+        <li><a href="reference/touchpy/InChop.html#touchpy.InChop.from_channels">from_channels() (touchpy.InChop method)</a>
+</li>
+        <li><a href="reference/touchpy/InTop.html#touchpy.InTop.from_dlpack">from_dlpack() (touchpy.InTop method)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.from_list">from_list() (DatTable method)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/InDat.html#touchpy.InDat.from_list">(touchpy.InDat method)</a>
+</li>
+        </ul></li>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.from_numpy">from_numpy() (ChopChannels method)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/InChop.html#touchpy.InChop.from_numpy">(touchpy.InChop method)</a>
+</li>
+        </ul></li>
+        <li><a href="reference/touchpy/InDat.html#touchpy.InDat.from_string">from_string() (touchpy.InDat method)</a>
+</li>
+        <li><a href="reference/touchpy/InDat.html#touchpy.InDat.from_table">from_table() (touchpy.InDat method)</a>
+</li>
+        <li><a href="reference/touchpy/InTop.html#touchpy.InTop.from_tensor">from_tensor() (touchpy.InTop method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="G" class="genindex-section">
+  <h2>G</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Color.html#touchpy.Color.g">g (touchpy.Color property)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/ColorPar.html#touchpy.ColorPar.g">(touchpy.ColorPar property)</a>
+</li>
+        </ul></li>
+        <li><a href="reference/touchpy/ColorPar.html#touchpy.ColorPar.get">get() (touchpy.ColorPar method)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/Double2Par.html#touchpy.Double2Par.get">(touchpy.Double2Par method)</a>
+</li>
+          <li><a href="reference/touchpy/Double3Par.html#touchpy.Double3Par.get">(touchpy.Double3Par method)</a>
+</li>
+          <li><a href="reference/touchpy/Double4Par.html#touchpy.Double4Par.get">(touchpy.Double4Par method)</a>
+</li>
+          <li><a href="reference/touchpy/Int2Par.html#touchpy.Int2Par.get">(touchpy.Int2Par method)</a>
+</li>
+          <li><a href="reference/touchpy/Int3Par.html#touchpy.Int3Par.get">(touchpy.Int3Par method)</a>
+</li>
+          <li><a href="reference/touchpy/Int4Par.html#touchpy.Int4Par.get">(touchpy.Int4Par method)</a>
+</li>
+          <li><a href="reference/touchpy/Par.html#touchpy.Par.get">(touchpy.Par method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/index.html#touchpy.get_dlpack_capsule_info">get_dlpack_capsule_info() (in module touchpy)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="H" class="genindex-section">
+  <h2>H</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/CudaFlags.html#touchpy.CudaFlags.HWC">HWC (touchpy.CudaFlags attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="I" class="genindex-section">
+  <h2>I</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Comp.html#Comp.in_chops">in_chops (Comp property)</a>
+</li>
+        <li><a href="reference/touchpy/Comp.html#Comp.in_dats">in_dats (Comp property)</a>
+</li>
+        <li><a href="reference/touchpy/Comp.html#Comp.in_tops">in_tops (Comp property)</a>
+</li>
+        <li><a href="reference/touchpy/LogLevel.html#touchpy.LogLevel.INFO">INFO (touchpy.LogLevel attribute)</a>
+</li>
+        <li><a href="reference/touchpy/index.html#touchpy.init_logging">init_logging() (in module touchpy)</a>
+</li>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.insert_channel">insert_channel() (ChopChannels method)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.insert_col">insert_col() (DatTable method)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.insert_row">insert_row() (DatTable method)</a>
+</li>
+        <li><a href="reference/touchpy/CompFlags.html#touchpy.CompFlags.INTERNAL_TIME">INTERNAL_TIME (touchpy.CompFlags attribute)</a>
+</li>
+        <li><a href="reference/touchpy/CompFlags.html#touchpy.CompFlags.INTERNAL_TIME_ASYNC">INTERNAL_TIME_ASYNC (touchpy.CompFlags attribute)</a>
+</li>
+        <li><a href="reference/touchpy/CompFlags.html#touchpy.CompFlags.INTERNAL_TIME_AUTO">INTERNAL_TIME_AUTO (touchpy.CompFlags attribute)</a>
+</li>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.is_time_dependent">is_time_dependent (ChopChannels property)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="L" class="genindex-section">
+  <h2>L</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Comp.html#Comp.load_tox">load_tox() (Comp method)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Comp.html#Comp.loaded">loaded() (Comp method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="M" class="genindex-section">
+  <h2>M</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li>
+    module
+
+        <ul>
+          <li><a href="reference/touchpy/index.html#module-touchpy">touchpy</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="N" class="genindex-section">
+  <h2>N</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/InChops.html#touchpy.InChops.names">names (touchpy.InChops property)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/InDats.html#touchpy.InDats.names">(touchpy.InDats property)</a>
+</li>
+          <li><a href="reference/touchpy/InTops.html#touchpy.InTops.names">(touchpy.InTops property)</a>
+</li>
+          <li><a href="reference/touchpy/OutChops.html#touchpy.OutChops.names">(touchpy.OutChops property)</a>
+</li>
+          <li><a href="reference/touchpy/OutDats.html#touchpy.OutDats.names">(touchpy.OutDats property)</a>
+</li>
+          <li><a href="reference/touchpy/OutTops.html#touchpy.OutTops.names">(touchpy.OutTops property)</a>
+</li>
+          <li><a href="reference/touchpy/ParCollection.html#touchpy.ParCollection.names">(touchpy.ParCollection property)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/CudaFlags.html#touchpy.CudaFlags.NONE">NONE (touchpy.CudaFlags attribute)</a>
+</li>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.num_chans">num_chans (ChopChannels property)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.num_cols">num_cols (DatTable property)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.num_rows">num_rows (DatTable property)</a>
+</li>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.num_samples">num_samples (ChopChannels property)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="O" class="genindex-section">
+  <h2>O</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/LogLevel.html#touchpy.LogLevel.OFF">OFF (touchpy.LogLevel attribute)</a>
+</li>
+        <li><a href="reference/touchpy/Comp.html#Comp.out_chops">out_chops (Comp property)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Comp.html#Comp.out_dats">out_dats (Comp property)</a>
+</li>
+        <li><a href="reference/touchpy/Comp.html#Comp.out_tops">out_tops (Comp property)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="P" class="genindex-section">
+  <h2>P</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Comp.html#Comp.par">par (Comp property)</a>
+</li>
+        <li><a href="reference/touchpy/CudaMemory.html#touchpy.CudaMemory.ptr">ptr (touchpy.CudaMemory property)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Par.html#touchpy.Par.pulse">pulse() (touchpy.Par method)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/PulsePar.html#touchpy.PulsePar.pulse">(touchpy.PulsePar method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="R" class="genindex-section">
+  <h2>R</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Color.html#touchpy.Color.r">r (touchpy.Color property)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/ColorPar.html#touchpy.ColorPar.r">(touchpy.ColorPar property)</a>
+</li>
+        </ul></li>
+        <li><a href="reference/touchpy/CudaFlags.html#touchpy.CudaFlags.R">R (touchpy.CudaFlags attribute)</a>
+</li>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.rate">rate (ChopChannels property)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/Comp.html#Comp.rate">(Comp property)</a>
+</li>
+          <li><a href="reference/touchpy/Time.html#touchpy.Time.rate">(touchpy.Time property)</a>
+</li>
+        </ul></li>
+        <li><a href="reference/touchpy/CompFlags.html#touchpy.CompFlags.REALTIME">REALTIME (touchpy.CompFlags attribute)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.remove_channel">remove_channel() (ChopChannels method)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.remove_col">remove_col() (DatTable method)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.remove_row">remove_row() (DatTable method)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.resize">resize() (DatTable method)</a>
+</li>
+        <li><a href="reference/touchpy/CudaFlags.html#touchpy.CudaFlags.RG">RG (touchpy.CudaFlags attribute)</a>
+</li>
+        <li><a href="reference/touchpy/CudaFlags.html#touchpy.CudaFlags.RGB">RGB (touchpy.CudaFlags attribute)</a>
+</li>
+        <li><a href="reference/touchpy/CudaFlags.html#touchpy.CudaFlags.RGBA">RGBA (touchpy.CudaFlags attribute)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.row">row() (DatTable method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="S" class="genindex-section">
+  <h2>S</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Time.html#touchpy.Time.scale">scale (touchpy.Time property)</a>
+</li>
+        <li><a href="reference/touchpy/Time.html#touchpy.Time.seconds">seconds (touchpy.Time property)</a>
+</li>
+        <li><a href="reference/touchpy/ColorPar.html#touchpy.ColorPar.set">set() (touchpy.ColorPar method)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/Double2Par.html#touchpy.Double2Par.set">(touchpy.Double2Par method)</a>
+</li>
+          <li><a href="reference/touchpy/Double3Par.html#touchpy.Double3Par.set">(touchpy.Double3Par method)</a>
+</li>
+          <li><a href="reference/touchpy/Double4Par.html#touchpy.Double4Par.set">(touchpy.Double4Par method)</a>
+</li>
+          <li><a href="reference/touchpy/Int2Par.html#touchpy.Int2Par.set">(touchpy.Int2Par method)</a>
+</li>
+          <li><a href="reference/touchpy/Int3Par.html#touchpy.Int3Par.set">(touchpy.Int3Par method)</a>
+</li>
+          <li><a href="reference/touchpy/Int4Par.html#touchpy.Int4Par.set">(touchpy.Int4Par method)</a>
+</li>
+          <li><a href="reference/touchpy/Par.html#touchpy.Par.set">(touchpy.Par method)</a>
+</li>
+          <li><a href="reference/touchpy/PulsePar.html#touchpy.PulsePar.set">(touchpy.PulsePar method)</a>
+</li>
+        </ul></li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.set_cell">set_cell() (DatTable method)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.set_col">set_col() (DatTable method)</a>
+</li>
+        <li><a href="reference/touchpy/OutTop.html#touchpy.OutTop.set_cuda_flags">set_cuda_flags() (touchpy.OutTop method)</a>
+</li>
+        <li><a href="reference/touchpy/OutTop.html#touchpy.OutTop.set_cuda_stream">set_cuda_stream() (touchpy.OutTop method)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/index.html#touchpy.set_log_level">set_log_level() (in module touchpy)</a>
+</li>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.set_name">set_name() (ChopChannels method)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.set_num_cols">set_num_cols() (DatTable method)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.set_num_rows">set_num_rows() (DatTable method)</a>
+</li>
+        <li><a href="reference/touchpy/Comp.html#Comp.set_on_frame_callback">set_on_frame_callback() (Comp method)</a>
+</li>
+        <li><a href="reference/touchpy/Comp.html#Comp.set_on_layout_change_callback">set_on_layout_change_callback() (Comp method)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#DatTable.set_row">set_row() (DatTable method)</a>
+</li>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.set_value">set_value() (ChopChannels method)</a>
+</li>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.set_values">set_values() (ChopChannels method)</a>
+</li>
+        <li><a href="reference/touchpy/CudaMemoryDesc.html#touchpy.CudaMemoryDesc.shape">shape (touchpy.CudaMemoryDesc property)</a>
+</li>
+        <li><a href="reference/touchpy/CudaMemory.html#touchpy.CudaMemory.size">size (touchpy.CudaMemory property)</a>
+</li>
+        <li><a href="reference/touchpy/Comp.html#Comp.start">start() (Comp method)</a>
+</li>
+        <li><a href="reference/touchpy/Comp.html#Comp.start_next_frame">start_next_frame() (Comp method)</a>
+</li>
+        <li><a href="reference/touchpy/ChopChannels.html#ChopChannels.start_time">start_time (ChopChannels property)</a>
+</li>
+        <li><a href="reference/touchpy/Comp.html#Comp.stop">stop() (Comp method)</a>
+</li>
+        <li><a href="reference/touchpy/CudaMemoryDesc.html#touchpy.CudaMemoryDesc.strides">strides (touchpy.CudaMemoryDesc property)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="T" class="genindex-section">
+  <h2>T</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Comp.html#Comp.time">time() (Comp method)</a>
+</li>
+        <li>
+    touchpy
+
+        <ul>
+          <li><a href="reference/touchpy/index.html#module-touchpy">module</a>
+</li>
+        </ul></li>
+        <li><a href="reference/touchpy/ChopChannels.html#touchpy.ChopChannels">touchpy.ChopChannels (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/Color.html#touchpy.Color">touchpy.Color (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/ColorPar.html#touchpy.ColorPar">touchpy.ColorPar (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/Comp.html#touchpy.Comp">touchpy.Comp (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/CompFlags.html#touchpy.CompFlags">touchpy.CompFlags (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/CUDADataType.html#touchpy.CUDADataType">touchpy.CUDADataType (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/CudaFlags.html#touchpy.CudaFlags">touchpy.CudaFlags (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/CudaMemory.html#touchpy.CudaMemory">touchpy.CudaMemory (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/CudaMemoryDesc.html#touchpy.CudaMemoryDesc">touchpy.CudaMemoryDesc (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/DatTable.html#touchpy.DatTable">touchpy.DatTable (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/Double2Par.html#touchpy.Double2Par">touchpy.Double2Par (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/Double3Par.html#touchpy.Double3Par">touchpy.Double3Par (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/Double4Par.html#touchpy.Double4Par">touchpy.Double4Par (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/Float2.html#touchpy.Float2">touchpy.Float2 (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/Float3.html#touchpy.Float3">touchpy.Float3 (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/Float4.html#touchpy.Float4">touchpy.Float4 (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/InChop.html#touchpy.InChop">touchpy.InChop (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/InChops.html#touchpy.InChops">touchpy.InChops (built-in class)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/InDat.html#touchpy.InDat">touchpy.InDat (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/InDats.html#touchpy.InDats">touchpy.InDats (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/Int2.html#touchpy.Int2">touchpy.Int2 (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/Int2Par.html#touchpy.Int2Par">touchpy.Int2Par (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/Int3.html#touchpy.Int3">touchpy.Int3 (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/Int3Par.html#touchpy.Int3Par">touchpy.Int3Par (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/Int4.html#touchpy.Int4">touchpy.Int4 (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/Int4Par.html#touchpy.Int4Par">touchpy.Int4Par (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/InTop.html#touchpy.InTop">touchpy.InTop (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/InTops.html#touchpy.InTops">touchpy.InTops (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/LogLevel.html#touchpy.LogLevel">touchpy.LogLevel (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/OutChop.html#touchpy.OutChop">touchpy.OutChop (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/OutChops.html#touchpy.OutChops">touchpy.OutChops (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/OutDat.html#touchpy.OutDat">touchpy.OutDat (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/OutDats.html#touchpy.OutDats">touchpy.OutDats (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/OutTop.html#touchpy.OutTop">touchpy.OutTop (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/OutTops.html#touchpy.OutTops">touchpy.OutTops (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/Par.html#touchpy.Par">touchpy.Par (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/ParCollection.html#touchpy.ParCollection">touchpy.ParCollection (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/PulsePar.html#touchpy.PulsePar">touchpy.PulsePar (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/Time.html#touchpy.Time">touchpy.Time (built-in class)</a>
+</li>
+        <li><a href="reference/touchpy/LogLevel.html#touchpy.LogLevel.TRACE">TRACE (touchpy.LogLevel attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="U" class="genindex-section">
+  <h2>U</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/CUDADataType.html#touchpy.CUDADataType.UInt8">UInt8 (touchpy.CUDADataType attribute)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/CUDADataType.html#touchpy.CUDADataType.Undefined">Undefined (touchpy.CUDADataType attribute)</a>
+</li>
+        <li><a href="reference/touchpy/Comp.html#Comp.unload">unload() (Comp method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="V" class="genindex-section">
+  <h2>V</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/ColorPar.html#touchpy.ColorPar.val">val (touchpy.ColorPar property)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/Double2Par.html#touchpy.Double2Par.val">(touchpy.Double2Par property)</a>
+</li>
+          <li><a href="reference/touchpy/Double3Par.html#touchpy.Double3Par.val">(touchpy.Double3Par property)</a>
+</li>
+          <li><a href="reference/touchpy/Double4Par.html#touchpy.Double4Par.val">(touchpy.Double4Par property)</a>
+</li>
+          <li><a href="reference/touchpy/Int2Par.html#touchpy.Int2Par.val">(touchpy.Int2Par property)</a>
+</li>
+          <li><a href="reference/touchpy/Int3Par.html#touchpy.Int3Par.val">(touchpy.Int3Par property)</a>
+</li>
+          <li><a href="reference/touchpy/Int4Par.html#touchpy.Int4Par.val">(touchpy.Int4Par property)</a>
+</li>
+          <li><a href="reference/touchpy/Par.html#touchpy.Par.val">(touchpy.Par property)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Time.html#touchpy.Time.value">value (touchpy.Time property)</a>
+</li>
+        <li><a href="reference/touchpy/CudaFlags.html#touchpy.CudaFlags.VEC2">VEC2 (touchpy.CudaFlags attribute)</a>
+</li>
+        <li><a href="reference/touchpy/CudaFlags.html#touchpy.CudaFlags.VEC3">VEC3 (touchpy.CudaFlags attribute)</a>
+</li>
+        <li><a href="reference/touchpy/CudaFlags.html#touchpy.CudaFlags.VEC4">VEC4 (touchpy.CudaFlags attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="W" class="genindex-section">
+  <h2>W</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Double4Par.html#touchpy.Double4Par.w">w (touchpy.Double4Par property)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/Float4.html#touchpy.Float4.w">(touchpy.Float4 property)</a>
+</li>
+          <li><a href="reference/touchpy/Int4.html#touchpy.Int4.w">(touchpy.Int4 property)</a>
+</li>
+          <li><a href="reference/touchpy/Int4Par.html#touchpy.Int4Par.w">(touchpy.Int4Par property)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/LogLevel.html#touchpy.LogLevel.WARN">WARN (touchpy.LogLevel attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="X" class="genindex-section">
+  <h2>X</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Double2Par.html#touchpy.Double2Par.x">x (touchpy.Double2Par property)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/Double3Par.html#touchpy.Double3Par.x">(touchpy.Double3Par property)</a>
+</li>
+          <li><a href="reference/touchpy/Double4Par.html#touchpy.Double4Par.x">(touchpy.Double4Par property)</a>
+</li>
+          <li><a href="reference/touchpy/Float2.html#touchpy.Float2.x">(touchpy.Float2 property)</a>
+</li>
+          <li><a href="reference/touchpy/Float3.html#touchpy.Float3.x">(touchpy.Float3 property)</a>
+</li>
+          <li><a href="reference/touchpy/Float4.html#touchpy.Float4.x">(touchpy.Float4 property)</a>
+</li>
+          <li><a href="reference/touchpy/Int2.html#touchpy.Int2.x">(touchpy.Int2 property)</a>
+</li>
+          <li><a href="reference/touchpy/Int2Par.html#touchpy.Int2Par.x">(touchpy.Int2Par property)</a>
+</li>
+          <li><a href="reference/touchpy/Int3.html#touchpy.Int3.x">(touchpy.Int3 property)</a>
+</li>
+          <li><a href="reference/touchpy/Int3Par.html#touchpy.Int3Par.x">(touchpy.Int3Par property)</a>
+</li>
+          <li><a href="reference/touchpy/Int4.html#touchpy.Int4.x">(touchpy.Int4 property)</a>
+</li>
+          <li><a href="reference/touchpy/Int4Par.html#touchpy.Int4Par.x">(touchpy.Int4Par property)</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="Y" class="genindex-section">
+  <h2>Y</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Double2Par.html#touchpy.Double2Par.y">y (touchpy.Double2Par property)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/Double3Par.html#touchpy.Double3Par.y">(touchpy.Double3Par property)</a>
+</li>
+          <li><a href="reference/touchpy/Double4Par.html#touchpy.Double4Par.y">(touchpy.Double4Par property)</a>
+</li>
+          <li><a href="reference/touchpy/Float2.html#touchpy.Float2.y">(touchpy.Float2 property)</a>
+</li>
+          <li><a href="reference/touchpy/Float3.html#touchpy.Float3.y">(touchpy.Float3 property)</a>
+</li>
+          <li><a href="reference/touchpy/Float4.html#touchpy.Float4.y">(touchpy.Float4 property)</a>
+</li>
+          <li><a href="reference/touchpy/Int2.html#touchpy.Int2.y">(touchpy.Int2 property)</a>
+</li>
+          <li><a href="reference/touchpy/Int2Par.html#touchpy.Int2Par.y">(touchpy.Int2Par property)</a>
+</li>
+          <li><a href="reference/touchpy/Int3.html#touchpy.Int3.y">(touchpy.Int3 property)</a>
+</li>
+          <li><a href="reference/touchpy/Int3Par.html#touchpy.Int3Par.y">(touchpy.Int3Par property)</a>
+</li>
+          <li><a href="reference/touchpy/Int4.html#touchpy.Int4.y">(touchpy.Int4 property)</a>
+</li>
+          <li><a href="reference/touchpy/Int4Par.html#touchpy.Int4Par.y">(touchpy.Int4Par property)</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="Z" class="genindex-section">
+  <h2>Z</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="reference/touchpy/Double3Par.html#touchpy.Double3Par.z">z (touchpy.Double3Par property)</a>
+
+        <ul>
+          <li><a href="reference/touchpy/Double4Par.html#touchpy.Double4Par.z">(touchpy.Double4Par property)</a>
+</li>
+          <li><a href="reference/touchpy/Float3.html#touchpy.Float3.z">(touchpy.Float3 property)</a>
+</li>
+          <li><a href="reference/touchpy/Float4.html#touchpy.Float4.z">(touchpy.Float4 property)</a>
+</li>
+          <li><a href="reference/touchpy/Int3.html#touchpy.Int3.z">(touchpy.Int3 property)</a>
+</li>
+          <li><a href="reference/touchpy/Int3Par.html#touchpy.Int3Par.z">(touchpy.Int3Par property)</a>
+</li>
+          <li><a href="reference/touchpy/Int4.html#touchpy.Int4.z">(touchpy.Int4 property)</a>
+</li>
+          <li><a href="reference/touchpy/Int4Par.html#touchpy.Int4Par.z">(touchpy.Int4Par property)</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024
+            </div>
+            Made with 
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=2709fde1"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=32e29ea5"></script>
+    </body>
+</html>

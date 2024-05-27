@@ -1,0 +1,74 @@
+touchpy.CudaFlags
+=================
+
+.. py:class:: touchpy.CudaFlags(arg: object, /)
+
+
+   
+   
+
+   .. rubric:: Attributes
+
+   .. py:attribute:: BGR
+      :type: CudaFlags
+
+      
+
+   .. py:attribute:: BGRA
+      :type: CudaFlags
+
+      
+
+   .. py:attribute:: CHW
+      :type: CudaFlags
+
+      
+
+   .. py:attribute:: HWC
+      :type: CudaFlags
+
+      
+
+   .. py:attribute:: NONE
+      :type: CudaFlags
+
+      
+
+   .. py:attribute:: R
+      :type: CudaFlags
+
+      
+
+   .. py:attribute:: RG
+      :type: CudaFlags
+
+      
+
+   .. py:attribute:: RGB
+      :type: CudaFlags
+
+      
+
+   .. py:attribute:: RGBA
+      :type: CudaFlags
+
+      
+
+   .. py:attribute:: VEC2
+      :type: CudaFlags
+
+      
+
+   .. py:attribute:: VEC3
+      :type: CudaFlags
+
+      
+
+   .. py:attribute:: VEC4
+      :type: CudaFlags
+
+      
+
+
+
+

@@ -1,0 +1,422 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="touchpy.Time" href="reference/touchpy/Time.html" />
+
+    <!-- Generated with Sphinx 7.3.6 and Furo 2024.01.29 -->
+        <title>License - TouchPy 0.9.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=fd3f3429" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
+    <link rel="stylesheet" type="text/css" href="_static/css/touchpy.css?v=a40a4ab4" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">TouchPy 0.9.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  
+  <span class="sidebar-brand-text">TouchPy 0.9.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">TouchPy Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="reference/touchpy/index.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of API Reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/CUDADataType.html">touchpy.CUDADataType</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/ChopChannels.html">touchpy.ChopChannels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Color.html">touchpy.Color</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/ColorPar.html">touchpy.ColorPar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Comp.html">touchpy.Comp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/CompFlags.html">touchpy.CompFlags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/CudaFlags.html">touchpy.CudaFlags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/CudaMemory.html">touchpy.CudaMemory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/CudaMemoryDesc.html">touchpy.CudaMemoryDesc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/DatTable.html">touchpy.DatTable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Double2Par.html">touchpy.Double2Par</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Double3Par.html">touchpy.Double3Par</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Double4Par.html">touchpy.Double4Par</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Float2.html">touchpy.Float2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Float3.html">touchpy.Float3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Float4.html">touchpy.Float4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/InChop.html">touchpy.InChop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/InChops.html">touchpy.InChops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/InDat.html">touchpy.InDat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/InDats.html">touchpy.InDats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/InTop.html">touchpy.InTop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/InTops.html">touchpy.InTops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Int2.html">touchpy.Int2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Int2Par.html">touchpy.Int2Par</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Int3.html">touchpy.Int3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Int3Par.html">touchpy.Int3Par</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Int4.html">touchpy.Int4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Int4Par.html">touchpy.Int4Par</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/LogLevel.html">touchpy.LogLevel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/OutChop.html">touchpy.OutChop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/OutChops.html">touchpy.OutChops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/OutDat.html">touchpy.OutDat</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/OutDats.html">touchpy.OutDats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/OutTop.html">touchpy.OutTop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/OutTops.html">touchpy.OutTops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Par.html">touchpy.Par</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/ParCollection.html">touchpy.ParCollection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/PulsePar.html">touchpy.PulsePar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Time.html">touchpy.Time</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">License</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="license">
+<h1>License<a class="headerlink" href="#license" title="Link to this heading">🔗</a></h1>
+<div class="highlight-ReST notranslate"><div class="highlight"><pre><span></span># PolyForm Noncommercial License 1.0.0
+
+<span class="nt">&lt;https://polyformproject.org/licenses/noncommercial/1.0.0&gt;</span>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree
+to them as both strict obligations and conditions to all
+your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the
+software to do everything you might do with the software
+that would otherwise infringe the licensor&#39;s copyright
+in it for any permitted purpose.  However, you may
+only distribute the software according to [Distribution
+License](#distribution-license) and make changes or new works
+based on the software according to [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Distribution License
+
+The licensor grants you an additional copyright license
+to distribute copies of the software.  Your license
+to distribute covers distributing the software with
+changes and new works permitted by [Changes and New Works
+License](#changes-and-new-works-license).
+
+## Notices
+
+You must ensure that anyone who gets a copy of any part of
+the software from you also gets a copy of these terms or the
+URL for them above, as well as copies of any plain-text lines
+beginning with <span class="nv">`Required Notice:`</span> that the licensor provided
+with the software.  For example:
+
+&gt; Required Notice: Intent Productions, Inc. (http://intentdev.io)
+
+## Changes and New Works License
+
+The licensor grants you an additional copyright license to
+make changes and new works based on the software for any
+permitted purpose.
+
+## Patent License
+
+The licensor grants you a patent license for the software that
+covers patent claims the licensor can license, or becomes able
+to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for
+the benefit of public knowledge, personal study, private
+entertainment, hobby projects, amateur pursuits, or religious
+observance, without any anticipated commercial application,
+is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution,
+public research organization, public safety or health
+organization, environmental protection organization,
+or government institution is use for a permitted purpose
+regardless of the source of funding or obligations resulting
+from the funding.
+
+## Fair Use
+
+You may have &quot;fair use&quot; rights for the software under the
+law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of
+your licenses to anyone else, or prevent the licensor from
+granting licenses to anyone else.  These terms do not imply
+any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or
+contributes to infringement of any patent, your patent license
+for the software granted under these terms ends immediately. If
+your company makes such a claim, your patent license ends
+immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have
+violated any of these terms, or done anything with the software
+not covered by your licenses, your licenses can nonetheless
+continue if you come into full compliance with these terms,
+and take practical steps to correct past violations, within
+32 days of receiving notice.  Otherwise, all your licenses
+end immediately.
+
+## No Liability
+
+<span class="ge">***</span>As far as the law allows, the software comes as is, without
+any warranty or condition, and the licensor will not be liable
+to you for any damages arising out of these terms or the use
+or nature of the software, under any kind of legal claim.<span class="ge">***</span>
+
+## Definitions
+
+The <span class="gs">**licensor**</span> is the individual or entity offering these
+terms, and the <span class="gs">**software**</span> is the software the licensor makes
+available under these terms.
+
+<span class="gs">**You**</span> refers to the individual or entity agreeing to these
+terms.
+
+<span class="gs">**Your company**</span> is any legal entity, sole proprietorship,
+or other kind of organization that you work for, plus all
+organizations that have control over, are under the control of,
+or are under common control with that organization.  <span class="gs">**Control**</span>
+means ownership of substantially all the assets of an entity,
+or the power to direct its management and policies by vote,
+contract, or otherwise.  Control can be direct or indirect.
+
+<span class="gs">**Your licenses**</span> are all the licenses granted to you for the
+software under these terms.
+
+<span class="gs">**Use**</span> means anything you do with the software requiring one
+of your licenses.
+</pre></div>
+</div>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          <a class="prev-page" href="reference/touchpy/Time.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">touchpy.Time</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024
+            </div>
+            Made with 
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=2709fde1"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=32e29ea5"></script>
+    </body>
+</html>

@@ -1,0 +1,18 @@
+span.summarylabel {
+    background-color: var(--color-foreground-secondary);
+    color: var(--color-background-secondary);
+    font-size: 70%;
+    padding-left: 2px;
+    padding-right: 2px;
+    border-radius: 3px;
+    vertical-align: 15%;
+    padding-bottom: 2px;
+    filter: opacity(40%);
+}
+
+dd p.rubric {
+    font-size:1.5em;
+    font-weight: 700;
+    text-transform: none;
+    margin-top: 1.75rem !important;
+}

@@ -1,0 +1,124 @@
+API Reference
+======================
+
+
+
+.. py:module:: touchpy
+
+
+TouchPy Classes
+---------------
+
+.. toctree::
+   :hidden:
+
+   /reference/touchpy/CUDADataType
+   /reference/touchpy/ChopChannels
+   /reference/touchpy/Color
+   /reference/touchpy/ColorPar
+   /reference/touchpy/Comp
+   /reference/touchpy/CompFlags
+   /reference/touchpy/CudaFlags
+   /reference/touchpy/CudaMemory
+   /reference/touchpy/CudaMemoryDesc
+   /reference/touchpy/DatTable
+   /reference/touchpy/Double2Par
+   /reference/touchpy/Double3Par
+   /reference/touchpy/Double4Par
+   /reference/touchpy/Float2
+   /reference/touchpy/Float3
+   /reference/touchpy/Float4
+   /reference/touchpy/InChop
+   /reference/touchpy/InChops
+   /reference/touchpy/InDat
+   /reference/touchpy/InDats
+   /reference/touchpy/InTop
+   /reference/touchpy/InTops
+   /reference/touchpy/Int2
+   /reference/touchpy/Int2Par
+   /reference/touchpy/Int3
+   /reference/touchpy/Int3Par
+   /reference/touchpy/Int4
+   /reference/touchpy/Int4Par
+   /reference/touchpy/LogLevel
+   /reference/touchpy/OutChop
+   /reference/touchpy/OutChops
+   /reference/touchpy/OutDat
+   /reference/touchpy/OutDats
+   /reference/touchpy/OutTop
+   /reference/touchpy/OutTops
+   /reference/touchpy/Par
+   /reference/touchpy/ParCollection
+   /reference/touchpy/PulsePar
+   /reference/touchpy/Time
+
+.. autoapisummary::
+
+   touchpy.CUDADataType
+   touchpy.ChopChannels
+   touchpy.Color
+   touchpy.ColorPar
+   touchpy.Comp
+   touchpy.CompFlags
+   touchpy.CudaFlags
+   touchpy.CudaMemory
+   touchpy.CudaMemoryDesc
+   touchpy.DatTable
+   touchpy.Double2Par
+   touchpy.Double3Par
+   touchpy.Double4Par
+   touchpy.Float2
+   touchpy.Float3
+   touchpy.Float4
+   touchpy.InChop
+   touchpy.InChops
+   touchpy.InDat
+   touchpy.InDats
+   touchpy.InTop
+   touchpy.InTops
+   touchpy.Int2
+   touchpy.Int2Par
+   touchpy.Int3
+   touchpy.Int3Par
+   touchpy.Int4
+   touchpy.Int4Par
+   touchpy.LogLevel
+   touchpy.OutChop
+   touchpy.OutChops
+   touchpy.OutDat
+   touchpy.OutDats
+   touchpy.OutTop
+   touchpy.OutTops
+   touchpy.Par
+   touchpy.ParCollection
+   touchpy.PulsePar
+   touchpy.Time
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   touchpy.get_dlpack_capsule_info
+   touchpy.init_logging
+   touchpy.set_log_level
+
+
+Module Contents
+---------------
+
+.. py:function:: get_dlpack_capsule_info(array: numpy.typing.ArrayLike) -> dict
+
+   Get information about a DLPack capsule.
+
+   :param array: The array to get information about.
+   :type array: :py:class:`ndarray`
+
+
+.. py:function:: init_logging(level: LogLevel = LogLevel.INFO, console: bool = True, file: bool = False) -> None
+
+
+.. py:function:: set_log_level(level: LogLevel = LogLevel.WARN) -> None
+
+
