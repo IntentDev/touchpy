@@ -37,11 +37,6 @@
 *.dmp
 __pycache__
 
-/docs/build
-/docs/source/reference
-
-/install/docs
-/install/modules
 
 CMakeUserPresets.json
 CMakePresets.json
@@ -51,11 +46,3 @@ vcpkg.json
 */models
 *log.txt
 
-# package/docs/
-package/build/
-package/dist/
-package/*egg-info*
-
-# bypass general rules
-!external/TouchEngine-Windows/bin/*.dll
-!external/TouchEngine-Windows/lib/*.lib
