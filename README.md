@@ -12,4 +12,7 @@ Please refer to the project [Documentation](https://intentdev.github.io/touchpy/
 
 More usage examples and tutorials are coming soon. 
 
-The first public version of TouchPy was released during the TouchDesigner Event Berlin in May 2024 - see the [video of the TouchPy release presentation](https://www.youtube.com/live/hxCsPlc6W-o?t=10315s).
+#### Video introduction / tutorials:
+- The first public version of TouchPy was released during the TouchDesigner Event Berlin in May 2024 - see the [video of the TouchPy release presentation](https://www.youtube.com/live/hxCsPlc6W-o?t=10315s).
+
+- Also the Touchpy workshop on Friday May 24th at Spatial Media Lab in Berlin was recorded, here's the [video of the TouchPy workshop at SML](https://www.youtube.com/watch?v=XDZkcEkWTOE).
