@@ -4,14 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "touchpy"
-version = "0.9.0"
+version = "0.9.1"
 authors = [
   { name="Keith Lostracco", email="keith@intentdev.io" },
   { name="Idzard Kwadijk", email="idzard@intentdev.io" },
 ]
-description = "Tools to make working with TouchDesigner and Python easier."
+description = "TouchPy is a high-performance toolset to work with TouchDesigner components in Python"
+license = { text = "PolyForm Noncommercial License 1.0.0" }
 readme = "README.md"
-license.file = "LICENSE"
+license.file = "LICENSE.md"
 requires-python = ">=3.9,<3.13"
 classifiers = [
     "Programming Language :: Python :: 3.9",
@@ -20,3 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Operating System :: Microsoft :: Windows",
 ]
+
+[project.urls]
+Documentation = "https://intentdev.github.io/touchpy/"
+GitHub = "https://github.com/IntentDev/touchpy"
