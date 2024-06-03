@@ -24,7 +24,7 @@ A Vulkan capable GPU and driver is required. To work with TOPs a Nvidia card is 
 
 As TouchPy uses TouchEngine, it requires TouchDesigner or TouchPlayer (release 2023 or later) to be installed with a paid license (Educational, Commercial, or Pro).
 
-The easiest way to install TouchPy is:
+The easiest way to install TouchPy is from [PyPI](https://pypi.org/project/touchpy/):
 
-$ pip install touchpy
+`$ pip install touchpy`
 
