@@ -214,9 +214,9 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 
 	spdlog::default_logger()->flush();
 	// wait for instance to load
-	cv_.wait(lock, [this] { return ssReady_; });
+	cv_.wait(lock, [this] { return ssLoaded_; });
 
-	return ssReady_;
+	return ssLoaded_;
 }
 
 void 
@@ -304,20 +304,21 @@ void
 Comp::onEventInstanceReady(TEResult result, Comp* comp)
 {
 	if (!comp) return;
-	
-	std::unique_lock<std::mutex> lock(mutex_);
 
-	comp->ssReady_ = result == TEResultSuccess;
-	comp->cv_.notify_one(); // notify load() that instance is ready
-	lock.unlock();
+	{
+		std::lock_guard<std::mutex> lock(comp->mutex_);
+		comp->ssReady_ = result == TEResultSuccess;
+	}
 	spdlog::info("Instance ready: {}", TEResultGetDescription(result));
 }
 
 void 
 Comp::onEventInstanceDidLoad(TEResult result, Comp* comp)
 {
-	std::lock_guard<std::mutex> lock(comp->mutex_);
+	std::unique_lock<std::mutex> lock(mutex_);
 	comp->ssLoaded_ = true;
+	comp->cv_.notify_one(); // notify load() that instance is ready
+	lock.unlock();
 	spdlog::info("Instance loaded: {}", TEResultGetDescription(result));
 }
 
