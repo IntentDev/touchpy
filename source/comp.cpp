@@ -12,24 +12,29 @@
 
 Comp::Comp()
 {
-	initComp(CompFlagBits::InternalTimeAuto);
+	initComp(CompFlagBits::InternalTimeAuto, 0u);
 }
 
-Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps) 
+Comp::Comp(uint8_t device)
+{
+	initComp(CompFlagBits::InternalTimeAuto, device);
+}
+
+Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps, uint8_t device) 
 	:	compFlags_(compFlags)
 {
-	spdlog::info("Creating Comp");
+	spdlog::debug("Creating Comp");
 	
-	initComp(compFlags);
+	initComp(compFlags, device);
 	loadTox(filePath, compFlags, fps);
 
 	spdlog::default_logger()->flush();
 }
 
 void
-Comp::initComp(CompFlags compFlags)
+Comp::initComp(CompFlags compFlags, uint8_t device)
 {
-	createRenderer();
+	createRenderer(device);
 
 	if (!(compFlags & CompFlagBits::CudaDisable)) cudaInit();
 	
@@ -46,14 +51,14 @@ Comp::~Comp()
 
 	vkDestroyFence(device_, submitFence_, nullptr);
 
-	spdlog::info("Comp resources destroyed");
+	spdlog::debug("Comp resources destroyed");
 	spdlog::default_logger()->flush();
 }
 
 void 
-Comp::createRenderer()
+Comp::createRenderer(uint8_t device)
 {
-	renderer_ = Renderer::instance();
+	renderer_ = Renderer::instance(device);
 
 	device_ = renderer_->vContext().device;
 	physicalDevice_ = renderer_->vContext().physicalDevice;
@@ -77,7 +82,7 @@ Comp::cudaInit()
 	if (compFlags_ & CompFlagBits::CudaStreamInternal) 
 	{
 		CUDA_CHECK(cudaStreamCreate(&cudaStream_));
-		spdlog::info("CUDA stream created: {}", static_cast<void*>(cudaStream_));
+		spdlog::debug("CUDA stream created: {}", static_cast<void*>(cudaStream_));
 	}
 
 	return;
@@ -109,7 +114,7 @@ Comp::setCudaDevice()
 			{
 				CUDA_CHECK(cudaSetDevice(device));
 				CUDA_CHECK(cudaGetDeviceProperties(&deviceProp, device));
-				spdlog::info("Set CUDA device: {} : {} with compute {}", device, deviceProp.name, deviceProp.major, deviceProp.minor);
+				spdlog::debug("Set CUDA device: {} : {} with compute {}", device, deviceProp.name, deviceProp.major, deviceProp.minor);
 
 				cudaDevice_ = device;
 				return true;
@@ -139,7 +144,7 @@ Comp::initInstance()
 {
 	TEResult result = TEInstanceCreate(eventCallback, linkEventCallback, this, instance_.take());
 	if (result == TEResultSuccess)
-		spdlog::info("TEInstance created");
+		spdlog::debug("TEInstance created");
 	else
 	{
 		spdlog::error("Failed to create TEInstance: {}", TEResultGetDescription(result));
@@ -149,7 +154,7 @@ Comp::initInstance()
 
 	result = TEInstanceAssociateGraphicsContext(instance_, renderer_->teContext());
 	if (result == TEResultSuccess)
-		spdlog::info("TEInstance associated with Vulkan Graphics Context");
+		spdlog::debug("TEInstance associated with Vulkan Graphics Context");
 	else
 	{
 		spdlog::error("Failed to associate TEInstance with Graphics Context: {}", TEResultGetDescription(result));
@@ -189,7 +194,7 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 	}
 
 	filePath_ = filePath;
-	spdlog::info("Loading tox: {}", filePath_);
+	spdlog::debug("Loading tox: {}", filePath_);
 
 	auto timeMode = TETimeInternal;
 	if (compFlags_ & CompFlagBits::ExternalTime) timeMode = TETimeExternal;
@@ -201,11 +206,10 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 		throw std::runtime_error("Failed to configure TEInstance");
 	}
 	
-
 	std::unique_lock<std::mutex> lock(mutex_);
 	result = TEInstanceLoad(instance_);
 	if (result == TEResultSuccess)
-		spdlog::info("Instance loading...");
+		spdlog::debug("Instance loading...");
 	else
 	{
 		spdlog::error("Failed to initiate loading of TEInstance: {}", TEResultGetDescription(result));
@@ -229,7 +233,7 @@ Comp::unload()
 	std::unique_lock<std::mutex> lock(mutex_);
 	if (ssLoaded_)
 	{
-		spdlog::info("Unloading TEInstance...");
+		spdlog::debug("Unloading TEInstance...");
 
 		ssUnloading_ = true;
 		onFrameCallbackUserData_ = nullptr;
@@ -309,7 +313,7 @@ Comp::onEventInstanceReady(TEResult result, Comp* comp)
 		std::lock_guard<std::mutex> lock(comp->mutex_);
 		comp->ssReady_ = result == TEResultSuccess;
 	}
-	spdlog::info("Instance ready: {}", TEResultGetDescription(result));
+	spdlog::debug("Instance ready: {}", TEResultGetDescription(result));
 }
 
 void 
@@ -319,7 +323,7 @@ Comp::onEventInstanceDidLoad(TEResult result, Comp* comp)
 	comp->ssLoaded_ = true;
 	comp->cv_.notify_one(); // notify load() that instance is ready
 	lock.unlock();
-	spdlog::info("Instance loaded: {}", TEResultGetDescription(result));
+	spdlog::debug("Instance loaded: {}", TEResultGetDescription(result));
 }
 
 void 
@@ -329,7 +333,7 @@ Comp::onEventInstanceDidUnload(TEResult result, Comp* comp)
 	ssLoaded_ = false;
 	ssReady_ = false;
 	comp->cv_.notify_one(); // notify unload() that instance is unloaded
-	spdlog::info("Instance unloaded: {}", TEResultGetDescription(result));
+	spdlog::debug("Instance unloaded: {}", TEResultGetDescription(result));
 }
 
 void 
@@ -367,7 +371,7 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 				}
 				else
 				{
-					spdlog::info("Frame did not finish successfully: {} {}", static_cast<int>(result), TEResultGetDescription(result));
+					spdlog::warn("Frame did not finish successfully: {} {}", static_cast<int>(result), TEResultGetDescription(result));
 					comp->setInFrame(false, true, end_time_value, end_time_scale);
 				}
 			}
@@ -726,12 +730,12 @@ void Comp::start()
 
 	if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AutoUpdate && !updateLoopRunning_)
 	{
-		spdlog::info("Starting auto update");
+		spdlog::debug("Starting auto update");
 		autoUpdate();
 	}
 	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate && !asyncRunning_.load())
 	{
-		spdlog::info("Starting async update");
+		spdlog::debug("Starting async update");
 		startAsync();
 	}
 }
@@ -741,12 +745,12 @@ void Comp::stop()
 	if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AutoUpdate)
 	{
 		stopUpdate();
-		spdlog::info("Auto update stopped");
+		spdlog::debug("Auto update stopped");
 	}
 	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate)
 	{
 		stopAsync();
-		spdlog::info("Async update stopped");
+		spdlog::debug("Async update stopped");
 	}
 
 	TEResult result = TEInstanceSuspend(instance_);
@@ -970,7 +974,7 @@ Comp::applyLayoutChange()
 		asyncLayoutReadyCV_.notify_one();
 	}
 
-	spdlog::info("Applying layout change");
+	spdlog::debug("Applying layout change");
 
 	inTopLinks_ = std::make_unique<InTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_, cudaStream_);
 	outTopLinks_ = std::make_unique<OutTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_, cudaStream_);

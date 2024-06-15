@@ -8,7 +8,8 @@
 #include <type_traits>
 
 
-//using namespace utils;
+NAMESPACE_BEGIN(utils)
+
 
 //void utils::ImageLoadUINT8(std::string path, int& width, int& height, int& numChannels, std::unique_ptr<unsigned char[]>& pixels)
 //{
@@ -31,7 +32,7 @@
 //}
 
 
-std::string utils::generateUUID(uint32_t length) {
+std::string generateUUID(uint32_t length) {
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_int_distribution<> dis(0, 15);
@@ -61,23 +62,44 @@ std::string utils::generateUUID(uint32_t length) {
 	return shortUUID;
 }
 
-std::string utils::stringTrimStart(const std::string& str, size_t length) {
+std::string stringTrimStart(const std::string& str, size_t length) {
 	if (str.length() <= length) {
 		return "";
 	}
 	return str.substr(length);
 }
 
-std::string utils::stringTrimEnd(const std::string& str, size_t length) {
+std::string stringTrimEnd(const std::string& str, size_t length) {
 	if (str.length() <= length) {
 		return "";
 	}
 	return str.substr(0, str.length() - length);
 }
 
-std::string utils::stringTrim(const std::string& str, size_t front, size_t back) {
+std::string stringTrim(const std::string& str, size_t front, size_t back) {
 	if (front + back >= str.length()) {
 		return "";
 	}
 	return str.substr(front, str.length() - front - back);
 }
+
+
+std::string arrayToHexString(const uint8_t* data, size_t size)
+{
+	std::string hexString;
+	for (size_t i = 0; i < size; ++i)
+	{
+		char buffer[3];
+		sprintf(buffer, "%02X", data[i]);
+		hexString += buffer;
+	}
+	return hexString;
+}
+
+std::string arrayToHexString(const char* data, size_t size)
+{
+	return arrayToHexString(reinterpret_cast<const uint8_t*>(data), size);
+}
+
+
+NAMESPACE_END(utils)

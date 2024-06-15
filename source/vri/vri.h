@@ -260,6 +260,12 @@ void setPrimaryPhysicalDevice(
 	const std::vector<const char*>& requiredDeviceExtensions,
 	VkQueueFlags queueFlags);
 
+bool setPrimaryPhysicalDevice(
+	VContext& vContext,
+	const std::vector<const char*>& requiredDeviceExtensions,
+	VkQueueFlags queueFlags,
+	uint8_t uuid[16]);
+
 //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 // Device
 

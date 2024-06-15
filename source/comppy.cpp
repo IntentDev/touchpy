@@ -187,9 +187,10 @@ void initCompBindings(nb::module_& m)
 
 	nb::class_<Comp> comp(m, "Comp");
 	comp.doc() = "A TouchDesigner component loaded in a TouchEngine instance.";
-	comp.def(nb::init<>())
-		.def(nb::init<const std::string&, CompFlagBits, int64_t>(),
-			"tox_path"_a, "flags"_a = CompFlagBits::InternalTimeAuto, "fps"_a = 60, nb::rv_policy::take_ownership)
+	comp.def(nb::init<>(), nb::rv_policy::take_ownership)
+		.def(nb::init<uint8_t>(), "device"_a = 0u, nb::rv_policy::take_ownership)
+		.def(nb::init<const std::string&, CompFlagBits, int64_t, uint8_t>(),
+			"tox_path"_a, "flags"_a = CompFlagBits::InternalTimeAuto, "fps"_a = 60, "device"_a = 0u, nb::rv_policy::take_ownership)
 		.def("load_tox", [](Comp& self, std::string path, int fps) { self.loadTox(path, fps); } , "tox_path"_a, "fps"_a = 60, load_toxDoc)
 		.def("unload",                 &Comp::unload, unloadDoc, nb::rv_policy::reference_internal)
 		.def("start",                  &Comp::start, startDoc, nb::rv_policy::reference_internal)

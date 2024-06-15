@@ -4,13 +4,15 @@
 #include <TouchEngine/TEVulkan.h>
 
 #include "vri/vri.h"
+
 #include <functional>
 #include <vector>
 #include <string>
 #include <memory>
 #include <mutex>
+#include <unordered_map>
 
-
+struct DeviceInfo;
 
 class Renderer
 {
@@ -18,7 +20,7 @@ public:
 
     ~Renderer();
 
-    static std::shared_ptr<Renderer> instance();
+    static std::shared_ptr<Renderer> instance(uint8_t gpuIndex);
 
     uint8_t* physicalDeviceUUID() { return physicalDeviceUUID_; }
     vri::VContext& vContext() { return vContext_; }
@@ -36,17 +38,17 @@ private:
 
     TouchObject<TEVulkanContext>        teContext_;
 
-    static std::shared_ptr<Renderer> instance_;
-    static std::once_flag initInstanceFlag_;
+    static std::unordered_map<uint8_t, std::shared_ptr<Renderer>> instances_;
+    static std::mutex instancesMutex_;
     
-    Renderer();
-    static void initSingleton();
+    Renderer(uint8_t gpuIndex);
+    static void initSingleton(uint8_t gpuIndex);
 
-    void init();
+    void init(DeviceInfo deviceInfo);
     void createVkInstance();
     void cleanup();
     bool configureTEInstance(TEInstance* instance, std::string& error);
-    void createPrimaryDevice();
+    void createPrimaryDevice(uint8_t uuid[16]);
     void allocateInstanceResources();
     void setRequiredExtensions(std::vector<const char*> extensions);
 

@@ -1,32 +1,53 @@
 #include "renderer.h"
+#include "deviceinfo.h"
 #include "logging.h"
 
 
 const std::string Renderer::ConfigureError = "Vulkan is not supported or the selected GPU does not have the needed features.";
 
-std::shared_ptr<Renderer> Renderer::instance_ { nullptr };
-std::once_flag Renderer::initInstanceFlag_;
+std::unordered_map<uint8_t, std::shared_ptr<Renderer>> Renderer::instances_;
+std::mutex Renderer::instancesMutex_;
 
 std::shared_ptr<Renderer> 
-Renderer::instance()
+Renderer::instance(uint8_t gpuIndex)
 {
-	std::call_once(initInstanceFlag_, &initSingleton);
-	return instance_;
+	std::lock_guard<std::mutex> lock(instancesMutex_);
+	auto it = instances_.find(gpuIndex);
+	if (it == instances_.end())
+	{
+		instances_[gpuIndex].reset(new Renderer(gpuIndex));
+	}
+	return instances_[gpuIndex];
 }
 
 void
-Renderer::initSingleton()
+Renderer::initSingleton(uint8_t gpuIndex)
 {
-	instance_.reset(new Renderer);
+	// this will attempt to call the private/protected constructor and won't compile without derived class
+	//instances_[gpuIndex] = std::make_shared<Renderer>(gpuIndex); 
 
-	// this will try to call the private/protected constructor and won't compile without derived class
-	//instance_ = std::make_shared<Renderer>(); 
+	instances_[gpuIndex].reset(new Renderer(gpuIndex));
 }
 
-Renderer::Renderer()
+Renderer::Renderer(uint8_t gpuIndex)
 {
 	createVkInstance();
-	init();
+	auto deviceInfos = enumerateDevices(vContext_.instance);
+
+	if (deviceInfos.size() == 0)
+	{
+		spdlog::error("No Vulkan/CUDA compatible devices found");
+		return;
+	}
+
+	if (gpuIndex >= deviceInfos.size())
+	{
+		spdlog::error("Invalid GPU index");
+		return;
+	}
+
+	auto gpuInfo = deviceInfos[gpuIndex];
+	init(gpuInfo);
 }
 
 Renderer::~Renderer()
@@ -47,10 +68,30 @@ Renderer::cleanup()
 	}
 }
 
-void 
-Renderer::init()
+void
+Renderer::createVkInstance()
 {
-	createPrimaryDevice();
+	//vri::printAvailableValidationLayers();
+	//setRequiredExtensions(presenter_->getRequiredExtensions());
+
+	vri::createInstance(vContext_, requiredExtensions_, validationLayers_, enableValidationLayers_, debugMessenger_);
+
+	vDestroyCallbacks_.push_back([&]() {
+		if (enableValidationLayers_)
+			vri::destroyDebugUtilsMessengerEXT(
+				vContext_.instance, debugMessenger_, nullptr);
+
+		vkDestroyInstance(vContext_.instance, nullptr);
+		spdlog::debug("Vulkan instance destroyed");
+		SPDLOG_FLUSH
+		});
+}
+
+
+void 
+Renderer::init(DeviceInfo deviceInfo)
+{
+	createPrimaryDevice(deviceInfo.uuid);
 	allocateInstanceResources();
 
 	VkPhysicalDeviceProperties2  physicalDeviceProperties{ };
@@ -77,7 +118,7 @@ Renderer::init()
 	}
 	else
 	{
-		spdlog::info("TEVulkanContext created");
+		spdlog::debug("TEVulkanContext created");
 		SPDLOG_FLUSH
 	}
 
@@ -91,50 +132,29 @@ Renderer::setRequiredExtensions(std::vector<const char*> extensions)
 	requiredExtensions_ = extensions;
 }
 
-void
-Renderer::createVkInstance()
-{
-	//vri::printAvailableValidationLayers();
-	//setRequiredExtensions(presenter_->getRequiredExtensions());
-
-	vri::createInstance(vContext_, requiredExtensions_, validationLayers_, enableValidationLayers_, debugMessenger_);
-
-
-
-	vDestroyCallbacks_.push_back([&]() {
-		if (enableValidationLayers_)
-			vri::destroyDebugUtilsMessengerEXT(
-				vContext_.instance, debugMessenger_, nullptr);
-
-		vkDestroyInstance(vContext_.instance, nullptr);
-		spdlog::info("Vulkan instance destroyed");
-		SPDLOG_FLUSH
-		});
-}
-
-
-
-
 void 
-Renderer::createPrimaryDevice()
+Renderer::createPrimaryDevice(uint8_t uuid[16])
 {
-	vri::setPrimaryPhysicalDevice(vContext_, deviceExtensions_,
-		VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT);
+	if(vri::setPrimaryPhysicalDevice(vContext_, deviceExtensions_, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT, uuid))
+	{
+		vkGetPhysicalDeviceProperties(vContext_.physicalDevice,
+			&vContext_.physicalDeviceProperties);
 
-	vkGetPhysicalDeviceProperties(vContext_.physicalDevice,
-		&vContext_.physicalDeviceProperties);
+		spdlog::debug("Selected GPU: {}, uuid: {}", vContext_.physicalDeviceProperties.deviceName, utils::arrayToHexString(uuid, 16));
+		SPDLOG_FLUSH
 
-	spdlog::info("Selected GPU: {}", vContext_.physicalDeviceProperties.deviceName);
-	SPDLOG_FLUSH
+			vri::createDevice(vContext_, deviceExtensions_,
+				validationLayers_, enableValidationLayers_);
 
-	vri::createDevice(vContext_, deviceExtensions_,
-		validationLayers_, enableValidationLayers_);
-
-	vDestroyCallbacks_.push_back([&]()
-		{
-			vkDestroyDevice(vContext_.device, nullptr); }
-	);
-
+		vDestroyCallbacks_.push_back([&]()
+			{
+				vkDestroyDevice(vContext_.device, nullptr); }
+		);
+	}
+	else
+	{
+		spdlog::error("Failed to set primary physical Vulkan device");
+	}
 }
 
 void 

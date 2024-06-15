@@ -26,11 +26,11 @@ class Comp
 {
 public:
 	Comp();
-	Comp(
-		const std::string& filePath, 
+	Comp(uint8_t device);
+	Comp(const std::string& filePath, 
 		CompFlags compFlags = CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault,
-		int64_t fps = 60
-	);
+		int64_t fps = 60,
+		uint8_t device = 0);
 
 	~Comp();
 
@@ -156,7 +156,7 @@ private:
 
 	//static std::function<void(std::string)> printInfo;
 
-	void initComp(CompFlags compFlags);
+	void initComp(CompFlags compFlags, uint8_t device);
 	bool initInstance();
 	bool loadTox(const std::string& filePath, CompFlags compFlags = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
 	void autoUpdate();
@@ -166,7 +166,7 @@ private:
 	void applyOutputFloatBufferChange();
 	void applyOutputStringDataChange();
 
-	void createRenderer();
+	void createRenderer(uint8_t device);
 	void cudaInit();
 	bool setCudaDevice();
 
