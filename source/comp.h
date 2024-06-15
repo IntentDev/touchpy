@@ -123,7 +123,7 @@ private:
 	CompFlags                 compFlags_         { CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault };
 	TouchObject<TEInstance>   instance_          { nullptr };
 
-	std::unique_ptr<Renderer> renderer_;
+	std::shared_ptr<Renderer> renderer_;
 	VkDevice                  device_            { VK_NULL_HANDLE };
 	VkPhysicalDevice          physicalDevice_    { VK_NULL_HANDLE };
 	std::vector<uint32_t>     queueFamilyIndices_;

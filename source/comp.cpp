@@ -53,9 +53,7 @@ Comp::~Comp()
 void 
 Comp::createRenderer()
 {
-	renderer_ = std::make_unique<Renderer>();
-	renderer_->createInstance();
-	renderer_->init();
+	renderer_ = Renderer::instance();
 
 	device_ = renderer_->vContext().device;
 	physicalDevice_ = renderer_->vContext().physicalDevice;

@@ -4,14 +4,34 @@
 
 const std::string Renderer::ConfigureError = "Vulkan is not supported or the selected GPU does not have the needed features.";
 
+std::shared_ptr<Renderer> Renderer::instance_ { nullptr };
+std::once_flag Renderer::initInstanceFlag_;
+
+std::shared_ptr<Renderer> 
+Renderer::instance()
+{
+	std::call_once(initInstanceFlag_, &initSingleton);
+	return instance_;
+}
+
+void
+Renderer::initSingleton()
+{
+	instance_.reset(new Renderer);
+
+	// this will try to call the private/protected constructor and won't compile without derived class
+	//instance_ = std::make_shared<Renderer>(); 
+}
 
 Renderer::Renderer()
 {
-
+	createVkInstance();
+	init();
 }
 
 Renderer::~Renderer()
 {
+	cleanup();
 }
 
 void 
@@ -72,7 +92,7 @@ Renderer::setRequiredExtensions(std::vector<const char*> extensions)
 }
 
 void
-Renderer::createInstance()
+Renderer::createVkInstance()
 {
 	//vri::printAvailableValidationLayers();
 	//setRequiredExtensions(presenter_->getRequiredExtensions());
@@ -229,32 +249,32 @@ std::string Renderer::getConfigureError() const
 	return composed;
 }
 
-void Renderer::renderFrame()
-{
-	//onFrameBegin();
-	//onFrameEnd();
-}
-
-void
-Renderer::onFrameBegin()
-{
-	// wait and reset fences are now in presenter_->recordCommands()
-	// if wait fences are enabled here they must be reset after recordCommands success
-	// 
-	// VkFrameFence frameFence = presenter_->nextFrameFence();
-	// vkWaitForFences(vContext_.device, 1, &frameFence, VK_TRUE, UINT64_MAX);
-
-
-	//presenter_->recordCommands();
-	// vkResetFences(vContext_.device, 1, &frameFence);
-
-	//presenter_->submitPresent(vContext_.graphicsQueue);
-
-	vContext_.currentFrame = (vContext_.currentFrame + 1) % vContext_.maxFramesInFlight;
-}
-
-void 
-Renderer::onFrameEnd()
-{
-
-}
+//void Renderer::renderFrame()
+//{
+//	//onFrameBegin();
+//	//onFrameEnd();
+//}
+//
+//void
+//Renderer::onFrameBegin()
+//{
+//	// wait and reset fences are now in presenter_->recordCommands()
+//	// if wait fences are enabled here they must be reset after recordCommands success
+//	// 
+//	// VkFrameFence frameFence = presenter_->nextFrameFence();
+//	// vkWaitForFences(vContext_.device, 1, &frameFence, VK_TRUE, UINT64_MAX);
+//
+//
+//	//presenter_->recordCommands();
+//	// vkResetFences(vContext_.device, 1, &frameFence);
+//
+//	//presenter_->submitPresent(vContext_.graphicsQueue);
+//
+//	vContext_.currentFrame = (vContext_.currentFrame + 1) % vContext_.maxFramesInFlight;
+//}
+//
+//void 
+//Renderer::onFrameEnd()
+//{
+//
+//}

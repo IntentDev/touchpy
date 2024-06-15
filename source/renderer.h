@@ -1,36 +1,24 @@
 #pragma once
 
+#include <TouchEngine/TouchEngine.h>
+#include <TouchEngine/TEVulkan.h>
+
 #include "vri/vri.h"
 #include <functional>
 #include <vector>
 #include <string>
-#include <TouchEngine/TouchEngine.h>
-#include <TouchEngine/TEVulkan.h>
+#include <memory>
+#include <mutex>
+
+
 
 class Renderer
 {
 public:
-    Renderer();
+
     ~Renderer();
-    void cleanup();
-    void init();
 
-    //void setPresenter(Presenter* presenter) { presenter_ = presenter; }
-
-    // TODO: make this a generic list with a uniform interface for all renderers
-    //void setUIGraphics(UIGraphics* uiGraphics) { uiGraphics_ = uiGraphics; }
-
-    void setRequiredExtensions(std::vector<const char*> extensions);
-    void createInstance();
-    bool configureTEInstance(TEInstance* instance, std::string& error);
-    void createPrimaryDevice();
-    void allocateInstanceResources();
-
-
-
-    void renderFrame();
-    void onFrameBegin();
-    void onFrameEnd();
+    static std::shared_ptr<Renderer> instance();
 
     uint8_t* physicalDeviceUUID() { return physicalDeviceUUID_; }
     vri::VContext& vContext() { return vContext_; }
@@ -38,8 +26,7 @@ public:
     TouchObject<TEGraphicsContext> teContext() { return teContext_; }
 
 private:
-
-    uint8_t                             physicalDeviceUUID_[VK_UUID_SIZE];
+    uint8_t                             physicalDeviceUUID_[VK_UUID_SIZE] { };
     vri::VContext                       vContext_{ };
     std::vector<const char*>            requiredExtensions_{ };
     VkDebugUtilsMessengerEXT            debugMessenger_{ nullptr };
@@ -48,6 +35,20 @@ private:
     VkDescriptorPool                    descriptorPool_{ nullptr };
 
     TouchObject<TEVulkanContext>        teContext_;
+
+    static std::shared_ptr<Renderer> instance_;
+    static std::once_flag initInstanceFlag_;
+    
+    Renderer();
+    static void initSingleton();
+
+    void init();
+    void createVkInstance();
+    void cleanup();
+    bool configureTEInstance(TEInstance* instance, std::string& error);
+    void createPrimaryDevice();
+    void allocateInstanceResources();
+    void setRequiredExtensions(std::vector<const char*> extensions);
 
     static const std::string ConfigureError;
     std::string getConfigureError() const;
