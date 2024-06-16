@@ -34,7 +34,7 @@ std::vector<DeviceInfo> enumerateDevices(VkInstance instance)
 		cudaGetDeviceProperties(&prop, i);
 
 		//spdlog::debug("CUDA   GPU {}: name: {}, luid: {}, uuid: {}", 
-		//	i, prop.name, utils::arrayToHexString(prop.luid, 8), utils::arrayToHexString(prop.uuid.bytes, 16));
+		//	i, prop.name, utils::arrayToHexString(prop.luid, 8), utils::arrayToString(prop.uuid.bytes, 16));
 
 		DeviceInfo info;
 		info.index = i;
@@ -69,14 +69,27 @@ std::vector<DeviceInfo> enumerateDevices(VkInstance instance)
 			i, physicalDeviceProperties.properties.deviceName, utils::arrayToHexString(
 				physicalDeviceIDProperties.deviceLUID, 8), utils::arrayToHexString(physicalDeviceIDProperties.deviceUUID, 16));
 
+		auto hasCompute = false;
 		for (auto& device : devices)
 		{
 			auto result = std::memcmp(device.uuid, physicalDeviceIDProperties.deviceUUID, 16);
 			if (result == 0)
 			{
 				device.hasVulkan = true;
+				hasCompute = true;
 				break;
 			}
+		}
+
+		if (!hasCompute)
+		{
+			DeviceInfo info;
+			info.index = i;
+			std::copy(physicalDeviceIDProperties.deviceLUID, physicalDeviceIDProperties.deviceLUID + 8, info.luid);
+			std::copy(physicalDeviceIDProperties.deviceUUID, physicalDeviceIDProperties.deviceUUID + 16, info.uuid);
+			info.name = physicalDeviceProperties.properties.deviceName;
+			info.hasVulkan = true;
+			devices.push_back(info);
 		}
 	}
 

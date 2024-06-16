@@ -10,18 +10,15 @@
 
 //#include <bitset>
 
-Comp::Comp()
+Comp::Comp(CompFlags compFlags, uint8_t device) 
+	:	compFlags_(compFlags),
+		tryDevice_(device)
 {
-	initComp(CompFlagBits::InternalTimeAuto, 0u);
 }
 
-Comp::Comp(uint8_t device)
-{
-	initComp(CompFlagBits::InternalTimeAuto, device);
-}
-
-Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps, uint8_t device) 
-	:	compFlags_(compFlags)
+Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps, uint8_t device)
+	:	compFlags_(compFlags),
+		tryDevice_(device)
 {
 	spdlog::debug("Creating Comp");
 	
@@ -166,6 +163,8 @@ Comp::initInstance()
 
 bool Comp::loadTox(const std::string& filePath, int64_t fps)
 {
+	if (!renderer_) initComp(compFlags_, tryDevice_);
+
 	std::ifstream file(filePath, std::ios::in | std::ios::binary);
 	if (!file.is_open())
 	{
@@ -217,8 +216,8 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 	}
 
 	spdlog::default_logger()->flush();
-	// wait for instance to load
-	cv_.wait(lock, [this] { return ssLoaded_; });
+	
+	if (!onLoadedCallback_) cv_.wait(lock, [this] { return ssLoaded_; });
 
 	return ssLoaded_;
 }
@@ -321,7 +320,8 @@ Comp::onEventInstanceDidLoad(TEResult result, Comp* comp)
 {
 	std::unique_lock<std::mutex> lock(mutex_);
 	comp->ssLoaded_ = true;
-	comp->cv_.notify_one(); // notify load() that instance is ready
+	if (onLoadedCallback_) onLoadedCallback_(*comp, onLoadedCallbackUserData_);
+	else comp->cv_.notify_one(); // notify load() that instance is ready
 	lock.unlock();
 	spdlog::debug("Instance loaded: {}", TEResultGetDescription(result));
 }
@@ -522,7 +522,16 @@ Comp::setInFrame(bool inFrame, bool setTime, int64_t timeValue, int32_t timeScal
 	lock.unlock();
 }
 
-void Comp::setOnFrameCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData)
+void
+Comp::setOnLoadedCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData)
+{
+	onLoadedCallback_ = callback;
+	onLoadedCallbackUserData_ = userData;
+	return;
+}
+
+void 
+Comp::setOnFrameCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData)
 {
 	if (!asyncActive_)
 	{
@@ -563,7 +572,8 @@ void Comp::setOnFrameCallback(std::function<void(Comp&, std::shared_ptr<void>)> 
 }
 
 
-void Comp::clearOnFrameCallback()
+void 
+Comp::clearOnFrameCallback()
 {
 	if (!asyncActive_)
 	{
@@ -595,7 +605,8 @@ void Comp::clearOnFrameCallback()
 	}
 }
 
-bool Comp::callOnFrameCallback()
+bool 
+Comp::callOnFrameCallback()
 {
 	if (onFrameCallback_)
 	{
@@ -605,7 +616,8 @@ bool Comp::callOnFrameCallback()
 	return false;
 }
 
-void Comp::setOnLayoutChangeCallback( std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData)
+void 
+Comp::setOnLayoutChangeCallback( std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData)
 {
 	if (!asyncActive_)
 	{
@@ -643,7 +655,8 @@ void Comp::setOnLayoutChangeCallback( std::function<void(Comp&, std::shared_ptr<
 	}
 }
 
-void Comp::clearOnLayoutChangeCallback()
+void 
+Comp::clearOnLayoutChangeCallback()
 {
 	if (!asyncActive_)
 	{
@@ -675,7 +688,8 @@ void Comp::clearOnLayoutChangeCallback()
 	}
 }
 
-bool Comp::callOnLayoutChangeCallback()
+bool 
+Comp::callOnLayoutChangeCallback()
 {
 	if (onLayoutChangeCallback_)
 	{
@@ -697,7 +711,8 @@ Comp::time() const
 	return time__;
 }
 
-float Comp::frameRate() const
+float 
+Comp::frameRate() const
 {
 	float rate = 0.0f;
 	auto result = TEInstanceGetFloatFrameRate(instance_, &rate);
@@ -714,7 +729,8 @@ float Comp::frameRate() const
 	return rate;
 }
 
-void Comp::start()
+void 
+Comp::start()
 {
 	TEResult result = TEInstanceResume(instance_);
 	if (result != TEResultSuccess)
@@ -740,7 +756,8 @@ void Comp::start()
 	}
 }
 
-void Comp::stop()
+void 
+Comp::stop()
 {
 	if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AutoUpdate)
 	{
@@ -762,7 +779,8 @@ void Comp::stop()
 	spdlog::default_logger()->flush();
 }
 
-void Comp::autoUpdate()
+void 
+Comp::autoUpdate()
 {
 	updateLoopRunning_ = true;
 	while (updateLoopRunning_)
@@ -776,12 +794,14 @@ void Comp::autoUpdate()
 	}
 }
 
-void Comp::stopUpdate()
+void 
+Comp::stopUpdate()
 {
 	updateLoopRunning_ = false;
 }
 
-void Comp::startAsync()
+void 
+Comp::startAsync()
 {
 	// need to wait before returning from this function until first frame is finished
 
@@ -795,7 +815,8 @@ void Comp::startAsync()
 	lock.unlock();
 }
 
-void Comp::stopAsync()
+void 
+Comp::stopAsync()
 {
 	asyncSettingCallback_ = false;
 	asyncRunning_.store(false);
@@ -812,7 +833,8 @@ void Comp::stopAsync()
 	asyncActive_ = false;
 }
 
-void Comp::asyncUpdate()
+void 
+Comp::asyncUpdate()
 {
 	SPDLOG_DEBUG("asyncUpdate() log in thread successfull");
 	SPDLOG_FLUSH_DEBUG
@@ -870,7 +892,8 @@ Comp::frameDidFinish()
 	return !inFrame;
 }
 
-bool Comp::startNextFrame(int64_t timeValue, int32_t timeScale)
+bool 
+Comp::startNextFrame(int64_t timeValue, int32_t timeScale)
 {
 	setInFrame(true);
 	TEResult result = TEInstanceStartFrameAtTime(instance_, timeValue, timeScale, false);
@@ -883,7 +906,8 @@ bool Comp::startNextFrame(int64_t timeValue, int32_t timeScale)
 	return true;
 }
 
-void Comp::applyValueChanges()
+void 
+Comp::applyValueChanges()
 {
 	changedOutputTextures_.clear();
 	changedOutputFloatBuffers_.clear();
@@ -1000,7 +1024,7 @@ Comp::applyLayoutChange()
 				result = TEInstanceLinkGetInfo(instance_, groups->strings[i], group.take());
 				if (result == TEResultSuccess)
 				{
-					SPDLOG_DEBUG(getLinkInfoAsString(group));
+					SPDLOG_DEBUG(teutils::getLinkInfoAsString(group));
 				}
 				TouchObject<TEStringArray> children;
 				if (result == TEResultSuccess)
@@ -1015,7 +1039,7 @@ Comp::applyLayoutChange()
 						result = TEInstanceLinkGetInfo(instance_, children->strings[j], info.take());
 						if (result == TEResultSuccess)
 						{
-							SPDLOG_DEBUG(getLinkInfoAsString(info));
+							SPDLOG_DEBUG(teutils::getLinkInfoAsString(info));
 
 							if (info->type == TELinkTypeTexture)
 							{
@@ -1079,19 +1103,4 @@ Comp::applyLayoutChange()
 	if (updateLoopRunning_ || asyncRunning_.load()) startNextFrame();
 }
 
-std::string Comp::getLinkInfoAsString(TouchObject<TELinkInfo> info)
-{
-	std::stringstream ss;
-	ss << std::left
-		<< std::setw(6) << "Link:" << std::setw(16) << info->identifier
-		<< std::setw(6) << "name:" << std::setw(16) << info->name
-		<< std::setw(7) << "label:" << std::setw(16) << info->label
-		<< std::setw(7) << "scope:" << std::setw(16) << teutils::scopeToString(info->scope)
-		<< std::setw(8) << "intent:" << std::setw(28) << teutils::linkIntentToString(info->intent)
-		<< std::setw(8) << "domain:" << std::setw(24) << teutils::linkDomainToString(info->domain)
-		<< std::setw(7) << "count:" << std::setw(5) << info->count
-		<< std::setw(6) << "type:" << std::setw(16) << teutils::linkTypeToString(info->type)
-		;
 
-	return ss.str();
-}

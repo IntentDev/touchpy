@@ -37,6 +37,8 @@ std::string stringTrim(const std::string& str, size_t front, size_t back);
 
 std::string arrayToHexString(const uint8_t* data, size_t size);
 std::string arrayToHexString(const char* data, size_t size);
+std::string arrayToString(const char* data, size_t size);
+std::string arrayToString(const uint8_t* data, size_t size);
 
 
 template <typename T>

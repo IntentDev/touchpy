@@ -101,5 +101,18 @@ std::string arrayToHexString(const char* data, size_t size)
 	return arrayToHexString(reinterpret_cast<const uint8_t*>(data), size);
 }
 
+std::string arrayToString(const char* data, size_t size)
+{
+	if (data[size - 1] == '\0')
+		return std::string(data);
+
+	return std::string(data, size);
+}
+
+std::string arrayToString(const uint8_t* data, size_t size)
+{
+	return arrayToString(reinterpret_cast<const char*>(data), size);
+}
+
 
 NAMESPACE_END(utils)

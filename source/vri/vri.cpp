@@ -874,6 +874,8 @@ bool setPrimaryPhysicalDevice(
 		{
 			spdlog::debug("Found suitable Vulkan device: {}", static_cast<void*>(device));
 			vContext.physicalDevice = device;
+			vContext.physicalDeviceProperties = physicalDeviceProperties.properties;
+			vContext.physicalDeviceIDProperties = physicalDeviceIDProperties;
 			return true;
 		}
 	}

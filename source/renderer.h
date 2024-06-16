@@ -22,19 +22,16 @@ public:
 
     static std::shared_ptr<Renderer> instance(uint8_t gpuIndex);
 
-    uint8_t* physicalDeviceUUID() { return physicalDeviceUUID_; }
+    uint8_t* physicalDeviceUUID() { return vContext_.physicalDeviceIDProperties.deviceUUID; }
     vri::VContext& vContext() { return vContext_; }
 
     TouchObject<TEGraphicsContext> teContext() { return teContext_; }
 
 private:
-    uint8_t                             physicalDeviceUUID_[VK_UUID_SIZE] { };
     vri::VContext                       vContext_{ };
     std::vector<const char*>            requiredExtensions_{ };
     VkDebugUtilsMessengerEXT            debugMessenger_{ nullptr };
     std::vector<std::function<void()>>  vDestroyCallbacks_;
-
-    VkDescriptorPool                    descriptorPool_{ nullptr };
 
     TouchObject<TEVulkanContext>        teContext_;
 
@@ -48,7 +45,7 @@ private:
     void createVkInstance();
     void cleanup();
     bool configureTEInstance(TEInstance* instance, std::string& error);
-    void createPrimaryDevice(uint8_t uuid[16]);
+    void createPrimaryDevice(DeviceInfo deviceInfo);
     void allocateInstanceResources();
     void setRequiredExtensions(std::vector<const char*> extensions);
 

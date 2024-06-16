@@ -23,7 +23,7 @@ Renderer::instance(uint8_t gpuIndex)
 void
 Renderer::initSingleton(uint8_t gpuIndex)
 {
-	// this will attempt to call the private/protected constructor and won't compile without derived class
+	// this will attempt to call the private/protected constructor and won't compile without a derived class
 	//instances_[gpuIndex] = std::make_shared<Renderer>(gpuIndex); 
 
 	instances_[gpuIndex].reset(new Renderer(gpuIndex));
@@ -46,8 +46,13 @@ Renderer::Renderer(uint8_t gpuIndex)
 		return;
 	}
 
-	auto gpuInfo = deviceInfos[gpuIndex];
-	init(gpuInfo);
+	if (deviceInfos[gpuIndex].hasVulkan == false)
+	{
+		spdlog::error("Selected GPU does not support Vulkan");
+		return;
+	}
+
+	init(deviceInfos[gpuIndex]);
 }
 
 Renderer::~Renderer()
@@ -91,23 +96,14 @@ Renderer::createVkInstance()
 void 
 Renderer::init(DeviceInfo deviceInfo)
 {
-	createPrimaryDevice(deviceInfo.uuid);
+	createPrimaryDevice(deviceInfo);
 	allocateInstanceResources();
 
-	VkPhysicalDeviceProperties2  physicalDeviceProperties{ };
-	physicalDeviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-
-	VkPhysicalDeviceIDProperties  physicalDeviceIDProperties{ };
-	physicalDeviceIDProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
-	physicalDeviceProperties.pNext = &physicalDeviceIDProperties;
-
-	vkGetPhysicalDeviceProperties2(vContext_.physicalDevice, &physicalDeviceProperties);
-
 	TEResult result = TEVulkanContextCreate(
-		physicalDeviceIDProperties.deviceUUID,
-		physicalDeviceIDProperties.driverUUID,
-		physicalDeviceIDProperties.deviceLUID,
-		physicalDeviceIDProperties.deviceLUIDValid,
+		vContext_.physicalDeviceIDProperties.deviceUUID,
+		vContext_.physicalDeviceIDProperties.driverUUID,
+		vContext_.physicalDeviceIDProperties.deviceLUID,
+		vContext_.physicalDeviceIDProperties.deviceLUIDValid,
 		TETextureOriginBottomLeft, 
 		teContext_.take()
 	);
@@ -121,9 +117,6 @@ Renderer::init(DeviceInfo deviceInfo)
 		spdlog::debug("TEVulkanContext created");
 		SPDLOG_FLUSH
 	}
-
-	
-    std::memcpy(physicalDeviceUUID_, physicalDeviceIDProperties.deviceUUID, sizeof(uint8_t) * 16);
 }
 
 void 
@@ -133,14 +126,14 @@ Renderer::setRequiredExtensions(std::vector<const char*> extensions)
 }
 
 void 
-Renderer::createPrimaryDevice(uint8_t uuid[16])
+Renderer::createPrimaryDevice(DeviceInfo deviceInfo)
 {
-	if(vri::setPrimaryPhysicalDevice(vContext_, deviceExtensions_, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT, uuid))
+	if(vri::setPrimaryPhysicalDevice(
+		vContext_, deviceExtensions_, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT, deviceInfo.uuid))
 	{
-		vkGetPhysicalDeviceProperties(vContext_.physicalDevice,
-			&vContext_.physicalDeviceProperties);
 
-		spdlog::debug("Selected GPU: {}, uuid: {}", vContext_.physicalDeviceProperties.deviceName, utils::arrayToHexString(uuid, 16));
+		spdlog::debug("Selected GPU: {}, uuid: {}", 
+			vContext_.physicalDeviceProperties.deviceName, utils::arrayToHexString(vContext_.physicalDeviceIDProperties.deviceUUID, 16));
 		SPDLOG_FLUSH
 
 			vri::createDevice(vContext_, deviceExtensions_,
@@ -162,12 +155,6 @@ Renderer::allocateInstanceResources()
 {
 	vri::createVmaAllocator(vContext_);
 	vDestroyCallbacks_.push_back([&]() { vmaDestroyAllocator(vContext_.allocator); });
-
-	vri::createDescriptorPool(vContext_, descriptorPool_, vContext_.maxFramesInFlight);
-	vDestroyCallbacks_.push_back([&]() {
-		if (descriptorPool_ != nullptr)
-			vkDestroyDescriptorPool(vContext_.device, descriptorPool_, nullptr);
-		});
 
 	vri::createCommandPool(
 		vContext_.device,
@@ -202,7 +189,6 @@ Renderer::allocateInstanceResources()
 		});
 
 }
-
 
 bool Renderer::configureTEInstance(TEInstance* instance, std::string& error)
 {

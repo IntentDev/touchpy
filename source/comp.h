@@ -25,8 +25,7 @@
 class Comp
 {
 public:
-	Comp();
-	Comp(uint8_t device);
+	Comp(CompFlags compFlags = CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault, uint8_t device = 0);
 	Comp(const std::string& filePath, 
 		CompFlags compFlags = CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault,
 		int64_t fps = 60,
@@ -35,6 +34,7 @@ public:
 	~Comp();
 
 	bool loadTox(const std::string& filePath, int64_t fps = 60);
+
 	void unload();
 	bool loaded() const; 
 
@@ -53,13 +53,12 @@ public:
 	OutDatLinks&       outDatLinks()    { return *outDatLinks_; }
 	ParLinkCollection& parLinks()       { return *parLinks_; }
 
+	void setOnLoadedCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData);
 	void setOnFrameCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData);
 	void clearOnFrameCallback();
-	bool callOnFrameCallback();
 
 	void setOnLayoutChangeCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData);
 	void clearOnLayoutChangeCallback();
-	bool callOnLayoutChangeCallback();
 
 	struct Time
 	{
@@ -121,6 +120,7 @@ private:
 
 	std::string               filePath_;
 	CompFlags                 compFlags_         { CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault };
+	uint8_t 				  tryDevice_         { 0 };
 	TouchObject<TEInstance>   instance_          { nullptr };
 
 	std::shared_ptr<Renderer> renderer_;
@@ -149,10 +149,12 @@ private:
 
 	
 	bool											  updateLoopRunning_	{ false };
+	std::function<void(Comp&, std::shared_ptr<void>)> onLoadedCallback_ { nullptr };
+	std::shared_ptr<void>							  onLoadedCallbackUserData_ { nullptr };
+	std::function<void(Comp&, std::shared_ptr<void>)> onFrameCallback_{ nullptr };
 	std::shared_ptr<void>							  onFrameCallbackUserData_ { nullptr };
-	std::function<void(Comp&, std::shared_ptr<void>)> onFrameCallback_ { nullptr };
-	std::shared_ptr<void>							  onLayoutChangeCallbackUserData_{ nullptr };
 	std::function<void(Comp&, std::shared_ptr<void>)> onLayoutChangeCallback_{ nullptr };
+	std::shared_ptr<void>							  onLayoutChangeCallbackUserData_{ nullptr };
 
 	//static std::function<void(std::string)> printInfo;
 
@@ -169,6 +171,9 @@ private:
 	void createRenderer(uint8_t device);
 	void cudaInit();
 	bool setCudaDevice();
+
+	bool callOnFrameCallback();
+	bool callOnLayoutChangeCallback();
 
 	// TouchEngine thread only
 	//-----------------------------------------------------------------------------------------------------------------
@@ -205,8 +210,5 @@ private:
 	void onLinkEventMoved(const char* identifier)       { onLinkLayoutChange(TELinkEventMoved, identifier); }
 	void onLinkEventStateChange(const char* identifier) { onLinkLayoutChange(TELinkEventStateChange, identifier); }
 	void onLinkEventChildChange(const char* identifier) { onLinkLayoutChange(TELinkEventChildChange, identifier); }    
-
-	std::string getLinkInfoAsString(TouchObject<TELinkInfo> info);
-
 
 };
