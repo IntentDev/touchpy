@@ -21,6 +21,8 @@
 #include <thread>
 #include <atomic>
 
+using CallbackFunc = std::function<void(std::shared_ptr<void>)>;
+using CallbackData = std::shared_ptr<void>;
 
 class Comp
 {
@@ -53,11 +55,14 @@ public:
 	OutDatLinks&       outDatLinks()    { return *outDatLinks_; }
 	ParLinkCollection& parLinks()       { return *parLinks_; }
 
-	void setOnLoadedCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData);
-	void setOnFrameCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData);
+
+	void setOnLoadedCallback(CallbackFunc callback, CallbackData data);
+	void setOnStartCallback(CallbackFunc callback, CallbackData data);
+	void setOnStopCallback(CallbackFunc callback, CallbackData data);
+	void setOnFrameCallback(CallbackFunc callback, CallbackData data);
 	void clearOnFrameCallback();
 
-	void setOnLayoutChangeCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData);
+	void setOnLayoutChangeCallback(CallbackFunc callback, CallbackData data);
 	void clearOnLayoutChangeCallback();
 
 	struct Time
@@ -147,14 +152,23 @@ private:
 	std::unique_ptr<OutDatLinks>       outDatLinks_;
 	std::unique_ptr<ParLinkCollection> parLinks_;
 
-	
-	bool											  updateLoopRunning_	{ false };
-	std::function<void(Comp&, std::shared_ptr<void>)> onLoadedCallback_ { nullptr };
-	std::shared_ptr<void>							  onLoadedCallbackUserData_ { nullptr };
-	std::function<void(Comp&, std::shared_ptr<void>)> onFrameCallback_{ nullptr };
-	std::shared_ptr<void>							  onFrameCallbackUserData_ { nullptr };
-	std::function<void(Comp&, std::shared_ptr<void>)> onLayoutChangeCallback_{ nullptr };
-	std::shared_ptr<void>							  onLayoutChangeCallbackUserData_{ nullptr };
+
+	bool         updateLoopRunning_      { false };
+
+	CallbackFunc onLoadedCallback_       { nullptr };
+	CallbackData onLoadedData_           { nullptr };
+
+	CallbackFunc onStartCallback_        { nullptr };
+	CallbackData onStartData_            { nullptr };
+
+	CallbackFunc onStopCallback_         { nullptr };
+	CallbackData onStopData_             { nullptr };
+
+	CallbackFunc onFrameCallback_        { nullptr };
+	CallbackData onFrameData_            { nullptr };
+
+	CallbackFunc onLayoutChangeCallback_ { nullptr };
+	CallbackData onLayoutChangeData_     { nullptr };
 
 	//static std::function<void(std::string)> printInfo;
 

@@ -48,7 +48,7 @@ Comp::~Comp()
 
 	vkDestroyFence(device_, submitFence_, nullptr);
 
-	spdlog::debug("Comp resources destroyed");
+	spdlog::debug("Comp destroyed");
 	spdlog::default_logger()->flush();
 }
 
@@ -228,16 +228,25 @@ Comp::unload()
 	if (asyncRunning_.load()) stopAsync();
 	else if (updateLoopRunning_) stopUpdate();
 
+	// sleep for a bit to allow async thread to finish
+	//std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
 	std::unique_lock<std::mutex> lock(mutex_);
 	if (ssLoaded_)
 	{
 		spdlog::debug("Unloading TEInstance...");
+		
 
 		ssUnloading_ = true;
-		onFrameCallbackUserData_ = nullptr;
+		onLoadedCallback_ = nullptr;
+		onLoadedData_ = nullptr;
+		onStartCallback_ = nullptr;
+		onStartData_ = nullptr;
+		onStopCallback_ = nullptr;
+		onStopData_ = nullptr;
+		onFrameData_ = nullptr;
 		onFrameCallback_ = nullptr;
-		onLayoutChangeCallbackUserData_ = nullptr;
+		onLayoutChangeData_ = nullptr;
 		onLayoutChangeCallback_ = nullptr;
 
 		cudaStreamSynchronize(cudaStream_);
@@ -276,8 +285,11 @@ Comp::eventCallback(TEInstance* instance,
 	int32_t end_time_scale,
 	void* info)
 {
-	//if (event != TEEventFrameDidFinish)
-	//	SPDLOG_DEBUG("eventCallback: {} result: {}", teutils::eventToString(event), TEResultGetDescription(result));
+	if (event != TEEventFrameDidFinish)
+	{
+		spdlog::debug("eventCallback: {} result: {}", teutils::eventToString(event), TEResultGetDescription(result));
+		spdlog::default_logger()->flush();
+	}
 
 	Comp* comp = static_cast<Comp*>(info);
 
@@ -320,10 +332,10 @@ Comp::onEventInstanceDidLoad(TEResult result, Comp* comp)
 {
 	std::unique_lock<std::mutex> lock(mutex_);
 	comp->ssLoaded_ = true;
-	if (onLoadedCallback_) onLoadedCallback_(*comp, onLoadedCallbackUserData_);
+	if (onLoadedCallback_) onLoadedCallback_(onLoadedData_);
 	else comp->cv_.notify_one(); // notify load() that instance is ready
-	lock.unlock();
 	spdlog::debug("Instance loaded: {}", TEResultGetDescription(result));
+	spdlog::default_logger()->flush();
 }
 
 void 
@@ -334,6 +346,7 @@ Comp::onEventInstanceDidUnload(TEResult result, Comp* comp)
 	ssReady_ = false;
 	comp->cv_.notify_one(); // notify unload() that instance is unloaded
 	spdlog::debug("Instance unloaded: {}", TEResultGetDescription(result));
+	spdlog::default_logger()->flush();
 }
 
 void 
@@ -523,23 +536,39 @@ Comp::setInFrame(bool inFrame, bool setTime, int64_t timeValue, int32_t timeScal
 }
 
 void
-Comp::setOnLoadedCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData)
+Comp::setOnLoadedCallback(CallbackFunc callback, CallbackData data)
 {
 	onLoadedCallback_ = callback;
-	onLoadedCallbackUserData_ = userData;
+	onLoadedData_ = data;
+	return;
+}
+
+void
+Comp::setOnStartCallback(CallbackFunc callback, CallbackData data)
+{
+	onStartCallback_ = callback;
+	onStartData_ = data;
+	return;
+}
+
+void
+Comp::setOnStopCallback(CallbackFunc callback, CallbackData data)
+{
+	onStopCallback_ = callback;
+	onStopData_ = data;
 	return;
 }
 
 void 
-Comp::setOnFrameCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData)
+Comp::setOnFrameCallback(CallbackFunc callback, CallbackData data)
 {
 	if (!asyncActive_)
 	{
 		onFrameCallback_ = nullptr;
-		onFrameCallbackUserData_ = nullptr;
+		onFrameData_ = nullptr;
 
 		onFrameCallback_ = callback;
-		onFrameCallbackUserData_ = userData;
+		onFrameData_ = data;
 		return;
 	}
 	else
@@ -556,10 +585,10 @@ Comp::setOnFrameCallback(std::function<void(Comp&, std::shared_ptr<void>)> callb
 		}
 
 		onFrameCallback_ = nullptr;
-		onFrameCallbackUserData_ = nullptr;
+		onFrameData_ = nullptr;
 
 		onFrameCallback_ = callback;
-		onFrameCallbackUserData_ = userData;
+		onFrameData_ = data;
 
 		if (asyncRunning_.load())
 		{
@@ -578,7 +607,7 @@ Comp::clearOnFrameCallback()
 	if (!asyncActive_)
 	{
 		onFrameCallback_ = nullptr;
-		onFrameCallbackUserData_ = nullptr;
+		onFrameData_ = nullptr;
 		return;
 	}
 	else
@@ -593,7 +622,7 @@ Comp::clearOnFrameCallback()
 		}
 
 		onFrameCallback_ = nullptr;
-		onFrameCallbackUserData_ = nullptr;
+		onFrameData_ = nullptr;
 
 		if (asyncRunning_.load())
 		{
@@ -610,22 +639,22 @@ Comp::callOnFrameCallback()
 {
 	if (onFrameCallback_)
 	{
-		onFrameCallback_(*this, onFrameCallbackUserData_);
+		onFrameCallback_(onFrameData_);
 		return true;
 	}
 	return false;
 }
 
 void 
-Comp::setOnLayoutChangeCallback( std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData)
+Comp::setOnLayoutChangeCallback( CallbackFunc callback, CallbackData data)
 {
 	if (!asyncActive_)
 	{
 		onLayoutChangeCallback_ = nullptr;
-		onLayoutChangeCallbackUserData_ = nullptr;
+		onLayoutChangeData_ = nullptr;
 
 		onLayoutChangeCallback_ = callback;
-		onLayoutChangeCallbackUserData_ = userData;
+		onLayoutChangeData_ = data;
 		return;
 	}
 	else
@@ -640,10 +669,10 @@ Comp::setOnLayoutChangeCallback( std::function<void(Comp&, std::shared_ptr<void>
 		}
 
 		onLayoutChangeCallback_ = nullptr;
-		onLayoutChangeCallbackUserData_ = nullptr;
+		onLayoutChangeData_ = nullptr;
 
 		onLayoutChangeCallback_ = callback;
-		onLayoutChangeCallbackUserData_ = userData;
+		onLayoutChangeData_ = data;
 
 		if (asyncRunning_.load())
 		{
@@ -661,7 +690,7 @@ Comp::clearOnLayoutChangeCallback()
 	if (!asyncActive_)
 	{
 		onLayoutChangeCallback_ = nullptr;
-		onLayoutChangeCallbackUserData_ = nullptr;
+		onLayoutChangeData_ = nullptr;
 		return;
 	}
 	else
@@ -676,7 +705,7 @@ Comp::clearOnLayoutChangeCallback()
 		}
 
 		onLayoutChangeCallback_ = nullptr;
-		onLayoutChangeCallbackUserData_ = nullptr;
+		onLayoutChangeData_ = nullptr;
 
 		if (asyncRunning_.load())
 		{
@@ -693,7 +722,7 @@ Comp::callOnLayoutChangeCallback()
 {
 	if (onLayoutChangeCallback_)
 	{
-		onLayoutChangeCallback_(*this, onLayoutChangeCallbackUserData_);
+		onLayoutChangeCallback_(onLayoutChangeData_);
 		return true;
 	}
 	return false;
@@ -754,6 +783,8 @@ Comp::start()
 		spdlog::debug("Starting async update");
 		startAsync();
 	}
+
+	if (onStartCallback_) onStartCallback_(onStartData_);
 }
 
 void 
@@ -776,6 +807,9 @@ Comp::stop()
 		spdlog::error("Failed to suspend TEInstance: {}", TEResultGetDescription(result));
 		throw std::runtime_error("Failed to suspend TEInstance");
 	}
+
+	spdlog::debug("TEInstance suspended");
+	if (onStopCallback_) onStopCallback_(onStopData_);
 	spdlog::default_logger()->flush();
 }
 
@@ -874,6 +908,8 @@ Comp::asyncUpdate()
 		asyncContinueStop_ = true;
 		asyncStopCV_.notify_one();  // Notify stopAsync() that the loop is finished
 	}
+	//SPDLOG_DEBUG("asyncUpdate() finished");
+	//SPDLOG_FLUSH_DEBUG
 }
 
 bool 
