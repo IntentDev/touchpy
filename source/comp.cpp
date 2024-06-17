@@ -228,9 +228,6 @@ Comp::unload()
 	if (asyncRunning_.load()) stopAsync();
 	else if (updateLoopRunning_) stopUpdate();
 
-	// sleep for a bit to allow async thread to finish
-	//std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
 	std::unique_lock<std::mutex> lock(mutex_);
 	if (ssLoaded_)
 	{
@@ -238,6 +235,7 @@ Comp::unload()
 		
 
 		ssUnloading_ = true;
+
 		onLoadedCallback_ = nullptr;
 		onLoadedData_ = nullptr;
 		onStartCallback_ = nullptr;
@@ -251,8 +249,6 @@ Comp::unload()
 
 		cudaStreamSynchronize(cudaStream_);
 
-
-		lock.unlock();
 		TEResult result = TEInstanceUnload(instance_);
 		if (result != TEResultSuccess)
 		{
@@ -260,8 +256,7 @@ Comp::unload()
 			throw std::runtime_error("Failed to initiate unloading of TEInstance");
 		}
 
-		lock.lock();
-		cv_.wait(lock, [this] { return !ssLoaded_; });
+		//cv_.wait(lock, [this] { return !ssLoaded_; });
 	}
 	//spdlog::default_logger()->flush();
 }
@@ -341,6 +336,7 @@ Comp::onEventInstanceDidLoad(TEResult result, Comp* comp)
 void 
 Comp::onEventInstanceDidUnload(TEResult result, Comp* comp)
 {
+	std::unique_lock<std::mutex> lock(mutex_);
 	ssUnloading_ = false;
 	ssLoaded_ = false;
 	ssReady_ = false;
@@ -872,6 +868,9 @@ Comp::asyncUpdate()
 {
 	SPDLOG_DEBUG("asyncUpdate() log in thread successfull");
 	SPDLOG_FLUSH_DEBUG
+
+	cudaSetDevice(cudaDevice_);
+
 	static uint64_t counter = 0;
 	while (asyncRunning_.load())
 	{

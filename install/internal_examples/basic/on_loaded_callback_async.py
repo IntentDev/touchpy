@@ -12,7 +12,7 @@ tp.init_logging(level=tp.LogLevel.DEBUG)
 
 
 class MyComp (tp.Comp):
-	def __init__(self, flags=tp.CompFlags.INTERNAL_TIME_ASYNC | tp.CompFlags.CUDA_STREAM_DEFAULT, device=0):
+	def __init__(self, flags=tp.CompFlags.INTERNAL_TIME_ASYNC | tp.CompFlags.CUDA_STREAM_DEFAULT, device=1):
 		super().__init__(flags=flags, device=device)
 		self.device = torch.device(f"cuda:{device}")
 		self.frame = 0
@@ -20,7 +20,7 @@ class MyComp (tp.Comp):
 		self.set_on_layout_change_callback(self.on_layout_change, {})
 		self.set_on_frame_callback(self.on_frame, {})
 
-	def on_layout_change(self, comp, info):
+	def on_layout_change(self, info):
 		# print('layout change:', info)
 		pass
 
@@ -28,7 +28,7 @@ class MyComp (tp.Comp):
 		if 'Openwindow' in self.par.names:
 			self.par['Openwindow'].pulse()
 
-	def on_frame(self, comp, info):
+	def on_frame(self, info):
 
 		self.start_next_frame()
 		self.frame += 1

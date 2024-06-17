@@ -73,24 +73,26 @@ async def stop_comps(comps):
 
 	await asyncio.gather(*comp_futures.values())
 
+async def unload_comps(comps):
+	for comp in comps:
+		comp.unload()
+
 
 async def main():
 	comps = [MyComp() for _ in range(3)]
+
+	# load 3 comps on the second GPU as well
+	# comps += [MyComp(flags=tp.CompFlags.INTERNAL_TIME_ASYNC, device=1) for _ in range(3)]
 
 	await load_comps(comps)
 	await start_comps(comps)
 	await wait_for_ctrl_q(comps)
 	await stop_comps(comps)
+	await unload_comps(comps)
 
-	await asyncio.sleep(0.1)
-	
-	for comp in comps:
-		comp.unload()
-		del comp
 
 if __name__ == '__main__':
 	asyncio.run(main())
-
 
 	print('Test complete.')
 
