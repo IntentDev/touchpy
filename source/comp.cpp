@@ -23,7 +23,7 @@ Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps, uint8_
 	spdlog::debug("Creating Comp");
 	
 	initComp(compFlags, device);
-	loadTox(filePath, compFlags, fps);
+	load(filePath, compFlags, fps);
 
 	spdlog::default_logger()->flush();
 }
@@ -161,7 +161,7 @@ Comp::initInstance()
 	return true;
 }
 
-bool Comp::loadTox(const std::string& filePath, int64_t fps)
+bool Comp::load(const std::string& filePath, int64_t fps)
 {
 	if (!renderer_) initComp(compFlags_, tryDevice_);
 
@@ -172,10 +172,10 @@ bool Comp::loadTox(const std::string& filePath, int64_t fps)
 		throw std::runtime_error("Failed to open tox file");
 	}
 
-	return loadTox(filePath, compFlags_, fps);
+	return load(filePath, compFlags_, fps);
 }
 
-bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps)
+bool Comp::load(const std::string& filePath, CompFlags compFlags, int64_t fps)
 {
 	std::ifstream file(filePath, std::ios::in | std::ios::binary);
 	if (!file.is_open())
@@ -228,13 +228,19 @@ Comp::unload()
 	if (asyncRunning_.load()) stopAsync();
 	else if (updateLoopRunning_) stopUpdate();
 
-	std::unique_lock<std::mutex> lock(mutex_);
-	if (ssLoaded_)
+	
+
+	auto state = getState();
+
+	if (state.loaded)
 	{
 		spdlog::debug("Unloading TEInstance...");
-		
+		spdlog::default_logger()->flush();
 
-		ssUnloading_ = true;
+		{
+			std::lock_guard<std::mutex> guard(mutex_);
+			ssUnloading_ = true;
+		}
 
 		onLoadedCallback_ = nullptr;
 		onLoadedData_ = nullptr;
@@ -256,9 +262,11 @@ Comp::unload()
 			throw std::runtime_error("Failed to initiate unloading of TEInstance");
 		}
 
+		// waiting seems to cause a deadlock when running async even though the thread is joined... 
+		//std::unique_lock<std::mutex> lock(mutex_);
 		//cv_.wait(lock, [this] { return !ssLoaded_; });
 	}
-	//spdlog::default_logger()->flush();
+	
 }
 
 
@@ -325,10 +333,12 @@ Comp::onEventInstanceReady(TEResult result, Comp* comp)
 void 
 Comp::onEventInstanceDidLoad(TEResult result, Comp* comp)
 {
-	std::unique_lock<std::mutex> lock(mutex_);
-	comp->ssLoaded_ = true;
-	if (onLoadedCallback_) onLoadedCallback_(onLoadedData_);
-	else comp->cv_.notify_one(); // notify load() that instance is ready
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		comp->ssLoaded_ = true;
+		if (onLoadedCallback_) onLoadedCallback_(onLoadedData_);
+		else comp->cv_.notify_one(); // notify load() that instance is ready
+	}
 	spdlog::debug("Instance loaded: {}", TEResultGetDescription(result));
 	spdlog::default_logger()->flush();
 }
@@ -336,11 +346,16 @@ Comp::onEventInstanceDidLoad(TEResult result, Comp* comp)
 void 
 Comp::onEventInstanceDidUnload(TEResult result, Comp* comp)
 {
-	std::unique_lock<std::mutex> lock(mutex_);
-	ssUnloading_ = false;
-	ssLoaded_ = false;
-	ssReady_ = false;
-	comp->cv_.notify_one(); // notify unload() that instance is unloaded
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		ssUnloading_ = false;
+		ssLoaded_ = false;
+		ssReady_ = false;
+		if (onUnloadedCallback_) onUnloadedCallback_(onUnloadedData_);
+		// waiting in unload() seems to cause a deadlock when running async even though the thread is joined... 
+		//else cv_.notify_one(); // notify unload() that instance is unloaded)
+	}
+
 	spdlog::debug("Instance unloaded: {}", TEResultGetDescription(result));
 	spdlog::default_logger()->flush();
 }
@@ -485,23 +500,27 @@ Comp::onLinkEventValueChange(const char* identifier)
 	}
 }
 
-void
-Comp::getState(bool& ready, bool& loaded, bool& linksLayoutChanged, bool& inFrame)
+const Comp::State
+Comp::getState()
 {
+	State state;
 	std::lock_guard<std::mutex> guard(mutex_);
-	loaded = ssLoaded_;
-	ready = ssReady_;
+	state.loaded = ssLoaded_;
+	state.ready = ssReady_;
+
 	if (ssLoaded_ && ssReady_)
 	{
-		linksLayoutChanged = ssPendingLayoutChange_;
-		inFrame = ssInFrame_;
+		state.linksLayoutChanged = ssPendingLayoutChange_;
+		state.inFrame = ssInFrame_;
 		ssPendingLayoutChange_ = false;
 	}
 	else
 	{
-		linksLayoutChanged = false;
-		inFrame = false;
+		state.linksLayoutChanged = false;
+		state.inFrame = false;
 	}
+
+	return state;
 }
 
 void 
@@ -536,6 +555,14 @@ Comp::setOnLoadedCallback(CallbackFunc callback, CallbackData data)
 {
 	onLoadedCallback_ = callback;
 	onLoadedData_ = data;
+	return;
+}
+
+void
+Comp::setOnUnloadedCallback(CallbackFunc callback, CallbackData data)
+{
+	onUnloadedCallback_ = callback;
+	onUnloadedData_ = data;
 	return;
 }
 
@@ -874,12 +901,11 @@ Comp::asyncUpdate()
 	static uint64_t counter = 0;
 	while (asyncRunning_.load())
 	{
-		bool ready, loaded, linksLayoutChanged, inFrame;
-		getState(ready, loaded, linksLayoutChanged, inFrame);
+		auto state = getState();
 
-		if (!loaded || !ready) continue;
+		if (!state.loaded || !state.ready) continue;
 
-		if (linksLayoutChanged)
+		if (state.linksLayoutChanged)
 		{
 			applyLayoutChange();
 			SPDLOG_DEBUG("layout changed");
@@ -887,7 +913,7 @@ Comp::asyncUpdate()
 			continue;
 		}
 		
-		if (!inFrame)
+		if (!state.inFrame)
 		{
 			++counter;
 
@@ -914,17 +940,15 @@ Comp::asyncUpdate()
 bool 
 Comp::frameDidFinish()
 {
-	bool ready, loaded, linksLayoutChanged, inFrame;
-	getState(ready, loaded, linksLayoutChanged, inFrame);
+	auto state = getState();
+	if (!state.loaded || !state.ready) return false;
 
-	if (!loaded || !ready) return false;
-
-	if (linksLayoutChanged)
+	if (state.linksLayoutChanged)
 	{
 		applyLayoutChange();
 		return false;
 	}
-	return !inFrame;
+	return !state.inFrame;
 }
 
 bool 

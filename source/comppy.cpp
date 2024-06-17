@@ -239,7 +239,7 @@ void initCompBindings(nb::module_& m)
 			"flags"_a = CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault, "device"_a = 0u, nb::rv_policy::take_ownership)
 		.def(nb::init<const std::string&, CompFlagBits, int64_t, uint8_t>(),
 			"tox_path"_a, "flags"_a = CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault, "fps"_a = 60, "device"_a = 0u, nb::rv_policy::take_ownership)
-		.def("load_tox", [](Comp& self, std::string path, int fps) { self.loadTox(path, fps); } , "tox_path"_a, "fps"_a = 60, load_toxDoc)
+		.def("load", [](Comp& self, std::string path, int fps) { self.load(path, fps); } , "tox_path"_a, "fps"_a = 60, load_toxDoc)
 		.def("unload",                 &Comp::unload, unloadDoc, nb::rv_policy::reference_internal)
 		.def("start",                  &Comp::start, startDoc, nb::rv_policy::reference_internal)
 		.def("stop",                   &Comp::stop, stopDoc, nb::rv_policy::reference_internal)
@@ -266,6 +266,13 @@ void initCompBindings(nb::module_& m)
 		{
 			auto dataPtr = std::make_shared<nb::object>(data); 
 			self.setOnLoadedCallback([callback](CallbackData data) { doCallbackAsync(callback, data); }, dataPtr);
+		},
+		"callback"_a, "info"_a, set_on_loaded_callbackDoc);
+
+	comp.def("set_on_unloaded_callback", [](Comp& self, nb::callable callback, nb::object data)
+		{
+			auto dataPtr = std::make_shared<nb::object>(data);
+			self.setOnUnloadedCallback([callback](CallbackData data) { doCallbackAsync(callback, data); }, dataPtr);
 		},
 		"callback"_a, "info"_a, set_on_loaded_callbackDoc);
 

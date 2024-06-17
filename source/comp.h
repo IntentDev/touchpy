@@ -35,7 +35,7 @@ public:
 
 	~Comp();
 
-	bool loadTox(const std::string& filePath, int64_t fps = 60);
+	bool load(const std::string& filePath, int64_t fps = 60);
 
 	void unload();
 	bool loaded() const; 
@@ -57,6 +57,7 @@ public:
 
 
 	void setOnLoadedCallback(CallbackFunc callback, CallbackData data);
+	void setOnUnloadedCallback(CallbackFunc callback, CallbackData data);
 	void setOnStartCallback(CallbackFunc callback, CallbackData data);
 	void setOnStopCallback(CallbackFunc callback, CallbackData data);
 	void setOnFrameCallback(CallbackFunc callback, CallbackData data);
@@ -86,6 +87,14 @@ public:
 	//static void setPrintInfoFunc(std::function<void(std::string)> func) { printInfo = func; }
 
 private:
+	struct State
+	{
+		bool ready{ false };
+		bool loaded{ false };
+		bool linksLayoutChanged{ false };
+		bool inFrame{ false };
+	};
+
 	// shared state between the main or free running thread and the TouchEngine thread
 	//-----------------------------------------------------------------------------------------------------------------
 
@@ -101,7 +110,7 @@ private:
 	std::vector<std::string> ssPendingOutputFloatBuffers;
 	std::vector<std::string> ssPendingOutputStringData;
 
-	void getState(bool& configured, bool& loaded, bool& linksChanged, bool& inFrame);
+	const Comp::State getState();
 	void setInFrame(bool inFrame, bool setTime = false, int64_t timeValue = 0, int32_t timeScale = 0);
 
 	// free running 
@@ -158,6 +167,9 @@ private:
 	CallbackFunc onLoadedCallback_       { nullptr };
 	CallbackData onLoadedData_           { nullptr };
 
+	CallbackFunc onUnloadedCallback_     { nullptr };
+	CallbackData onUnloadedData_         { nullptr };
+
 	CallbackFunc onStartCallback_        { nullptr };
 	CallbackData onStartData_            { nullptr };
 
@@ -174,7 +186,7 @@ private:
 
 	void initComp(CompFlags compFlags, uint8_t device);
 	bool initInstance();
-	bool loadTox(const std::string& filePath, CompFlags compFlags = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
+	bool load(const std::string& filePath, CompFlags compFlags = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
 	void autoUpdate();
 	void stopUpdate();
 	void applyLayoutChange();

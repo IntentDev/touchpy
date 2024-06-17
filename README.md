@@ -17,18 +17,18 @@ conda create -n py312 python=3.12
 - Open the Visual Studio Developer Command Prompt and run:
 ```bash
 # build compile all configs and copy to install
-build_release.bat
+build.bat
 
 # additionally build package
-build_release.bat package
+build.bat package
 
 # additionally upload to TestPyPI
-build_release.bat package test_upload
+build.bat package test_upload
 
 # or additionally upload to PyPI
-build_release.bat package upload
+build.bat package upload
 
 # additionally copy all files to specified directory (deprecated?)
-build_release.bat path/to/release/directory
+build.bat path/to/release/directory
 
 ```

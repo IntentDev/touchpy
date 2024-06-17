@@ -68,7 +68,7 @@ def on_loaded(info):
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 comp = MyComp()
 comp.set_on_loaded_callback(on_loaded, {})
-comp.load_tox('TopChopDatIO.tox')
+comp.load('TopChopDatIO.tox')
 
 keyboard.add_hotkey('ctrl+w', comp.on_w_key)
 

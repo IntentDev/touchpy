@@ -48,7 +48,7 @@ async def load_comps(comps):
 		comp_futures[id(comp)] = loop.create_future()
 		comp.set_on_loaded_callback(on_loaded, {'comp_id': comp_id})
 		comp.set_on_stop_callback(on_stop, {'comp_id': comp_id})
-		comp.load_tox('TopChopDatIO.tox')
+		comp.load('TopChopDatIO.tox')
 
 	await asyncio.gather(*comp_futures.values())
 
@@ -82,7 +82,7 @@ async def main():
 	comps = [MyComp() for _ in range(3)]
 
 	# load 3 comps on the second GPU as well
-	# comps += [MyComp(flags=tp.CompFlags.INTERNAL_TIME_ASYNC, device=1) for _ in range(3)]
+	comps += [MyComp(flags=tp.CompFlags.INTERNAL_TIME_ASYNC, device=1) for _ in range(3)]
 
 	await load_comps(comps)
 	await start_comps(comps)
