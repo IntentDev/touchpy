@@ -37,13 +37,6 @@ static const char* apply_value_changesDoc =
 R"(Stops the TouchEngine instance.
 )";
 
-static const char* call_on_frame_callbackDoc =
-R"(calls the method set using: set_on_frame_callback()
-
-Returns:
-	bool: True if the callback was succesfully called, False otherwise
-)";
-
 static const char* start_next_frameDoc =
 R"(Starts the next frame.
 
@@ -100,6 +93,39 @@ static const char* parDoc =
 R"(The parameters of the currently loaded tox.
 )";
 
+static const char* set_on_loaded_callbackDoc =
+R"(Sets the Python method to be called once the component is loaded.
+
+Args:
+	callback (Callable)	: a callable Python method
+	user_data (object)	: a Python object for any userdata to be passed to the callback method
+
+Returns:
+	None
+)";
+
+static const char* set_on_start_callbackDoc =
+R"(Sets the Python method to be called once the component starts.
+
+Args:
+	callback (Callable)	: a callable Python method
+	user_data (object)	: a Python object for any userdata to be passed to the callback method
+
+Returns:
+	None
+)";
+
+static const char* set_on_stop_callbackDoc =
+R"(Sets the Python method to be called once the component stops.
+
+Args:
+	callback (Callable)	: a callable Python method
+	user_data (object)	: a Python object for any userdata to be passed to the callback method
+
+Returns:
+	None
+)";
+
 static const char* clear_on_frame_callbackDoc =
 R"(Unsets any callback method set using :py:meth:`set_on_frame_callback`.
 
@@ -138,7 +164,28 @@ R"(Returns the CUDA stream handle used by TouchEngine.
 )";
 
 
+inline void 
+doCallback(Comp& self, nb::callable pythonCallback, CallbackData data)
+{
+	auto& dataPyObj = *std::static_pointer_cast<nb::object>(data);
+	if (!self.asyncRunning())
+	{
+		pythonCallback(dataPyObj);
+	}
+	else
+	{
+		nb::gil_scoped_acquire acquire;
+		pythonCallback(dataPyObj);
+	}
+};
 
+inline void
+doCallbackAsync(nb::callable pythonCallback, CallbackData data)
+{
+	auto& dataPyObj = *std::static_pointer_cast<nb::object>(data);
+	nb::gil_scoped_acquire acquire;
+	pythonCallback(dataPyObj);
+};
 
 
 void initCompBindings(nb::module_& m)
@@ -187,15 +234,16 @@ void initCompBindings(nb::module_& m)
 
 	nb::class_<Comp> comp(m, "Comp");
 	comp.doc() = "A TouchDesigner component loaded in a TouchEngine instance.";
-	comp.def(nb::init<>())
-		.def(nb::init<const std::string&, CompFlagBits, int64_t>(),
-			"tox_path"_a, "flags"_a = CompFlagBits::InternalTimeAuto, "fps"_a = 60, nb::rv_policy::take_ownership)
-		.def("load_tox", [](Comp& self, std::string path, int fps) { self.loadTox(path, fps); } , "tox_path"_a, "fps"_a = 60, load_toxDoc)
+	comp.def(nb::init<>(), nb::rv_policy::take_ownership)
+		.def(nb::init<CompFlagBits, uint8_t>(), 
+			"flags"_a = CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault, "device"_a = 0u, nb::rv_policy::take_ownership)
+		.def(nb::init<const std::string&, CompFlagBits, int64_t, uint8_t>(),
+			"tox_path"_a, "flags"_a = CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault, "fps"_a = 60, "device"_a = 0u, nb::rv_policy::take_ownership)
+		.def("load", [](Comp& self, std::string path, int fps) { self.load(path, fps); } , "tox_path"_a, "fps"_a = 60, load_toxDoc)
 		.def("unload",                 &Comp::unload, unloadDoc, nb::rv_policy::reference_internal)
 		.def("start",                  &Comp::start, startDoc, nb::rv_policy::reference_internal)
 		.def("stop",                   &Comp::stop, stopDoc, nb::rv_policy::reference_internal)
 		.def("apply_value_changes",    &Comp::applyValueChanges, apply_value_changesDoc, nb::rv_policy::reference_internal)
-		.def("call_on_frame_callback", &Comp::callOnFrameCallback, call_on_frame_callbackDoc, nb::rv_policy::reference_internal)
 		.def("start_next_frame",       &Comp::startNextFrame, "time_value"_a = 0, "time_scale"_a = 0, start_next_frameDoc, nb::rv_policy::reference_internal)
 		.def("loaded",				   &Comp::loaded, loadedDoc, nb::rv_policy::reference_internal)
 		.def("frame_did_finish",       &Comp::frameDidFinish, frame_did_finishDoc, nb::rv_policy::reference_internal)
@@ -207,59 +255,55 @@ void initCompBindings(nb::module_& m)
 		.def_prop_ro("in_dats",        &Comp::inDatLinks, in_datsDoc, nb::rv_policy::reference_internal)
 		.def_prop_ro("out_dats",       &Comp::outDatLinks, out_datsDoc, nb::rv_policy::reference_internal)
 		.def_prop_ro("par",            &Comp::parLinks, parDoc, nb::rv_policy::reference_internal)
+		.def_prop_ro("rate", [](Comp& self) -> float { return self.frameRate(); })
+		.def("cuda_stream", [](Comp& self) -> uintptr_t { return reinterpret_cast<uintptr_t>(self.cudaStream()); }, cuda_streamDoc, nb::rv_policy::reference_internal)
+		.def("clear_on_frame_callback", &Comp::clearOnFrameCallback, clear_on_frame_callbackDoc, nb::rv_policy::reference_internal)
+		.def("clear_on_layout_change_callback", &Comp::clearOnLayoutChangeCallback, clear_on_layout_change_callbackDoc, nb::rv_policy::reference_internal)
 		;
 
-	comp.def("clear_on_frame_callback", &Comp::clearOnFrameCallback, clear_on_frame_callbackDoc, nb::rv_policy::reference_internal);
-	comp.def("set_on_frame_callback", [](Comp& self, nb::callable pythonCallback, nb::object userData)
+
+	comp.def("set_on_loaded_callback", [](Comp& self, nb::callable callback, nb::object data)
 		{
-			auto userDataPtr = std::make_shared<nb::object>(userData);
-			self.setOnFrameCallback([pythonCallback](Comp& comp, std::shared_ptr<void> userData)
-				{
-					auto& userDataPyObj = *std::static_pointer_cast<nb::object>(userData);
-					if (!comp.asyncRunning())
-					{
-						pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userDataPyObj);
-					}
-
-					else
-					{
-						nb::gil_scoped_acquire acquire;
-						pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userDataPyObj);
-					}
-				},
-				userDataPtr);
+			auto dataPtr = std::make_shared<nb::object>(data); 
+			self.setOnLoadedCallback([callback](CallbackData data) { doCallbackAsync(callback, data); }, dataPtr);
 		},
-		set_on_frame_callbackDoc);
+		"callback"_a, "info"_a, set_on_loaded_callbackDoc);
 
-	comp.def("clear_on_layout_change_callback", &Comp::clearOnLayoutChangeCallback, clear_on_layout_change_callbackDoc, nb::rv_policy::reference_internal);
-	comp.def("set_on_layout_change_callback", [](Comp& self, nb::callable pythonCallback, nb::object userData)
+	comp.def("set_on_unloaded_callback", [](Comp& self, nb::callable callback, nb::object data)
 		{
-			auto userDataPtr = std::make_shared<nb::object>(userData);
-			self.setOnLayoutChangeCallback([pythonCallback](Comp& comp, std::shared_ptr<void> userData)
-				{
-					auto& userDataPyObj = *std::static_pointer_cast<nb::object>(userData);
-					if (!comp.asyncRunning())
-					{
-						pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userDataPyObj);
-					}
-
-					else
-					{
-						nb::gil_scoped_acquire acquire;
-						pythonCallback(nb::cast(comp, nb::rv_policy::reference_internal), userDataPyObj);
-					}
-				},
-				userDataPtr);
+			auto dataPtr = std::make_shared<nb::object>(data);
+			self.setOnUnloadedCallback([callback](CallbackData data) { doCallbackAsync(callback, data); }, dataPtr);
 		},
-		set_on_layout_change_callbackDoc);
+		"callback"_a, "info"_a, set_on_loaded_callbackDoc);
 
-	comp.def("cuda_stream", [](Comp& self) -> uintptr_t
-		{ 
-			return reinterpret_cast<uintptr_t>(self.cudaStream());
+	comp.def("set_on_start_callback", [](Comp& self, nb::callable callback, nb::object data)
+		{
+			auto dataPtr = std::make_shared<nb::object>(data);
+			self.setOnStartCallback([&self, callback](CallbackData data) { doCallback(self, callback, data); }, dataPtr);
 		},
-		cuda_streamDoc, nb::rv_policy::reference_internal);
+		"callback"_a, "info"_a, set_on_start_callbackDoc);
 
-	comp.def_prop_ro("rate", [](Comp& self) -> float { return self.frameRate(); });
+	comp.def("set_on_stop_callback", [](Comp& self, nb::callable callback, nb::object data)
+		{
+			auto dataPtr = std::make_shared<nb::object>(data);
+			self.setOnStopCallback([&self, callback](CallbackData data) { doCallback(self, callback, data); }, dataPtr);
+		},
+		"callback"_a, "info"_a, set_on_stop_callbackDoc);
+		
+	comp.def("set_on_frame_callback", [](Comp& self, nb::callable callback, nb::object data)
+		{
+			auto dataPtr = std::make_shared<nb::object>(data);
+			self.setOnFrameCallback([&self, callback](CallbackData data) { doCallback(self, callback, data); }, dataPtr);
+		},
+		"callback"_a, "info"_a, set_on_frame_callbackDoc);
+
+	comp.def("set_on_layout_change_callback", [](Comp& self, nb::callable callback, nb::object data)
+		{
+			auto dataPtr = std::make_shared<nb::object>(data);
+			self.setOnLayoutChangeCallback([&self, callback](CallbackData data) { doCallback(self, callback, data); }, dataPtr);
+		},
+		"callback"_a, "info"_a, set_on_layout_change_callbackDoc);
+
 
 	
 
