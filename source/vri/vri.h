@@ -22,39 +22,35 @@ NAMESPACE_BEGIN(vri)
 
 struct VContext
 {
-	VkInstance                   instance                 { VK_NULL_HANDLE };
-	VkPhysicalDevice             physicalDevice           { VK_NULL_HANDLE };
-	VkPhysicalDeviceProperties  physicalDeviceProperties  { };
-	VkDevice                     device                   { VK_NULL_HANDLE };
+	VkInstance                   instance                   { VK_NULL_HANDLE };
+	VkPhysicalDevice             physicalDevice             { VK_NULL_HANDLE };
+	VkPhysicalDeviceProperties   physicalDeviceProperties   { };
+	VkPhysicalDeviceIDProperties physicalDeviceIDProperties { };
+	VkDevice                     device                     { VK_NULL_HANDLE };
 
+	QueueFamilyIndices           queueFamilyIndices         { };
 
-	QueueFamilyIndices			 queueFamilyIndices		  { };
+	std::optional<uint32_t>      graphicsFamily             { };
+	std::optional<uint32_t>      computeFamily              { };
+	std::optional<uint32_t>      transferFamily             { };
+	std::optional<uint32_t>      presentFamily              { };
+	VkQueue                      graphicsQueue              { VK_NULL_HANDLE };
+	VkQueue                      computeQueue               { VK_NULL_HANDLE };
+	VkQueue                      transferQueue              { VK_NULL_HANDLE };
+	VkQueue                      presentQueue               { VK_NULL_HANDLE };
 
-	std::optional<uint32_t>      graphicsFamily           { };
-	std::optional<uint32_t>      computeFamily            { };
-	std::optional<uint32_t>      transferFamily           { };
-	std::optional<uint32_t>      presentFamily            { };
-	VkQueue                      graphicsQueue            { VK_NULL_HANDLE };
-	VkQueue                      computeQueue             { VK_NULL_HANDLE };
-	VkQueue                      transferQueue            { VK_NULL_HANDLE };
-	VkQueue                      presentQueue             { VK_NULL_HANDLE };
+	VkCommandPool                graphicsCommandPool        { VK_NULL_HANDLE };
+	VkCommandPool                transferCommandPool        { VK_NULL_HANDLE };
+	VkCommandPool                computeCommandPool         { VK_NULL_HANDLE };
+	VkCommandPool                presentCommandPool         { VK_NULL_HANDLE };
 
-	VkCommandPool                graphicsCommandPool      { VK_NULL_HANDLE };
-	VkCommandPool                transferCommandPool      { VK_NULL_HANDLE };
-	VkCommandPool                computeCommandPool       { VK_NULL_HANDLE };
-	VkCommandPool                presentCommandPool       { VK_NULL_HANDLE };
+	std::vector<VkCommandBuffer> graphicsCommandBuffers     { };
+	std::vector<VkCommandBuffer> transferCommandBuffers     { };
+	uint32_t                     maxFramesInFlight          { 2 };
+	uint32_t                     currentFrame               { 0 };
 
-	std::vector<VkCommandBuffer> graphicsCommandBuffers   { };
-	std::vector<VkCommandBuffer> transferCommandBuffers	  { };
-	uint32_t                     maxFramesInFlight        { 2 };
-	uint32_t                     currentFrame             { 0 };
-
-	//std::vector <VkSemaphore>  imageAvailableSemaphores {};
-	//std::vector <VkSemaphore>  renderFinishedSemaphores {};
-	//std::vector <VkFence>		 frameFences			  {};
-
-	VmaAllocator                 allocator                { VK_NULL_HANDLE };
-	};
+	VmaAllocator                 allocator                  { VK_NULL_HANDLE };
+};
 
 struct SwapchainSupport
 {
@@ -259,6 +255,12 @@ void setPrimaryPhysicalDevice(
 	VContext& vContext,
 	const std::vector<const char*>& requiredDeviceExtensions,
 	VkQueueFlags queueFlags);
+
+bool setPrimaryPhysicalDevice(
+	VContext& vContext,
+	const std::vector<const char*>& requiredDeviceExtensions,
+	VkQueueFlags queueFlags,
+	uint8_t uuid[16]);
 
 //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 // Device

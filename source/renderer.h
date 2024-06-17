@@ -1,53 +1,53 @@
 #pragma once
 
+#include <TouchEngine/TouchEngine.h>
+#include <TouchEngine/TEVulkan.h>
+
 #include "vri/vri.h"
+
 #include <functional>
 #include <vector>
 #include <string>
-#include <TouchEngine/TouchEngine.h>
-#include <TouchEngine/TEVulkan.h>
+#include <memory>
+#include <mutex>
+#include <unordered_map>
+
+struct DeviceInfo;
 
 class Renderer
 {
 public:
-    Renderer();
+
     ~Renderer();
-    void cleanup();
-    void init();
 
-    //void setPresenter(Presenter* presenter) { presenter_ = presenter; }
+    static std::shared_ptr<Renderer> instance(uint8_t gpuIndex);
 
-    // TODO: make this a generic list with a uniform interface for all renderers
-    //void setUIGraphics(UIGraphics* uiGraphics) { uiGraphics_ = uiGraphics; }
-
-    void setRequiredExtensions(std::vector<const char*> extensions);
-    void createInstance();
-    bool configureTEInstance(TEInstance* instance, std::string& error);
-    void createPrimaryDevice();
-    void allocateInstanceResources();
-
-
-
-    void renderFrame();
-    void onFrameBegin();
-    void onFrameEnd();
-
-    uint8_t* physicalDeviceUUID() { return physicalDeviceUUID_; }
+    uint8_t* physicalDeviceUUID() { return vContext_.physicalDeviceIDProperties.deviceUUID; }
     vri::VContext& vContext() { return vContext_; }
 
     TouchObject<TEGraphicsContext> teContext() { return teContext_; }
 
 private:
-
-    uint8_t                             physicalDeviceUUID_[VK_UUID_SIZE];
     vri::VContext                       vContext_{ };
     std::vector<const char*>            requiredExtensions_{ };
     VkDebugUtilsMessengerEXT            debugMessenger_{ nullptr };
     std::vector<std::function<void()>>  vDestroyCallbacks_;
 
-    VkDescriptorPool                    descriptorPool_{ nullptr };
-
     TouchObject<TEVulkanContext>        teContext_;
+
+    static std::unordered_map<uint8_t, std::shared_ptr<Renderer>> instances_;
+    static std::mutex instancesMutex_;
+    
+    Renderer(uint8_t gpuIndex);
+    static void initSingleton(uint8_t gpuIndex);
+
+    void init(DeviceInfo deviceInfo);
+    void createVkInstance();
+    void cleanup();
+    bool configureTEInstance(TEInstance* instance, std::string& error);
+    void createPrimaryDevice(DeviceInfo deviceInfo);
+    void allocateInstanceResources();
+    void setRequiredExtensions(std::vector<const char*> extensions);
 
     static const std::string ConfigureError;
     std::string getConfigureError() const;

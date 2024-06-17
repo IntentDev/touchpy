@@ -10,26 +10,28 @@
 
 //#include <bitset>
 
-Comp::Comp()
+Comp::Comp(CompFlags compFlags, uint8_t device) 
+	:	compFlags_(compFlags),
+		tryDevice_(device)
 {
-	initComp(CompFlagBits::InternalTimeAuto);
 }
 
-Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps) 
-	:	compFlags_(compFlags)
+Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps, uint8_t device)
+	:	compFlags_(compFlags),
+		tryDevice_(device)
 {
-	spdlog::info("Creating Comp");
+	spdlog::debug("Creating Comp");
 	
-	initComp(compFlags);
-	loadTox(filePath, compFlags, fps);
+	initComp(compFlags, device);
+	load(filePath, compFlags, fps);
 
 	spdlog::default_logger()->flush();
 }
 
 void
-Comp::initComp(CompFlags compFlags)
+Comp::initComp(CompFlags compFlags, uint8_t device)
 {
-	createRenderer();
+	createRenderer(device);
 
 	if (!(compFlags & CompFlagBits::CudaDisable)) cudaInit();
 	
@@ -46,16 +48,14 @@ Comp::~Comp()
 
 	vkDestroyFence(device_, submitFence_, nullptr);
 
-	spdlog::info("Comp resources destroyed");
+	spdlog::debug("Comp destroyed");
 	spdlog::default_logger()->flush();
 }
 
 void 
-Comp::createRenderer()
+Comp::createRenderer(uint8_t device)
 {
-	renderer_ = std::make_unique<Renderer>();
-	renderer_->createInstance();
-	renderer_->init();
+	renderer_ = Renderer::instance(device);
 
 	device_ = renderer_->vContext().device;
 	physicalDevice_ = renderer_->vContext().physicalDevice;
@@ -79,7 +79,7 @@ Comp::cudaInit()
 	if (compFlags_ & CompFlagBits::CudaStreamInternal) 
 	{
 		CUDA_CHECK(cudaStreamCreate(&cudaStream_));
-		spdlog::info("CUDA stream created: {}", static_cast<void*>(cudaStream_));
+		spdlog::debug("CUDA stream created: {}", static_cast<void*>(cudaStream_));
 	}
 
 	return;
@@ -111,7 +111,7 @@ Comp::setCudaDevice()
 			{
 				CUDA_CHECK(cudaSetDevice(device));
 				CUDA_CHECK(cudaGetDeviceProperties(&deviceProp, device));
-				spdlog::info("Set CUDA device: {} : {} with compute {}", device, deviceProp.name, deviceProp.major, deviceProp.minor);
+				spdlog::debug("Set CUDA device: {} : {} with compute {}", device, deviceProp.name, deviceProp.major, deviceProp.minor);
 
 				cudaDevice_ = device;
 				return true;
@@ -141,7 +141,7 @@ Comp::initInstance()
 {
 	TEResult result = TEInstanceCreate(eventCallback, linkEventCallback, this, instance_.take());
 	if (result == TEResultSuccess)
-		spdlog::info("TEInstance created");
+		spdlog::debug("TEInstance created");
 	else
 	{
 		spdlog::error("Failed to create TEInstance: {}", TEResultGetDescription(result));
@@ -151,7 +151,7 @@ Comp::initInstance()
 
 	result = TEInstanceAssociateGraphicsContext(instance_, renderer_->teContext());
 	if (result == TEResultSuccess)
-		spdlog::info("TEInstance associated with Vulkan Graphics Context");
+		spdlog::debug("TEInstance associated with Vulkan Graphics Context");
 	else
 	{
 		spdlog::error("Failed to associate TEInstance with Graphics Context: {}", TEResultGetDescription(result));
@@ -161,8 +161,10 @@ Comp::initInstance()
 	return true;
 }
 
-bool Comp::loadTox(const std::string& filePath, int64_t fps)
+bool Comp::load(const std::string& filePath, int64_t fps)
 {
+	if (!renderer_) initComp(compFlags_, tryDevice_);
+
 	std::ifstream file(filePath, std::ios::in | std::ios::binary);
 	if (!file.is_open())
 	{
@@ -170,10 +172,10 @@ bool Comp::loadTox(const std::string& filePath, int64_t fps)
 		throw std::runtime_error("Failed to open tox file");
 	}
 
-	return loadTox(filePath, compFlags_, fps);
+	return load(filePath, compFlags_, fps);
 }
 
-bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps)
+bool Comp::load(const std::string& filePath, CompFlags compFlags, int64_t fps)
 {
 	std::ifstream file(filePath, std::ios::in | std::ios::binary);
 	if (!file.is_open())
@@ -191,7 +193,7 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 	}
 
 	filePath_ = filePath;
-	spdlog::info("Loading tox: {}", filePath_);
+	spdlog::debug("Loading tox: {}", filePath_);
 
 	auto timeMode = TETimeInternal;
 	if (compFlags_ & CompFlagBits::ExternalTime) timeMode = TETimeExternal;
@@ -203,11 +205,10 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 		throw std::runtime_error("Failed to configure TEInstance");
 	}
 	
-
 	std::unique_lock<std::mutex> lock(mutex_);
 	result = TEInstanceLoad(instance_);
 	if (result == TEResultSuccess)
-		spdlog::info("Instance loading...");
+		spdlog::debug("Instance loading...");
 	else
 	{
 		spdlog::error("Failed to initiate loading of TEInstance: {}", TEResultGetDescription(result));
@@ -215,10 +216,10 @@ bool Comp::loadTox(const std::string& filePath, CompFlags compFlags, int64_t fps
 	}
 
 	spdlog::default_logger()->flush();
-	// wait for instance to load
-	cv_.wait(lock, [this] { return ssReady_; });
+	
+	if (!onLoadedCallback_) cv_.wait(lock, [this] { return ssLoaded_; });
 
-	return ssReady_;
+	return ssLoaded_;
 }
 
 void 
@@ -227,22 +228,33 @@ Comp::unload()
 	if (asyncRunning_.load()) stopAsync();
 	else if (updateLoopRunning_) stopUpdate();
 
+	
 
-	std::unique_lock<std::mutex> lock(mutex_);
-	if (ssLoaded_)
+	auto state = getState();
+
+	if (state.loaded)
 	{
-		spdlog::info("Unloading TEInstance...");
+		spdlog::debug("Unloading TEInstance...");
+		spdlog::default_logger()->flush();
 
-		ssUnloading_ = true;
-		onFrameCallbackUserData_ = nullptr;
+		{
+			std::lock_guard<std::mutex> guard(mutex_);
+			ssUnloading_ = true;
+		}
+
+		onLoadedCallback_ = nullptr;
+		onLoadedData_ = nullptr;
+		onStartCallback_ = nullptr;
+		onStartData_ = nullptr;
+		onStopCallback_ = nullptr;
+		onStopData_ = nullptr;
+		onFrameData_ = nullptr;
 		onFrameCallback_ = nullptr;
-		onLayoutChangeCallbackUserData_ = nullptr;
+		onLayoutChangeData_ = nullptr;
 		onLayoutChangeCallback_ = nullptr;
 
 		cudaStreamSynchronize(cudaStream_);
 
-
-		lock.unlock();
 		TEResult result = TEInstanceUnload(instance_);
 		if (result != TEResultSuccess)
 		{
@@ -250,10 +262,11 @@ Comp::unload()
 			throw std::runtime_error("Failed to initiate unloading of TEInstance");
 		}
 
-		lock.lock();
-		cv_.wait(lock, [this] { return !ssLoaded_; });
+		// waiting seems to cause a deadlock when running async even though the thread is joined... 
+		//std::unique_lock<std::mutex> lock(mutex_);
+		//cv_.wait(lock, [this] { return !ssLoaded_; });
 	}
-	//spdlog::default_logger()->flush();
+	
 }
 
 
@@ -275,8 +288,11 @@ Comp::eventCallback(TEInstance* instance,
 	int32_t end_time_scale,
 	void* info)
 {
-	//if (event != TEEventFrameDidFinish)
-	//	SPDLOG_DEBUG("eventCallback: {} result: {}", teutils::eventToString(event), TEResultGetDescription(result));
+	if (event != TEEventFrameDidFinish)
+	{
+		spdlog::debug("eventCallback: {} result: {}", teutils::eventToString(event), TEResultGetDescription(result));
+		spdlog::default_logger()->flush();
+	}
 
 	Comp* comp = static_cast<Comp*>(info);
 
@@ -306,31 +322,42 @@ void
 Comp::onEventInstanceReady(TEResult result, Comp* comp)
 {
 	if (!comp) return;
-	
-	std::unique_lock<std::mutex> lock(mutex_);
 
-	comp->ssReady_ = result == TEResultSuccess;
-	comp->cv_.notify_one(); // notify load() that instance is ready
-	lock.unlock();
-	spdlog::info("Instance ready: {}", TEResultGetDescription(result));
+	{
+		std::lock_guard<std::mutex> lock(comp->mutex_);
+		comp->ssReady_ = result == TEResultSuccess;
+	}
+	spdlog::debug("Instance ready: {}", TEResultGetDescription(result));
 }
 
 void 
 Comp::onEventInstanceDidLoad(TEResult result, Comp* comp)
 {
-	std::lock_guard<std::mutex> lock(comp->mutex_);
-	comp->ssLoaded_ = true;
-	spdlog::info("Instance loaded: {}", TEResultGetDescription(result));
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		comp->ssLoaded_ = true;
+		if (onLoadedCallback_) onLoadedCallback_(onLoadedData_);
+		else comp->cv_.notify_one(); // notify load() that instance is ready
+	}
+	spdlog::debug("Instance loaded: {}", TEResultGetDescription(result));
+	spdlog::default_logger()->flush();
 }
 
 void 
 Comp::onEventInstanceDidUnload(TEResult result, Comp* comp)
 {
-	ssUnloading_ = false;
-	ssLoaded_ = false;
-	ssReady_ = false;
-	comp->cv_.notify_one(); // notify unload() that instance is unloaded
-	spdlog::info("Instance unloaded: {}", TEResultGetDescription(result));
+	{
+		std::unique_lock<std::mutex> lock(mutex_);
+		ssUnloading_ = false;
+		ssLoaded_ = false;
+		ssReady_ = false;
+		if (onUnloadedCallback_) onUnloadedCallback_(onUnloadedData_);
+		// waiting in unload() seems to cause a deadlock when running async even though the thread is joined... 
+		//else cv_.notify_one(); // notify unload() that instance is unloaded)
+	}
+
+	spdlog::debug("Instance unloaded: {}", TEResultGetDescription(result));
+	spdlog::default_logger()->flush();
 }
 
 void 
@@ -368,7 +395,7 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 				}
 				else
 				{
-					spdlog::info("Frame did not finish successfully: {} {}", static_cast<int>(result), TEResultGetDescription(result));
+					spdlog::warn("Frame did not finish successfully: {} {}", static_cast<int>(result), TEResultGetDescription(result));
 					comp->setInFrame(false, true, end_time_value, end_time_scale);
 				}
 			}
@@ -473,23 +500,27 @@ Comp::onLinkEventValueChange(const char* identifier)
 	}
 }
 
-void
-Comp::getState(bool& ready, bool& loaded, bool& linksLayoutChanged, bool& inFrame)
+const Comp::State
+Comp::getState()
 {
+	State state;
 	std::lock_guard<std::mutex> guard(mutex_);
-	loaded = ssLoaded_;
-	ready = ssReady_;
+	state.loaded = ssLoaded_;
+	state.ready = ssReady_;
+
 	if (ssLoaded_ && ssReady_)
 	{
-		linksLayoutChanged = ssPendingLayoutChange_;
-		inFrame = ssInFrame_;
+		state.linksLayoutChanged = ssPendingLayoutChange_;
+		state.inFrame = ssInFrame_;
 		ssPendingLayoutChange_ = false;
 	}
 	else
 	{
-		linksLayoutChanged = false;
-		inFrame = false;
+		state.linksLayoutChanged = false;
+		state.inFrame = false;
 	}
+
+	return state;
 }
 
 void 
@@ -519,15 +550,48 @@ Comp::setInFrame(bool inFrame, bool setTime, int64_t timeValue, int32_t timeScal
 	lock.unlock();
 }
 
-void Comp::setOnFrameCallback(std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData)
+void
+Comp::setOnLoadedCallback(CallbackFunc callback, CallbackData data)
+{
+	onLoadedCallback_ = callback;
+	onLoadedData_ = data;
+	return;
+}
+
+void
+Comp::setOnUnloadedCallback(CallbackFunc callback, CallbackData data)
+{
+	onUnloadedCallback_ = callback;
+	onUnloadedData_ = data;
+	return;
+}
+
+void
+Comp::setOnStartCallback(CallbackFunc callback, CallbackData data)
+{
+	onStartCallback_ = callback;
+	onStartData_ = data;
+	return;
+}
+
+void
+Comp::setOnStopCallback(CallbackFunc callback, CallbackData data)
+{
+	onStopCallback_ = callback;
+	onStopData_ = data;
+	return;
+}
+
+void 
+Comp::setOnFrameCallback(CallbackFunc callback, CallbackData data)
 {
 	if (!asyncActive_)
 	{
 		onFrameCallback_ = nullptr;
-		onFrameCallbackUserData_ = nullptr;
+		onFrameData_ = nullptr;
 
 		onFrameCallback_ = callback;
-		onFrameCallbackUserData_ = userData;
+		onFrameData_ = data;
 		return;
 	}
 	else
@@ -544,10 +608,10 @@ void Comp::setOnFrameCallback(std::function<void(Comp&, std::shared_ptr<void>)> 
 		}
 
 		onFrameCallback_ = nullptr;
-		onFrameCallbackUserData_ = nullptr;
+		onFrameData_ = nullptr;
 
 		onFrameCallback_ = callback;
-		onFrameCallbackUserData_ = userData;
+		onFrameData_ = data;
 
 		if (asyncRunning_.load())
 		{
@@ -560,12 +624,13 @@ void Comp::setOnFrameCallback(std::function<void(Comp&, std::shared_ptr<void>)> 
 }
 
 
-void Comp::clearOnFrameCallback()
+void 
+Comp::clearOnFrameCallback()
 {
 	if (!asyncActive_)
 	{
 		onFrameCallback_ = nullptr;
-		onFrameCallbackUserData_ = nullptr;
+		onFrameData_ = nullptr;
 		return;
 	}
 	else
@@ -580,7 +645,7 @@ void Comp::clearOnFrameCallback()
 		}
 
 		onFrameCallback_ = nullptr;
-		onFrameCallbackUserData_ = nullptr;
+		onFrameData_ = nullptr;
 
 		if (asyncRunning_.load())
 		{
@@ -592,25 +657,27 @@ void Comp::clearOnFrameCallback()
 	}
 }
 
-bool Comp::callOnFrameCallback()
+bool 
+Comp::callOnFrameCallback()
 {
 	if (onFrameCallback_)
 	{
-		onFrameCallback_(*this, onFrameCallbackUserData_);
+		onFrameCallback_(onFrameData_);
 		return true;
 	}
 	return false;
 }
 
-void Comp::setOnLayoutChangeCallback( std::function<void(Comp&, std::shared_ptr<void>)> callback, std::shared_ptr<void> userData)
+void 
+Comp::setOnLayoutChangeCallback( CallbackFunc callback, CallbackData data)
 {
 	if (!asyncActive_)
 	{
 		onLayoutChangeCallback_ = nullptr;
-		onLayoutChangeCallbackUserData_ = nullptr;
+		onLayoutChangeData_ = nullptr;
 
 		onLayoutChangeCallback_ = callback;
-		onLayoutChangeCallbackUserData_ = userData;
+		onLayoutChangeData_ = data;
 		return;
 	}
 	else
@@ -625,10 +692,10 @@ void Comp::setOnLayoutChangeCallback( std::function<void(Comp&, std::shared_ptr<
 		}
 
 		onLayoutChangeCallback_ = nullptr;
-		onLayoutChangeCallbackUserData_ = nullptr;
+		onLayoutChangeData_ = nullptr;
 
 		onLayoutChangeCallback_ = callback;
-		onLayoutChangeCallbackUserData_ = userData;
+		onLayoutChangeData_ = data;
 
 		if (asyncRunning_.load())
 		{
@@ -640,12 +707,13 @@ void Comp::setOnLayoutChangeCallback( std::function<void(Comp&, std::shared_ptr<
 	}
 }
 
-void Comp::clearOnLayoutChangeCallback()
+void 
+Comp::clearOnLayoutChangeCallback()
 {
 	if (!asyncActive_)
 	{
 		onLayoutChangeCallback_ = nullptr;
-		onLayoutChangeCallbackUserData_ = nullptr;
+		onLayoutChangeData_ = nullptr;
 		return;
 	}
 	else
@@ -660,7 +728,7 @@ void Comp::clearOnLayoutChangeCallback()
 		}
 
 		onLayoutChangeCallback_ = nullptr;
-		onLayoutChangeCallbackUserData_ = nullptr;
+		onLayoutChangeData_ = nullptr;
 
 		if (asyncRunning_.load())
 		{
@@ -672,11 +740,12 @@ void Comp::clearOnLayoutChangeCallback()
 	}
 }
 
-bool Comp::callOnLayoutChangeCallback()
+bool 
+Comp::callOnLayoutChangeCallback()
 {
 	if (onLayoutChangeCallback_)
 	{
-		onLayoutChangeCallback_(*this, onLayoutChangeCallbackUserData_);
+		onLayoutChangeCallback_(onLayoutChangeData_);
 		return true;
 	}
 	return false;
@@ -694,7 +763,8 @@ Comp::time() const
 	return time__;
 }
 
-float Comp::frameRate() const
+float 
+Comp::frameRate() const
 {
 	float rate = 0.0f;
 	auto result = TEInstanceGetFloatFrameRate(instance_, &rate);
@@ -711,7 +781,8 @@ float Comp::frameRate() const
 	return rate;
 }
 
-void Comp::start()
+void 
+Comp::start()
 {
 	TEResult result = TEInstanceResume(instance_);
 	if (result != TEResultSuccess)
@@ -727,27 +798,30 @@ void Comp::start()
 
 	if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AutoUpdate && !updateLoopRunning_)
 	{
-		spdlog::info("Starting auto update");
+		spdlog::debug("Starting auto update");
 		autoUpdate();
 	}
 	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate && !asyncRunning_.load())
 	{
-		spdlog::info("Starting async update");
+		spdlog::debug("Starting async update");
 		startAsync();
 	}
+
+	if (onStartCallback_) onStartCallback_(onStartData_);
 }
 
-void Comp::stop()
+void 
+Comp::stop()
 {
 	if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AutoUpdate)
 	{
 		stopUpdate();
-		spdlog::info("Auto update stopped");
+		spdlog::debug("Auto update stopped");
 	}
 	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate)
 	{
 		stopAsync();
-		spdlog::info("Async update stopped");
+		spdlog::debug("Async update stopped");
 	}
 
 	TEResult result = TEInstanceSuspend(instance_);
@@ -756,10 +830,14 @@ void Comp::stop()
 		spdlog::error("Failed to suspend TEInstance: {}", TEResultGetDescription(result));
 		throw std::runtime_error("Failed to suspend TEInstance");
 	}
+
+	spdlog::debug("TEInstance suspended");
+	if (onStopCallback_) onStopCallback_(onStopData_);
 	spdlog::default_logger()->flush();
 }
 
-void Comp::autoUpdate()
+void 
+Comp::autoUpdate()
 {
 	updateLoopRunning_ = true;
 	while (updateLoopRunning_)
@@ -773,12 +851,14 @@ void Comp::autoUpdate()
 	}
 }
 
-void Comp::stopUpdate()
+void 
+Comp::stopUpdate()
 {
 	updateLoopRunning_ = false;
 }
 
-void Comp::startAsync()
+void 
+Comp::startAsync()
 {
 	// need to wait before returning from this function until first frame is finished
 
@@ -792,7 +872,8 @@ void Comp::startAsync()
 	lock.unlock();
 }
 
-void Comp::stopAsync()
+void 
+Comp::stopAsync()
 {
 	asyncSettingCallback_ = false;
 	asyncRunning_.store(false);
@@ -809,19 +890,22 @@ void Comp::stopAsync()
 	asyncActive_ = false;
 }
 
-void Comp::asyncUpdate()
+void 
+Comp::asyncUpdate()
 {
 	SPDLOG_DEBUG("asyncUpdate() log in thread successfull");
 	SPDLOG_FLUSH_DEBUG
+
+	cudaSetDevice(cudaDevice_);
+
 	static uint64_t counter = 0;
 	while (asyncRunning_.load())
 	{
-		bool ready, loaded, linksLayoutChanged, inFrame;
-		getState(ready, loaded, linksLayoutChanged, inFrame);
+		auto state = getState();
 
-		if (!loaded || !ready) continue;
+		if (!state.loaded || !state.ready) continue;
 
-		if (linksLayoutChanged)
+		if (state.linksLayoutChanged)
 		{
 			applyLayoutChange();
 			SPDLOG_DEBUG("layout changed");
@@ -829,7 +913,7 @@ void Comp::asyncUpdate()
 			continue;
 		}
 		
-		if (!inFrame)
+		if (!state.inFrame)
 		{
 			++counter;
 
@@ -849,25 +933,26 @@ void Comp::asyncUpdate()
 		asyncContinueStop_ = true;
 		asyncStopCV_.notify_one();  // Notify stopAsync() that the loop is finished
 	}
+	//SPDLOG_DEBUG("asyncUpdate() finished");
+	//SPDLOG_FLUSH_DEBUG
 }
 
 bool 
 Comp::frameDidFinish()
 {
-	bool ready, loaded, linksLayoutChanged, inFrame;
-	getState(ready, loaded, linksLayoutChanged, inFrame);
+	auto state = getState();
+	if (!state.loaded || !state.ready) return false;
 
-	if (!loaded || !ready) return false;
-
-	if (linksLayoutChanged)
+	if (state.linksLayoutChanged)
 	{
 		applyLayoutChange();
 		return false;
 	}
-	return !inFrame;
+	return !state.inFrame;
 }
 
-bool Comp::startNextFrame(int64_t timeValue, int32_t timeScale)
+bool 
+Comp::startNextFrame(int64_t timeValue, int32_t timeScale)
 {
 	setInFrame(true);
 	TEResult result = TEInstanceStartFrameAtTime(instance_, timeValue, timeScale, false);
@@ -880,7 +965,8 @@ bool Comp::startNextFrame(int64_t timeValue, int32_t timeScale)
 	return true;
 }
 
-void Comp::applyValueChanges()
+void 
+Comp::applyValueChanges()
 {
 	changedOutputTextures_.clear();
 	changedOutputFloatBuffers_.clear();
@@ -971,7 +1057,7 @@ Comp::applyLayoutChange()
 		asyncLayoutReadyCV_.notify_one();
 	}
 
-	spdlog::info("Applying layout change");
+	spdlog::debug("Applying layout change");
 
 	inTopLinks_ = std::make_unique<InTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_, cudaStream_);
 	outTopLinks_ = std::make_unique<OutTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_, cudaStream_);
@@ -997,7 +1083,7 @@ Comp::applyLayoutChange()
 				result = TEInstanceLinkGetInfo(instance_, groups->strings[i], group.take());
 				if (result == TEResultSuccess)
 				{
-					SPDLOG_DEBUG(getLinkInfoAsString(group));
+					SPDLOG_DEBUG(teutils::getLinkInfoAsString(group));
 				}
 				TouchObject<TEStringArray> children;
 				if (result == TEResultSuccess)
@@ -1012,7 +1098,7 @@ Comp::applyLayoutChange()
 						result = TEInstanceLinkGetInfo(instance_, children->strings[j], info.take());
 						if (result == TEResultSuccess)
 						{
-							SPDLOG_DEBUG(getLinkInfoAsString(info));
+							SPDLOG_DEBUG(teutils::getLinkInfoAsString(info));
 
 							if (info->type == TELinkTypeTexture)
 							{
@@ -1076,19 +1162,4 @@ Comp::applyLayoutChange()
 	if (updateLoopRunning_ || asyncRunning_.load()) startNextFrame();
 }
 
-std::string Comp::getLinkInfoAsString(TouchObject<TELinkInfo> info)
-{
-	std::stringstream ss;
-	ss << std::left
-		<< std::setw(6) << "Link:" << std::setw(16) << info->identifier
-		<< std::setw(6) << "name:" << std::setw(16) << info->name
-		<< std::setw(7) << "label:" << std::setw(16) << info->label
-		<< std::setw(7) << "scope:" << std::setw(16) << teutils::scopeToString(info->scope)
-		<< std::setw(8) << "intent:" << std::setw(28) << teutils::linkIntentToString(info->intent)
-		<< std::setw(8) << "domain:" << std::setw(24) << teutils::linkDomainToString(info->domain)
-		<< std::setw(7) << "count:" << std::setw(5) << info->count
-		<< std::setw(6) << "type:" << std::setw(16) << teutils::linkTypeToString(info->type)
-		;
 
-	return ss.str();
-}
