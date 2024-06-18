@@ -22,7 +22,7 @@ class MyComp (tp.Comp):
 
 	def on_layout_change(self, info):
 		# print('layout change:', info)
-		self.out_tops[0].set_cuda_flags(tp.CudaFlags.RGB)
+		self.out_tops[0].set_cuda_flags(tp.CudaFlags.RGB | tp.CudaFlags.HWC)
 		pass
 
 	def on_w_key(self):
@@ -44,7 +44,7 @@ class MyComp (tp.Comp):
 	
 		self.start_next_frame()
 
-		self.in_tops[0].from_tensor(tensor, flags=tp.CudaFlags.RGB)
+		self.in_tops[0].from_tensor(tensor, flags=tp.CudaFlags.RGB | tp.CudaFlags.HWC)
 		
 		self.frame += 1
 
