@@ -7,7 +7,34 @@
 namespace nb = nanobind;
 using namespace nb::literals;
 
-static const char* load_toxDoc = 
+static const char* Comp_Doc = R"(
+A TouchDesigner component loaded in a TouchEngine instance.
+
+Args:
+	flags (CompFlags) : the flags for the component
+	device (int) : the hardware device to run the component on 
+	td_path (str) : the path to the TouchDesigner installation
+
+Args:
+	tox_path (str) : the path to the .tox file
+	flags (CompFlags) : the flags for the component
+	device (int) : the hardware device to run the component on
+	fps (int) : the frames per second of the TouchEngine instance
+	td_path (str) : the path to the TouchDesigner installation
+
+Attributes:
+	in_tops (List[InTOP]) : the In TOPs of the currently loaded tox
+	out_tops (List[OutTOP]) : the Out TOPs of the currently loaded tox
+	in_chops (List[InCHOP]) : the In CHOPs of the currently loaded tox
+	out_chops (List[OutCHOP]) : the Out CHOPs of the currently loaded tox
+	in_dats (List[InDAT]) : the In DATs of the currently loaded tox
+	out_dats (List[OutDAT]) : the Out DATs of the currently loaded tox
+	par (List[Par]) : the parameters of the currently loaded tox
+	rate (float) : the frame rate of the currently loaded tox
+	cuda_stream (int) : the CUDA stream handle used by the CUDA device 
+)";
+
+static const char* load_Doc = 
 R"(Loads a .tox file, creates and initializes a TouchEngine Instance.
 
 Args:
@@ -63,6 +90,22 @@ Usage:
 Returns:
 	Time: a struct containing the time information of the currently loaded component.
 
+)";
+
+static const char* file_pathDoc =
+R"(The path to the loaded .tox file.
+)";
+
+static const char* td_pathDoc =
+R"(The path to the TouchDesigner installation TouchEngine is using.
+)";
+
+static const char* cuda_deviceDoc =
+R"(The CUDA device index used by TouchEngine.
+)";
+
+static const char* flagsDoc =
+R"(The flags of the currently loaded tox.
 )";
 
 static const char* in_topsDoc =
@@ -194,7 +237,7 @@ void initCompBindings(nb::module_& m)
 {
 	//Comp::setPrintInfoFunc(printInfo);
 
-	auto defaultCompFlags = CompFlags(CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault)();
+	//auto defaultCompFlags = CompFlags(CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault)();
 
 	nb::enum_<CompFlagBits>(m, "CompFlags", nb::is_flag_enum())
 		.value("INTERNAL_TIME", CompFlagBits::InternalTime)
@@ -228,13 +271,22 @@ void initCompBindings(nb::module_& m)
 	;
 
 	nb::class_<Comp> comp(m, "Comp");
-	comp.doc() = "A TouchDesigner component loaded in a TouchEngine instance.";
+	comp.doc() = Comp_Doc;
 	comp.def(nb::init<>(), nb::rv_policy::take_ownership)
 
-		.def(nb::init<CompFlagBits, uint8_t>(),
-			"flags"_a = CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault, "device"_a = 0u, nb::rv_policy::take_ownership)
-		.def(nb::init<const std::string&, CompFlagBits, int64_t, uint8_t>(),
-			"tox_path"_a, "flags"_a = CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault, "fps"_a = 60, "device"_a = 0u, nb::rv_policy::take_ownership)
+		.def(nb::init<CompFlagBits, uint8_t, const std::string&>(),
+			"flags"_a = DEFAULT_COMP_FLAG_BITS, 
+			"device"_a = 0u, 
+			"td_path"_a = "",
+			nb::rv_policy::take_ownership)
+
+		.def(nb::init<const std::string&, CompFlagBits, int64_t, uint8_t, const std::string&>(),
+			"tox_path"_a, 
+			"flags"_a = DEFAULT_COMP_FLAG_BITS, 
+			"fps"_a = 60, 
+			"device"_a = 0u,
+			"td_path"_a = "",
+			nb::rv_policy::take_ownership)
 
 		//.def("__init__", [](Comp* comp, CompFlagsInt flags, uint8_t device)
 		//	{ 
@@ -248,7 +300,7 @@ void initCompBindings(nb::module_& m)
 		//	},
 		//	"tox_path"_a, "flags"_a = defaultCompFlags, "fps"_a = 60, "device"_a = 0u, nb::rv_policy::take_ownership)
 
-		.def("load", [](Comp& self, std::string path, int fps) { self.load(path, fps); } , "tox_path"_a, "fps"_a = 60, load_toxDoc)
+		.def("load", [](Comp& self, std::string path, int fps) { self.load(path, fps); } , "tox_path"_a, "fps"_a = 60, load_Doc)
 		.def("unload",                 &Comp::unload, unloadDoc, nb::rv_policy::reference_internal)
 		.def("start",                  &Comp::start, startDoc, nb::rv_policy::reference_internal)
 		.def("stop",                   &Comp::stop, stopDoc, nb::rv_policy::reference_internal)
@@ -257,6 +309,10 @@ void initCompBindings(nb::module_& m)
 		.def("loaded",				   &Comp::loaded, loadedDoc, nb::rv_policy::reference_internal)
 		.def("frame_did_finish",       &Comp::frameDidFinish, frame_did_finishDoc, nb::rv_policy::reference_internal)
 		.def("time",                   &Comp::time, time_doc, nb::rv_policy::reference_internal)
+		.def_prop_ro("file_path",      &Comp::filePath, file_pathDoc, nb::rv_policy::reference_internal)
+		.def_prop_ro("td_path",        &Comp::configuredEnginePath, td_pathDoc, nb::rv_policy::reference_internal)
+		.def_prop_ro("cuda_device",    &Comp::cudaDeviceIndex, cuda_deviceDoc, nb::rv_policy::reference_internal)
+		.def_prop_ro("flags", [](Comp& self) -> CompFlagBits { return static_cast<CompFlagBits>(self.flags()); }, flagsDoc, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_tops",        &Comp::inputTopLinks, in_topsDoc, nb::rv_policy::reference_internal)
 		.def_prop_ro("out_tops",       &Comp::outputTopLinks,out_topsDoc, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_chops",       &Comp::inChopLinks, in_chopsDoc, nb::rv_policy::reference_internal)
@@ -269,7 +325,6 @@ void initCompBindings(nb::module_& m)
 		.def("clear_on_frame_callback", &Comp::clearOnFrameCallback, clear_on_frame_callbackDoc, nb::rv_policy::reference_internal)
 		.def("clear_on_layout_change_callback", &Comp::clearOnLayoutChangeCallback, clear_on_layout_change_callbackDoc, nb::rv_policy::reference_internal)
 		;
-
 
 	comp.def("set_on_loaded_callback", [](Comp& self, nb::callable callback, nb::object data)
 		{

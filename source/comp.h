@@ -21,17 +21,23 @@
 #include <thread>
 #include <atomic>
 
+#define DEFAULT_COMP_FLAG_BITS CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault
+
 using CallbackFunc = std::function<void(std::shared_ptr<void>)>;
 using CallbackData = std::shared_ptr<void>;
 
 class Comp
 {
 public:
-	Comp(CompFlags compFlags = CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault, uint8_t device = 0);
+	Comp(CompFlags compFlags = DEFAULT_COMP_FLAG_BITS,
+		uint8_t device = 0, 
+		const std::string& preferredEnginePath = "");
+
 	Comp(const std::string& filePath, 
-		CompFlags compFlags = CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault,
+		CompFlags compFlags = DEFAULT_COMP_FLAG_BITS,
 		int64_t fps = 60,
-		uint8_t device = 0);
+		uint8_t device = 0,
+		const std::string& preferredEnginePath = "");
 
 	~Comp();
 
@@ -79,6 +85,10 @@ public:
 
 	Time time() const;
 	float frameRate() const;
+	std::string configuredEnginePath() const;
+	std::string filePath() const { return filePath_; }
+	uint8_t cudaDeviceIndex() const { return cudaDevice_; }
+	CompFlags flags() const { return compFlags_; }
 
 	// for internal use only, not for python bindings
 	//-----------------------------------------------------------------------------------------------------------------
@@ -132,21 +142,23 @@ private:
 	// main thread only
 	//-----------------------------------------------------------------------------------------------------------------
 
-	std::string               filePath_;
-	CompFlags                 compFlags_         { CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault };
-	uint8_t 				  tryDevice_         { 0 };
-	TouchObject<TEInstance>   instance_          { nullptr };
+	std::string                        filePath_;
+	CompFlags                          compFlags_            { DEFAULT_COMP_FLAG_BITS };
+	int64_t                            fps_                  { 60 };
+	uint8_t                            preferredDeviceIndex_ { 0 };
+	TouchObject<TEInstance>            instance_             { nullptr };
+	std::string						   preferredEnginePath_;
 
-	std::shared_ptr<Renderer> renderer_;
-	VkDevice                  device_            { VK_NULL_HANDLE };
-	VkPhysicalDevice          physicalDevice_    { VK_NULL_HANDLE };
-	std::vector<uint32_t>     queueFamilyIndices_;
-	VkQueue                   queue_             { VK_NULL_HANDLE };
-	VkCommandBuffer           commandBuffer_     { VK_NULL_HANDLE };
-	VkFence                   submitFence_       { VK_NULL_HANDLE };
+	std::shared_ptr<Renderer>          renderer_;
+	VkDevice                           device_               { VK_NULL_HANDLE };
+	VkPhysicalDevice                   physicalDevice_       { VK_NULL_HANDLE };
+	std::vector<uint32_t>              queueFamilyIndices_;
+	VkQueue                            queue_                { VK_NULL_HANDLE };
+	VkCommandBuffer                    commandBuffer_        { VK_NULL_HANDLE };
+	VkFence                            submitFence_          { VK_NULL_HANDLE };
 
-	cudaStream_t              cudaStream_        { nullptr };
-	int                       cudaDevice_        { -1 };
+	cudaStream_t                       cudaStream_           { nullptr };
+	int                                cudaDevice_           { -1 };
 
 
 	std::vector<std::string>           changedOutputTextures_;
@@ -184,9 +196,9 @@ private:
 
 	//static std::function<void(std::string)> printInfo;
 
-	void initComp(CompFlags compFlags, uint8_t device);
+	void initComp();
 	bool initInstance();
-	bool load(const std::string& filePath, CompFlags compFlags = CompFlagBits::InternalTimeAuto, int64_t fps = 60);
+	bool load();
 	void autoUpdate();
 	void stopUpdate();
 	void applyLayoutChange();
@@ -194,7 +206,7 @@ private:
 	void applyOutputFloatBufferChange();
 	void applyOutputStringDataChange();
 
-	void createRenderer(uint8_t device);
+	void createRenderer(uint8_t preferredDeviceIndex);
 	void cudaInit();
 	bool setCudaDevice();
 

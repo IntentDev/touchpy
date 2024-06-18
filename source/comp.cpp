@@ -10,36 +10,42 @@
 
 //#include <bitset>
 
-Comp::Comp(CompFlags compFlags, uint8_t device) 
+Comp::Comp(CompFlags compFlags, uint8_t device, const std::string& preferredEnginePath)
 	:	compFlags_(compFlags),
-		tryDevice_(device)
+		preferredDeviceIndex_(device),
+		preferredEnginePath_(preferredEnginePath)
 {
 }
 
-Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps, uint8_t device)
-	:	compFlags_(compFlags),
-		tryDevice_(device)
+Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps, uint8_t device, const std::string& preferredEnginePath)
+	:	filePath_(filePath),
+		compFlags_(compFlags),
+		fps_(fps),
+		preferredDeviceIndex_(device),
+		preferredEnginePath_(preferredEnginePath)
 {
 	spdlog::debug("Creating Comp");
-	
-	initComp(compFlags, device);
-	load(filePath, compFlags, fps);
+
+	initComp();
+	load();
 
 	spdlog::default_logger()->flush();
 }
 
 void
-Comp::initComp(CompFlags compFlags, uint8_t device)
+Comp::initComp()
 {
-	createRenderer(device);
+	createRenderer(preferredDeviceIndex_);
 
-	if (!(compFlags & CompFlagBits::CudaDisable)) cudaInit();
+	if (!(compFlags_ & CompFlagBits::CudaDisable)) cudaInit();
 	
 	initInstance();
 }
 
 Comp::~Comp()
 {
+	// Need to test this to see if it still holds true...
+	// 
 	// Calling unload here can cause python to deadlock if it doesn't finish before python is closed... 
 	// call unload() before destruction, or not at all but that will cause memory leaks if the object is the global scope
 	//unload();
@@ -53,9 +59,9 @@ Comp::~Comp()
 }
 
 void 
-Comp::createRenderer(uint8_t device)
+Comp::createRenderer(uint8_t preferredDeviceIndex)
 {
-	renderer_ = Renderer::instance(device);
+	renderer_ = Renderer::instance(preferredDeviceIndex);
 
 	device_ = renderer_->vContext().device;
 	physicalDevice_ = renderer_->vContext().physicalDevice;
@@ -158,12 +164,34 @@ Comp::initInstance()
 		spdlog::default_logger()->flush();
 		throw std::runtime_error("Failed to associate TEInstance with Graphics Context");
 	}
+
+	if (!preferredEnginePath_.empty())
+	{
+		result = TEInstanceSetPreferredEnginePath(instance_, preferredEnginePath_.c_str());
+		if (result != TEResultSuccess)
+		{
+			spdlog::error("Failed to set preferred engine path: {}", TEResultGetDescription(result));
+		}
+		else
+		{
+			TouchObject<TEString> str;
+			result = TEInstanceGetPreferredEnginePath(instance_, str.take());
+			if (result == TEResultSuccess)
+			{
+				preferredEnginePath_ = str->string;
+				spdlog::debug("Preferred engine path set to: {}", preferredEnginePath_);
+			}
+		}
+	}
 	return true;
 }
 
 bool Comp::load(const std::string& filePath, int64_t fps)
 {
-	if (!renderer_) initComp(compFlags_, tryDevice_);
+	filePath_ = filePath;
+	fps_ = fps;
+
+	if (!renderer_) initComp();
 
 	std::ifstream file(filePath, std::ios::in | std::ios::binary);
 	if (!file.is_open())
@@ -172,27 +200,25 @@ bool Comp::load(const std::string& filePath, int64_t fps)
 		throw std::runtime_error("Failed to open tox file");
 	}
 
-	return load(filePath, compFlags_, fps);
+	return load();
 }
 
-bool Comp::load(const std::string& filePath, CompFlags compFlags, int64_t fps)
+bool Comp::load()
 {
-	std::ifstream file(filePath, std::ios::in | std::ios::binary);
+	std::ifstream file(filePath_, std::ios::in | std::ios::binary);
 	if (!file.is_open())
 	{
-		spdlog::error("Failed to open tox file: {}", filePath);
+		spdlog::error("Failed to open tox file: {}", filePath_);
 		throw std::runtime_error("Failed to open tox file");
 	}
 
-	compFlags_ = compFlags;
-	TEResult result = TEInstanceSetFrameRate(instance_, fps, 1);
+	TEResult result = TEInstanceSetFrameRate(instance_, fps_, 1);
 	if (result != TEResultSuccess)
 	{
 		spdlog::error("Failed to set frame rate: {}", TEResultGetDescription(result));
 		throw std::runtime_error("Failed to set frame rate");
 	}
 
-	filePath_ = filePath;
 	spdlog::debug("Loading tox: {}", filePath_);
 
 	auto timeMode = TETimeInternal;
@@ -322,12 +348,18 @@ void
 Comp::onEventInstanceReady(TEResult result, Comp* comp)
 {
 	if (!comp) return;
-
 	{
 		std::lock_guard<std::mutex> lock(comp->mutex_);
 		comp->ssReady_ = result == TEResultSuccess;
 	}
 	spdlog::debug("Instance ready: {}", TEResultGetDescription(result));
+
+	TouchObject<TEString> str;
+	TEResult res = TEInstanceGetConfiguredEnginePath(comp->instance_, str.take());
+	if (res == TEResultSuccess)
+	{
+		spdlog::debug("Configured engine path: {}", str->string);
+	}
 }
 
 void 
@@ -779,6 +811,17 @@ Comp::frameRate() const
 			spdlog::info("Failed to get frame rate: {}", TEResultGetDescription(result));
 	}
 	return rate;
+}
+
+std::string 
+Comp::configuredEnginePath() const
+{
+	TouchObject<TEString> str;
+	auto result = TEInstanceGetConfiguredEnginePath(instance_, str.take());
+	if (result == TEResultSuccess)
+		return str->string;
+	else
+		return std::string();
 }
 
 void 
