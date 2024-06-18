@@ -188,11 +188,15 @@ doCallbackAsync(nb::callable pythonCallback, CallbackData data)
 };
 
 
+using CompFlagsInt = std::underlying_type_t<CompFlagBits>;
+
 void initCompBindings(nb::module_& m)
 {
 	//Comp::setPrintInfoFunc(printInfo);
 
-	nb::enum_<CompFlagBits>(m, "CompFlags")
+	auto defaultCompFlags = CompFlags(CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault)();
+
+	nb::enum_<CompFlagBits>(m, "CompFlags", nb::is_arithmetic())
 		.value("INTERNAL_TIME", CompFlagBits::InternalTime)
 		.value("EXTERNAL_TIME", CompFlagBits::ExternalTime)
 		.value("AUTO_UPDATE", CompFlagBits::AutoUpdate)
@@ -203,15 +207,15 @@ void initCompBindings(nb::module_& m)
 		.value("CUDA_STREAM_DEFAULT", CompFlagBits::CudaStreamDefault)
 		.value("CUDA_STREAM_INTERNAL", CompFlagBits::CudaStreamInternal)
 		.value("CUDA_DISABLE", CompFlagBits::CudaDisable)
-		.def(nb::self | nb::self)
-		.def(nb::self & nb::self)
-		.def(nb::self ^ nb::self)
-		.def(~nb::self)
-		.def(nb::self |= nb::self)
-		.def(nb::self &= nb::self)
-		.def(nb::self ^= nb::self)
-		.def(nb::self == nb::self)
-		.def(nb::self != nb::self)
+		//.def(nb::self | nb::self)
+		//.def(nb::self & nb::self)
+		//.def(nb::self ^ nb::self)
+		//.def(~nb::self)
+		//.def(nb::self |= nb::self)
+		//.def(nb::self &= nb::self)
+		//.def(nb::self ^= nb::self)
+		//.def(nb::self == nb::self)
+		//.def(nb::self != nb::self)
 		;
 
 	nb::class_ <Comp::Time> time(m, "Time");
@@ -235,10 +239,18 @@ void initCompBindings(nb::module_& m)
 	nb::class_<Comp> comp(m, "Comp");
 	comp.doc() = "A TouchDesigner component loaded in a TouchEngine instance.";
 	comp.def(nb::init<>(), nb::rv_policy::take_ownership)
-		.def(nb::init<CompFlagBits, uint8_t>(), 
-			"flags"_a = CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault, "device"_a = 0u, nb::rv_policy::take_ownership)
-		.def(nb::init<const std::string&, CompFlagBits, int64_t, uint8_t>(),
-			"tox_path"_a, "flags"_a = CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault, "fps"_a = 60, "device"_a = 0u, nb::rv_policy::take_ownership)
+		.def("__init__", [](Comp* comp, CompFlagsInt flags, uint8_t device)
+			{ 
+				new (comp) Comp(flags, device); 
+			}, 
+			"flags"_a = defaultCompFlags, "device"_a = 0u, nb::rv_policy::take_ownership)
+
+		.def("__init__", [](Comp* comp, const std::string& tox_path, CompFlagsInt flags, int64_t fps, uint8_t device)
+			{
+				new (comp) Comp(tox_path, flags, fps, device);
+			},
+			"tox_path"_a, "flags"_a = defaultCompFlags, "fps"_a = 60, "device"_a = 0u, nb::rv_policy::take_ownership)
+
 		.def("load", [](Comp& self, std::string path, int fps) { self.load(path, fps); } , "tox_path"_a, "fps"_a = 60, load_toxDoc)
 		.def("unload",                 &Comp::unload, unloadDoc, nb::rv_policy::reference_internal)
 		.def("start",                  &Comp::start, startDoc, nb::rv_policy::reference_internal)

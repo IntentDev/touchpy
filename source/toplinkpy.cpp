@@ -145,20 +145,20 @@ copyArrayToCudaMemory(InTopLink& inTopLink, T array, uintptr_t stream, CudaFlags
 	}
 }
 
-using arrayShapeCHW4 = nb::shape<4, nb::any, nb::any>;
-using arrayShapeCHW3 = nb::shape<3, nb::any, nb::any>;
-using arrayShapeCHW2 = nb::shape<2, nb::any, nb::any>;
-using arrayShapeCHW1 = nb::shape<1, nb::any, nb::any>;
+using arrayShapeCHW4 = nb::shape<4, -1, -1>;
+using arrayShapeCHW3 = nb::shape<3, -1, -1>;
+using arrayShapeCHW2 = nb::shape<2, -1, -1>;
+using arrayShapeCHW1 = nb::shape<1, -1, -1>;
 
-using arrayShapeHWC4 = nb::shape<nb::any, nb::any, 4>;
-using arrayShapeHWC3 = nb::shape<nb::any, nb::any, 3>;
-using arrayShapeHWC2 = nb::shape<nb::any, nb::any, 2>;
-using arrayShapeHWC1 = nb::shape<nb::any, nb::any, 1>;
+using arrayShapeHWC4 = nb::shape<-1, -1, 4>;
+using arrayShapeHWC3 = nb::shape<-1, -1, 3>;
+using arrayShapeHWC2 = nb::shape<-1, -1, 2>;
+using arrayShapeHWC1 = nb::shape<-1, -1, 1>;
 
 void 
 initTopLinkBindings(nb::module_& m)
 {
-	nb::enum_<CudaFlagBits>(m, "CudaFlags")
+	nb::enum_<CudaFlagBits>(m, "CudaFlags", nb::is_arithmetic())
 		.value("NONE", CudaFlagBits::None)
 		.value("RGBA", CudaFlagBits::RGBA)
 		.value("RGB", CudaFlagBits::RGB)
@@ -171,15 +171,6 @@ initTopLinkBindings(nb::module_& m)
 		.value("VEC4", CudaFlagBits::VEC4)
 		.value("VEC3", CudaFlagBits::VEC3)
 		.value("VEC2", CudaFlagBits::VEC2)
-		.def(nb::self | nb::self)
-		.def(nb::self & nb::self)
-		.def(nb::self ^ nb::self)
-		.def(~nb::self)
-		.def(nb::self |= nb::self)
-		.def(nb::self &= nb::self)
-		.def(nb::self ^= nb::self)
-		.def(nb::self == nb::self)
-		.def(nb::self != nb::self)
 		;
 
 

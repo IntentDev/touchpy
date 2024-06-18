@@ -12,7 +12,7 @@ tp.init_logging(level=tp.LogLevel.DEBUG)
 
 
 class MyComp (tp.Comp):
-	def __init__(self, flags=tp.CompFlags.INTERNAL_TIME_AUTO | tp.CompFlags.CUDA_STREAM_DEFAULT, device=1):
+	def __init__(self, flags=tp.CompFlags.INTERNAL_TIME_AUTO | tp.CompFlags.CUDA_STREAM_DEFAULT, device=0):
 		super().__init__(flags=flags, device=device)
 		self.device = torch.device(f"cuda:{device}")
 		self.frame = 0
@@ -22,6 +22,7 @@ class MyComp (tp.Comp):
 
 	def on_layout_change(self, info):
 		# print('layout change:', info)
+		self.out_tops[0].set_cuda_flags(tp.CudaFlags.RGB)
 		pass
 
 	def on_w_key(self):
@@ -38,8 +39,12 @@ class MyComp (tp.Comp):
 	def on_frame(self, info):
 		if self.ctrl_q_key_is_pressed(): # need to exit here for clean exit
 			return
+		
+		tensor = self.out_tops[0].as_tensor()
 	
 		self.start_next_frame()
+
+		self.in_tops[0].from_tensor(tensor, flags=tp.CudaFlags.RGB)
 		
 		self.frame += 1
 
