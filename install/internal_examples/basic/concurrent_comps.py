@@ -39,6 +39,13 @@ def on_stop(info):
 	if comp_id in comp_futures:
 		loop.call_soon_threadsafe(comp_futures[comp_id].set_result, True)
 
+def on_unloaded(info):
+	# print('on_unloaded info:', info)
+	global comp_futures, loop
+	comp_id = info['comp_id']
+	if comp_id in comp_futures:
+		loop.call_soon_threadsafe(comp_futures[comp_id].set_result, True)
+
 async def load_comps(comps):
 	global comp_futures, loop
 	loop = asyncio.get_running_loop()
@@ -48,6 +55,7 @@ async def load_comps(comps):
 		comp_futures[id(comp)] = loop.create_future()
 		comp.set_on_loaded_callback(on_loaded, {'comp_id': comp_id})
 		comp.set_on_stop_callback(on_stop, {'comp_id': comp_id})
+		comp.set_on_unloaded_callback(on_unloaded, {'comp_id': comp_id})
 		comp.load('TopChopDatIO.tox')
 
 	await asyncio.gather(*comp_futures.values())
@@ -74,9 +82,14 @@ async def stop_comps(comps):
 	await asyncio.gather(*comp_futures.values())
 
 async def unload_comps(comps):
+	global comp_futures, loop
+	loop = asyncio.get_running_loop()
+
 	for comp in comps:
+		comp_futures[id(comp)] = loop.create_future()
 		comp.unload()
 
+	await asyncio.gather(*comp_futures.values())
 
 async def main():
 	comps = [MyComp() for _ in range(3)]

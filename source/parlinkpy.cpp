@@ -50,7 +50,6 @@ void initParLinkBindings(nb::module_& m)
 	par.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>())
 		.def("set", &ParLink::set)
 		.def("get", &ParLink::get)
-		.def("pulse", &PulseParLink::pulse)
 		.def_prop_rw("val", &ParLink::get, &ParLink::set)
 		;
 

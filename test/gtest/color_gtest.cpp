@@ -5,7 +5,7 @@
 
 TEST(ColorTest, DefaultConstructor)
 {
-    std::cout << "color sise: " << sizeof(Color) << std::endl;
+    //std::cout << "color sise: " << sizeof(Color) << std::endl;
 
     Color color;
     EXPECT_EQ(color.r, 0.0);
