@@ -22,6 +22,7 @@ enum class CompFlagBits : Type
 
 using CompFlags = Flags<CompFlagBits>;
 
+
 ENABLE_BITMASK_OPERATORS(CompFlagBits)
 
 

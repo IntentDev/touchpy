@@ -146,7 +146,7 @@ nb::ndarray<nb::numpy, const float, nb::ndim<2>> asNumpy(ChopChannels& chopChann
 		static_cast<size_t>(chopChannels.channelCount()),
 		static_cast<size_t>(chopChannels.valueCount())
 	};
-	return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(chopChannels.valuesArray(), 2, shape);
+	return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(chopChannels.valuesArray(), 2, shape, nb::handle());
 }
 
 void initChopLinkBindings(nb::module_& m)
@@ -285,7 +285,7 @@ void initChopLinkBindings(nb::module_& m)
 				static_cast<size_t>(chans.channelCount()),
 				static_cast<size_t>(chans.valueCount())
 			};
-			return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(self.valuesArray(), 2, shape);
+			return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(self.valuesArray(), 2, shape, nb::handle());
 		},
 		nb::sig("def as_numpy()-> numpy.ndarray"),
 		as_numpyDoc, nb::rv_policy::automatic);
@@ -297,7 +297,7 @@ void initChopLinkBindings(nb::module_& m)
 				static_cast<size_t>(chans.channelCount()),
 				static_cast<size_t>(chans.valueCount())
 			};
-			return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(self.valuesArray(), 2, shape);
+			return nb::ndarray<nb::numpy, const float, nb::ndim<2>>(self.valuesArray(), 2, shape, nb::handle());
 		},
 		nb::sig("def as_numpy_ref()-> numpy.ndarray"),
 		as_numpy_refDoc, nb::rv_policy::reference_internal);
