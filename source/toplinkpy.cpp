@@ -158,7 +158,14 @@ using arrayShapeHWC1 = nb::shape<-1, -1, 1>;
 void 
 initTopLinkBindings(nb::module_& m)
 {
-	nb::enum_<CudaFlagBits>(m, "CudaFlags", nb::is_flag_enum())
+	nb::class_ <CudaFlags> compFlags(m, "CudaFlags");
+	compFlags.doc() = "A struct containing the flags for the component.";
+	compFlags.def(nb::init<>(), nb::rv_policy::take_ownership)
+		.def(nb::init<CudaFlagBits>(), "flags"_a, nb::rv_policy::take_ownership)
+		.def(nb::init<CudaFlags::IntType>(), "flags"_a, nb::rv_policy::take_ownership)
+		;
+
+	nb::enum_<CudaFlagBits>(m, "CudaFlagBits", nb::flag_enum())
 		.value("NONE", CudaFlagBits::None)
 		.value("RGBA", CudaFlagBits::RGBA)
 		.value("RGB", CudaFlagBits::RGB)

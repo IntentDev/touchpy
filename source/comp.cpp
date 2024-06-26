@@ -254,8 +254,6 @@ Comp::unload()
 	if (asyncRunning_.load()) stopAsync();
 	else if (updateLoopRunning_) stopUpdate();
 
-	
-
 	auto state = getState();
 
 	if (state.loaded)
@@ -285,12 +283,19 @@ Comp::unload()
 		if (result != TEResultSuccess)
 		{
 			spdlog::error("Failed to initiate unloading of TEInstance: {}", TEResultGetDescription(result));
-			throw std::runtime_error("Failed to initiate unloading of TEInstance");
+			spdlog::default_logger()->flush();
+			//throw std::runtime_error("Failed to initiate unloading of TEInstance");
 		}
 
-		// waiting seems to cause a deadlock when running async even though the thread is joined... 
-		//std::unique_lock<std::mutex> lock(mutex_);
-		//cv_.wait(lock, [this] { return !ssLoaded_; });
+		if (!onUnloadedCallback_)
+		{
+			spdlog::debug("Waiting for instance to unload.");
+			spdlog::default_logger()->flush();
+			std::unique_lock<std::mutex> lock(mutex_);
+			cv_.wait(lock, [this] { return !ssLoaded_; });
+		}
+
+
 	}
 	
 }
@@ -314,11 +319,11 @@ Comp::eventCallback(TEInstance* instance,
 	int32_t end_time_scale,
 	void* info)
 {
-	if (event != TEEventFrameDidFinish)
-	{
-		spdlog::debug("eventCallback: {} result: {}", teutils::eventToString(event), TEResultGetDescription(result));
-		spdlog::default_logger()->flush();
-	}
+	//if (event != TEEventFrameDidFinish)
+	//{
+	//	spdlog::debug("eventCallback: {} result: {}", teutils::eventToString(event), TEResultGetDescription(result));
+	//	spdlog::default_logger()->flush();
+	//}
 
 	Comp* comp = static_cast<Comp*>(info);
 
@@ -378,14 +383,14 @@ Comp::onEventInstanceDidLoad(TEResult result, Comp* comp)
 void 
 Comp::onEventInstanceDidUnload(TEResult result, Comp* comp)
 {
+	
 	{
 		std::unique_lock<std::mutex> lock(mutex_);
 		ssUnloading_ = false;
 		ssLoaded_ = false;
 		ssReady_ = false;
 		if (onUnloadedCallback_) onUnloadedCallback_(onUnloadedData_);
-		// waiting in unload() seems to cause a deadlock when running async even though the thread is joined... 
-		//else cv_.notify_one(); // notify unload() that instance is unloaded)
+		else cv_.notify_one(); // notify unload() that instance is unloaded)
 	}
 
 	spdlog::debug("Instance unloaded: {}", TEResultGetDescription(result));
@@ -834,11 +839,6 @@ Comp::start()
 		throw std::runtime_error("Failed to resume TEInstance");
 	}
 
-	// print out the flags as bits
-	//std::cout << "Comp flags: " << std::bitset<32>(compFlags_()) << std::endl;
-	//std::cout << "InternalTimeAuto: " << std::bitset<32>(static_cast<uint32_t>(CompFlagBits::InternalTimeAuto)) << std::endl;
-	//std::cout << "InternalTimeAsync: " << std::bitset<32>(static_cast<uint32_t>(CompFlagBits::InternalTimeAsync)) << std::endl;
-
 	if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AutoUpdate && !updateLoopRunning_)
 	{
 		spdlog::debug("Starting auto update");
@@ -971,13 +971,18 @@ Comp::asyncUpdate()
 		}
 	}
 
+	auto state = getState();
+	while (state.inFrame)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		state = getState();
+	}
+
 	{
 		std::lock_guard<std::mutex> lock(asyncMutex_);
 		asyncContinueStop_ = true;
 		asyncStopCV_.notify_one();  // Notify stopAsync() that the loop is finished
 	}
-	//SPDLOG_DEBUG("asyncUpdate() finished");
-	//SPDLOG_FLUSH_DEBUG
 }
 
 bool 

@@ -239,7 +239,27 @@ void initCompBindings(nb::module_& m)
 
 	//auto defaultCompFlags = CompFlags(CompFlagBits::InternalTimeAuto | CompFlagBits::CudaStreamDefault)();
 
-	nb::enum_<CompFlagBits>(m, "CompFlags", nb::is_flag_enum())
+	//nb::class_ <CompFlags> compFlags(m, "CompFlags");
+	//compFlags.doc() = "A struct containing the flags for the component.";
+	//compFlags.def(nb::init<>(), nb::rv_policy::take_ownership)
+	//	.def(nb::init<CompFlagBits>(), "flags"_a, nb::rv_policy::take_ownership)
+	//	.def(nb::init<CompFlags::IntType>(), "flags"_a, nb::rv_policy::take_ownership)
+	//	;
+
+	//nb::enum_<CompFlagBits>(m, "CompFlagBits", nb::flag_enum())
+	//	.value("INTERNAL_TIME", CompFlagBits::InternalTime)
+	//	.value("EXTERNAL_TIME", CompFlagBits::ExternalTime)
+	//	.value("AUTO_UPDATE", CompFlagBits::AutoUpdate)
+	//	.value("ASYNC_UPDATE", CompFlagBits::AsyncUpdate)
+	//	.value("REALTIME", CompFlagBits::Realtime)
+	//	.value("INTERNAL_TIME_AUTO", CompFlagBits::InternalTimeAuto)
+	//	.value("INTERNAL_TIME_ASYNC", CompFlagBits::InternalTimeAsync)
+	//	.value("CUDA_STREAM_DEFAULT", CompFlagBits::CudaStreamDefault)
+	//	.value("CUDA_STREAM_INTERNAL", CompFlagBits::CudaStreamInternal)
+	//	.value("CUDA_DISABLE", CompFlagBits::CudaDisable)
+	//	;
+
+	nb::enum_<CompFlagBits>(m, "CompFlags", nb::flag_enum())
 		.value("INTERNAL_TIME", CompFlagBits::InternalTime)
 		.value("EXTERNAL_TIME", CompFlagBits::ExternalTime)
 		.value("AUTO_UPDATE", CompFlagBits::AutoUpdate)
@@ -275,30 +295,44 @@ void initCompBindings(nb::module_& m)
 	comp.def(nb::init<>(), nb::rv_policy::take_ownership)
 
 		.def(nb::init<CompFlagBits, uint8_t, const std::string&>(),
-			"flags"_a = DEFAULT_COMP_FLAG_BITS, 
+			"flags"_a = static_cast<CompFlags::IntType>(DEFAULT_COMP_FLAG_BITS),
 			"device"_a = 0u, 
 			"td_path"_a = "",
 			nb::rv_policy::take_ownership)
 
 		.def(nb::init<const std::string&, CompFlagBits, int64_t, uint8_t, const std::string&>(),
 			"tox_path"_a, 
-			"flags"_a = DEFAULT_COMP_FLAG_BITS, 
+			"flags"_a = static_cast<CompFlags::IntType>(DEFAULT_COMP_FLAG_BITS),
 			"fps"_a = 60, 
 			"device"_a = 0u,
 			"td_path"_a = "",
 			nb::rv_policy::take_ownership)
 
-		//.def("__init__", [](Comp* comp, CompFlagsInt flags, uint8_t device)
+		//.def(nb::init<CompFlags, uint8_t, const std::string&>(),
+		//	"flags"_a = CompFlags(DEFAULT_COMP_FLAG_BITS),
+		//	"device"_a = 0u,
+		//	"td_path"_a = "",
+		//	nb::rv_policy::take_ownership)
+
+		//.def(nb::init<const std::string&, CompFlags, int64_t, uint8_t, const std::string&>(),
+		//	"tox_path"_a,
+		//	"flags"_a = CompFlags(DEFAULT_COMP_FLAG_BITS),
+		//	"fps"_a = 60,
+		//	"device"_a = 0u,
+		//	"td_path"_a = "",
+		//	nb::rv_policy::take_ownership)
+
+		//.def("__init__", [](Comp* comp, CompFlagBits flags, uint8_t device)
 		//	{ 
 		//		new (comp) Comp(flags, device); 
 		//	}, 
-		//	"flags"_a = defaultCompFlags, "device"_a = 0u, nb::rv_policy::take_ownership)
+		//	"flags"_a = static_cast<CompFlags::IntType>(DEFAULT_COMP_FLAG_BITS), "device"_a = 0u, nb::rv_policy::take_ownership)
 
-		//.def("__init__", [](Comp* comp, const std::string& tox_path, CompFlagsInt flags, int64_t fps, uint8_t device)
+		//.def("__init__", [](Comp* comp, const std::string& tox_path, CompFlagBits flags, int64_t fps, uint8_t device)
 		//	{
 		//		new (comp) Comp(tox_path, flags, fps, device);
 		//	},
-		//	"tox_path"_a, "flags"_a = defaultCompFlags, "fps"_a = 60, "device"_a = 0u, nb::rv_policy::take_ownership)
+		//	"tox_path"_a, "flags"_a = static_cast<CompFlags::IntType>(DEFAULT_COMP_FLAG_BITS), "fps"_a = 60, "device"_a = 0u, nb::rv_policy::take_ownership)
 
 		.def("load", [](Comp& self, std::string path, int fps) { self.load(path, fps); } , "tox_path"_a, "fps"_a = 60, load_Doc)
 		.def("unload",                 &Comp::unload, unloadDoc, nb::rv_policy::reference_internal)
@@ -312,7 +346,8 @@ void initCompBindings(nb::module_& m)
 		.def_prop_ro("file_path",      &Comp::filePath, file_pathDoc, nb::rv_policy::reference_internal)
 		.def_prop_ro("td_path",        &Comp::configuredEnginePath, td_pathDoc, nb::rv_policy::reference_internal)
 		.def_prop_ro("cuda_device",    &Comp::cudaDeviceIndex, cuda_deviceDoc, nb::rv_policy::reference_internal)
-		.def_prop_ro("flags", [](Comp& self) -> CompFlagBits { return static_cast<CompFlagBits>(self.flags()); }, flagsDoc, nb::rv_policy::reference_internal)
+		.def_prop_ro("flags",		   [](Comp& self) { return self.flags()(); }, flagsDoc, nb::rv_policy::reference_internal)
+		//.def_prop_ro("flags",		   &Comp::flags, flagsDoc, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_tops",        &Comp::inputTopLinks, in_topsDoc, nb::rv_policy::reference_internal)
 		.def_prop_ro("out_tops",       &Comp::outputTopLinks,out_topsDoc, nb::rv_policy::reference_internal)
 		.def_prop_ro("in_chops",       &Comp::inChopLinks, in_chopsDoc, nb::rv_policy::reference_internal)

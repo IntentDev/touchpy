@@ -33,9 +33,18 @@ class MyComp (tp.Comp):
 		self.start_next_frame()
 		self.frame += 1
 
-future = concurrent.futures.Future()
+future_load = concurrent.futures.Future()
 def on_loaded(info):
-	future.set_result(True)
+	future_load.set_result(True)
+
+future_stop = concurrent.futures.Future()
+def on_stop(info):
+	future_stop.set_result(True)
+
+# future_unload = concurrent.futures.Future()
+# def on_unloaded(info):
+# 	future_unload.set_result(True)
+
 
 # # load comp in local scope to allow garbage collection
 # # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -58,19 +67,26 @@ def on_loaded(info):
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 comp = MyComp()
 comp.set_on_loaded_callback(on_loaded, {})
-comp.load('TopChopDatIO.tox')
+comp.set_on_stop_callback(on_stop, {})
+# comp.set_on_unloaded_callback(on_unloaded, {})
 
 keyboard.add_hotkey('ctrl+w', comp.on_w_key)
 
-result = future.result()
+comp.load('TopChopDatIO.tox')
+
+result = future_load.result()
 comp.start()
 
 while not keyboard.is_pressed('ctrl+q'):
+	time.sleep(0.1)
 	pass
 
 comp.stop()
-time.sleep(0.5)
+result = future_stop.result()
+
 comp.unload()
+# result = future_unload.result()
+
 # need to remove all references to the comp object to allow it to be garbage collected
 keyboard.remove_all_hotkeys()
 del comp
