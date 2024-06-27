@@ -1,11 +1,11 @@
+#include "toplinkpy.h"
+#include "toplink.h"
+
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/operators.h>
-
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
-
-#include "toplink.h"
 
 namespace nb = nanobind;
 using namespace nb::literals;

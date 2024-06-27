@@ -1,112 +1,14 @@
+#include "choplinkpy.h"
+#include "choplink.h"
+#include "chopchannels.h"
+
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 
-#include "choplink.h"
-#include "chopchannels.h"
-
-#include <iostream>
-
 namespace nb = nanobind;
 using namespace nb::literals;
-
-static const char* num_chansDoc =
-R"((get) The number of channels in the CHOP.
-)";
-
-static const char* num_samplesDoc =
-R"((get) The number of samples in the CHOP.
-)";
-
-static const char* chan_namesDoc =
-R"((get) List of the  channel names in this CHOP.
-)";
-
-static const char* rateDoc =
-R"((set, get) The sample rate of the CHOP.
-)";
-
-static const char* is_time_dependentDoc =
-R"((set, get) Refers to whether the corresponding CHOP is time dependent or not. i.e. audio chops are time dependent. 
-)";
-
-static const char* start_timeDoc =
-R"((set, get) The start time of the CHOP, in frame number * chop rate.
-)";
-
-static const char* end_timeDoc =
-R"((set, get) The end time of the CHOP, in frame number * chop rate.
-)";
-
-static const char* set_valuesDoc =
-R"(Sets the values of a channel in the CHOP.
-)";
-
-static const char* set_valueDoc =
-R"(Sets the value of a channel at a specific sample index.
-)";
-
-static const char* set_nameDoc =
-R"(Sets the name of a channel.
-)";
-
-static const char* append_channelDoc =
-R"(Appends a channel to the CHOP.
-)";
-
-static const char* insert_channelDoc =
-R"(Inserts a channel at the specified index.
-)";
-
-static const char* remove_channelDoc =
-R"(Removes a channel by name or at the specified index.
-)";
-
-static const char* clearDoc =
-R"(Remove all the channels and their data.
-)";
-
-static const char* as_numpyDoc =
-R"(Returns all of the channels in this CHOP as 2D NumPy array with a width equal to the channel length (the number of samples) and a height equal to the number of channels.
-)";
-
-static const char* chansDoc =
-R"((get) The ChopChannels member.
-)";
-
-static const char* as_numpy_refDoc =
-R"(Returns a reference to a 2D NumPy array, with a width equal to the channel length (the number of samples) and a height equal to the number of channels. The data contained in this array is read-only must explicitly be copied if values need to be manipulated. For very large arrays this will be faster than as_numpy().
-)";
-
-static const char* countDocOutChop =
-R"(Returns the number of Out CHOPS in the loaded tox.
-)";
-
-static const char* namesDocOutChop =
-R"(Returns a list of names of all Out CHOPs in the loaded tox.
-)";
-
-static const char* from_numpyDoc =
-R"(Sets the data in this CHOP from a 2D NumPy array.
-
-Args:
-	array (numpy.ndarray) : the 2D NumPy array to set the data from
-	names (list) : the names of the channels in the array (optional)
-)";
-
-
-static const char* countDocInChop =
-R"(Returns:
-	int: number of In CHOPs in the loaded tox.
-)";	
-
-static const char* namesDocInChop =
-R"(Names of all In CHOPs.
-
-Returns: 
-	list: names of all In CHOPs in the loaded tox.
-)";
 
 void fromNumpyToChopLink(
 	InChopLink& inChopLink,
@@ -152,7 +54,7 @@ nb::ndarray<nb::numpy, const float, nb::ndim<2>> asNumpy(ChopChannels& chopChann
 void initChopLinkBindings(nb::module_& m)
 {
 	nb::class_<ChopChannels> chopChannels(m, "ChopChannels");
-	chopChannels.doc() = "A container of CHOP channels";
+	chopChannels.doc() = ChopChannelsDoc;
 	chopChannels.def(nb::init<>())
 		.def("__init__", [](
 			ChopChannels* chopChannels, 
@@ -196,6 +98,16 @@ void initChopLinkBindings(nb::module_& m)
 				return repr;
 			})
 
+		.def("__getitem__", [](ChopChannels& self, const std::string name)
+			{
+				auto array = nb::ndarray<nb::numpy, float, nb::ndim<1>, nb::device::cpu>(
+					static_cast<void*>(self.mutableChan(name.c_str())),
+					{ self.valueCount() },
+					nb::handle(),
+					{ 1 });
+				return array;
+			}, "name"_a, Chans__getitem__byNameDoc, nb::rv_policy::reference_internal)
+
 		.def("__getitem__", [](ChopChannels& self, int32_t index)
 			{
 				auto array = nb::ndarray<nb::numpy, float, nb::ndim<1>, nb::device::cpu>(
@@ -205,17 +117,8 @@ void initChopLinkBindings(nb::module_& m)
 					{ 1 });
 
 				return array;
-			}, "index"_a, nb::rv_policy::reference_internal)
+			}, "index"_a, Chans__getitem__byIndexDoc, nb::rv_policy::reference_internal)
 
-		.def("__getitem__", [](ChopChannels& self, const std::string name)
-			{
-				auto array = nb::ndarray<nb::numpy, float, nb::ndim<1>, nb::device::cpu>(
-					static_cast<void*>(self.mutableChan(name.c_str())),
-					{ self.valueCount() },
-					nb::handle(),
-					{ 1 });
-				return array;
-			}, "name"_a, nb::rv_policy::reference_internal)
 		
 		.def_prop_ro("num_chans", &ChopChannels::channelCount, num_chansDoc)
 		.def_prop_ro("num_samples", &ChopChannels::valueCount, num_samplesDoc)
@@ -273,7 +176,7 @@ void initChopLinkBindings(nb::module_& m)
 		;
 
 	nb::class_<OutChopLink> outChop(m, "OutChop");
-	outChop.doc() = "An interface for an OutCHOP in a loaded TouchDesigner component";
+	outChop.doc() = "Access data in an OutCHOP in a loaded TouchDesigner component";
 	outChop.def(nb::init<TouchObject<TEInstance>, TouchObject<TELinkInfo>>());
 	outChop.def_prop_ro("chan_names", &OutChopLink::channelNames, chan_namesDoc, nb::rv_policy::reference_internal);
 	outChop.def("chans", &OutChopLink::chopChannels, chansDoc, nb::rv_policy::reference_internal);
@@ -308,12 +211,12 @@ void initChopLinkBindings(nb::module_& m)
 	outChops.def(nb::init<>())
 		.def_prop_ro("count", [](OutChopLinks& self) { return self.size(); }, countDocOutChop)
 		.def_prop_ro("names", [](OutChopLinks& self) { return self.getLinkNames(); }, namesDocOutChop, nb::rv_policy::reference_internal)
-		.def("__getitem__", [](OutChopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
-		.def("__getitem__", [](OutChopLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](OutChopLinks& self, const std::string& name) { return self.getLinkByName(name); }, OutChops__getitem__byNameDoc, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](OutChopLinks& self, size_t index) { return self.getLinkByIndex(index); }, OutChops__getitem__byIndexDoc, nb::rv_policy::reference_internal)
 		;
 
 	nb::class_<InChopLink> inChop(m, "InChop");
-	inChop.doc() = "An interface for an InCHOP in a loaded TouchDesigner component";
+	inChop.doc() = "Set data on an InCHOP in a loaded TouchDesigner component";
 
 	inChop.def("from_channels", [](InChopLink& self, ChopChannels& channels)
 		{
@@ -331,8 +234,8 @@ void initChopLinkBindings(nb::module_& m)
 	inChops.def(nb::init<>())
 		.def_prop_ro("count", [](InChopLinks& self) { return self.size(); }, countDocInChop)
 		.def_prop_ro("names", [](InChopLinks& self) { return self.getLinkNames(); }, namesDocInChop, nb::rv_policy::reference_internal)
-		.def("__getitem__", [](InChopLinks& self, const std::string& name) { return self.getLinkByName(name); }, nb::rv_policy::reference_internal)
-		.def("__getitem__", [](InChopLinks& self, size_t index) { return self.getLinkByIndex(index); }, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](InChopLinks& self, const std::string& name) { return self.getLinkByName(name); }, InChops__getitem__byNameDoc, nb::rv_policy::reference_internal)
+		.def("__getitem__", [](InChopLinks& self, size_t index) { return self.getLinkByIndex(index); }, InChops__getitem__byIndexDoc, nb::rv_policy::reference_internal)
 		;
 
 }

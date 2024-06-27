@@ -1,203 +1,14 @@
+#include "datlinkpy.h"
+#include "datlink.h"
+
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/string_view.h>
 #include <nanobind/stl/vector.h>
 #include <nanobind/stl/pair.h>
 
-#include "datlink.h"
-
-#include <iostream>
-
 namespace nb = nanobind;
 using namespace nb::literals;
-
-static const char* DatTableDoc =
-R"(A table of data in a DAT link.
-)";
-
-static const char* num_rowsDoc =
-R"((set, get) The number of rows in the table.
-)";
-
-static const char* num_colsDoc =
-R"((set, get) The number of columns in the table.
-)";
-
-static const char* rowDoc =
-R"(Returns a list of values from the row matching the index.
-
-Args:
-	index (int) : the index of the row to return
-)";
-
-
-static const char* colDoc =
-R"(Returns a list of values from the column matching the index.
-
-Args:
-	index (int) : the index of the column to return
-)";
-
-static const char* cellDoc =
-R"(Returns the value at the row and column index.
-
-Args:
-	row (int) : the index of the row
-	col (int) : the index of the column
-)";
-
-static const char* reseizeDoc =
-R"(Resizes the table to the specified number of rows and columns.
-
-Args:
-	numRows (int) : the number of rows
-	numCols (int) : the number of columns
-)";
-
-static const char* set_num_rowsDoc =
-R"(Sets the number of rows in the table.
-
-Args:
-	numRows (int) : the number of rows
-)";
-
-static const char* set_num_colsDoc =
-R"(Sets the number of columns in the table.
-
-Args:
-	numCols (int) : the number of columns
-)";
-
-static const char* set_cellDoc =
-R"(Sets the value at the row and column index.
-
-Args:
-	row (int) : the index of the row
-	col (int) : the index of the column
-	value (str) : the value to set
-)";
-
-static const char* set_rowDoc =
-R"(Sets the values of the row at the index.
-
-Lists smaller than the number of columns will be padded with empty strings.
-Lists larger than the number of columns will be truncated.
-
-Args:
-	i (int) : the index of the row
-	row (list) : the values to set 
-)";
-
-static const char* set_colDoc =
-R"(Sets the values of the column at the index.
-
-Lists smaller than the number of rows will be padded with empty strings.
-Lists larger than the number of rows will be truncated.
-
-Args:
-	i (int) : the index of the column
-	col (list) : the values to set 
-)";
-
-static const char* append_rowDoc =
-R"(Appends a row to the table.
-
-Lists smaller or larger than the number of columns will be padded or truncated respectively.
-
-Args:
-	row (list) : the values to append (optional)
-)";
-
-static const char* append_colDoc =
-R"(Appends a column to the table.
-
-Lists smaller or larger than the number of rows will be padded or truncated respectively.
-
-Args:
-	col (list) : the values to append (optional)
-)";
-
-static const char* insert_rowDoc =
-R"(Inserts a row at the index.
-
-Lists smaller or larger than the number of columns will be padded or truncated respectively.
-
-Args:
-	i (int) : the index to insert the row
-	row (list) : the values to insert (optional)
-)";
-
-static const char* insert_colDoc =
-R"(Inserts a column at the index.
-
-Lists smaller or larger than the number of rows will be padded or truncated respectively.
-
-Args:
-	i (int) : the index to insert the column
-	col (list) : the values to insert (optional)
-)";
-
-static const char* remove_rowDoc =
-R"(Removes the row at the index.
-
-Args:
-	i (int) : the index of the row to remove
-)";
-
-static const char* remove_colDoc =
-R"(Removes the column at the index.
-
-Args:
-	i (int) : the index of the column to remove
-)";
-
-static const char* clearDoc =
-R"(Removes all rows and columns from the table.
-)";
-
-static const char* as_listDoc =
-R"(Returns the table as a list of lists.
-)";
-
-static const char* from_listDoc =
-R"(Fills the table from a list of lists.
-
-Args:
-	list (list) : the list of lists to fill the table from
-	cast (bool) : if True, casts the values to strings (optional)
-)";
-
-static const char* as_tableDoc =
-R"(Returns the Out DAT as touchpy.DatTable object
-)";
-
-static const char* as_stringDoc =
-R"(Returns the Out DAT in string format.
-)";
-
-static const char* countDocOutDat =
-R"(Returns the number of Out DATs in the loaded tox.
-)";
-
-static const char* namesDocOutDat =
-R"(Returns a list of names of all Out DATs in the loaded tox.
-)";
-
-static const char* from_tableDoc =
-R"(Fills the In DAT from a touchpy.DatTable object and sets it to Table DAT mode.
-)";
-
-static const char* from_stringDoc =
-R"(Fills the In DAT from a string and sets it to Text DAT mode.
-)";
-
-static const char* countDocInDat =
-R"(Returns the number of In DATs in the loaded tox.
-)";
-
-static const char* namesDocInDat =
-R"(Returns a list of names of all In DATs in the loaded tox.
-)";
 
 DatTable tableFromList(const nb::list& list, bool cast = false)
 {
@@ -251,8 +62,8 @@ void initDatLinkBindings(nb::module_& m)
 	datTable.doc() = DatTableDoc;
 	datTable.def(nb::init<>())
 
-		.def(nb::init<uint32_t, uint32_t>(), "numRows"_a, "numCols"_a, DatTableDoc)
-		.def(nb::init<const std::vector<std::string>&, uint32_t, uint32_t>(), "values"_a, "numRows"_a, "numCols"_a, DatTableDoc)
+		.def(nb::init<uint32_t, uint32_t>(), "num_rows"_a, "num_cols"_a, DatTableDoc)
+		.def(nb::init<const std::vector<std::string>&, uint32_t, uint32_t>(), "values"_a, "num_rows"_a, "num_cols"_a, DatTableDoc)
 		.def(nb::init<const std::vector<std::vector<std::string>>&>(), "values"_a, DatTableDoc)
 
 		.def("__getitem__", [](DatTable& self, std::pair<uint32_t, uint32_t> index) 
@@ -291,15 +102,15 @@ void initDatLinkBindings(nb::module_& m)
 		.def("cell", nb::overload_cast<uint32_t, uint32_t>(&DatTable::cell), 
 			"row"_a, "col"_a, cellDoc, nb::rv_policy::reference_internal)
 		.def("cell", nb::overload_cast<const std::string&, uint32_t>(&DatTable::cell), 
-			"rowName"_a, "col"_a, cellDoc, nb::rv_policy::reference_internal)
+			"row_name"_a, "col"_a, cellDoc, nb::rv_policy::reference_internal)
 		.def("cell", nb::overload_cast<uint32_t, const std::string&>(&DatTable::cell), 
-			"row"_a, "colName"_a, cellDoc, nb::rv_policy::reference_internal)
+			"row"_a, "col_name"_a, cellDoc, nb::rv_policy::reference_internal)
 		.def("cell", nb::overload_cast<const std::string&, const std::string&>(&DatTable::cell), 
-			"rowName"_a, "colName"_a, cellDoc, nb::rv_policy::reference_internal)
+			"row_name"_a, "col_name"_a, cellDoc, nb::rv_policy::reference_internal)
 
-		.def("resize",       &DatTable::resize, "numRows"_a, "numCols"_a, reseizeDoc)
-		.def("set_num_rows", &DatTable::setNumRows, "numRows"_a, set_num_rowsDoc)
-		.def("set_num_cols", &DatTable::setNumCols, "numCols"_a, set_num_colsDoc)
+		.def("resize",       &DatTable::resize, "num_rows"_a, "num_cols"_a, reseizeDoc)
+		.def("set_num_rows", &DatTable::setNumRows, "num_rows"_a, set_num_rowsDoc)
+		.def("set_num_cols", &DatTable::setNumCols, "num_cols"_a, set_num_colsDoc)
 
 		.def("set_cell", nb::overload_cast<size_t, size_t, const std::string&>(&DatTable::setCell), 
 			"i"_a, "j"_a, "value"_a, set_cellDoc)
