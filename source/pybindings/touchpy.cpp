@@ -1,12 +1,13 @@
+#include "touchpy.h"
+#include "logging.h"
+
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 #include <nanobind/stl/vector.h>
 #include <nanobind/stl/string.h>
-#include "logging.h"
 
 namespace nb = nanobind;
 using namespace nb::literals;
-
 
 void printInfo(const std::string& info)
 {
@@ -66,14 +67,6 @@ nb::dict getDLPackCapsuleInfo(nb::ndarray<> array)
 	return info;
 }
 
-static const char* get_dlpack_capsule_infoDoc =
-R"(Get information about a DLPack capsule.
-
-Args:
-	array (ndarray): The array to get information about.
-)";
-
-
 extern void initCompBindings(nb::module_& m);
 extern void initTopLinkBindings(nb::module_& m);
 extern void initChopLinkBindings(nb::module_& m);
@@ -90,15 +83,16 @@ NB_MODULE(touchpy, m)
 		.value("ERROR", spdlog::level::err)
 		.value("CRITICAL", spdlog::level::critical)
 		.value("OFF", spdlog::level::off)
+		.doc() = LogLevelDoc
 		;
 
 	//nb::set_leak_warnings(false);
 	initLogging(spdlog::level::info, true, false);
 
-	m.def("init_logging", &initLogging, "level"_a = spdlog::level::info, "console"_a = true, "file"_a = false);
-	m.def("set_log_level", &setLogLevel, "level"_a = spdlog::level::warn);
+	m.def("init_logging", &initLogging, "level"_a = spdlog::level::info, "console"_a = true, "file"_a = false, init_loggingDoc);
+	m.def("set_log_level", &setLogLevel, "level"_a = spdlog::level::warn, set_log_levelDoc);
 
-	m.def("get_dlpack_capsule_info", &getDLPackCapsuleInfo, "array"_a, get_dlpack_capsule_infoDoc, nb::rv_policy::reference_internal);
+	m.def("get_dlpack_capsule_info", &getDLPackCapsuleInfo, "array"_a, get_dlpack_capsule_infoDoc);
 
 
 	initCompBindings(m);
