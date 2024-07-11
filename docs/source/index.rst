@@ -29,6 +29,17 @@ Full Table Of Contents
    self
    install
    overview
-   reference/touchpy/index
    license
 
+.. toctree::
+    :maxdepth: 2
+    :caption: Core Reference
+   
+    types
+    reference/touchpy/index
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Examples
+   
+    examples/basic
