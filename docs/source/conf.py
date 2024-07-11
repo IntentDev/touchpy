@@ -54,7 +54,20 @@ autoapi_prepare_jinja_env = prepare_jinja_env
 def skip_members(app, what, name, obj, skip, options):
     if what == "class" and "_Enum" in name:
        skip = True
-    
+    if what == "class" and name in ["Double2Par", 
+                                    "Double3Par", 
+                                    "Double4Par", 
+                                    "Float2", 
+                                    "Float3", 
+                                    "Float4", 
+                                    "Int2", 
+                                    "Int2Par", 
+                                    "Int3", 
+                                    "Int3Par", 
+                                    "Int4", 
+                                    "Int4Par"]:
+       skip = True
+
     if name.endswith("__"):
         skip = True
     #elif what == "function" and "set_log_level" in name:
