@@ -10,8 +10,9 @@
 
 //#include <bitset>
 
-Comp::Comp(CompFlags compFlags, uint8_t device, const std::string& preferredEnginePath)
+Comp::Comp(CompFlags compFlags, int64_t fps, uint8_t device, const std::string& preferredEnginePath)
 	:	compFlags_(compFlags),
+		fps_(fps),
 		preferredDeviceIndex_(device),
 		preferredEnginePath_(preferredEnginePath)
 {
@@ -24,7 +25,7 @@ Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps, uint8_
 		preferredDeviceIndex_(device),
 		preferredEnginePath_(preferredEnginePath)
 {
-	spdlog::debug("Creating Comp");
+	spdlog::info("Creating Comp");
 
 	initComp();
 	load();
@@ -54,7 +55,7 @@ Comp::~Comp()
 
 	vkDestroyFence(device_, submitFence_, nullptr);
 
-	spdlog::debug("Comp destroyed");
+	spdlog::info("Comp destroyed");
 	spdlog::default_logger()->flush();
 }
 
@@ -85,7 +86,7 @@ Comp::cudaInit()
 	if (compFlags_ & CompFlagBits::CudaStreamInternal) 
 	{
 		CUDA_CHECK(cudaStreamCreate(&cudaStream_));
-		spdlog::debug("CUDA stream created: {}", static_cast<void*>(cudaStream_));
+		spdlog::info("CUDA stream created: {}", static_cast<void*>(cudaStream_));
 	}
 
 	return;
@@ -117,7 +118,7 @@ Comp::setCudaDevice()
 			{
 				CUDA_CHECK(cudaSetDevice(device));
 				CUDA_CHECK(cudaGetDeviceProperties(&deviceProp, device));
-				spdlog::debug("Set CUDA device: {} : {} with compute {}", device, deviceProp.name, deviceProp.major, deviceProp.minor);
+				spdlog::info("Set CUDA device: {} : {} with compute {}", device, deviceProp.name, deviceProp.major, deviceProp.minor);
 
 				cudaDevice_ = device;
 				return true;
@@ -147,7 +148,7 @@ Comp::initInstance()
 {
 	TEResult result = TEInstanceCreate(eventCallback, linkEventCallback, this, instance_.take());
 	if (result == TEResultSuccess)
-		spdlog::debug("TEInstance created");
+		spdlog::info("TEInstance created");
 	else
 	{
 		spdlog::error("Failed to create TEInstance: {}", TEResultGetDescription(result));
@@ -157,7 +158,7 @@ Comp::initInstance()
 
 	result = TEInstanceAssociateGraphicsContext(instance_, renderer_->teContext());
 	if (result == TEResultSuccess)
-		spdlog::debug("TEInstance associated with Vulkan Graphics Context");
+		spdlog::info("TEInstance associated with Vulkan Graphics Context");
 	else
 	{
 		spdlog::error("Failed to associate TEInstance with Graphics Context: {}", TEResultGetDescription(result));
@@ -179,7 +180,7 @@ Comp::initInstance()
 			if (result == TEResultSuccess)
 			{
 				preferredEnginePath_ = str->string;
-				spdlog::debug("Preferred engine path set to: {}", preferredEnginePath_);
+				spdlog::info("Preferred engine path set to: {}", preferredEnginePath_);
 			}
 		}
 	}
@@ -219,7 +220,7 @@ bool Comp::load()
 		throw std::runtime_error("Failed to set frame rate");
 	}
 
-	spdlog::debug("Loading tox: {}", filePath_);
+	spdlog::info("Loading tox: {}", filePath_);
 
 	auto timeMode = TETimeInternal;
 	if (compFlags_ & CompFlagBits::ExternalTime) timeMode = TETimeExternal;
@@ -234,7 +235,7 @@ bool Comp::load()
 	std::unique_lock<std::mutex> lock(mutex_);
 	result = TEInstanceLoad(instance_);
 	if (result == TEResultSuccess)
-		spdlog::debug("Instance loading...");
+		spdlog::info("Instance loading...");
 	else
 	{
 		spdlog::error("Failed to initiate loading of TEInstance: {}", TEResultGetDescription(result));
@@ -258,7 +259,7 @@ Comp::unload()
 
 	if (state.loaded)
 	{
-		spdlog::debug("Unloading TEInstance...");
+		spdlog::info("Unloading TEInstance...");
 		spdlog::default_logger()->flush();
 
 		{
@@ -289,7 +290,7 @@ Comp::unload()
 
 		if (!onUnloadedCallback_)
 		{
-			spdlog::debug("Waiting for instance to unload.");
+			spdlog::info("Waiting for instance to unload.");
 			spdlog::default_logger()->flush();
 			std::unique_lock<std::mutex> lock(mutex_);
 			cv_.wait(lock, [this] { return !ssLoaded_; });
@@ -357,13 +358,13 @@ Comp::onEventInstanceReady(TEResult result, Comp* comp)
 		std::lock_guard<std::mutex> lock(comp->mutex_);
 		comp->ssReady_ = result == TEResultSuccess;
 	}
-	spdlog::debug("Instance ready: {}", TEResultGetDescription(result));
+	spdlog::info("Instance ready: {}", TEResultGetDescription(result));
 
 	TouchObject<TEString> str;
 	TEResult res = TEInstanceGetConfiguredEnginePath(comp->instance_, str.take());
 	if (res == TEResultSuccess)
 	{
-		spdlog::debug("Configured engine path: {}", str->string);
+		spdlog::info("Configured engine path: {}", str->string);
 	}
 }
 
@@ -376,7 +377,7 @@ Comp::onEventInstanceDidLoad(TEResult result, Comp* comp)
 		if (onLoadedCallback_) onLoadedCallback_(onLoadedData_);
 		else comp->cv_.notify_one(); // notify load() that instance is ready
 	}
-	spdlog::debug("Instance loaded: {}", TEResultGetDescription(result));
+	spdlog::info("Instance loaded: {}", TEResultGetDescription(result));
 	spdlog::default_logger()->flush();
 }
 
@@ -393,7 +394,7 @@ Comp::onEventInstanceDidUnload(TEResult result, Comp* comp)
 		else cv_.notify_one(); // notify unload() that instance is unloaded)
 	}
 
-	spdlog::debug("Instance unloaded: {}", TEResultGetDescription(result));
+	spdlog::info("Instance unloaded: {}", TEResultGetDescription(result));
 	spdlog::default_logger()->flush();
 }
 
@@ -841,12 +842,12 @@ Comp::start()
 
 	if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AutoUpdate && !updateLoopRunning_)
 	{
-		spdlog::debug("Starting auto update");
+		spdlog::info("Starting auto update");
 		autoUpdate();
 	}
 	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate && !asyncRunning_.load())
 	{
-		spdlog::debug("Starting async update");
+		spdlog::info("Starting async update");
 		startAsync();
 	}
 
@@ -859,12 +860,12 @@ Comp::stop()
 	if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AutoUpdate)
 	{
 		stopUpdate();
-		spdlog::debug("Auto update stopped");
+		spdlog::info("Auto update stopped");
 	}
 	else if (compFlags_ & CompFlagBits::InternalTime && compFlags_ & CompFlagBits::AsyncUpdate)
 	{
 		stopAsync();
-		spdlog::debug("Async update stopped");
+		spdlog::info("Async update stopped");
 	}
 
 	TEResult result = TEInstanceSuspend(instance_);
@@ -874,7 +875,7 @@ Comp::stop()
 		throw std::runtime_error("Failed to suspend TEInstance");
 	}
 
-	spdlog::debug("TEInstance suspended");
+	spdlog::info("TEInstance suspended");
 	if (onStopCallback_) onStopCallback_(onStopData_);
 	spdlog::default_logger()->flush();
 }
@@ -1105,7 +1106,7 @@ Comp::applyLayoutChange()
 		asyncLayoutReadyCV_.notify_one();
 	}
 
-	spdlog::debug("Applying layout change");
+	spdlog::info("Applying layout change");
 
 	inTopLinks_ = std::make_unique<InTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_, cudaStream_);
 	outTopLinks_ = std::make_unique<OutTopLinks>(instance_, renderer_->teContext(), physicalDevice_, device_, cudaStream_);
