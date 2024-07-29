@@ -30,7 +30,7 @@ Args:
 	td_path (str): The path to the TouchDesigner installation if no path is set (default: "") then either:
 					- The most recent TD install will be used.
 					- The path set in TOUCHENGINE_APP_PATH environment variable if it exists.
-					- The path set in shortcut or symblink located in the same directory as the component to be loaded.
+					- The path set in shortcut or symlink located in the same directory as the component to be loaded.
 
 Args:
 	tox_path (str): The path to the .tox file.
@@ -104,7 +104,7 @@ Returns:
 constexpr static char start_next_frameDoc[] =
 R"(Starts the next frame.
 
-Whe the component is running in INTERNAL_TIME this will instruct the TE instance to 
+When the component is running in INTERNAL_TIME this will instruct the TE instance to 
 start the process of transfering data. When the component is running in EXTERNAL_TIME
 this will instruct the component to start processing the set data and rendering the frame.	
 
