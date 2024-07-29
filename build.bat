@@ -21,33 +21,33 @@ cmake -S . -B out/install_build/py312 -G "Ninja" --preset x64-release-py312
 ninja -C out/install_build/py312
 
 
-@REM pushd %~dp0
+pushd %~dp0
 
-@REM REM Command file for Sphinx documentation
+REM Command file for Sphinx documentation
 
-@REM if "%SPHINXBUILD%" == "" (
-@REM 	set SPHINXBUILD=sphinx-build
-@REM )
-@REM set SOURCEDIR=docs/source
-@REM set BUILDDIR=install/docs
+if "%SPHINXBUILD%" == "" (
+	set SPHINXBUILD=sphinx-build
+)
+set SOURCEDIR=docs/source
+set BUILDDIR=install/docs
 
-@REM %SPHINXBUILD% >NUL 2>NUL
-@REM if errorlevel 9009 (
-@REM 	echo.
-@REM 	echo.The 'sphinx-build' command was not found. Make sure you have Sphinx
-@REM 	echo.installed, then set the SPHINXBUILD environment variable to point
-@REM 	echo.to the full path of the 'sphinx-build' executable. Alternatively you
-@REM 	echo.may add the Sphinx directory to PATH.
-@REM 	echo.
-@REM 	echo.If you don't have Sphinx installed, grab it from
-@REM 	echo.https://www.sphinx-doc.org/
-@REM 	exit /b 1
-@REM )
+%SPHINXBUILD% >NUL 2>NUL
+if errorlevel 9009 (
+	echo.
+	echo.The 'sphinx-build' command was not found. Make sure you have Sphinx
+	echo.installed, then set the SPHINXBUILD environment variable to point
+	echo.to the full path of the 'sphinx-build' executable. Alternatively you
+	echo.may add the Sphinx directory to PATH.
+	echo.
+	echo.If you don't have Sphinx installed, grab it from
+	echo.https://www.sphinx-doc.org/
+	exit /b 1
+)
 
-@REM %SPHINXBUILD% -M html %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
+%SPHINXBUILD% -M html %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
 
-@REM :end
-@REM popd
+:end
+popd
 
 @REM if first argument exists use it as a path to copy modules, docs, and examples to the specified directory
 

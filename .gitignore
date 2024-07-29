@@ -59,3 +59,4 @@ package/*egg-info*
 # bypass general rules
 !external/TouchEngine-Windows/bin/*.dll
 !external/TouchEngine-Windows/lib/*.lib
+/.vscode
