@@ -17,8 +17,8 @@ class MyComp (tp.Comp):
 
 	def on_layout_change(self, info):
 		print('layout changed:')
-		print('in chops:\n', *[f"\t{name}\n" for name in self.in_chops.names])
 		print('out chops:\n', *[f"\t{name}\n" for name in self.out_chops.names])
+		print('in chops:\n', *[f"\t{name}\n" for name in self.in_chops.names])
 
 		if 'Openwindow' in self.par.names:
 			# only works on supported TD builds
