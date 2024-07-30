@@ -1,51 +1,59 @@
-import keyboard
-import numpy as np
-import torch
+import touchpy as tp
+import modules.utils as utils
 import asyncio
 
-import touchpy as tp
-
-tp.init_logging(level=tp.LogLevel.DEBUG)
-
-comp_futures = {}
-loop = None
-
-class MyComp(tp.Comp):
-	def __init__(self, flags=tp.CompFlags.INTERNAL_TIME_ASYNC | tp.CompFlags.CUDA_STREAM_DEFAULT, device=0):
+class MyComp (tp.Comp):
+	def __init__(self, name, flags, device=0):
 		super().__init__(flags=flags, device=device)
-		self.device = torch.device(f"cuda:{device}")
-		self.frame = 0
 
+		self.name = name
+		self.frame = 0
 		self.set_on_layout_change_callback(self.on_layout_change, {})
 		self.set_on_frame_callback(self.on_frame, {})
 
 	def on_layout_change(self, info):
+		print('layout changed:')
+
 		if 'Openwindow' in self.par.names:
 			self.par['Openwindow'].pulse()
 
 	def on_frame(self, info):
 		self.start_next_frame()
+
+		if self.frame % 180 == 0:
+			print(f'{self.name} - frame: {self.frame}')
+
 		self.frame += 1
 
+# global dictionary to store the futures for each comp instance
+# used to signal when the comp is loaded, stopped, or unloaded
+comp_futures = {}
+
+# global loop variable to call futures from the main thread
+loop = None
+
+# define the on_loaded callback that will be called when the component is loaded
 def on_loaded(info):
 	global comp_futures, loop
 	comp_id = info['comp_id']
 	if comp_id in comp_futures:
 		loop.call_soon_threadsafe(comp_futures[comp_id].set_result, True)
 
+# define the on_stop callback that will be called when the component is stopped
 def on_stop(info):
 	global comp_futures, loop
 	comp_id = info['comp_id']
 	if comp_id in comp_futures:
 		loop.call_soon_threadsafe(comp_futures[comp_id].set_result, True)
 
+# define the on_unloaded callback that will be called when the component is unloaded
 def on_unloaded(info):
-	# print('on_unloaded info:', info)
 	global comp_futures, loop
 	comp_id = info['comp_id']
 	if comp_id in comp_futures:
 		loop.call_soon_threadsafe(comp_futures[comp_id].set_result, True)
 
+# async function to load multiple comps concurrently
 async def load_comps(comps):
 	global comp_futures, loop
 	loop = asyncio.get_running_loop()
@@ -60,17 +68,19 @@ async def load_comps(comps):
 
 	await asyncio.gather(*comp_futures.values())
 
+# async function to start multiple comps concurrently
 async def start_comps(comps):
 	for comp in comps:
 		comp.start()
 
-
-async def wait_for_ctrl_q(comps):
+# async function to wait for the user to press 'q' to continue
+async def wait_for_q_key(comps):
 	while True:
-		if keyboard.is_pressed('ctrl+q'):
+		if utils.check_key('q'):
 			break
 		await asyncio.sleep(0.1)
 
+# async function to stop multiple comps concurrently
 async def stop_comps(comps):
 	global comp_futures, loop
 	loop = asyncio.get_running_loop()
@@ -81,6 +91,7 @@ async def stop_comps(comps):
 
 	await asyncio.gather(*comp_futures.values())
 
+# async function to unload multiple comps concurrently
 async def unload_comps(comps):
 	global comp_futures, loop
 	loop = asyncio.get_running_loop()
@@ -91,23 +102,36 @@ async def unload_comps(comps):
 
 	await asyncio.gather(*comp_futures.values())
 
+# main function to load, start, stop, and unload multiple comps concurrently
 async def main():
-	comps = [MyComp() for _ in range(3)]
 
-	# load 3 comps on the second GPU as well
-	comps += [MyComp(flags=tp.CompFlags.INTERNAL_TIME_ASYNC, device=1) for _ in range(3)]
+	base_name = 'my_comp_gpu0_'
+	comps = [MyComp(f"my_comp_gpu0_{i}", flags=tp.CompFlags.INTERNAL_TIME_ASYNC) for i in range(3)]
 
+	# uncomment to load 3 comps on the second GPU as well (if available)
+	# comps += [MyComp(f"my_comp_gpu1_{i}", flags=tp.CompFlags.INTERNAL_TIME_ASYNC, device=1) for _ in range(3)]
+
+	print('loading comps...')
 	await load_comps(comps)
+
+	print('starting comps...')
 	await start_comps(comps)
-	await wait_for_ctrl_q(comps)
+
+	print('waiting for user to press "q" to continue...')
+	await wait_for_q_key(comps)
+
+	print('stopping comps...')
 	await stop_comps(comps)
+
+	print('unloading comps...')
 	await unload_comps(comps)
 
+asyncio.run(main())
 
-if __name__ == '__main__':
-	asyncio.run(main())
 
-	print('Test complete.')
+
+
+
 
 
 

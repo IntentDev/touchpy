@@ -7,11 +7,11 @@ class ImageFilter(nn.Module):
 	
 	Function to test io with TopLink tensors.
 	"""
-	def __init__(self, in_channels=4, out_channels=4, kernel_size=3):
+	def __init__(self, in_channels=4, out_channels=4, kernel_size=3, stride=1, groups=4):
 		super().__init__()
 
-		self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride=1, 
-							  padding=kernel_size // 2, groups=4, bias=False)
+		self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride=stride, 
+							  padding=kernel_size // 2, groups=groups, bias=False)
 
 		nn.init.constant_(self.conv.weight, 1.0 / (kernel_size ** 2) )
 		# nn.init.normal_(self.conv.weight, 0.0, 1)

@@ -1,5 +1,5 @@
 #include "chopchannels.h"
-
+#include "logging.h"
 #include <iostream>
 
 const float* 
@@ -347,6 +347,8 @@ ChopChannels::setEndTime(int64_t endTime) { endTime_ = endTime; }
 void 
 ChopChannels::appendChannel(const float* data, uint32_t size, const char* name)
 {
+	//SPDLOG_DEBUG("appendChannel: {}", name);
+
 	size_t newSize = static_cast<size_t>(channelCount_ + 1);
 
 	channelsBuffer_.resize(newSize * capacity_);
@@ -369,16 +371,14 @@ ChopChannels::appendChannel(const float* data, uint32_t size, const char* name)
 	auto nameCount = namesBuffer_.size();
 	if (name || nameCount > 0)
 	{
+		namesBuffer_.resize(newSize);
 		if (nameCount != channelCount_)
 		{
-			namesBuffer_.resize(newSize);
-			for (uint32_t i = 0; i < channelCount_; ++i)
+			for (uint32_t i = 0; i < channelCount_ + 1; ++i)
 			{
 				namesBuffer_[i] = "chan" + std::to_string(i + 1);
 			}
 		}
-		else
-			namesBuffer_.resize(newSize);
 
 		if (name)
 			namesBuffer_[channelCount_] = name;
@@ -386,7 +386,7 @@ ChopChannels::appendChannel(const float* data, uint32_t size, const char* name)
 			namesBuffer_[channelCount_] = "chan" + std::to_string(newSize);
 	
 		names_.resize(newSize);
-		for (uint32_t i = 0; i < channelCount_; ++i)
+		for (uint32_t i = 0; i < channelCount_ + 1; ++i)
 		{
 			names_[i] = namesBuffer_[i].c_str();
 		}
@@ -450,7 +450,7 @@ ChopChannels::insertChannel(uint32_t index, const float* data, uint32_t size, co
 				namesBuffer_.resize(newSize);
 				names_.resize(newSize);
 
-				for (size_t i = 0; i < channelCount_; ++i)
+				for (size_t i = 0; i < channelCount_ + 1; ++i)
 				{
 					channels_[i] = &channelsBuffer_[i * capacity_];
 					namesBuffer_[i] = "chan" + std::to_string(i + 1);
@@ -464,7 +464,7 @@ ChopChannels::insertChannel(uint32_t index, const float* data, uint32_t size, co
 				namesBuffer_.insert(namesBuffer_.begin() + index, name);
 				names_.resize(newSize);
 
-				for (size_t i = 0; i < channelCount_; ++i)
+				for (size_t i = 0; i < channelCount_ + 1; ++i)
 				{
 					channels_[i] = &channelsBuffer_[i * capacity_];
 					names_[i] = namesBuffer_[i].c_str();
