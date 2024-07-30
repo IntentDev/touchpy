@@ -30,6 +30,7 @@ class Comp
 {
 public:
 	Comp(CompFlags compFlags = DEFAULT_COMP_FLAG_BITS,
+		int64_t fps = 60,
 		uint8_t device = 0, 
 		const std::string& preferredEnginePath = "");
 

@@ -71,8 +71,9 @@ void initCompBindings(nb::module_& m)
 	comp.doc() = CompDoc;
 	comp.def(nb::init<>(), nb::rv_policy::take_ownership)
 
-		.def(nb::init<CompFlagBits, uint8_t, const std::string&>(),
+		.def(nb::init<CompFlagBits, int64_t, uint8_t, const std::string&>(),
 			"flags"_a = static_cast<CompFlags::IntType>(DEFAULT_COMP_FLAG_BITS),
+			"fps"_a = 60,
 			"device"_a = 0u, 
 			"td_path"_a = "",
 			nb::rv_policy::take_ownership)

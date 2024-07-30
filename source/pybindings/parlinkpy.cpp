@@ -74,6 +74,18 @@ void initParLinkBindings(nb::module_& m)
 				);
 				self.set(val);
 			})
+		.def("set", [](Int2ParLink& self, const nb::tuple& tuple)
+			{
+				if (tuple.size() != 2)
+					throw std::invalid_argument("List must have 2 elements");
+
+				auto val = Int2(
+					nb::cast<int32_t>(tuple[0]),
+					nb::cast<int32_t>(tuple[1])
+				);
+				self.set(val);
+			})
+
 		;
 
 	nb::class_ <Int3ParLink> int3Par(m, "Int3Par");
@@ -102,7 +114,19 @@ void initParLinkBindings(nb::module_& m)
 				);
 				self.set(val);
 			})
-				;
+		.def("set", [](Int3ParLink& self, const nb::tuple& tuple)
+			{
+				if (tuple.size() != 3)
+					throw std::invalid_argument("List must have 3 elements");
+
+				auto val = Int3(
+					nb::cast<int32_t>(tuple[0]),
+					nb::cast<int32_t>(tuple[1]),
+					nb::cast<int32_t>(tuple[2])
+				);
+				self.set(val);
+			})
+		;
 
 	nb::class_ <Int4ParLink> int4Par(m, "Int4Par");
 	int4Par.doc() = "An int4 parameter in a TouchDesigner component";
@@ -132,7 +156,20 @@ void initParLinkBindings(nb::module_& m)
 				);
 				self.set(val);
 			})
-				;
+		.def("set", [](Int4ParLink& self, const nb::tuple& tuple)
+			{
+				if (tuple.size() != 4)
+					throw std::invalid_argument("List must have 4 elements");
+
+				auto val = Int4(
+					nb::cast<int32_t>(tuple[0]),
+					nb::cast<int32_t>(tuple[1]),
+					nb::cast<int32_t>(tuple[2]),
+					nb::cast<int32_t>(tuple[3])
+				);
+				self.set(val);
+			})
+		;
 
 	nb::class_ <Double2ParLink> double2Par(m, "Double2Par");
 	double2Par.doc() = "A float2 parameter in a TouchDesigner component";
@@ -158,7 +195,19 @@ void initParLinkBindings(nb::module_& m)
 				);
 				self.set(val);
 			})
-				;
+
+		.def("set", [](Double2ParLink& self, const nb::tuple& tuple)
+			{
+				if (tuple.size() != 2)
+					throw std::invalid_argument("List must have 2 elements");
+
+				auto val = Double2(
+					nb::cast<double>(tuple[0]),
+					nb::cast<double>(tuple[1])
+				);
+				self.set(val);
+			})
+		;
 
 	nb::class_ <Double3ParLink> double3Par(m, "Double3Par");
 	double3Par.doc() = "A float3 parameter in a TouchDesigner component";
@@ -185,6 +234,19 @@ void initParLinkBindings(nb::module_& m)
 				);
 				self.set(val);
 			}, "values"_a)
+		.def("set", [](Double3ParLink& self, const nb::tuple& tuple)
+			{
+				if (tuple.size() != 3)
+					throw std::invalid_argument("List must have 3 elements");
+
+				auto val = Double3(
+					nb::cast<double>(tuple[0]),
+					nb::cast<double>(tuple[1]),
+					nb::cast<double>(tuple[2])
+				);
+				self.set(val);
+			}, "values"_a)
+
 				;
 
 	nb::class_ <Double4ParLink> double4Par(m, "Double4Par");
@@ -215,7 +277,20 @@ void initParLinkBindings(nb::module_& m)
 				);
 				self.set(val);
 			})
-				;
+		.def("set", [](Double4ParLink& self, const nb::tuple& tuple)
+			{
+				if (tuple.size() != 4)
+					throw std::invalid_argument("List must have 4 elements");
+
+				auto val = Double4(
+					nb::cast<double>(tuple[0]),
+					nb::cast<double>(tuple[1]),
+					nb::cast<double>(tuple[2]),
+					nb::cast<double>(tuple[3])
+				);
+				self.set(val);
+			})
+		;
 
 	nb::class_ <ColorParLink> colorPar(m, "ColorPar");
 	colorPar.doc() = "A color parameter in a TouchDesigner component";
@@ -245,7 +320,20 @@ void initParLinkBindings(nb::module_& m)
 				);
 				self.set(val);
 			})
-				;
+		.def("set", [](ColorParLink& self, const nb::tuple& tuple)
+			{
+				if (tuple.size() != 4)
+					throw std::invalid_argument("List must have 4 elements");
+
+				auto val = Color(
+					nb::cast<double>(tuple[0]),
+					nb::cast<double>(tuple[1]),
+					nb::cast<double>(tuple[2]),
+					nb::cast<double>(tuple[3])
+				);
+				self.set(val);
+			})
+		;
 
 	nb::class_ <PulseParLink> pulsePar(m, "PulsePar");
 	pulsePar.doc() = "A pulse parameter in a TouchDesigner component";
