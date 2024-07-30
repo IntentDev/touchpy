@@ -12,7 +12,7 @@ class MyComp (tp.Comp):
 	# fps: is the frames per second that the component will run at (can only be set at initialization)
 	# device: is the device (GPU) that the component will run on (0 is defualt, can only be set at initialization)
 	# td_path: is the path to the TouchDesigner executable ("" will use the latest installed version)
-	def __init__(self, flags=tp.CompFlags.INTERNAL_TIME_AUTO, fps=60, device=0, td_path=td_path):
+	def __init__(self, flags=tp.CompFlags.INTERNAL_TIME_AUTO, fps=60, device=0, td_path=""):
 		
 		# call the parent class constructor to initialize the component
 		super().__init__(flags=flags, fps=fps, device=device, td_path=td_path)

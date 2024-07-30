@@ -122,7 +122,7 @@ void initChopLinkBindings(nb::module_& m)
 		
 		.def_prop_ro("num_chans", &ChopChannels::channelCount, num_chansDoc)
 		.def_prop_ro("num_samples", &ChopChannels::valueCount, num_samplesDoc)
-		.def_prop_ro("chan_names", &ChopChannels::namesBuffer, chan_namesDoc, nb::rv_policy::reference_internal)
+		.def_prop_ro("names", &ChopChannels::namesBuffer, chan_namesDoc, nb::rv_policy::reference_internal)
 
 		.def_prop_rw("rate", 
 			[](ChopChannels& self) { return self.rate(); },
