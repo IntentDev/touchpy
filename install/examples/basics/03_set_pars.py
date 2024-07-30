@@ -1,5 +1,5 @@
 import touchpy as tp
-import utils
+import modules.utils as utils
 import math
 
 class MyComp (tp.Comp):

@@ -1,5 +1,5 @@
 import touchpy as tp
-import utils # utils.py is in the same directory as this script
+import modules.utils as utils # utils.py is in the same directory as this script
 
 # set the logging level to INFO which will print out verbose information
 tp.init_logging(level=tp.LogLevel.INFO)

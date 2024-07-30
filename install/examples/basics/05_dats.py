@@ -1,5 +1,5 @@
 import touchpy as tp
-import utils
+import modules.utils as utils
 import numpy as np
 
 class MyComp (tp.Comp):
@@ -17,15 +17,9 @@ class MyComp (tp.Comp):
 		self.my_table.append_row(['d', 'e', 'f'])
 		self.my_table.append_col(['4', '5', '6'])
 
-		self.my_table2  = tp.DatTable()
-		values = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-		# tables can be created from a list of lists and can only store strings
-		# use the cast flag to convert the values to the string representation
-		self.my_table2.from_list(values, cast=True)
-
 		print(
-			'my_table2 as list:\n', 
-			*[f"\t{self.my_table2.row(i)}\n" for i in range(self.my_table2.num_rows)]
+			'my_table:\n', 
+			*[f"\t{self.my_table.row(i)}\n" for i in range(self.my_table.num_rows)]
 		)
 
 
@@ -73,10 +67,21 @@ class MyComp (tp.Comp):
 			print('out_dat2 rows:\n', *[f"\t{row}\n" for row in out_dat2_table.as_list()])
 			print('out_dat2 as string:', out_dat2_str, '\n')
 
-
+		# set first in DAT to a string from a string
 		self.in_dats[0].from_string(f"Hello World! frame: {self.frame}")
 
+		# set second in DAT to a table from a DatTable
 		self.in_dats['datIn2'].from_table(self.my_table)
+
+		# set third in DAT to a table from a list of lists
+		# optional set cast flag to convert values to string
+		table_data = [
+			['values', 'str', 'int', 'float'],
+			['row2', 'some string', 1, 1.111111],
+			['row3', 'another string', 2, 2.222222],
+			['row4', 'and another', 3, 3.3333333]
+		]
+		self.in_dats['datIn3'].from_list(table_data, cast=True)
 
 
 

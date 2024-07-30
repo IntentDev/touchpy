@@ -6,6 +6,7 @@
 #include <nanobind/operators.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
+#include <nanobind/stl/array.h>
 
 namespace nb = nanobind;
 using namespace nb::literals;
