@@ -3,7 +3,7 @@ touchpy.InChop
 
 .. py:class:: touchpy.InChop(arg0: TouchObject<TEInstance_>, arg1: TouchObject<TELinkInfo>, /)
 
-   An interface for an InCHOP in a loaded TouchDesigner component
+   Set data on an InCHOP in a loaded TouchDesigner component
 
    
    
@@ -22,9 +22,9 @@ touchpy.InChop
 
       Sets the data in this CHOP from a 2D NumPy array.
 
-      :param array: the 2D NumPy array to set the data from
+      :param array: The 2D NumPy array to set the data from.
       :type array: :py:class:`numpy.ndarray`
-      :param names: the names of the channels in the array (optional)
+      :param names: The names of the channels in the array (optional).
       :type names: :py:class:`list`
 
 

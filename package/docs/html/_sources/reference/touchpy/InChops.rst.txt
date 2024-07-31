@@ -14,14 +14,14 @@ touchpy.InChops
       :type: int
 
       Returns:
-      int: number of In CHOPs in the loaded tox.
+      int: The number of InCHOPs in the loaded tox.
 
    .. py:property:: names
       :type: list[str]
 
       Names of all In CHOPs.
 
-      :returns: names of all In CHOPs in the loaded tox.
+      :returns: The names of all In CHOPs in the loaded tox.
       :rtype: list
 
 

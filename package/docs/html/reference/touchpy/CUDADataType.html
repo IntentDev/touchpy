@@ -156,10 +156,15 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <ul class="current">
+  <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../index.html">TouchPy Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../types.html">TouchPy Data Types</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">API Reference</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of API Reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">touchpy.CUDADataType</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ChopChannels.html">touchpy.ChopChannels</a></li>
@@ -202,7 +207,10 @@
 <li class="toctree-l2"><a class="reference internal" href="Time.html">touchpy.Time</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/basic.html">Basic Example</a></li>
 </ul>
 
 </div>
@@ -241,40 +249,28 @@
 <h1>touchpy.CUDADataType<a class="headerlink" href="#touchpy-cudadatatype" title="Link to this heading">🔗</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="touchpy.CUDADataType">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">touchpy.</span></span><span class="sig-name descname"><span class="pre">CUDADataType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><span class="pre">object</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#touchpy.CUDADataType" title="Link to this definition">🔗</a></dt>
-<dd><p>str(object='') -&gt; str
-str(bytes_or_buffer[, encoding[, errors]]) -&gt; str</p>
-<p>Create a new string object from the given object. If encoding or
-errors is specified, then the object must expose a data buffer
-that will be decoded using the given encoding and error handler.
-Otherwise, returns the result of object.__str__() (if defined)
-or repr(object).
-encoding defaults to sys.getdefaultencoding().
-errors defaults to ‘strict’.</p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">touchpy.</span></span><span class="sig-name descname"><span class="pre">CUDADataType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#touchpy.CUDADataType" title="Link to this definition">🔗</a></dt>
+<dd><p>The data type of a CUDA memory buffer</p>
 <p class="rubric">Attributes</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CUDADataType.Float16">
-<span class="sig-name descname"><span class="pre">Float16</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CUDADataType" title="touchpy.CUDADataType"><span class="pre">CUDADataType</span></a></em><a class="headerlink" href="#touchpy.CUDADataType.Float16" title="Link to this definition">🔗</a></dt>
-<dd><p>The data type of a CUDA memory buffer</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">Float16</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'2'</span></em><a class="headerlink" href="#touchpy.CUDADataType.Float16" title="Link to this definition">🔗</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CUDADataType.Float32">
-<span class="sig-name descname"><span class="pre">Float32</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CUDADataType" title="touchpy.CUDADataType"><span class="pre">CUDADataType</span></a></em><a class="headerlink" href="#touchpy.CUDADataType.Float32" title="Link to this definition">🔗</a></dt>
-<dd><p>The data type of a CUDA memory buffer</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">Float32</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'3'</span></em><a class="headerlink" href="#touchpy.CUDADataType.Float32" title="Link to this definition">🔗</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CUDADataType.UInt8">
-<span class="sig-name descname"><span class="pre">UInt8</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CUDADataType" title="touchpy.CUDADataType"><span class="pre">CUDADataType</span></a></em><a class="headerlink" href="#touchpy.CUDADataType.UInt8" title="Link to this definition">🔗</a></dt>
-<dd><p>The data type of a CUDA memory buffer</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">UInt8</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'0'</span></em><a class="headerlink" href="#touchpy.CUDADataType.UInt8" title="Link to this definition">🔗</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CUDADataType.Undefined">
-<span class="sig-name descname"><span class="pre">Undefined</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CUDADataType" title="touchpy.CUDADataType"><span class="pre">CUDADataType</span></a></em><a class="headerlink" href="#touchpy.CUDADataType.Undefined" title="Link to this definition">🔗</a></dt>
-<dd><p>The data type of a CUDA memory buffer</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">Undefined</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'255'</span></em><a class="headerlink" href="#touchpy.CUDADataType.Undefined" title="Link to this definition">🔗</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 

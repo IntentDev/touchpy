@@ -5,17 +5,47 @@ touchpy.ChopChannels
               ChopChannels(array: Annotated[numpy.typing.ArrayLike, dict(dtype='float32', shape=(None, None), device='cpu')], rate: float = -1.0, is_time_dependent: bool = False, start_time: int = 0, end_time: int = 0, channel_names: collections.abc.Sequence[str] = [])
               ChopChannels(num_samples: int, rate: float = -1.0, is_time_dependent: bool = False, start_time: int = 0, end_time: int = 0, channel_names: collections.abc.Sequence[str] = [])
 
-   A container of CHOP channels
+   Represents an array of floating point values.
+
+   A ChopChannels object is an array of floating point values that has similar
+   structure as 2D Numpy array but can operated on in a similar fashion to a CHOP
+   in TD. The data is stored in a single contiguous block of memory but is still
+   accessble by channel (name or index) and sample index.
+
+   Constructor 1:
+       Default constructor, creates an empty ChopChannels object.
+
+   Constructor 2:
+       Args:
+               array (numpy.ndarray): A 2D NumPy array to set the data from.
+               rate (float): The sample rate of the CHOP (optional, default is -1.0 which means the rate is not set).
+               is_time_dependent (bool): Whether the CHOP is time dependent or not (optional, default is False).
+               start_time (float): The start time of the CHOP (optional, default is 0.0).
+               end_time (float): The end time of the CHOP (optional, default is 0.0).
+               channel_names (list): The names of the channels in the array (optional, default is []).
+
+   Constructor 3:
+       Args:
+               num_samples (int): The number of samples in the CHOP.
+               rate (float): The sample rate of the CHOP (optional, default is -1.0 which means the rate is not set).
+               is_time_dependent (bool): Whether the CHOP is time dependent or not (optional, default is False).
+               start_time (float): The start time of the CHOP (optional, default is 0.0).
+               end_time (float): The end time of the CHOP (optional, default is 0.0).
+               channel_names (list): The names of the channels in the array (optional, default is []).
+
+   Properties:
+       num_chans (int): (get) The number of channels in the CHOP.
+       num_samples (int): (get) The number of samples in the CHOP.
+       chan_names (list): (get) List of the channel names in this CHOP.
+       rate (float): (get, set) The sample rate of the CHOP.
+       is_time_dependent (bool): (get, set) Refers to whether the corresponding CHOP is time dependent or not. i.e. audio chops are time dependent.
+       start_time (float): (get, set) The start time of the CHOP, in frame number * chop rate.
+       end_time (float): (get, set) The end time of the CHOP, in frame number * chop rate.
 
    
    
 
    .. rubric:: Attributes
-
-   .. py:property:: chan_names
-      :type: list[str]
-
-      (get) List of the  channel names in this CHOP.
 
    .. py:property:: end_time
       :type: int
@@ -26,6 +56,11 @@ touchpy.ChopChannels
       :type: bool
 
       (set, get) Refers to whether the corresponding CHOP is time dependent or not. i.e. audio chops are time dependent.
+
+   .. py:property:: names
+      :type: list[str]
+
+      (get) List of the  channel names in this CHOP.
 
    .. py:property:: num_chans
       :type: int

@@ -33,6 +33,7 @@ touchpy.Int2Par
    .. py:method:: set(arg: bool | str | int | Int2 | Int3 | Int4 | float | Float2 | Float3 | Float4 | Color, /) -> None
                   set(x: int = 0, y: int = 0) -> None
                   set(arg: list, /) -> None
+                  set(arg: tuple, /) -> None
 
 
 

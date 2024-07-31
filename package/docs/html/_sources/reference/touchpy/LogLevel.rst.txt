@@ -1,8 +1,11 @@
 touchpy.LogLevel
 ================
 
-.. py:class:: touchpy.LogLevel(arg: object, /)
+.. py:class:: touchpy.LogLevel(*args, **kwds)
 
+
+
+   Enumeration of logging levels.
 
    
    
@@ -10,37 +13,37 @@ touchpy.LogLevel
    .. rubric:: Attributes
 
    .. py:attribute:: CRITICAL
-      :type: LogLevel
+      :value: '5'
 
       
 
    .. py:attribute:: DEBUG
-      :type: LogLevel
+      :value: '1'
 
       
 
    .. py:attribute:: ERROR
-      :type: LogLevel
+      :value: '4'
 
       
 
    .. py:attribute:: INFO
-      :type: LogLevel
+      :value: '2'
 
       
 
    .. py:attribute:: OFF
-      :type: LogLevel
+      :value: '6'
 
       
 
    .. py:attribute:: TRACE
-      :type: LogLevel
+      :value: '0'
 
       
 
    .. py:attribute:: WARN
-      :type: LogLevel
+      :value: '3'
 
       
 

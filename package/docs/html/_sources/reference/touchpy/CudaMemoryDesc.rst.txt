@@ -16,11 +16,11 @@ touchpy.CudaMemoryDesc
 
 
    .. py:property:: shape
-      :type: std::array<unsigned int,3>
+      :type: list[int]
 
 
    .. py:property:: strides
-      :type: std::array<unsigned int,3>
+      :type: list[int]
 
 
 

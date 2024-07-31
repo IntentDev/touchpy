@@ -37,6 +37,7 @@ touchpy.Double3Par
    .. py:method:: set(arg: bool | str | int | Int2 | Int3 | Int4 | float | Float2 | Float3 | Float4 | Color, /) -> None
                   set(x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None
                   set(values: list) -> None
+                  set(values: tuple) -> None
 
 
 

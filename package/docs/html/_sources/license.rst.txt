@@ -2,5 +2,5 @@
 License
 =======
 
-.. literalinclude:: ../../install/LICENSE
+.. literalinclude:: ../../install/LICENSE.md
     :language: ReST

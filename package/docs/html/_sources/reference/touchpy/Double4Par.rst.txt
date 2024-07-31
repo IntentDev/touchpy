@@ -41,6 +41,7 @@ touchpy.Double4Par
    .. py:method:: set(arg: bool | str | int | Int2 | Int3 | Int4 | float | Float2 | Float3 | Float4 | Color, /) -> None
                   set(x: float = 0.0, y: float = 0.0, z: float = 0.0, w: float = 0.0) -> None
                   set(arg: list, /) -> None
+                  set(arg: tuple, /) -> None
 
 
 

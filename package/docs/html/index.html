@@ -160,6 +160,11 @@
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">TouchPy Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="types.html">TouchPy Data Types</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="reference/touchpy/index.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of API Reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="reference/touchpy/CUDADataType.html">touchpy.CUDADataType</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/touchpy/ChopChannels.html">touchpy.ChopChannels</a></li>
@@ -202,7 +207,10 @@
 <li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Time.html">touchpy.Time</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/basic.html">Basic Example</a></li>
 </ul>
 
 </div>
@@ -239,22 +247,16 @@
         <article role="main">
           <section id="touchpy-documentation">
 <h1>TouchPy Documentation<a class="headerlink" href="#touchpy-documentation" title="Link to this heading">🔗</a></h1>
-<p><em>TouchPy</em> is a Python framework for high-performance integration of any existing Python framework with TouchDesigner. By leveraging Vulkan, CUDA, and TouchEngine, TouchPy opens new pathways for integration, particularly with libraries such as PyTorch and Nvidia Warp. TouchPy supports GPU-to-GPU (zero-copy) data transfers, streamlining data exchange between standalone Python applications and Touchdesigner.</p>
-<p>The first public version of TouchPy was released during the TouchDesigner Event Berlin 2024.</p>
+<p><em>TouchPy</em> is a high-performance toolset to work with TouchDesigner components in Python. By leveraging Vulkan, CUDA, and TouchEngine, TouchPy opens new pathways for integration, particularly with libraries such as PyTorch and Nvidia Warp. TouchPy supports GPU-to-GPU (zero-copy) data transfers, streamlining data exchange between standalone Python applications and Touchdesigner.</p>
+<p>The first public version of TouchPy was released during the TouchDesigner Event Berlin in May 2024.</p>
 <section id="quickstart">
 <h2>Quickstart<a class="headerlink" href="#quickstart" title="Link to this heading">🔗</a></h2>
-<div class="line-block">
-<div class="line">TouchPy supports Python 3.11 and TouchDesigner 2023. For now it runs on Windows only.</div>
-<div class="line">A Vulkan &amp; CUDA capable NVIDIA GPU and driver are required.</div>
-</div>
+<p>TouchPy supports Python 3.9 onwards and runs on Windows. To work with TOPs a Nvidia card is required.
+TouchPy requires TouchDesigner or TouchPlayer to be installed with a paid license (Educational, Commercial, or Pro).</p>
 <p>The easiest way to install TouchPy is from <a class="reference external" href="https://pypi.org/project/touchpy">PyPI</a>:</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>touchpy
 </pre></div>
 </div>
-<section id="basic-example">
-<h3>Basic Example<a class="headerlink" href="#basic-example" title="Link to this heading">🔗</a></h3>
-<p>insert example here</p>
-</section>
 <section id="full-table-of-contents">
 <h3>Full Table Of Contents<a class="headerlink" href="#full-table-of-contents" title="Link to this heading">🔗</a></h3>
 <div class="toctree-wrapper compound">
@@ -262,8 +264,28 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">TouchPy Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="reference/touchpy/index.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Core Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="types.html">TouchPy Data Types</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="types.html#generic-types">Generic Types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="reference/touchpy/index.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/index.html#touchpy-classes">TouchPy Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/index.html#functions">Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference/touchpy/index.html#module-contents">Module Contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/basic.html">Basic Example</a></li>
 </ul>
 </div>
 </section>
@@ -316,8 +338,9 @@
             <ul>
 <li><a class="reference internal" href="#">TouchPy Documentation</a><ul>
 <li><a class="reference internal" href="#quickstart">Quickstart</a><ul>
-<li><a class="reference internal" href="#basic-example">Basic Example</a></li>
-<li><a class="reference internal" href="#full-table-of-contents">Full Table Of Contents</a></li>
+<li><a class="reference internal" href="#full-table-of-contents">Full Table Of Contents</a><ul>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

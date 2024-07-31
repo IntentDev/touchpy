@@ -3,7 +3,7 @@ touchpy.OutChop
 
 .. py:class:: touchpy.OutChop(arg0: TouchObject<TEInstance_>, arg1: TouchObject<TELinkInfo>, /)
 
-   An interface for an OutCHOP in a loaded TouchDesigner component
+   Access data in an OutCHOP in a loaded TouchDesigner component
 
    
    
