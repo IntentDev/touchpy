@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="touchpy.ParCollection" href="ParCollection.html" /><link rel="prev" title="touchpy.OutTops" href="OutTops.html" />
 
     <!-- Generated with Sphinx 7.3.6 and Furo 2024.01.29 -->
-        <title>touchpy.Par - TouchPy 0.9.0 documentation</title>
+        <title>touchpy.Par - TouchPy 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
@@ -125,7 +125,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">TouchPy 0.9.0 documentation</div></a>
+      <a href="../../index.html"><div class="brand">TouchPy 0.1 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -148,7 +148,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
   
   
-  <span class="sidebar-brand-text">TouchPy 0.9.0 documentation</span>
+  <span class="sidebar-brand-text">TouchPy 0.1 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -156,10 +156,15 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <ul class="current">
+  <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../index.html">TouchPy Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../types.html">TouchPy Data Types</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">API Reference</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of API Reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="CUDADataType.html">touchpy.CUDADataType</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ChopChannels.html">touchpy.ChopChannels</a></li>
@@ -202,7 +207,10 @@
 <li class="toctree-l2"><a class="reference internal" href="Time.html">touchpy.Time</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/basic.html">Basic Example</a></li>
 </ul>
 
 </div>
@@ -253,11 +261,6 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="touchpy.Par.get">
 <span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="Int2.html#touchpy.Int2" title="touchpy.Int2"><span class="pre">Int2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="Int3.html#touchpy.Int3" title="touchpy.Int3"><span class="pre">Int3</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="Int4.html#touchpy.Int4" title="touchpy.Int4"><span class="pre">Int4</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="Float2.html#touchpy.Float2" title="touchpy.Float2"><span class="pre">Float2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="Float3.html#touchpy.Float3" title="touchpy.Float3"><span class="pre">Float3</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="Float4.html#touchpy.Float4" title="touchpy.Float4"><span class="pre">Float4</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="Color.html#touchpy.Color" title="touchpy.Color"><span class="pre">Color</span></a></span></span><a class="headerlink" href="#touchpy.Par.get" title="Link to this definition">🔗</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="touchpy.Par.pulse">
-<span class="sig-name descname"><span class="pre">pulse</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#touchpy.Par.pulse" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -334,7 +337,6 @@
 <li><a class="reference internal" href="#touchpy.Par"><code class="docutils literal notranslate"><span class="pre">touchpy.Par</span></code></a><ul>
 <li><a class="reference internal" href="#touchpy.Par.val"><code class="docutils literal notranslate"><span class="pre">touchpy.Par.val</span></code></a></li>
 <li><a class="reference internal" href="#touchpy.Par.get"><code class="docutils literal notranslate"><span class="pre">touchpy.Par.get()</span></code></a></li>
-<li><a class="reference internal" href="#touchpy.Par.pulse"><code class="docutils literal notranslate"><span class="pre">touchpy.Par.pulse()</span></code></a></li>
 <li><a class="reference internal" href="#touchpy.Par.set"><code class="docutils literal notranslate"><span class="pre">touchpy.Par.set()</span></code></a></li>
 </ul>
 </li>

@@ -115,10 +115,31 @@ Module Contents
    :param array: The array to get information about.
    :type array: :py:class:`ndarray`
 
+   :returns: A dictionary containing information about the array.
+   :rtype: dict
+
 
 .. py:function:: init_logging(level: LogLevel = LogLevel.INFO, console: bool = True, file: bool = False) -> None
 
+   Initialize the logging system.
+
+   :param level: The logging level to use.
+   :type level: :py:class:`LogLevel`
+   :param console: Whether to log to the console.
+   :type console: :py:class:`bool`
+   :param file: Whether to log to a file.
+   :type file: :py:class:`bool`
+
+   :returns: None
+
 
 .. py:function:: set_log_level(level: LogLevel = LogLevel.WARN) -> None
+
+   Set the logging level.
+
+   :param level: The logging level to use.
+   :type level: :py:class:`LogLevel`
+
+   :returns: None
 
 

@@ -1,8 +1,11 @@
 touchpy.CudaFlags
 =================
 
-.. py:class:: touchpy.CudaFlags(arg: object, /)
+.. py:class:: touchpy.CudaFlags
 
+
+
+   Support for integer-based Flags
 
    
    
@@ -10,62 +13,62 @@ touchpy.CudaFlags
    .. rubric:: Attributes
 
    .. py:attribute:: BGR
-      :type: CudaFlags
+      :value: '32'
 
       
 
    .. py:attribute:: BGRA
-      :type: CudaFlags
+      :value: '16'
 
       
 
    .. py:attribute:: CHW
-      :type: CudaFlags
+      :value: '64'
 
       
 
    .. py:attribute:: HWC
-      :type: CudaFlags
+      :value: '128'
 
       
 
    .. py:attribute:: NONE
-      :type: CudaFlags
+      :value: '0'
 
       
 
    .. py:attribute:: R
-      :type: CudaFlags
+      :value: '8'
 
       
 
    .. py:attribute:: RG
-      :type: CudaFlags
+      :value: '4'
 
       
 
    .. py:attribute:: RGB
-      :type: CudaFlags
+      :value: '2'
 
       
 
    .. py:attribute:: RGBA
-      :type: CudaFlags
+      :value: '1'
 
       
 
    .. py:attribute:: VEC2
-      :type: CudaFlags
+      :value: '1024'
 
       
 
    .. py:attribute:: VEC3
-      :type: CudaFlags
+      :value: '512'
 
       
 
    .. py:attribute:: VEC4
-      :type: CudaFlags
+      :value: '256'
 
       
 

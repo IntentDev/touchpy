@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="touchpy.CudaMemory" href="CudaMemory.html" /><link rel="prev" title="touchpy.CompFlags" href="CompFlags.html" />
 
     <!-- Generated with Sphinx 7.3.6 and Furo 2024.01.29 -->
-        <title>touchpy.CudaFlags - TouchPy 0.9.0 documentation</title>
+        <title>touchpy.CudaFlags - TouchPy 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
@@ -125,7 +125,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">TouchPy 0.9.0 documentation</div></a>
+      <a href="../../index.html"><div class="brand">TouchPy 0.1 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -148,7 +148,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
   
   
-  <span class="sidebar-brand-text">TouchPy 0.9.0 documentation</span>
+  <span class="sidebar-brand-text">TouchPy 0.1 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -156,10 +156,15 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <ul class="current">
+  <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../index.html">TouchPy Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../types.html">TouchPy Data Types</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">API Reference</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of API Reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="CUDADataType.html">touchpy.CUDADataType</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ChopChannels.html">touchpy.ChopChannels</a></li>
@@ -202,7 +207,10 @@
 <li class="toctree-l2"><a class="reference internal" href="Time.html">touchpy.Time</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/basic.html">Basic Example</a></li>
 </ul>
 
 </div>
@@ -241,66 +249,67 @@
 <h1>touchpy.CudaFlags<a class="headerlink" href="#touchpy-cudaflags" title="Link to this heading">🔗</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="touchpy.CudaFlags">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">touchpy.</span></span><span class="sig-name descname"><span class="pre">CudaFlags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><span class="pre">object</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#touchpy.CudaFlags" title="Link to this definition">🔗</a></dt>
-<dd><p class="rubric">Attributes</p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">touchpy.</span></span><span class="sig-name descname"><span class="pre">CudaFlags</span></span><a class="headerlink" href="#touchpy.CudaFlags" title="Link to this definition">🔗</a></dt>
+<dd><p>Support for integer-based Flags</p>
+<p class="rubric">Attributes</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CudaFlags.BGR">
-<span class="sig-name descname"><span class="pre">BGR</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CudaFlags" title="touchpy.CudaFlags"><span class="pre">CudaFlags</span></a></em><a class="headerlink" href="#touchpy.CudaFlags.BGR" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">BGR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'32'</span></em><a class="headerlink" href="#touchpy.CudaFlags.BGR" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CudaFlags.BGRA">
-<span class="sig-name descname"><span class="pre">BGRA</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CudaFlags" title="touchpy.CudaFlags"><span class="pre">CudaFlags</span></a></em><a class="headerlink" href="#touchpy.CudaFlags.BGRA" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">BGRA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'16'</span></em><a class="headerlink" href="#touchpy.CudaFlags.BGRA" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CudaFlags.CHW">
-<span class="sig-name descname"><span class="pre">CHW</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CudaFlags" title="touchpy.CudaFlags"><span class="pre">CudaFlags</span></a></em><a class="headerlink" href="#touchpy.CudaFlags.CHW" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">CHW</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'64'</span></em><a class="headerlink" href="#touchpy.CudaFlags.CHW" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CudaFlags.HWC">
-<span class="sig-name descname"><span class="pre">HWC</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CudaFlags" title="touchpy.CudaFlags"><span class="pre">CudaFlags</span></a></em><a class="headerlink" href="#touchpy.CudaFlags.HWC" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">HWC</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'128'</span></em><a class="headerlink" href="#touchpy.CudaFlags.HWC" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CudaFlags.NONE">
-<span class="sig-name descname"><span class="pre">NONE</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CudaFlags" title="touchpy.CudaFlags"><span class="pre">CudaFlags</span></a></em><a class="headerlink" href="#touchpy.CudaFlags.NONE" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">NONE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'0'</span></em><a class="headerlink" href="#touchpy.CudaFlags.NONE" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CudaFlags.R">
-<span class="sig-name descname"><span class="pre">R</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CudaFlags" title="touchpy.CudaFlags"><span class="pre">CudaFlags</span></a></em><a class="headerlink" href="#touchpy.CudaFlags.R" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">R</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'8'</span></em><a class="headerlink" href="#touchpy.CudaFlags.R" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CudaFlags.RG">
-<span class="sig-name descname"><span class="pre">RG</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CudaFlags" title="touchpy.CudaFlags"><span class="pre">CudaFlags</span></a></em><a class="headerlink" href="#touchpy.CudaFlags.RG" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">RG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'4'</span></em><a class="headerlink" href="#touchpy.CudaFlags.RG" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CudaFlags.RGB">
-<span class="sig-name descname"><span class="pre">RGB</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CudaFlags" title="touchpy.CudaFlags"><span class="pre">CudaFlags</span></a></em><a class="headerlink" href="#touchpy.CudaFlags.RGB" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">RGB</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'2'</span></em><a class="headerlink" href="#touchpy.CudaFlags.RGB" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CudaFlags.RGBA">
-<span class="sig-name descname"><span class="pre">RGBA</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CudaFlags" title="touchpy.CudaFlags"><span class="pre">CudaFlags</span></a></em><a class="headerlink" href="#touchpy.CudaFlags.RGBA" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">RGBA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'1'</span></em><a class="headerlink" href="#touchpy.CudaFlags.RGBA" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CudaFlags.VEC2">
-<span class="sig-name descname"><span class="pre">VEC2</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CudaFlags" title="touchpy.CudaFlags"><span class="pre">CudaFlags</span></a></em><a class="headerlink" href="#touchpy.CudaFlags.VEC2" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">VEC2</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'1024'</span></em><a class="headerlink" href="#touchpy.CudaFlags.VEC2" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CudaFlags.VEC3">
-<span class="sig-name descname"><span class="pre">VEC3</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CudaFlags" title="touchpy.CudaFlags"><span class="pre">CudaFlags</span></a></em><a class="headerlink" href="#touchpy.CudaFlags.VEC3" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">VEC3</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'512'</span></em><a class="headerlink" href="#touchpy.CudaFlags.VEC3" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CudaFlags.VEC4">
-<span class="sig-name descname"><span class="pre">VEC4</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CudaFlags" title="touchpy.CudaFlags"><span class="pre">CudaFlags</span></a></em><a class="headerlink" href="#touchpy.CudaFlags.VEC4" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">VEC4</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'256'</span></em><a class="headerlink" href="#touchpy.CudaFlags.VEC4" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 </dd></dl>

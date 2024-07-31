@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="touchpy.CudaFlags" href="CudaFlags.html" /><link rel="prev" title="touchpy.Comp" href="Comp.html" />
 
     <!-- Generated with Sphinx 7.3.6 and Furo 2024.01.29 -->
-        <title>touchpy.CompFlags - TouchPy 0.9.0 documentation</title>
+        <title>touchpy.CompFlags - TouchPy 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
@@ -125,7 +125,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">TouchPy 0.9.0 documentation</div></a>
+      <a href="../../index.html"><div class="brand">TouchPy 0.1 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -148,7 +148,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
   
   
-  <span class="sidebar-brand-text">TouchPy 0.9.0 documentation</span>
+  <span class="sidebar-brand-text">TouchPy 0.1 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -156,10 +156,15 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <ul class="current">
+  <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../index.html">TouchPy Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../types.html">TouchPy Data Types</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">API Reference</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of API Reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="CUDADataType.html">touchpy.CUDADataType</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ChopChannels.html">touchpy.ChopChannels</a></li>
@@ -202,7 +207,10 @@
 <li class="toctree-l2"><a class="reference internal" href="Time.html">touchpy.Time</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/basic.html">Basic Example</a></li>
 </ul>
 
 </div>
@@ -241,56 +249,70 @@
 <h1>touchpy.CompFlags<a class="headerlink" href="#touchpy-compflags" title="Link to this heading">🔗</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="touchpy.CompFlags">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">touchpy.</span></span><span class="sig-name descname"><span class="pre">CompFlags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><span class="pre">object</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#touchpy.CompFlags" title="Link to this definition">🔗</a></dt>
-<dd><p class="rubric">Attributes</p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">touchpy.</span></span><span class="sig-name descname"><span class="pre">CompFlags</span></span><a class="headerlink" href="#touchpy.CompFlags" title="Link to this definition">🔗</a></dt>
+<dd><p>Enumeration of component flags.</p>
+<dl class="simple">
+<dt>Values:</dt><dd><p>INTERNAL_TIME: Sets the loaded component to run in internal time mode.
+EXTERNAL_TIME: Sets the loaded component to run in external time mode.
+AUTO_UPDATE: The Comp will run a loop that updates the component.
+ASYNC_UPDATE: The Comp will run an asynchronous loop that updates the component.
+REALTIME: If INTERNAL_TIME is set the loaded component will run in real-time mode.
+INTERNAL_TIME_AUTO: Shortcut for setting INTERNAL_TIME | AUTO_UPDATE.
+INTERNAL_TIME_ASYNC: Shortcut for setting INTERNAL_TIME | ASYNC_UPDATE.
+CUDA_STREAM_DEFAULT: Sets the CUDA stream to the default stream.
+CUDA_STREAM_INTERNAL: Sets the CUDA stream to an internal stream specific to the Comp.
+CUDA_DISABLE: Disables CUDA processing.</p>
+</dd>
+</dl>
+<p class="rubric">Attributes</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CompFlags.ASYNC_UPDATE">
-<span class="sig-name descname"><span class="pre">ASYNC_UPDATE</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CompFlags" title="touchpy.CompFlags"><span class="pre">CompFlags</span></a></em><a class="headerlink" href="#touchpy.CompFlags.ASYNC_UPDATE" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">ASYNC_UPDATE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'8'</span></em><a class="headerlink" href="#touchpy.CompFlags.ASYNC_UPDATE" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CompFlags.AUTO_UPDATE">
-<span class="sig-name descname"><span class="pre">AUTO_UPDATE</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CompFlags" title="touchpy.CompFlags"><span class="pre">CompFlags</span></a></em><a class="headerlink" href="#touchpy.CompFlags.AUTO_UPDATE" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">AUTO_UPDATE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'4'</span></em><a class="headerlink" href="#touchpy.CompFlags.AUTO_UPDATE" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CompFlags.CUDA_DISABLE">
-<span class="sig-name descname"><span class="pre">CUDA_DISABLE</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CompFlags" title="touchpy.CompFlags"><span class="pre">CompFlags</span></a></em><a class="headerlink" href="#touchpy.CompFlags.CUDA_DISABLE" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">CUDA_DISABLE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'128'</span></em><a class="headerlink" href="#touchpy.CompFlags.CUDA_DISABLE" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CompFlags.CUDA_STREAM_DEFAULT">
-<span class="sig-name descname"><span class="pre">CUDA_STREAM_DEFAULT</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CompFlags" title="touchpy.CompFlags"><span class="pre">CompFlags</span></a></em><a class="headerlink" href="#touchpy.CompFlags.CUDA_STREAM_DEFAULT" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">CUDA_STREAM_DEFAULT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'32'</span></em><a class="headerlink" href="#touchpy.CompFlags.CUDA_STREAM_DEFAULT" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CompFlags.CUDA_STREAM_INTERNAL">
-<span class="sig-name descname"><span class="pre">CUDA_STREAM_INTERNAL</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CompFlags" title="touchpy.CompFlags"><span class="pre">CompFlags</span></a></em><a class="headerlink" href="#touchpy.CompFlags.CUDA_STREAM_INTERNAL" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">CUDA_STREAM_INTERNAL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'64'</span></em><a class="headerlink" href="#touchpy.CompFlags.CUDA_STREAM_INTERNAL" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CompFlags.EXTERNAL_TIME">
-<span class="sig-name descname"><span class="pre">EXTERNAL_TIME</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CompFlags" title="touchpy.CompFlags"><span class="pre">CompFlags</span></a></em><a class="headerlink" href="#touchpy.CompFlags.EXTERNAL_TIME" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">EXTERNAL_TIME</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'2'</span></em><a class="headerlink" href="#touchpy.CompFlags.EXTERNAL_TIME" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CompFlags.INTERNAL_TIME">
-<span class="sig-name descname"><span class="pre">INTERNAL_TIME</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CompFlags" title="touchpy.CompFlags"><span class="pre">CompFlags</span></a></em><a class="headerlink" href="#touchpy.CompFlags.INTERNAL_TIME" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">INTERNAL_TIME</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'1'</span></em><a class="headerlink" href="#touchpy.CompFlags.INTERNAL_TIME" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CompFlags.INTERNAL_TIME_ASYNC">
-<span class="sig-name descname"><span class="pre">INTERNAL_TIME_ASYNC</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CompFlags" title="touchpy.CompFlags"><span class="pre">CompFlags</span></a></em><a class="headerlink" href="#touchpy.CompFlags.INTERNAL_TIME_ASYNC" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">INTERNAL_TIME_ASYNC</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'9'</span></em><a class="headerlink" href="#touchpy.CompFlags.INTERNAL_TIME_ASYNC" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CompFlags.INTERNAL_TIME_AUTO">
-<span class="sig-name descname"><span class="pre">INTERNAL_TIME_AUTO</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CompFlags" title="touchpy.CompFlags"><span class="pre">CompFlags</span></a></em><a class="headerlink" href="#touchpy.CompFlags.INTERNAL_TIME_AUTO" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">INTERNAL_TIME_AUTO</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'5'</span></em><a class="headerlink" href="#touchpy.CompFlags.INTERNAL_TIME_AUTO" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="touchpy.CompFlags.REALTIME">
-<span class="sig-name descname"><span class="pre">REALTIME</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#touchpy.CompFlags" title="touchpy.CompFlags"><span class="pre">CompFlags</span></a></em><a class="headerlink" href="#touchpy.CompFlags.REALTIME" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">REALTIME</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'16'</span></em><a class="headerlink" href="#touchpy.CompFlags.REALTIME" title="Link to this definition">🔗</a></dt>
 <dd></dd></dl>
 
 </dd></dl>

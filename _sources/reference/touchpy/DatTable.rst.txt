@@ -2,11 +2,109 @@ touchpy.DatTable
 ================
 
 .. py:class:: touchpy.DatTable
-              DatTable(numRows: int, numCols: int)
-              DatTable(values: collections.abc.Sequence[str], numRows: int, numCols: int)
+              DatTable(num_rows: int, num_cols: int)
+              DatTable(values: collections.abc.Sequence[str], num_rows: int, num_cols: int)
               DatTable(values: collections.abc.Sequence[collections.abc.Sequence[str]])
 
-   A table of data in a DAT link.
+   Represents a 2D table of strings.
+
+   Constructor 1:
+       Default constructor, creates an empty DatTable object.
+
+   Constructor 2:
+       Args:
+               values (list[str]): A single list fill the table with (length must be == num_rows * num_cols).
+               num_rows (int): The number of rows in the table.
+               num_cols (int): The number of columns in the table.
+
+   Constructor 3:
+       Args:
+               values (list[list[str]]): A list of lists to fill the table with.
+
+   Properties:
+       num_rows (int): (set, get) The number of rows in the table.
+       num_cols (int): (set, get) The number of columns in the table.
+
+   .. method:: row(int) -> list[str]
+
+      Returns a list of values from the row matching the index.
+
+   .. method:: col(int) -> list[str]
+
+      Returns a list of values from the column matching the index.
+
+   .. method:: cell(int, int) -> str
+
+      Returns the value at the row and column index.
+
+   .. method:: resize(int, int)
+
+      Resizes the table to the specified number of rows and columns.
+
+   .. method:: set_num_rows(int)
+
+      Sets the number of rows in the table.
+
+   .. method:: set_num_cols(int)
+
+      Sets the number of columns in the table.
+
+   .. method:: set_cell(int, int, str)
+
+      Sets the value at the row and column index.
+
+   .. method:: set_row(int, list[str])
+
+      Sets the values of the row at the index.
+
+   .. method:: set_col(int, list[str])
+
+      Sets the values of the column at the index.
+
+   .. method:: append_row(list[str])
+
+      Appends a row to the table.
+
+   .. method:: append_col(list[str])
+
+      Appends a column to the table.
+
+   .. method:: insert_row(int, list[str])
+
+      Inserts a row at the index.
+
+   .. method:: insert_col(int, list[str])
+
+      Inserts a column at the index.
+
+   .. method:: remove_row(int)
+
+      Removes the row at the index.
+
+   .. method:: remove_col(int)
+
+      Removes the column at the index.
+
+   .. method:: clear()
+
+      Removes all rows and columns from the table.
+
+   .. method:: as_list() -> list[list[str]]
+
+      Returns the table as a list of lists.
+
+   .. method:: from_list(list[list[str]], bool) -> DatTable
+
+      Fills the table from a list of lists.
+
+   .. method:: as_table() -> DatTable
+
+      Returns the Out DAT as touchpy.DatTable object
+
+   .. method:: as_string() -> str
+
+      Returns the Out DAT in string format.
+      
 
    
    
@@ -59,9 +157,9 @@ touchpy.DatTable
 
 
    .. py:method:: cell(row: int, col: int) -> str
-                  cell(rowName: str, col: int) -> str
-                  cell(row: int, colName: str) -> str
-                  cell(rowName: str, colName: str) -> str
+                  cell(row_name: str, col: int) -> str
+                  cell(row: int, col_name: str) -> str
+                  cell(row_name: str, col_name: str) -> str
 
       Returns the value at the row and column index.
 
@@ -137,7 +235,7 @@ touchpy.DatTable
       :type i: :py:class:`int`
 
 
-   .. py:method:: resize(numRows: int, numCols: int) -> None
+   .. py:method:: resize(num_rows: int, num_cols: int) -> None
 
       Resizes the table to the specified number of rows and columns.
 
@@ -185,7 +283,7 @@ touchpy.DatTable
       :type col: :py:class:`list`
 
 
-   .. py:method:: set_num_cols(numCols: int) -> None
+   .. py:method:: set_num_cols(num_cols: int) -> None
 
       Sets the number of columns in the table.
 
@@ -193,7 +291,7 @@ touchpy.DatTable
       :type numCols: :py:class:`int`
 
 
-   .. py:method:: set_num_rows(numRows: int) -> None
+   .. py:method:: set_num_rows(num_rows: int) -> None
 
       Sets the number of rows in the table.
 

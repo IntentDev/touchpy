@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="touchpy.CUDADataType" href="CUDADataType.html" /><link rel="prev" title="Overview" href="../../overview.html" />
+<link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="touchpy.CUDADataType" href="CUDADataType.html" /><link rel="prev" title="TouchPy Data Types" href="../../types.html" />
 
     <!-- Generated with Sphinx 7.3.6 and Furo 2024.01.29 -->
-        <title>API Reference - TouchPy 0.9.0 documentation</title>
+        <title>API Reference - TouchPy 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
@@ -125,7 +125,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">TouchPy 0.9.0 documentation</div></a>
+      <a href="../../index.html"><div class="brand">TouchPy 0.1 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -148,7 +148,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
   
   
-  <span class="sidebar-brand-text">TouchPy 0.9.0 documentation</span>
+  <span class="sidebar-brand-text">TouchPy 0.1 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -156,10 +156,15 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <ul class="current">
+  <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../index.html">TouchPy Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../types.html">TouchPy Data Types</a></li>
 <li class="toctree-l1 current has-children current-page"><a class="current reference internal" href="#">API Reference</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of API Reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="CUDADataType.html">touchpy.CUDADataType</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ChopChannels.html">touchpy.ChopChannels</a></li>
@@ -202,7 +207,10 @@
 <li class="toctree-l2"><a class="reference internal" href="Time.html">touchpy.Time</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/basic.html">Basic Example</a></li>
 </ul>
 
 </div>
@@ -247,10 +255,10 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="CUDADataType.html#touchpy.CUDADataType" title="touchpy.CUDADataType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CUDADataType</span></code></a></p></td>
-<td><p>str(object='') -&gt; str</p></td>
+<td><p>The data type of a CUDA memory buffer</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="ChopChannels.html#touchpy.ChopChannels" title="touchpy.ChopChannels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ChopChannels</span></code></a></p></td>
-<td><p>A container of CHOP channels</p></td>
+<td><p>Represents an array of floating point values.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="Color.html#touchpy.Color" title="touchpy.Color"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Color</span></code></a></p></td>
 <td><p></p></td>
@@ -259,13 +267,13 @@
 <td><p>A color parameter in a TouchDesigner component</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="Comp.html#touchpy.Comp" title="touchpy.Comp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Comp</span></code></a></p></td>
-<td><p>A TouchDesigner component loaded in a TouchEngine instance.</p></td>
+<td><p>Representsa TouchDesigner component loaded in a TouchEngine instance.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="CompFlags.html#touchpy.CompFlags" title="touchpy.CompFlags"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CompFlags</span></code></a></p></td>
-<td><p></p></td>
+<td><p>Enumeration of component flags.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="CudaFlags.html#touchpy.CudaFlags" title="touchpy.CudaFlags"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CudaFlags</span></code></a></p></td>
-<td><p></p></td>
+<td><p>Support for integer-based Flags</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="CudaMemory.html#touchpy.CudaMemory" title="touchpy.CudaMemory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CudaMemory</span></code></a></p></td>
 <td><p>A pointer to CUDA memory and its attributes</p></td>
@@ -274,7 +282,7 @@
 <td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="DatTable.html#touchpy.DatTable" title="touchpy.DatTable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DatTable</span></code></a></p></td>
-<td><p>A table of data in a DAT link.</p></td>
+<td><p>Represents a 2D table of strings.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="Double2Par.html#touchpy.Double2Par" title="touchpy.Double2Par"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Double2Par</span></code></a></p></td>
 <td><p>A float2 parameter in a TouchDesigner component</p></td>
@@ -295,7 +303,7 @@
 <td><p></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="InChop.html#touchpy.InChop" title="touchpy.InChop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InChop</span></code></a></p></td>
-<td><p>An interface for an InCHOP in a loaded TouchDesigner component</p></td>
+<td><p>Set data on an InCHOP in a loaded TouchDesigner component</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="InChops.html#touchpy.InChops" title="touchpy.InChops"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InChops</span></code></a></p></td>
 <td><p>A container of InChop objects.</p></td>
@@ -331,10 +339,10 @@
 <td><p>An int4 parameter in a TouchDesigner component</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="LogLevel.html#touchpy.LogLevel" title="touchpy.LogLevel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LogLevel</span></code></a></p></td>
-<td><p></p></td>
+<td><p>Enumeration of logging levels.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="OutChop.html#touchpy.OutChop" title="touchpy.OutChop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OutChop</span></code></a></p></td>
-<td><p>An interface for an OutCHOP in a loaded TouchDesigner component</p></td>
+<td><p>Access data in an OutCHOP in a loaded TouchDesigner component</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="OutChops.html#touchpy.OutChops" title="touchpy.OutChops"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OutChops</span></code></a></p></td>
 <td><p>A container of OutChop objects.</p></td>
@@ -376,10 +384,10 @@
 <td><p>Get information about a DLPack capsule.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#touchpy.init_logging" title="touchpy.init_logging"><code class="xref py py-obj docutils literal notranslate"><span class="pre">init_logging</span></code></a>(→ None)</p></td>
-<td><p></p></td>
+<td><p>Initialize the logging system.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#touchpy.set_log_level" title="touchpy.set_log_level"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_log_level</span></code></a>(→ None)</p></td>
-<td><p></p></td>
+<td><p>Set the logging level.</p></td>
 </tr>
 </tbody>
 </table>
@@ -395,6 +403,12 @@
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>array</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>) – The array to get information about.</p>
 </dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing information about the array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)">dict</a></p>
+</dd>
 </dl>
 </dd></dl>
 
@@ -409,12 +423,34 @@
 </dl>
 
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#touchpy.init_logging" title="Link to this definition">🔗</a></dt>
-<dd></dd></dl>
+<dd><p>Initialize the logging system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>level</strong> (<a class="reference internal" href="LogLevel.html#touchpy.LogLevel" title="touchpy.LogLevel"><code class="xref py py-class docutils literal notranslate"><span class="pre">LogLevel</span></code></a>) – The logging level to use.</p></li>
+<li><p><strong>console</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to log to the console.</p></li>
+<li><p><strong>file</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to log to a file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="touchpy.set_log_level">
 <span class="sig-prename descclassname"><span class="pre">touchpy.</span></span><span class="sig-name descname"><span class="pre">set_log_level</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="LogLevel.html#touchpy.LogLevel" title="touchpy.LogLevel"><span class="pre">LogLevel</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">LogLevel.WARN</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#touchpy.set_log_level" title="Link to this definition">🔗</a></dt>
-<dd></dd></dl>
+<dd><p>Set the logging level.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>level</strong> (<a class="reference internal" href="LogLevel.html#touchpy.LogLevel" title="touchpy.LogLevel"><code class="xref py py-class docutils literal notranslate"><span class="pre">LogLevel</span></code></a>) – The logging level to use.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 </section>
@@ -433,14 +469,14 @@
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="../../overview.html">
+          <a class="prev-page" href="../../types.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Overview</div>
+                <div class="title">TouchPy Data Types</div>
                 
               </div>
             </a>

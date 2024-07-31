@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="touchpy.CompFlags" href="CompFlags.html" /><link rel="prev" title="touchpy.ColorPar" href="ColorPar.html" />
 
     <!-- Generated with Sphinx 7.3.6 and Furo 2024.01.29 -->
-        <title>touchpy.Comp - TouchPy 0.9.0 documentation</title>
+        <title>touchpy.Comp - TouchPy 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
@@ -125,7 +125,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">TouchPy 0.9.0 documentation</div></a>
+      <a href="../../index.html"><div class="brand">TouchPy 0.1 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -148,7 +148,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
   
   
-  <span class="sidebar-brand-text">TouchPy 0.9.0 documentation</span>
+  <span class="sidebar-brand-text">TouchPy 0.1 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -156,10 +156,15 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <ul class="current">
+  <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../index.html">TouchPy Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../types.html">TouchPy Data Types</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">API Reference</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of API Reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="CUDADataType.html">touchpy.CUDADataType</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ChopChannels.html">touchpy.ChopChannels</a></li>
@@ -202,7 +207,10 @@
 <li class="toctree-l2"><a class="reference internal" href="Time.html">touchpy.Time</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/basic.html">Basic Example</a></li>
 </ul>
 
 </div>
@@ -243,81 +251,219 @@
 <dt class="sig sig-object py" id="touchpy.Comp">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">touchpy.</span></span><span class="sig-name descname"><span class="pre">Comp</span></span><a class="headerlink" href="#touchpy.Comp" title="Link to this definition">🔗</a></dt>
 <dt class="sig sig-object py" id="Comp">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Comp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flags</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="CompFlags.html#touchpy.CompFlags" title="touchpy.CompFlags"><span class="pre">CompFlags</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">37</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">60</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">td_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#Comp" title="Link to this definition">🔗</a></dt>
+<dt class="sig sig-object py">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Comp</span></span><span class="sig-paren">(</span>
 
 <dl>
 <dd><em class="sig-param"><span class="n"><span class="pre">tox_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">flags</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="CompFlags.html#touchpy.CompFlags" title="touchpy.CompFlags"><span class="pre">CompFlags</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">CompFlags.INTERNAL_TIME_AUTO</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">flags</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="CompFlags.html#touchpy.CompFlags" title="touchpy.CompFlags"><span class="pre">CompFlags</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">37</span></span></em>,</dd>
 <dd><em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">60</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">td_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>,</dd>
 </dl>
 
-<span class="sig-paren">)</span><a class="headerlink" href="#Comp" title="Link to this definition">🔗</a></dt>
-<dd><p>A TouchDesigner component loaded in a TouchEngine instance.</p>
+<span class="sig-paren">)</span></dt>
+<dd><p>Representsa TouchDesigner component loaded in a TouchEngine instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>flags</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">CompFlags</span></code>) – The flags for the component (default: CompFlags.INTERNAL_TIME_AUTO | CompFlags.CUDA_STREAM_DEFAULT).</p></li>
+<li><p><strong>device</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – The hardware device index to run the component on (default: 0).</p></li>
+<li><p><strong>td_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – The path to the TouchDesigner installation if no path is set (default: “”) then either:
+- The most recent TD install will be used.
+- The path set in TOUCHENGINE_APP_PATH environment variable if it exists.
+- The path set in shortcut or symlink located in the same directory as the component to be loaded.</p></li>
+<li><p><strong>tox_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – The path to the .tox file.</p></li>
+<li><p><strong>flags</strong> – The flags for the component.</p></li>
+<li><p><strong>device</strong> – The hardware device to run the component on.</p></li>
+<li><p><strong>fps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – The frames per second of the TouchEngine instance.</p></li>
+<li><p><strong>td_path</strong> – The path to the TouchDesigner installation.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="Comp.in_tops">
+<span class="sig-name descname"><span class="pre">in_tops</span></span><a class="headerlink" href="#Comp.in_tops" title="Link to this definition">🔗</a></dt>
+<dd><p>The In TOPs of the currently loaded component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List[InTOP]</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="Comp.out_tops">
+<span class="sig-name descname"><span class="pre">out_tops</span></span><a class="headerlink" href="#Comp.out_tops" title="Link to this definition">🔗</a></dt>
+<dd><p>The Out TOPs of the currently loaded component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List[OutTOP]</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="Comp.in_chops">
+<span class="sig-name descname"><span class="pre">in_chops</span></span><a class="headerlink" href="#Comp.in_chops" title="Link to this definition">🔗</a></dt>
+<dd><p>The In CHOPs of the currently loaded component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List[InCHOP]</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="Comp.out_chops">
+<span class="sig-name descname"><span class="pre">out_chops</span></span><a class="headerlink" href="#Comp.out_chops" title="Link to this definition">🔗</a></dt>
+<dd><p>The Out CHOPs of the currently loaded component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List[OutCHOP]</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="Comp.in_dats">
+<span class="sig-name descname"><span class="pre">in_dats</span></span><a class="headerlink" href="#Comp.in_dats" title="Link to this definition">🔗</a></dt>
+<dd><p>The In DATs of the currently loaded component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List[InDAT]</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="Comp.out_dats">
+<span class="sig-name descname"><span class="pre">out_dats</span></span><a class="headerlink" href="#Comp.out_dats" title="Link to this definition">🔗</a></dt>
+<dd><p>The Out DATs of the currently loaded component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List[OutDAT]</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="Comp.par">
+<span class="sig-name descname"><span class="pre">par</span></span><a class="headerlink" href="#Comp.par" title="Link to this definition">🔗</a></dt>
+<dd><p>The parameters of the currently loaded component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">List[Par]</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="Comp.rate">
+<span class="sig-name descname"><span class="pre">rate</span></span><a class="headerlink" href="#Comp.rate" title="Link to this definition">🔗</a></dt>
+<dd><p>The frame rate of the currently loaded component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="Comp.cuda_stream">
+<span class="sig-name descname"><span class="pre">cuda_stream</span></span><a class="headerlink" href="#Comp.cuda_stream" title="Link to this definition">🔗</a></dt>
+<dd><p>The CUDA stream handle used by the CUDA device .</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
 <p class="rubric">Attributes</p>
 <dl class="py property">
-<dt class="sig sig-object py" id="Comp.in_chops">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">in_chops</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="InChops.html#touchpy.InChops" title="touchpy.InChops"><span class="pre">InChops</span></a></em><a class="headerlink" href="#Comp.in_chops" title="Link to this definition">🔗</a></dt>
-<dd><p>The In CHOPs of the currently loaded tox.</p>
+<dt class="sig sig-object py" id="Comp.cuda_device">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cuda_device</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></em><a class="headerlink" href="#Comp.cuda_device" title="Link to this definition">🔗</a></dt>
+<dd><p>(get) The CUDA device index used by TouchEngine.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="Comp.in_dats">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">in_dats</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="InDats.html#touchpy.InDats" title="touchpy.InDats"><span class="pre">InDats</span></a></em><a class="headerlink" href="#Comp.in_dats" title="Link to this definition">🔗</a></dt>
-<dd><p>The In DATs of the currently loaded tox.</p>
+<dt class="sig sig-object py" id="Comp.file_path">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">file_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></em><a class="headerlink" href="#Comp.file_path" title="Link to this definition">🔗</a></dt>
+<dd><p>(get) The path to the loaded .tox file.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="Comp.in_tops">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">in_tops</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="InTops.html#touchpy.InTops" title="touchpy.InTops"><span class="pre">InTops</span></a></em><a class="headerlink" href="#Comp.in_tops" title="Link to this definition">🔗</a></dt>
-<dd><p>The In TOPs of the currently loaded tox.</p>
+<dt class="sig sig-object py" id="Comp.flags">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">flags</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></em><a class="headerlink" href="#Comp.flags" title="Link to this definition">🔗</a></dt>
+<dd><p>(get) The flags (as an int) of the currently loaded tox.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="Comp.out_chops">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">out_chops</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="OutChops.html#touchpy.OutChops" title="touchpy.OutChops"><span class="pre">OutChops</span></a></em><a class="headerlink" href="#Comp.out_chops" title="Link to this definition">🔗</a></dt>
-<dd><p>The Out CHOPs of the currently loaded tox.</p>
+<dt class="sig sig-object py" id="id0">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">in_chops</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="InChops.html#touchpy.InChops" title="touchpy.InChops"><span class="pre">InChops</span></a></em><a class="headerlink" href="#id0" title="Link to this definition">🔗</a></dt>
+<dd><p>(get) List InCHOPs of the currently loaded tox.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="Comp.out_dats">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">out_dats</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="OutDats.html#touchpy.OutDats" title="touchpy.OutDats"><span class="pre">OutDats</span></a></em><a class="headerlink" href="#Comp.out_dats" title="Link to this definition">🔗</a></dt>
-<dd><p>The Out DATs of the currently loaded tox.</p>
+<dt class="sig sig-object py" id="id1">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">in_dats</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="InDats.html#touchpy.InDats" title="touchpy.InDats"><span class="pre">InDats</span></a></em><a class="headerlink" href="#id1" title="Link to this definition">🔗</a></dt>
+<dd><p>(get) List InDATs of the currently loaded tox.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="Comp.out_tops">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">out_tops</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="OutTops.html#touchpy.OutTops" title="touchpy.OutTops"><span class="pre">OutTops</span></a></em><a class="headerlink" href="#Comp.out_tops" title="Link to this definition">🔗</a></dt>
-<dd><p>The Out TOPs of the currently loaded tox.</p>
+<dt class="sig sig-object py" id="id2">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">in_tops</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="InTops.html#touchpy.InTops" title="touchpy.InTops"><span class="pre">InTops</span></a></em><a class="headerlink" href="#id2" title="Link to this definition">🔗</a></dt>
+<dd><p>(get) List of InTOPs of the currently loaded tox.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="Comp.par">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">par</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="ParCollection.html#touchpy.ParCollection" title="touchpy.ParCollection"><span class="pre">ParCollection</span></a></em><a class="headerlink" href="#Comp.par" title="Link to this definition">🔗</a></dt>
-<dd><p>The parameters of the currently loaded tox.</p>
+<dt class="sig sig-object py" id="id3">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">out_chops</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="OutChops.html#touchpy.OutChops" title="touchpy.OutChops"><span class="pre">OutChops</span></a></em><a class="headerlink" href="#id3" title="Link to this definition">🔗</a></dt>
+<dd><p>(get) List OutCHOPs of the currently loaded tox.</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="Comp.rate">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></em><a class="headerlink" href="#Comp.rate" title="Link to this definition">🔗</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="id4">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">out_dats</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="OutDats.html#touchpy.OutDats" title="touchpy.OutDats"><span class="pre">OutDats</span></a></em><a class="headerlink" href="#id4" title="Link to this definition">🔗</a></dt>
+<dd><p>(get) List OutDATs of the currently loaded tox.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="id5">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">out_tops</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="OutTops.html#touchpy.OutTops" title="touchpy.OutTops"><span class="pre">OutTops</span></a></em><a class="headerlink" href="#id5" title="Link to this definition">🔗</a></dt>
+<dd><p>(get) List of OutTOPs of the currently loaded tox.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="id6">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">par</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="ParCollection.html#touchpy.ParCollection" title="touchpy.ParCollection"><span class="pre">ParCollection</span></a></em><a class="headerlink" href="#id6" title="Link to this definition">🔗</a></dt>
+<dd><p>(get) ParCollection of the currently loaded tox.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="id7">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></em><a class="headerlink" href="#id7" title="Link to this definition">🔗</a></dt>
+<dd><p>(get) The frame rate of the currently loaded tox.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="Comp.td_path">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">td_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></em><a class="headerlink" href="#Comp.td_path" title="Link to this definition">🔗</a></dt>
+<dd><p>(get) The path to the TouchDesigner installation TouchEngine is using.</p>
+</dd></dl>
 
 <p class="rubric">Methods</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="Comp.apply_value_changes">
 <span class="sig-name descname"><span class="pre">apply_value_changes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#Comp.apply_value_changes" title="Link to this definition">🔗</a></dt>
-<dd><p>Stops the TouchEngine instance.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="Comp.call_on_frame_callback">
-<span class="sig-name descname"><span class="pre">call_on_frame_callback</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#Comp.call_on_frame_callback" title="Link to this definition">🔗</a></dt>
-<dd><p>calls the method set using: set_on_frame_callback()</p>
+<dd><p>Applies value changes to the Comp if there are changes in the loaded component.</p>
+<p>This should only be called when running the update loop manually, after
+frame_did_finish() returns True and before start_next_frame() is called.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>True if the callback was succesfully called, False otherwise</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)">bool</a></p>
+<dd class="field-odd"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -325,7 +471,7 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="Comp.clear_on_frame_callback">
 <span class="sig-name descname"><span class="pre">clear_on_frame_callback</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#Comp.clear_on_frame_callback" title="Link to this definition">🔗</a></dt>
-<dd><p>Unsets any callback method set using <a class="reference internal" href="#Comp.set_on_frame_callback" title="Comp.set_on_frame_callback"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_on_frame_callback()</span></code></a>.</p>
+<dd><p>Unsets any callback method set using:py:meth:<cite>set_on_frame_callback</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
@@ -336,19 +482,21 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="Comp.clear_on_layout_change_callback">
 <span class="sig-name descname"><span class="pre">clear_on_layout_change_callback</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#Comp.clear_on_layout_change_callback" title="Link to this definition">🔗</a></dt>
-<dd><p>Unsets any callback method set using: <a class="reference internal" href="#Comp.set_on_layout_change_callback" title="Comp.set_on_layout_change_callback"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_on_layout_change_callback()</span></code></a>.</p>
+<dd><p>Unsets any callback method set using:<a class="reference internal" href="#Comp.set_on_layout_change_callback" title="Comp.set_on_layout_change_callback"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_on_layout_change_callback()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="Comp.cuda_stream">
-<span class="sig-name descname"><span class="pre">cuda_stream</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></span><a class="headerlink" href="#Comp.cuda_stream" title="Link to this definition">🔗</a></dt>
-<dd><p>Returns the CUDA stream handle used by TouchEngine.</p>
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">cuda_stream</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></span><a class="headerlink" href="#id8" title="Link to this definition">🔗</a></dt>
+<dd><p>The CUDA stream handle used by TouchEngine.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="Comp.frame_did_finish">
 <span class="sig-name descname"><span class="pre">frame_did_finish</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#Comp.frame_did_finish" title="Link to this definition">🔗</a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Checks if the loaded component’s frame has finished.</p>
+<p>This should only be called when running the update loop manually.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>True if the frame has finished, False otherwise.</p>
 </dd>
@@ -359,18 +507,18 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="Comp.load_tox">
-<span class="sig-name descname"><span class="pre">load_tox</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tox_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">60</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#Comp.load_tox" title="Link to this definition">🔗</a></dt>
+<dt class="sig sig-object py" id="Comp.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tox_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">60</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#Comp.load" title="Link to this definition">🔗</a></dt>
 <dd><p>Loads a .tox file, creates and initializes a TouchEngine Instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>tox_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – the path to the .tox file</p></li>
-<li><p><strong>fps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – the frames per second of the TouchEngine instance</p></li>
+<li><p><strong>tox_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>) – The path to the .tox file.</p></li>
+<li><p><strong>fps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>) – The frames per second of the TouchEngine instance.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if the .tox file was loaded successfully, False otherwise</p>
+<dd class="field-even"><p>True if the .tox file was loaded successfully, False otherwise.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)">bool</a></p>
@@ -393,7 +541,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="Comp.set_on_frame_callback">
-<span class="sig-name descname"><span class="pre">set_on_frame_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.12)"><span class="pre">collections.abc.Callable</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">arg1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><span class="pre">object</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#Comp.set_on_frame_callback" title="Link to this definition">🔗</a></dt>
+<span class="sig-name descname"><span class="pre">set_on_frame_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.12)"><span class="pre">collections.abc.Callable</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><span class="pre">object</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#Comp.set_on_frame_callback" title="Link to this definition">🔗</a></dt>
 <dd><p>Sets the Python method to be called everytime a frame ends.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -413,9 +561,8 @@
 <span class="sig-name descname"><span class="pre">set_on_layout_change_callback</span></span><span class="sig-paren">(</span>
 
 <dl>
-<dd><em class="sig-param"><span class="n"><span class="pre">arg0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.12)"><span class="pre">collections.abc.Callable</span></a></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">arg1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><span class="pre">object</span></a></span></em>,</dd>
-<dd><em class="sig-param"><span class="o"><span class="pre">/</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.12)"><span class="pre">collections.abc.Callable</span></a></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><span class="pre">object</span></a></span></em>,</dd>
 </dl>
 
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#Comp.set_on_layout_change_callback" title="Link to this definition">🔗</a></dt>
@@ -434,15 +581,97 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="Comp.set_on_loaded_callback">
+<span class="sig-name descname"><span class="pre">set_on_loaded_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.12)"><span class="pre">collections.abc.Callable</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><span class="pre">object</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#Comp.set_on_loaded_callback" title="Link to this definition">🔗</a></dt>
+<dd><p>Sets the Python method to be called once the component is loaded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>callback</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.12)"><em>collections.abc.Callable</em></a>) – a callable Python method</p></li>
+<li><p><strong>user_data</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a>) – a Python object for any userdata to be passed to the callback method</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="Comp.set_on_start_callback">
+<span class="sig-name descname"><span class="pre">set_on_start_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.12)"><span class="pre">collections.abc.Callable</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><span class="pre">object</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#Comp.set_on_start_callback" title="Link to this definition">🔗</a></dt>
+<dd><p>Sets the Python method to be called once the component starts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>callback</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.12)"><em>collections.abc.Callable</em></a>) – a callable Python method</p></li>
+<li><p><strong>user_data</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a>) – a Python object for any userdata to be passed to the callback method</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="Comp.set_on_stop_callback">
+<span class="sig-name descname"><span class="pre">set_on_stop_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.12)"><span class="pre">collections.abc.Callable</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><span class="pre">object</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#Comp.set_on_stop_callback" title="Link to this definition">🔗</a></dt>
+<dd><p>Sets the Python method to be called once the component stops.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>callback</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.12)"><em>collections.abc.Callable</em></a>) – a callable Python method</p></li>
+<li><p><strong>user_data</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a>) – a Python object for any userdata to be passed to the callback method</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="Comp.set_on_unloaded_callback">
+<span class="sig-name descname"><span class="pre">set_on_unloaded_callback</span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.12)"><span class="pre">collections.abc.Callable</span></a></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><span class="pre">object</span></a></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#Comp.set_on_unloaded_callback" title="Link to this definition">🔗</a></dt>
+<dd><p>Sets the Python method to be called once the component is unloaded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>callback</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.12)"><em>collections.abc.Callable</em></a>) – a callable Python method</p></li>
+<li><p><strong>user_data</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a>) – a Python object for any userdata to be passed to the callback method</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="Comp.start">
 <span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#Comp.start" title="Link to this definition">🔗</a></dt>
-<dd><p>Starts the TouchEngine instance.</p>
+<dd><p>Starts the TouchEngine instance and the update loop (if AutoUpdate or AutoUpdate flags are set).</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="Comp.start_next_frame">
 <span class="sig-name descname"><span class="pre">start_next_frame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#Comp.start_next_frame" title="Link to this definition">🔗</a></dt>
 <dd><p>Starts the next frame.</p>
+<p>When the component is running in INTERNAL_TIME this will instruct the TE instance to
+start the process of transfering data. When the component is running in EXTERNAL_TIME
+this will instruct the component to start processing the set data and rendering the frame.</p>
+<p>When running the update loop manually, this must be called after apply_value_changes().
+Otherwise, if the on_frame() callback is set must also be called. Call after reading data
+from the component, then do work on the data and set values in the component after
+start_next_frame() is called to gain performance with the cost of 1 frame of latency.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>True if frame started succesfully, False otherwise</p>
@@ -456,7 +685,7 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="Comp.stop">
 <span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#Comp.stop" title="Link to this definition">🔗</a></dt>
-<dd><p>Stops the TouchEngine instance.</p>
+<dd><p>Stops the TouchEngine instance and the update loop (if AutoUpdate or AutoUpdate flags are set).</p>
 </dd></dl>
 
 <dl class="py method">
@@ -464,7 +693,7 @@
 <span class="sig-name descname"><span class="pre">time</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="Time.html#touchpy.Time" title="touchpy.Time"><span class="pre">Time</span></a></span></span><a class="headerlink" href="#Comp.time" title="Link to this definition">🔗</a></dt>
 <dd><p>This method is best called at most once per frame, as it i an asynchronous call to the TouchEngine instance.</p>
 <dl class="simple">
-<dt>Usage:</dt><dd><p>time_info = comp.time()</p>
+<dt>Usage:</dt><dd><p>time_info[] = comp.time()</p>
 </dd>
 </dl>
 <dl class="field-list simple">
@@ -483,7 +712,7 @@
 <dd><p>Unloads TouchEngine instance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>True if the toxfile has unloaded, False if the toxfile is still loaded</p>
+<dd class="field-odd"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -549,24 +778,40 @@
 <li><a class="reference internal" href="#">touchpy.Comp</a><ul>
 <li><a class="reference internal" href="#touchpy.Comp"><code class="docutils literal notranslate"><span class="pre">touchpy.Comp</span></code></a></li>
 <li><a class="reference internal" href="#Comp"><code class="docutils literal notranslate"><span class="pre">Comp</span></code></a><ul>
-<li><a class="reference internal" href="#Comp.in_chops"><code class="docutils literal notranslate"><span class="pre">Comp.in_chops</span></code></a></li>
-<li><a class="reference internal" href="#Comp.in_dats"><code class="docutils literal notranslate"><span class="pre">Comp.in_dats</span></code></a></li>
 <li><a class="reference internal" href="#Comp.in_tops"><code class="docutils literal notranslate"><span class="pre">Comp.in_tops</span></code></a></li>
-<li><a class="reference internal" href="#Comp.out_chops"><code class="docutils literal notranslate"><span class="pre">Comp.out_chops</span></code></a></li>
-<li><a class="reference internal" href="#Comp.out_dats"><code class="docutils literal notranslate"><span class="pre">Comp.out_dats</span></code></a></li>
 <li><a class="reference internal" href="#Comp.out_tops"><code class="docutils literal notranslate"><span class="pre">Comp.out_tops</span></code></a></li>
+<li><a class="reference internal" href="#Comp.in_chops"><code class="docutils literal notranslate"><span class="pre">Comp.in_chops</span></code></a></li>
+<li><a class="reference internal" href="#Comp.out_chops"><code class="docutils literal notranslate"><span class="pre">Comp.out_chops</span></code></a></li>
+<li><a class="reference internal" href="#Comp.in_dats"><code class="docutils literal notranslate"><span class="pre">Comp.in_dats</span></code></a></li>
+<li><a class="reference internal" href="#Comp.out_dats"><code class="docutils literal notranslate"><span class="pre">Comp.out_dats</span></code></a></li>
 <li><a class="reference internal" href="#Comp.par"><code class="docutils literal notranslate"><span class="pre">Comp.par</span></code></a></li>
 <li><a class="reference internal" href="#Comp.rate"><code class="docutils literal notranslate"><span class="pre">Comp.rate</span></code></a></li>
+<li><a class="reference internal" href="#Comp.cuda_stream"><code class="docutils literal notranslate"><span class="pre">Comp.cuda_stream</span></code></a></li>
+<li><a class="reference internal" href="#Comp.cuda_device"><code class="docutils literal notranslate"><span class="pre">Comp.cuda_device</span></code></a></li>
+<li><a class="reference internal" href="#Comp.file_path"><code class="docutils literal notranslate"><span class="pre">Comp.file_path</span></code></a></li>
+<li><a class="reference internal" href="#Comp.flags"><code class="docutils literal notranslate"><span class="pre">Comp.flags</span></code></a></li>
+<li><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">Comp.in_chops</span></code></a></li>
+<li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">Comp.in_dats</span></code></a></li>
+<li><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">Comp.in_tops</span></code></a></li>
+<li><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">Comp.out_chops</span></code></a></li>
+<li><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">Comp.out_dats</span></code></a></li>
+<li><a class="reference internal" href="#id5"><code class="docutils literal notranslate"><span class="pre">Comp.out_tops</span></code></a></li>
+<li><a class="reference internal" href="#id6"><code class="docutils literal notranslate"><span class="pre">Comp.par</span></code></a></li>
+<li><a class="reference internal" href="#id7"><code class="docutils literal notranslate"><span class="pre">Comp.rate</span></code></a></li>
+<li><a class="reference internal" href="#Comp.td_path"><code class="docutils literal notranslate"><span class="pre">Comp.td_path</span></code></a></li>
 <li><a class="reference internal" href="#Comp.apply_value_changes"><code class="docutils literal notranslate"><span class="pre">Comp.apply_value_changes()</span></code></a></li>
-<li><a class="reference internal" href="#Comp.call_on_frame_callback"><code class="docutils literal notranslate"><span class="pre">Comp.call_on_frame_callback()</span></code></a></li>
 <li><a class="reference internal" href="#Comp.clear_on_frame_callback"><code class="docutils literal notranslate"><span class="pre">Comp.clear_on_frame_callback()</span></code></a></li>
 <li><a class="reference internal" href="#Comp.clear_on_layout_change_callback"><code class="docutils literal notranslate"><span class="pre">Comp.clear_on_layout_change_callback()</span></code></a></li>
-<li><a class="reference internal" href="#Comp.cuda_stream"><code class="docutils literal notranslate"><span class="pre">Comp.cuda_stream()</span></code></a></li>
+<li><a class="reference internal" href="#id8"><code class="docutils literal notranslate"><span class="pre">Comp.cuda_stream()</span></code></a></li>
 <li><a class="reference internal" href="#Comp.frame_did_finish"><code class="docutils literal notranslate"><span class="pre">Comp.frame_did_finish()</span></code></a></li>
-<li><a class="reference internal" href="#Comp.load_tox"><code class="docutils literal notranslate"><span class="pre">Comp.load_tox()</span></code></a></li>
+<li><a class="reference internal" href="#Comp.load"><code class="docutils literal notranslate"><span class="pre">Comp.load()</span></code></a></li>
 <li><a class="reference internal" href="#Comp.loaded"><code class="docutils literal notranslate"><span class="pre">Comp.loaded()</span></code></a></li>
 <li><a class="reference internal" href="#Comp.set_on_frame_callback"><code class="docutils literal notranslate"><span class="pre">Comp.set_on_frame_callback()</span></code></a></li>
 <li><a class="reference internal" href="#Comp.set_on_layout_change_callback"><code class="docutils literal notranslate"><span class="pre">Comp.set_on_layout_change_callback()</span></code></a></li>
+<li><a class="reference internal" href="#Comp.set_on_loaded_callback"><code class="docutils literal notranslate"><span class="pre">Comp.set_on_loaded_callback()</span></code></a></li>
+<li><a class="reference internal" href="#Comp.set_on_start_callback"><code class="docutils literal notranslate"><span class="pre">Comp.set_on_start_callback()</span></code></a></li>
+<li><a class="reference internal" href="#Comp.set_on_stop_callback"><code class="docutils literal notranslate"><span class="pre">Comp.set_on_stop_callback()</span></code></a></li>
+<li><a class="reference internal" href="#Comp.set_on_unloaded_callback"><code class="docutils literal notranslate"><span class="pre">Comp.set_on_unloaded_callback()</span></code></a></li>
 <li><a class="reference internal" href="#Comp.start"><code class="docutils literal notranslate"><span class="pre">Comp.start()</span></code></a></li>
 <li><a class="reference internal" href="#Comp.start_next_frame"><code class="docutils literal notranslate"><span class="pre">Comp.start_next_frame()</span></code></a></li>
 <li><a class="reference internal" href="#Comp.stop"><code class="docutils literal notranslate"><span class="pre">Comp.stop()</span></code></a></li>

@@ -1,8 +1,23 @@
 touchpy.CompFlags
 =================
 
-.. py:class:: touchpy.CompFlags(arg: object, /)
+.. py:class:: touchpy.CompFlags
 
+
+
+   Enumeration of component flags.
+
+   Values:
+       INTERNAL_TIME: Sets the loaded component to run in internal time mode.
+       EXTERNAL_TIME: Sets the loaded component to run in external time mode.
+       AUTO_UPDATE: The Comp will run a loop that updates the component.
+       ASYNC_UPDATE: The Comp will run an asynchronous loop that updates the component.
+       REALTIME: If INTERNAL_TIME is set the loaded component will run in real-time mode.
+       INTERNAL_TIME_AUTO: Shortcut for setting INTERNAL_TIME | AUTO_UPDATE.
+       INTERNAL_TIME_ASYNC: Shortcut for setting INTERNAL_TIME | ASYNC_UPDATE.
+       CUDA_STREAM_DEFAULT: Sets the CUDA stream to the default stream.
+       CUDA_STREAM_INTERNAL: Sets the CUDA stream to an internal stream specific to the Comp.
+       CUDA_DISABLE: Disables CUDA processing.
 
    
    
@@ -10,52 +25,52 @@ touchpy.CompFlags
    .. rubric:: Attributes
 
    .. py:attribute:: ASYNC_UPDATE
-      :type: CompFlags
+      :value: '8'
 
       
 
    .. py:attribute:: AUTO_UPDATE
-      :type: CompFlags
+      :value: '4'
 
       
 
    .. py:attribute:: CUDA_DISABLE
-      :type: CompFlags
+      :value: '128'
 
       
 
    .. py:attribute:: CUDA_STREAM_DEFAULT
-      :type: CompFlags
+      :value: '32'
 
       
 
    .. py:attribute:: CUDA_STREAM_INTERNAL
-      :type: CompFlags
+      :value: '64'
 
       
 
    .. py:attribute:: EXTERNAL_TIME
-      :type: CompFlags
+      :value: '2'
 
       
 
    .. py:attribute:: INTERNAL_TIME
-      :type: CompFlags
+      :value: '1'
 
       
 
    .. py:attribute:: INTERNAL_TIME_ASYNC
-      :type: CompFlags
+      :value: '9'
 
       
 
    .. py:attribute:: INTERNAL_TIME_AUTO
-      :type: CompFlags
+      :value: '5'
 
       
 
    .. py:attribute:: REALTIME
-      :type: CompFlags
+      :value: '16'
 
       
 

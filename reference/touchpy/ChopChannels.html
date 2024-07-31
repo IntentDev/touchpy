@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><link rel="next" title="touchpy.Color" href="Color.html" /><link rel="prev" title="touchpy.CUDADataType" href="CUDADataType.html" />
 
     <!-- Generated with Sphinx 7.3.6 and Furo 2024.01.29 -->
-        <title>touchpy.ChopChannels - TouchPy 0.9.0 documentation</title>
+        <title>touchpy.ChopChannels - TouchPy 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
@@ -125,7 +125,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">TouchPy 0.9.0 documentation</div></a>
+      <a href="../../index.html"><div class="brand">TouchPy 0.1 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -148,7 +148,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
   
   
-  <span class="sidebar-brand-text">TouchPy 0.9.0 documentation</span>
+  <span class="sidebar-brand-text">TouchPy 0.1 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -156,10 +156,15 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <ul class="current">
+  <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../index.html">TouchPy Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../types.html">TouchPy Data Types</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">API Reference</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of API Reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="CUDADataType.html">touchpy.CUDADataType</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">touchpy.ChopChannels</a></li>
@@ -202,7 +207,10 @@
 <li class="toctree-l2"><a class="reference internal" href="Time.html">touchpy.Time</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/basic.html">Basic Example</a></li>
 </ul>
 
 </div>
@@ -268,14 +276,44 @@
 </dl>
 
 <span class="sig-paren">)</span></dt>
-<dd><p>A container of CHOP channels</p>
+<dd><p>Represents an array of floating point values.</p>
+<p>A ChopChannels object is an array of floating point values that has similar
+structure as 2D Numpy array but can operated on in a similar fashion to a CHOP
+in TD. The data is stored in a single contiguous block of memory but is still
+accessble by channel (name or index) and sample index.</p>
+<dl class="simple">
+<dt>Constructor 1:</dt><dd><p>Default constructor, creates an empty ChopChannels object.</p>
+</dd>
+<dt>Constructor 2:</dt><dd><dl class="simple">
+<dt>Args:</dt><dd><p>array (numpy.ndarray): A 2D NumPy array to set the data from.
+rate (float): The sample rate of the CHOP (optional, default is -1.0 which means the rate is not set).
+is_time_dependent (bool): Whether the CHOP is time dependent or not (optional, default is False).
+start_time (float): The start time of the CHOP (optional, default is 0.0).
+end_time (float): The end time of the CHOP (optional, default is 0.0).
+channel_names (list): The names of the channels in the array (optional, default is []).</p>
+</dd>
+</dl>
+</dd>
+<dt>Constructor 3:</dt><dd><dl class="simple">
+<dt>Args:</dt><dd><p>num_samples (int): The number of samples in the CHOP.
+rate (float): The sample rate of the CHOP (optional, default is -1.0 which means the rate is not set).
+is_time_dependent (bool): Whether the CHOP is time dependent or not (optional, default is False).
+start_time (float): The start time of the CHOP (optional, default is 0.0).
+end_time (float): The end time of the CHOP (optional, default is 0.0).
+channel_names (list): The names of the channels in the array (optional, default is []).</p>
+</dd>
+</dl>
+</dd>
+<dt>Properties:</dt><dd><p>num_chans (int): (get) The number of channels in the CHOP.
+num_samples (int): (get) The number of samples in the CHOP.
+chan_names (list): (get) List of the channel names in this CHOP.
+rate (float): (get, set) The sample rate of the CHOP.
+is_time_dependent (bool): (get, set) Refers to whether the corresponding CHOP is time dependent or not. i.e. audio chops are time dependent.
+start_time (float): (get, set) The start time of the CHOP, in frame number * chop rate.
+end_time (float): (get, set) The end time of the CHOP, in frame number * chop rate.</p>
+</dd>
+</dl>
 <p class="rubric">Attributes</p>
-<dl class="py property">
-<dt class="sig sig-object py" id="ChopChannels.chan_names">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">chan_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ChopChannels.chan_names" title="Link to this definition">🔗</a></dt>
-<dd><p>(get) List of the  channel names in this CHOP.</p>
-</dd></dl>
-
 <dl class="py property">
 <dt class="sig sig-object py" id="ChopChannels.end_time">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">end_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></em><a class="headerlink" href="#ChopChannels.end_time" title="Link to this definition">🔗</a></dt>
@@ -286,6 +324,12 @@
 <dt class="sig sig-object py" id="ChopChannels.is_time_dependent">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_time_dependent</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></em><a class="headerlink" href="#ChopChannels.is_time_dependent" title="Link to this definition">🔗</a></dt>
 <dd><p>(set, get) Refers to whether the corresponding CHOP is time dependent or not. i.e. audio chops are time dependent.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ChopChannels.names">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ChopChannels.names" title="Link to this definition">🔗</a></dt>
+<dd><p>(get) List of the  channel names in this CHOP.</p>
 </dd></dl>
 
 <dl class="py property">
@@ -482,9 +526,9 @@
 <li><a class="reference internal" href="#">touchpy.ChopChannels</a><ul>
 <li><a class="reference internal" href="#touchpy.ChopChannels"><code class="docutils literal notranslate"><span class="pre">touchpy.ChopChannels</span></code></a></li>
 <li><a class="reference internal" href="#ChopChannels"><code class="docutils literal notranslate"><span class="pre">ChopChannels</span></code></a><ul>
-<li><a class="reference internal" href="#ChopChannels.chan_names"><code class="docutils literal notranslate"><span class="pre">ChopChannels.chan_names</span></code></a></li>
 <li><a class="reference internal" href="#ChopChannels.end_time"><code class="docutils literal notranslate"><span class="pre">ChopChannels.end_time</span></code></a></li>
 <li><a class="reference internal" href="#ChopChannels.is_time_dependent"><code class="docutils literal notranslate"><span class="pre">ChopChannels.is_time_dependent</span></code></a></li>
+<li><a class="reference internal" href="#ChopChannels.names"><code class="docutils literal notranslate"><span class="pre">ChopChannels.names</span></code></a></li>
 <li><a class="reference internal" href="#ChopChannels.num_chans"><code class="docutils literal notranslate"><span class="pre">ChopChannels.num_chans</span></code></a></li>
 <li><a class="reference internal" href="#ChopChannels.num_samples"><code class="docutils literal notranslate"><span class="pre">ChopChannels.num_samples</span></code></a></li>
 <li><a class="reference internal" href="#ChopChannels.rate"><code class="docutils literal notranslate"><span class="pre">ChopChannels.rate</span></code></a></li>

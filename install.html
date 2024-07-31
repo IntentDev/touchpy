@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Overview" href="overview.html" /><link rel="prev" title="TouchPy Documentation" href="index.html" />
 
     <!-- Generated with Sphinx 7.3.6 and Furo 2024.01.29 -->
-        <title>Installation - TouchPy 0.9.0 documentation</title>
+        <title>Installation - TouchPy 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=fd3f3429" />
@@ -125,7 +125,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">TouchPy 0.9.0 documentation</div></a>
+      <a href="index.html"><div class="brand">TouchPy 0.1 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -148,7 +148,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   
-  <span class="sidebar-brand-text">TouchPy 0.9.0 documentation</span>
+  <span class="sidebar-brand-text">TouchPy 0.1 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -160,6 +160,11 @@
 <li class="toctree-l1"><a class="reference internal" href="index.html">TouchPy Documentation</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="types.html">TouchPy Data Types</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="reference/touchpy/index.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of API Reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="reference/touchpy/CUDADataType.html">touchpy.CUDADataType</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference/touchpy/ChopChannels.html">touchpy.ChopChannels</a></li>
@@ -202,7 +207,10 @@
 <li class="toctree-l2"><a class="reference internal" href="reference/touchpy/Time.html">touchpy.Time</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/basic.html">Basic Example</a></li>
 </ul>
 
 </div>
@@ -239,31 +247,26 @@
         <article role="main">
           <section id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">🔗</a></h1>
-
-<p>TouchPy supports Python 3.9 onwards and runs on Windows. <br>A Vulkan capable GPU and driver is required. To work with TOPs a Nvidia card is required.</p>
-
-<p>TouchPy requires TouchDesigner or TouchPlayer (release 2023 or later) to be installed with a paid license (Educational, Commercial, or Pro) </p>
-<p>The easiest way to install TouchPy is:</p>
+<p>TouchPy supports Python 3.9 onwards and runs on Windows. To work with TOPs a Nvidia card is required.
+TouchPy requires TouchDesigner or TouchPlayer to be installed with a paid license (Educational, Commercial, or Pro).</p>
+<p>The easiest way to install TouchPy is from <a class="reference external" href="https://pypi.org/project/touchpy">PyPI</a>:</p>
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>touchpy
 </pre></div>
 </div>
-
-
-
 <section id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading">🔗</a></h2>
-
-
 <p>TouchPy supports Python versions 3.9 onwards.</p>
-
 <p>The following optional dependencies are required to support certain features:</p>
 <ul class="simple">
-
-<li><p><a class="reference external" href="https://pytorch.org/get-started/locally/">PyTorch</a>: Required for PyTorch interoperability .</p></li>
-
+<li><p><cite>PyTorch &lt;https://pytorch.org/get-started/locally/&gt;</cite>: Required for PyTorch interoperability.</p></li>
 </ul>
-
-
+<p>Building the TouchPy documentation requires:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.sphinx-doc.org">Sphinx</a></p></li>
+<li><p><a class="reference external" href="https://github.com/pradyunsg/furo">Furo</a></p></li>
+<li><p><a class="reference external" href="https://sphinx-copybutton.readthedocs.io/en/latest/index.html">Sphinx-copybutton</a></p></li>
+<li><p><a class="reference external" href="https://sphinx-autoapi.readthedocs.io/en/latest/">Sphinx-autoapi</a></p></li>
+</ul>
 </section>
 </section>
 
