@@ -38,7 +38,6 @@
 __pycache__
 
 /docs/build
-/docs/source/reference
 
 /install/docs
 /install/modules
