@@ -3,7 +3,7 @@
 This folder contains basic examples of how to use TouchPy, with relatively thorough explanations of the concepts and tools. Each example focuses on a particular aspect of interfacing with the library. 
 
 ## Dependencies
-Currently only two examples have dependencies other than TouchPy, 02_chops.py (NumPy) and 06_tops.py (PyTorch). 
+Currently only two examples have dependencies other than TouchPy, 02_chops.py ([NumPy](https://numpy.org/doc/stable/index.html)) and 06_tops.py ([PyTorch](https://pytorch.org)). 
 
 	pip install numpy
 
@@ -27,7 +27,7 @@ Follow instructions from https://pytorch.org/ to install PyTorch for your system
 
 
 ## Jurigged
-Installing Jurigged is also useful for experimenation providing the ability to update code while it's running.
+Installing [Jurigged](https://github.com/breuleux/jurigged) is also useful for experimenation providing the ability to update code while it's running.
 
 	pip install jurigged
 
