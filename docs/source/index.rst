@@ -35,8 +35,8 @@ Full Table Of Contents
     :maxdepth: 2
     :caption: Core Reference
    
-    types
     reference/touchpy/index
+    types
 
 .. toctree::
     :maxdepth: 2
