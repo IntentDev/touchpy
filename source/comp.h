@@ -30,19 +30,19 @@ class Comp
 {
 public:
 	Comp(CompFlags compFlags = DEFAULT_COMP_FLAG_BITS,
-		int64_t fps = 60,
+		double fps = 60.,
 		uint8_t device = 0, 
 		const std::string& preferredEnginePath = "");
 
 	Comp(const std::string& filePath, 
 		CompFlags compFlags = DEFAULT_COMP_FLAG_BITS,
-		int64_t fps = 60,
+		double fps = 60.,
 		uint8_t device = 0,
 		const std::string& preferredEnginePath = "");
 
 	~Comp();
 
-	bool load(const std::string& filePath, int64_t fps = 60);
+	bool load(const std::string& filePath, double fps = 60.0);
 
 	void unload();
 	bool loaded() const; 
@@ -52,7 +52,10 @@ public:
 
 	bool frameDidFinish();
 	void applyValueChanges();
-	bool startNextFrame(int64_t timeValue = 0, int32_t timeScale = 0);
+
+	bool startNextFrame();
+	bool startNextFrame(double seconds);
+	bool startNextFrame(int64_t timeValue, int32_t timeScale);
 
 	InTopLinks&        inputTopLinks()  { return *inTopLinks_; }
 	OutTopLinks&       outputTopLinks() { return *outTopLinks_; }
@@ -75,11 +78,13 @@ public:
 
 	struct Time
 	{
-		float rate { 0.0f };
-		int64_t frame { 0 };
-		double seconds { 0.0 };
-		int64_t value { 0 };
-		int32_t scale { 0 };
+		double        seconds{ 0.0 };
+		int64_t       value{ 0 };
+		int32_t       scale{ 6000 };
+		int64_t		  frame{ 0 };
+		double 		  rate{ 0.0 };
+		LARGE_INTEGER startTime{ 0 };
+		LARGE_INTEGER performanceCounterFrequency{ 1 };
 	};
 
 	cudaStream_t cudaStream() const { return cudaStream_; }
@@ -116,7 +121,6 @@ private:
 	bool                     ssUnloading_                { false };
 	bool                     ssReady_                    { false };
 	bool                     ssInFrame_                  { false };
-	Time					 ssTime						 { };
 	std::vector<std::string> ssPendingOutputTextures_;
 	std::vector<std::string> ssPendingOutputFloatBuffers;
 	std::vector<std::string> ssPendingOutputStringData;
@@ -136,6 +140,7 @@ private:
 	bool								  asyncContinueStop_ { false };
 	std::condition_variable 			  asyncLayoutReadyCV_;
 	bool								  asyncLayoutReady_ { false };
+
 	void								  asyncUpdate();
 	void								  startAsync();
 	void								  stopAsync();
@@ -143,23 +148,24 @@ private:
 	// main thread only
 	//-----------------------------------------------------------------------------------------------------------------
 
-	std::string                        filePath_;
-	CompFlags                          compFlags_            { DEFAULT_COMP_FLAG_BITS };
-	int64_t                            fps_                  { 60 };
-	uint8_t                            preferredDeviceIndex_ { 0 };
-	TouchObject<TEInstance>            instance_             { nullptr };
-	std::string						   preferredEnginePath_;
+	std::string               filePath_;
+	CompFlags                 compFlags_            { DEFAULT_COMP_FLAG_BITS };
+	Time                      time_                 { };
+	double 					  maxTimeDelta_			{ 0.25 };
+	uint8_t                   preferredDeviceIndex_ { 0 };
+	TouchObject<TEInstance>   instance_             { nullptr };
+	std::string               preferredEnginePath_;
 
-	std::shared_ptr<Renderer>          renderer_;
-	VkDevice                           device_               { VK_NULL_HANDLE };
-	VkPhysicalDevice                   physicalDevice_       { VK_NULL_HANDLE };
-	std::vector<uint32_t>              queueFamilyIndices_;
-	VkQueue                            queue_                { VK_NULL_HANDLE };
-	VkCommandBuffer                    commandBuffer_        { VK_NULL_HANDLE };
-	VkFence                            submitFence_          { VK_NULL_HANDLE };
+	std::shared_ptr<Renderer> renderer_;
+	VkDevice                  device_               { VK_NULL_HANDLE };
+	VkPhysicalDevice          physicalDevice_       { VK_NULL_HANDLE };
+	std::vector<uint32_t>     queueFamilyIndices_;
+	VkQueue                   queue_                { VK_NULL_HANDLE };
+	VkCommandBuffer           commandBuffer_        { VK_NULL_HANDLE };
+	VkFence                   submitFence_          { VK_NULL_HANDLE };
 
-	cudaStream_t                       cudaStream_           { nullptr };
-	int                                cudaDevice_           { -1 };
+	cudaStream_t              cudaStream_           { nullptr };
+	int                       cudaDevice_           { -1 };
 
 
 	std::vector<std::string>           changedOutputTextures_;

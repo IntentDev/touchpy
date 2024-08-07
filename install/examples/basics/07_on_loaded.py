@@ -7,16 +7,16 @@ class MyComp (tp.Comp):
 		super().__init__()
 
 		self.frame = 0
-		self.set_on_layout_change_callback(self.on_layout_change, {})
-		self.set_on_frame_callback(self.on_frame, {})
+		self.set_on_layout_change_callback(self.on_layout_change)
+		self.set_on_frame_callback(self.on_frame)
 
-	def on_layout_change(self, info):
+	def on_layout_change(self):
 		print('layout changed:')
 
 		if 'Openwindow' in self.par.names:
 			self.par['Openwindow'].pulse()
 
-	def on_frame(self, info):
+	def on_frame(self):
 		if utils.check_key('q'):
 			self.stop()
 			return
@@ -29,14 +29,14 @@ class MyComp (tp.Comp):
 future_load = concurrent.futures.Future()
 
 # define the on_loaded callback that will be called when the component is loaded
-def on_loaded(info):
+def on_loaded():
 	future_load.set_result(True)
 
 # create a new instance of MyComp
 comp = MyComp()
 
 # set the on_loaded callback
-comp.set_on_loaded_callback(on_loaded, {})
+comp.set_on_loaded_callback(on_loaded)
 
 # if no on_loaded callback is set, comp.load() will block until the component is loaded
 # otherwise, comp.load() will return immediately

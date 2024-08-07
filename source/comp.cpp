@@ -10,22 +10,22 @@
 
 //#include <bitset>
 
-Comp::Comp(CompFlags compFlags, int64_t fps, uint8_t device, const std::string& preferredEnginePath)
+Comp::Comp(CompFlags compFlags, double fps, uint8_t device, const std::string& preferredEnginePath)
 	:	compFlags_(compFlags),
-		fps_(fps),
 		preferredDeviceIndex_(device),
 		preferredEnginePath_(preferredEnginePath)
 {
+	time_.rate = fps;
 }
 
-Comp::Comp(const std::string& filePath, CompFlags compFlags, int64_t fps, uint8_t device, const std::string& preferredEnginePath)
+Comp::Comp(const std::string& filePath, CompFlags compFlags, double fps, uint8_t device, const std::string& preferredEnginePath)
 	:	filePath_(filePath),
 		compFlags_(compFlags),
-		fps_(fps),
 		preferredDeviceIndex_(device),
 		preferredEnginePath_(preferredEnginePath)
 {
 	spdlog::info("Creating Comp");
+	time_.rate = fps;
 
 	initComp();
 	load();
@@ -187,10 +187,10 @@ Comp::initInstance()
 	return true;
 }
 
-bool Comp::load(const std::string& filePath, int64_t fps)
+bool Comp::load(const std::string& filePath, double fps)
 {
 	filePath_ = filePath;
-	fps_ = fps;
+	time_.rate = fps;
 
 	if (!renderer_) initComp();
 
@@ -213,7 +213,9 @@ bool Comp::load()
 		throw std::runtime_error("Failed to open tox file");
 	}
 
-	TEResult result = TEInstanceSetFrameRate(instance_, fps_, 1);
+	int64_t numerator = static_cast<int64_t>(time_.rate * 1000);
+
+	TEResult result = TEInstanceSetFrameRate(instance_, numerator, 1000);
 	if (result != TEResultSuccess)
 	{
 		spdlog::error("Failed to set frame rate: {}", TEResultGetDescription(result));
@@ -567,22 +569,27 @@ Comp::setInFrame(bool inFrame, bool setTime, int64_t timeValue, int32_t timeScal
 	auto rate = frameRate();
 	int64_t currentFrame = 0;
 	double seconds = 0.0;
-	if (timeScale > 0 && rate > 0)
-	{
-		currentFrame = static_cast<int64_t>(timeValue / (static_cast<float>(timeScale) / rate));
-		seconds = static_cast<double>(currentFrame) / rate;
-	}
 
 	std::unique_lock<std::mutex> lock(mutex_);
 	ssInFrame_ = inFrame;
 	if (setTime)
 	{
-		ssTime.rate = rate;
-		ssTime.frame = currentFrame;
-		ssTime.seconds = seconds;
-		ssTime.value = timeValue;
-		ssTime.scale = timeScale;
+		auto rate = frameRate();
+		int64_t currentFrame = 0;
+		double seconds = 0.0;
+		if (timeScale > 0 && rate > 0)
+		{
+			currentFrame = static_cast<int64_t>(timeValue / (static_cast<float>(timeScale) / rate));
+			seconds = static_cast<double>(currentFrame) / rate;
+		}
+
+		time_.rate = rate;
+		time_.frame = currentFrame;
+		time_.seconds = seconds;
+		time_.value = timeValue;
+		time_.scale = timeScale;
 	}
+
 
 	if (asyncActive_) cv_.notify_one();
 	lock.unlock();
@@ -789,17 +796,18 @@ Comp::callOnLayoutChangeCallback()
 	return false;
 }
 
-Comp::Time 
+Comp::Time
 Comp::time() const
-{	
-	Time time__;
+{
+	if (compFlags_ & CompFlagBits::InternalTime)
 	{
 		std::lock_guard<std::mutex> guard(mutex_);
-		time__ = ssTime;
+		return time_;
 	}
 
-	return time__;
+	return time_;
 }
+
 
 float 
 Comp::frameRate() const
@@ -1000,10 +1008,52 @@ Comp::frameDidFinish()
 	return !state.inFrame;
 }
 
+bool
+Comp::startNextFrame()
+{
+	setInFrame(true);
+	TEResult result = TEInstanceStartFrameAtTime(instance_, 0, 0, false);
+	if (result != TEResultSuccess)
+	{
+		spdlog::error("Frame did not start successfully: {}", TEResultGetDescription(result));
+		setInFrame(false);
+		return false;
+	}
+	return true;
+}
+
+bool
+Comp::startNextFrame(double seconds)
+{
+	setInFrame(true);
+	auto discontinuity = seconds <= time_.seconds || seconds - time_.seconds > maxTimeDelta_;
+	time_.seconds = seconds;
+	time_.value = static_cast<int64_t>(floor(seconds * time_.scale));
+	time_.frame = seconds / time_.rate;
+	TEResult result = TEInstanceStartFrameAtTime(instance_, time_.value, time_.scale, discontinuity);
+
+	if (result != TEResultSuccess)
+	{
+		spdlog::error("Frame did not start successfully: {}", TEResultGetDescription(result));
+		setInFrame(false);
+		return false;
+	}
+	return true;
+}
+
 bool 
 Comp::startNextFrame(int64_t timeValue, int32_t timeScale)
 {
 	setInFrame(true);
+	double seconds = static_cast<double>(timeValue) / timeScale;
+
+	auto discontinuity = seconds <= time_.seconds || seconds - time_.seconds > maxTimeDelta_;
+
+	time_.seconds = seconds;
+	time_.value = timeValue;
+	time_.scale = timeScale;
+	time_.frame = seconds / time_.rate;
+
 	TEResult result = TEInstanceStartFrameAtTime(instance_, timeValue, timeScale, false);
 	if (result != TEResultSuccess)
 	{

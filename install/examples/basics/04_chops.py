@@ -5,8 +5,8 @@ import numpy as np
 class MyComp (tp.Comp):
 	def __init__(self):
 		super().__init__()
-		self.set_on_layout_change_callback(self.on_layout_change, {})
-		self.set_on_frame_callback(self.on_frame, {})
+		self.set_on_layout_change_callback(self.on_layout_change)
+		self.set_on_frame_callback(self.on_frame)
 
 		self.frame = 0
 
@@ -15,7 +15,7 @@ class MyComp (tp.Comp):
 		self.my_chans.insert_channel(1, 'b', [1.0])
 		self.my_chans.append_channel('e')
 
-	def on_layout_change(self, info):
+	def on_layout_change(self):
 		print('layout changed:')
 		print('out chops:\n', *[f"\t{name}\n" for name in self.out_chops.names])
 		print('in chops:\n', *[f"\t{name}\n" for name in self.in_chops.names])
@@ -26,7 +26,7 @@ class MyComp (tp.Comp):
 			# self.par['Openwindow'].pulse()
 			pass
 
-	def on_frame(self, info):
+	def on_frame(self):
 		if utils.check_key('q'):
 			self.stop()
 			return

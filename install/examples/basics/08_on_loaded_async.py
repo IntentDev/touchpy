@@ -8,16 +8,16 @@ class MyComp (tp.Comp):
 		super().__init__(flags=flags)
 
 		self.frame = 0
-		self.set_on_layout_change_callback(self.on_layout_change, {})
-		self.set_on_frame_callback(self.on_frame, {})
+		self.set_on_layout_change_callback(self.on_layout_change)
+		self.set_on_frame_callback(self.on_frame)
 
-	def on_layout_change(self, info):
+	def on_layout_change(self):
 		print('layout changed:')
 
 		if 'Openwindow' in self.par.names:
 			self.par['Openwindow'].pulse()
 
-	def on_frame(self, info):
+	def on_frame(self):
 		self.start_next_frame()
 
 		if self.frame % 60 == 0:
@@ -29,14 +29,14 @@ class MyComp (tp.Comp):
 future_load = concurrent.futures.Future()
 
 # define the on_loaded callback that will be called when the component is loaded
-def on_loaded(info):
+def on_loaded():
 	future_load.set_result(True)
 
 # create a future to signal when the component is stopped
 future_stop = concurrent.futures.Future()
 
 # define the on_stop callback that will be called when the component is stopped
-def on_stop(info):
+def on_stop():
 	future_stop.set_result(True)
 
 # create a new instance of MyComp and set the ASYNC flag 
@@ -45,8 +45,8 @@ def on_stop(info):
 comp = MyComp(tp.CompFlags.INTERNAL_TIME_ASYNC)
 
 # set the on_loaded and on_stop callbacks
-comp.set_on_loaded_callback(on_loaded, {})
-comp.set_on_stop_callback(on_stop, {})
+comp.set_on_loaded_callback(on_loaded)
+comp.set_on_stop_callback(on_stop)
 
 comp.load('TopChopDatIO.tox')
 
