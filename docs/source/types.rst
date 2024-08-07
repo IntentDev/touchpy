@@ -3,7 +3,7 @@ TouchPy Data Types
 ==================
 
 .. functions:
-.. currentmodule:: warp
+.. currentmodule:: touchpy
 
 Generic Types
 ------------
