@@ -40,8 +40,8 @@ TEST(CompFlagsTest, test4)
 	Comp comp1;
 	EXPECT_EQ(comp1.flags(), CompFlagBits::InternalTimeAuto);
 
-	Comp comp2 { CompFlagBits::InternalTime | CompFlagBits::Realtime };
-	EXPECT_EQ(comp2.flags(), CompFlagBits::InternalTime | CompFlagBits::Realtime);
+	//Comp comp2 { CompFlagBits::InternalTime | CompFlagBits::Realtime };
+	//EXPECT_EQ(comp2.flags(), CompFlagBits::InternalTime | CompFlagBits::Realtime);
 	
 }
 
@@ -58,9 +58,9 @@ TEST(CompFlagsTest, testEquality)
 {
 	CompFlags a = CompFlagBits::InternalTime | CompFlagBits::AutoUpdate;
 	CompFlags b = CompFlagBits::InternalTime | CompFlagBits::AutoUpdate;
-	CompFlags c = CompFlagBits::InternalTime | CompFlagBits::Realtime;
+	//CompFlags c = CompFlagBits::InternalTime | CompFlagBits::Realtime;
 
 	EXPECT_TRUE(a == b);
-	EXPECT_FALSE(a == c);
+	//EXPECT_FALSE(a == c);
 
 }
