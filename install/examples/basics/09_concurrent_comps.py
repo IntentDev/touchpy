@@ -8,16 +8,16 @@ class MyComp (tp.Comp):
 
 		self.name = name
 		self.frame = 0
-		self.set_on_layout_change_callback(self.on_layout_change, {})
-		self.set_on_frame_callback(self.on_frame, {})
+		self.set_on_layout_change_callback(self.on_layout_change)
+		self.set_on_frame_callback(self.on_frame)
 
-	def on_layout_change(self, info):
+	def on_layout_change(self):
 		print('layout changed:')
 
 		if 'Openwindow' in self.par.names:
 			self.par['Openwindow'].pulse()
 
-	def on_frame(self, info):
+	def on_frame(self):
 		self.start_next_frame()
 
 		if self.frame % 180 == 0:

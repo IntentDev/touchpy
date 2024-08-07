@@ -10,8 +10,8 @@ from modules.image_filter import ImageFilter
 class MyComp (tp.Comp):
 	def __init__(self):
 		super().__init__()
-		self.set_on_layout_change_callback(self.on_layout_change, {})
-		self.set_on_frame_callback(self.on_frame, {})
+		self.set_on_layout_change_callback(self.on_layout_change)
+		self.set_on_frame_callback(self.on_frame)
 
 		# CUDA compatible device is required for this example
 		self.device = torch.device('cuda:0') 
@@ -31,7 +31,7 @@ class MyComp (tp.Comp):
 		# this tensor will be used to create a 4 channel tensor
 		self.alpha_tensor = torch.ones(1, 1080, 1920, device=self.device, dtype=torch.float16)
 
-	def on_layout_change(self, info):
+	def on_layout_change(self):
 		print('layout changed:')
 		print('out tops:\n', *[f"\t{name}\n" for name in self.out_tops.names])
 		print('in tops:\n', *[f"\t{name}\n" for name in self.in_tops.names])
@@ -104,7 +104,7 @@ class MyComp (tp.Comp):
 			# self.par['Openwindow'].pulse()
 			pass
 
-	def on_frame(self, info):
+	def on_frame(self):
 		if utils.check_key('q'):
 			self.stop()
 			return

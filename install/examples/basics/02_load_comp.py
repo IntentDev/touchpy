@@ -21,15 +21,15 @@ class MyComp (tp.Comp):
 		self.frame = 0
 
 		# set the on_layout_change_callback to the on_layout_change method
-		self.set_on_layout_change_callback(self.on_layout_change, {})
+		self.set_on_layout_change_callback(self.on_layout_change)
 
 		# set the on_frame_callback to the on_frame method
-		self.set_on_frame_callback(self.on_frame, {})
+		self.set_on_frame_callback(self.on_frame)
 
 	# this gets called at least once after the component is loaded, at this point
 	# all the pars, in and out ops are available. If the a par, in or out op is added or removed
 	# this method will be called again
-	def on_layout_change(self, info):
+	def on_layout_change(self):
 		print('layout changed:')
 		print('in tops:\n', *[f"\t{name}\n" for name in self.in_tops.names])
 		print('out tops:\n', *[f"\t{name}\n" for name in self.out_tops.names])
@@ -42,7 +42,7 @@ class MyComp (tp.Comp):
 	# define the on_frame method that will be called on every frame
 	# the info argument is user data that can be passed to the callback
 	# in this case it is an empty dictionary
-	def on_frame(self, info):
+	def on_frame(self):
 
 		# stop running the if the 'q' key is pressed (terminal must be in focus)
 		# always stop the component before calling start_next_frame()

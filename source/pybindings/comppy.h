@@ -9,7 +9,6 @@ Values:
 	EXTERNAL_TIME: Sets the loaded component to run in external time mode.
 	AUTO_UPDATE: The Comp will run a loop that updates the component.
 	ASYNC_UPDATE: The Comp will run an asynchronous loop that updates the component.
-	REALTIME: If INTERNAL_TIME is set the loaded component will run in real-time mode.
 	INTERNAL_TIME_AUTO: Shortcut for setting INTERNAL_TIME | AUTO_UPDATE.
 	INTERNAL_TIME_ASYNC: Shortcut for setting INTERNAL_TIME | ASYNC_UPDATE.
 	CUDA_STREAM_DEFAULT: Sets the CUDA stream to the default stream.
