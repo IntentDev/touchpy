@@ -6,6 +6,10 @@ TouchPy Documentation
 
 The first public version of TouchPy was released during the TouchDesigner Event Berlin in May 2024. 
 
+Below an example of a `POPs <https://derivative.ca/community-post/pops-new-operator-family-touchdesigner/69468>`_ cloth simulation on Nvidia Warp implemented using TouchPy:
+
+.. image:: ./img/TouchPy_POP_clothsim.png
+
 
 Quickstart
 ==========
@@ -21,11 +25,11 @@ The easiest way to install TouchPy is from `PyPI <https://pypi.org/project/touch
 
 
 Basic Example
-==========
+==============
 
-A basic example which loads a .tox file is given below::
+A basic example which loads and starts a .tox file is given below:
 
-.. code-block::python
+.. code-block:: python
 
     import touchpy as tp
 
@@ -48,7 +52,7 @@ A basic example which loads a .tox file is given below::
             self.start_next_frame()
 
 
-    # create an instance of the MyBasicComp class
+    # create an instance of your MyBasicComp class
     comp = MyBasicComp()
 
     # load a tox file into the component
