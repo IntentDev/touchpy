@@ -15,7 +15,7 @@ if str(localImportPath) not in sys.path:
 project = 'TouchPy'
 copyright = '2024'
 author = 'IntentDev'
-release = '0.1'
+release = '0.10'
 
 
 #==== start autoapi variant ========================
@@ -24,7 +24,9 @@ release = '0.1'
 extensions = ['sphinx.ext.autodoc',
 		  'sphinx.ext.napoleon',
 		  'autoapi.extension',
-          "sphinx.ext.intersphinx"]
+          'sphinx.ext.intersphinx',
+          'numpydoc',
+          'myst_parser']
 
 autoapi_dirs = ['../../out/install_build/py312']
 autoapi_type = "python"
@@ -54,18 +56,18 @@ autoapi_prepare_jinja_env = prepare_jinja_env
 def skip_members(app, what, name, obj, skip, options):
     if what == "class" and "_Enum" in name:
        skip = True
-    if what == "class" and name in ["Double2Par", 
-                                    "Double3Par", 
-                                    "Double4Par", 
-                                    "Float2", 
-                                    "Float3", 
-                                    "Float4", 
-                                    "Int2", 
-                                    "Int2Par", 
-                                    "Int3", 
-                                    "Int3Par", 
-                                    "Int4", 
-                                    "Int4Par"]:
+    if what == "class" and name in ["touchpy.Double2Par", 
+                                    "touchpy.Double3Par", 
+                                    "touchpy.Double4Par", 
+                                    "touchpy.Float2", 
+                                    "touchpy.Float3", 
+                                    "touchpy.Float4", 
+                                    "touchpy.Int2", 
+                                    "touchpy.Int2Par", 
+                                    "touchpy.Int3", 
+                                    "touchpy.Int3Par", 
+                                    "touchpy.Int4", 
+                                    "touchpy.Int4Par"]:
        skip = True
 
     if name.endswith("__"):
