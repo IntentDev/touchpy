@@ -8,7 +8,7 @@ The first public version of TouchPy was released during the TouchDesigner Event 
 
 Below an example of a `POPs <https://derivative.ca/community-post/pops-new-operator-family-touchdesigner/69468>`_ cloth simulation on Nvidia Warp implemented using TouchPy:
 
-.. image:: ./img/TouchPy_POP_clothsim.png
+.. image:: ./img/TouchPy_POP_clothsim.jpg
 
 
 Quickstart
