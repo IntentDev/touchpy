@@ -25,7 +25,8 @@ extensions = ['sphinx.ext.autodoc',
 		  'sphinx.ext.napoleon',
 		  'autoapi.extension',
           'sphinx.ext.intersphinx',
-          'numpydoc']
+          'numpydoc',
+          'myst_parser']
 
 autoapi_dirs = ['../../out/install_build/py312']
 autoapi_type = "python"
