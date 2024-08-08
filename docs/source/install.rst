@@ -16,7 +16,7 @@ TouchPy supports Python versions 3.9 onwards.
 
 The following optional dependencies are required to support certain features:
 
-* `PyTorch <https://pytorch.org/get-started/locally/>`: Required for PyTorch interoperability.
+* `PyTorch <https://pytorch.org/get-started/locally/>`_: Required for PyTorch interoperability.
 
 Building the TouchPy documentation requires:
 
