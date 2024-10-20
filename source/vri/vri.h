@@ -7,7 +7,7 @@
 #include "vri/vri_macros.h"	
 
 #include <vulkan/vulkan.h>
-#include "vk_mem_alloc.h"
+#include "vma/vk_mem_alloc.h"
 #include "vri_queuefamilyindices.h"
 #include "vri_semaphorepool.h"
 #include "vri_fencepool.h"
@@ -15,9 +15,7 @@
 #include <vector>
 
 
-
 NAMESPACE_BEGIN(vri)
-
 
 
 struct VContext
@@ -58,7 +56,6 @@ struct SwapchainSupport
 	std::vector<VkSurfaceFormatKHR> formats;
 	std::vector<VkPresentModeKHR> presentModes;
 };
-
 
 VkFormat findDepthFormat(
 	const VkPhysicalDevice&	physicalDevice);

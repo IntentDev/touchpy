@@ -1,6 +1,6 @@
 ﻿# CMakeList.txt : CMake project for touchpy
 #
-cmake_minimum_required (VERSION 3.21)
+cmake_minimum_required (VERSION 3.3)
 
 function(add_copy_file_cmds target_name file_list dest_dir)
     foreach(file IN LISTS file_list)
@@ -44,6 +44,7 @@ endif()
 
 project ("TouchPy" LANGUAGES CXX CUDA)
 
+
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
 
 # Collect all source files and exclude gtest files.
@@ -76,9 +77,6 @@ endif ()
 find_package(Vulkan REQUIRED)
 message(STATUS Vulkan_INCLUDE_DIR=${Vulkan_INCLUDE_DIR})
 
-### not used atm but vri includes it... 
-# .\vcpkg install vulkan-memory-allocator 
-find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 
 find_package(CUDAToolkit REQUIRED)
 message(STATUS CUDAToolkit_INCLUDE_DIRS=${CUDAToolkit_INCLUDE_DIRS})
@@ -125,7 +123,6 @@ target_link_directories(touchpy PRIVATE
 target_link_libraries(touchpy PRIVATE 
     TouchEngine 
     Vulkan::Vulkan 
-    GPUOpen::VulkanMemoryAllocator
     CUDA::cudart 
     spdlog::spdlog
 )
@@ -138,7 +135,7 @@ add_custom_command(TARGET touchpy POST_BUILD
 # copy dlls to the build directory
 set(target_dependencies
     "${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin/TouchEngine.dll"
-    "${CUDAToolkit_BIN_DIR}/cudart64_110.dll"
+    "${CUDAToolkit_BIN_DIR}/cudart64_12.dll"
     $<TARGET_FILE:spdlog::spdlog>
     $<TARGET_FILE:fmt::fmt>
 )
@@ -189,7 +186,6 @@ target_link_libraries(touchpygtest PRIVATE
     GTest::gtest_main
     TouchEngine
     Vulkan::Vulkan
-    GPUOpen::VulkanMemoryAllocator
     CUDA::cudart
     spdlog::spdlog
 )
