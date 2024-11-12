@@ -1,6 +1,6 @@
 ﻿# CMakeList.txt : CMake project for touchpy
 #
-cmake_minimum_required (VERSION 3.3)
+cmake_minimum_required (VERSION 3.15)
 
 function(add_copy_file_cmds target_name file_list dest_dir)
     foreach(file IN LISTS file_list)
@@ -20,7 +20,6 @@ function(add_copy_dir_cmds target_name dir_list dest_dir)
     endforeach()
 endfunction()
 
-
 # Enable Hot Reload for MSVC compilers if supported.
 if (POLICY CMP0141)
   cmake_policy(SET CMP0141 NEW)
@@ -34,24 +33,23 @@ set(CMAKE_CUDA_ARCHITECTURES 75;80;86;89)
 set(CMAKE_CXX_STANDARD 17) # need to upgrade CUDA to 12.1 to use C++20
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CUDA_FLAGS "--allow-unsupported-compiler") # For MSVC >=19.40
+
+set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CUDA_STANDARD_REQUIRED True)
 
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-
 project ("TouchPy" LANGUAGES CXX CUDA)
-
 
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
 
 # Collect all source files and exclude gtest files.
-file(GLOB_RECURSE ALL_TPY_SOURCES 
-    "${SOURCE_DIR}/*.cpp" "${SOURCE_DIR}/*.c" "${SOURCE_DIR}/*.cu" "${SOURCE_DIR}/*.h")
-list(FILTER ALL_TPY_SOURCES EXCLUDE REGEX ".*gtest\\.cpp$")
-list(FILTER ALL_TPY_SOURCES EXCLUDE REGEX ".*main\\.cpp$")
+file(GLOB_RECURSE ALL_TPY_SOURCES "${SOURCE_DIR}/*.cpp" "${SOURCE_DIR}/*.c" "${SOURCE_DIR}/*.h" "${SOURCE_DIR}/*.cu")
+list(FILTER ALL_TPY_SOURCES EXCLUDE REGEX ".*gtest\.cpp$")
+list(FILTER ALL_TPY_SOURCES EXCLUDE REGEX ".*main\.cpp$")
 
 # print all sources if on
 set(PRINT_SOURCE_FILES Off)
@@ -66,7 +64,6 @@ if (WIN32)
     list(APPEND COMPILE_DEFINITIONS 
         WIN32_LEAN_AND_MEAN # Exclude rarely-used stuff from Windows headers
         NOMINMAX # Exclude min and max macros from Windows headers
-        # _CRT_SECURE_NO_WARNINGS # Disable warnings for unsafe functions in MSVC
         _UNICODE # Use Unicode character set
         UNICODE # Use Unicode character set
         VK_USE_PLATFORM_WIN32_KHR # use Vulkan on Windows
@@ -76,7 +73,6 @@ endif ()
 # .\vcpkg install vulkan ### haven't tested this, probably best to just install the SDK
 find_package(Vulkan REQUIRED)
 message(STATUS Vulkan_INCLUDE_DIR=${Vulkan_INCLUDE_DIR})
-
 
 find_package(CUDAToolkit REQUIRED)
 message(STATUS CUDAToolkit_INCLUDE_DIRS=${CUDAToolkit_INCLUDE_DIRS})
@@ -127,6 +123,11 @@ target_link_libraries(touchpy PRIVATE
     spdlog::spdlog
 )
 
+# Add warning suppression for MSVC specific warnings
+if(MSVC)
+    target_compile_options(touchpy PRIVATE /wd4819)
+endif()
+
 add_custom_command(TARGET touchpy POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     $<TARGET_FILE:touchpy> "${CMAKE_CURRENT_SOURCE_DIR}/install/modules"
@@ -167,7 +168,7 @@ set(GTEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/gtest)
 file(GLOB_RECURSE TEST_SOURCES "${GTEST_SOURCE_DIR}/*gtest*.cpp")
 
 set(TOUCHPY_TEST_SOURCES ${ALL_TPY_SOURCES})
-list(FILTER TOUCHPY_TEST_SOURCES EXCLUDE REGEX ".*py\\.cpp$")
+list(FILTER TOUCHPY_TEST_SOURCES EXCLUDE REGEX ".*py\.cpp$")
 add_executable (touchpygtest ${TEST_SOURCES} ${TOUCHPY_TEST_SOURCES})
 
 target_compile_definitions(touchpygtest PRIVATE ${COMPILE_DEFINITIONS})
@@ -193,5 +194,3 @@ target_link_libraries(touchpygtest PRIVATE
 include(GoogleTest)
 gtest_discover_tests(touchpygtest)
 add_definitions(-DCMAKE_PROJECT_DIR="${CMAKE_SOURCE_DIR}")
-
-
