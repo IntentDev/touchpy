@@ -1,6 +1,7 @@
 ﻿# CMakeList.txt : CMake project for touchpy
 #
-cmake_minimum_required (VERSION 3.15)
+cmake_minimum_required (VERSION 3.29)
+
 
 function(add_copy_file_cmds target_name file_list dest_dir)
     foreach(file IN LISTS file_list)
@@ -26,7 +27,7 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
-set(CMAKE_CUDA_ARCHITECTURES 75;80;86;89)
+set(CMAKE_CUDA_ARCHITECTURES 75 80 86 89)
 
 # set cpp standard for all targets unless otherwise specified 
 # with target_compile_features() or set_property()
@@ -36,6 +37,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED True)
+set(CMAKE_CUDA_COMPILER "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6/bin/nvcc.exe")
+set(CMAKE_CUDA_HOST_COMPILER "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.41.34120/bin/Hostx64/x64/cl.exe")
 
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
@@ -46,15 +49,16 @@ project ("TouchPy" LANGUAGES CXX CUDA)
 
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
 
-# Collect all source files and exclude gtest files.
-file(GLOB_RECURSE ALL_TPY_SOURCES "${SOURCE_DIR}/*.cpp" "${SOURCE_DIR}/*.c" "${SOURCE_DIR}/*.h" "${SOURCE_DIR}/*.cu")
-list(FILTER ALL_TPY_SOURCES EXCLUDE REGEX ".*gtest\.cpp$")
-list(FILTER ALL_TPY_SOURCES EXCLUDE REGEX ".*main\.cpp$")
+file(GLOB_RECURSE CPP_SOURCES "${SOURCE_DIR}/*.cpp" "${SOURCE_DIR}/*.c" "${SOURCE_DIR}/*.h")
+list(FILTER CPP_SOURCES EXCLUDE REGEX ".*gtest\.cpp$")
+list(FILTER CPP_SOURCES EXCLUDE REGEX ".*main\.cpp$")
+
+file(GLOB_RECURSE CUDA_SOURCES "${SOURCE_DIR}/*.cu" "${SOURCE_DIR}/*.cuh")
 
 # print all sources if on
 set(PRINT_SOURCE_FILES Off)
 if(PRINT_SOURCE_FILES)
-    foreach(source IN LISTS ALL_TPY_SOURCES)
+    foreach(source IN LISTS CPP_SOURCES CUDA_SOURCES)
       message(STATUS "touchpy source: ${source}")
     endforeach()
 endif()
@@ -70,6 +74,8 @@ if (WIN32)
     )
 endif ()
 
+include(FetchContent)
+
 # .\vcpkg install vulkan ### haven't tested this, probably best to just install the SDK
 find_package(Vulkan REQUIRED)
 message(STATUS Vulkan_INCLUDE_DIR=${Vulkan_INCLUDE_DIR})
@@ -77,8 +83,15 @@ message(STATUS Vulkan_INCLUDE_DIR=${Vulkan_INCLUDE_DIR})
 find_package(CUDAToolkit REQUIRED)
 message(STATUS CUDAToolkit_INCLUDE_DIRS=${CUDAToolkit_INCLUDE_DIRS})
 
-# .\vcpkg install spdlog
-find_package(spdlog REQUIRED)
+# ./vcpkg install spdlog
+# find_package(spdlog CONFIG REQUIRED)
+
+FetchContent_Declare(
+  spdlog
+  GIT_REPOSITORY https://github.com/gabime/spdlog.git
+  GIT_TAG v1.15.0
+)
+FetchContent_MakeAvailable(spdlog)
 
 # .\vcpkg install gtest
 find_package(GTest CONFIG REQUIRED)
@@ -98,7 +111,16 @@ if(DEFINED Python_SOABI)
 endif()
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/nanobind)
-nanobind_add_module(touchpy NB_DOMAIN NOMINSIZE ${ALL_TPY_SOURCES})
+
+# Create a static library for CUDA sources
+add_library(touchpy_cuda STATIC ${CUDA_SOURCES})
+set_target_properties(touchpy_cuda PROPERTIES LINKER_LANGUAGE CUDA)
+
+# Add nanobind module with only C/C++ sources
+nanobind_add_module(touchpy NB_DOMAIN NOMINSIZE ${CPP_SOURCES})
+
+# Link the CUDA static library to the nanobind module
+# target_link_libraries(touchpy PRIVATE touchpy_cuda)
 
 target_compile_definitions(touchpy PRIVATE ${COMPILE_DEFINITIONS})
 
@@ -117,9 +139,10 @@ target_link_directories(touchpy PRIVATE
 )
 
 target_link_libraries(touchpy PRIVATE 
+    touchpy_cuda
     TouchEngine 
     Vulkan::Vulkan 
-    CUDA::cudart 
+    # CUDA::cudart 
     spdlog::spdlog
 )
 
@@ -137,37 +160,37 @@ add_custom_command(TARGET touchpy POST_BUILD
 set(target_dependencies
     "${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/bin/TouchEngine.dll"
     "${CUDAToolkit_BIN_DIR}/cudart64_12.dll"
-    $<TARGET_FILE:spdlog::spdlog>
-    $<TARGET_FILE:fmt::fmt>
+    # $<TARGET_FILE:spdlog::spdlog>
+    # $<TARGET_FILE:fmt::fmt>
 )
 
 add_copy_file_cmds(touchpy "${target_dependencies}" "${CMAKE_CURRENT_SOURCE_DIR}/install/modules")
 
-# generate stub file to enable Sphinx to generate docs
-#################################################################################################
-if (Python_VERSION_MAJOR EQUAL 3 AND Python_VERSION_MINOR EQUAL 12)
+# # generate stub file to enable Sphinx to generate docs
+# #################################################################################################
+# if (Python_VERSION_MAJOR EQUAL 3 AND Python_VERSION_MINOR EQUAL 12)
 
-    message(STATUS "Python version 3.12 detected. Generating stubs.")
+#     message(STATUS "Python version 3.12 detected. Generating stubs.")
 
-    # copy dlls to the build directory for the module to work
-    add_copy_file_cmds(touchpy "${target_dependencies}" $<TARGET_FILE_DIR:touchpy>)
+#     # copy dlls to the build directory for the module to work
+#     add_copy_file_cmds(touchpy "${target_dependencies}" $<TARGET_FILE_DIR:touchpy>)
 
-    nanobind_add_stub(
-        touchpy_stub
-        MODULE touchpy
-        OUTPUT touchpy.pyi
-        PYTHON_PATH $<TARGET_FILE_DIR:touchpy>
-        DEPENDS touchpy
-    )
+#     nanobind_add_stub(
+#         touchpy_stub
+#         MODULE touchpy
+#         OUTPUT touchpy.pyi
+#         PYTHON_PATH $<TARGET_FILE_DIR:touchpy>
+#         DEPENDS touchpy
+#     )
 
-endif()
+# endif()
 
 # touchpygtest
 #################################################################################################
 set(GTEST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test/gtest)
 file(GLOB_RECURSE TEST_SOURCES "${GTEST_SOURCE_DIR}/*gtest*.cpp")
 
-set(TOUCHPY_TEST_SOURCES ${ALL_TPY_SOURCES})
+set(TOUCHPY_TEST_SOURCES ${CPP_SOURCES})
 list(FILTER TOUCHPY_TEST_SOURCES EXCLUDE REGEX ".*py\.cpp$")
 add_executable (touchpygtest ${TEST_SOURCES} ${TOUCHPY_TEST_SOURCES})
 
@@ -185,9 +208,10 @@ target_link_directories(touchpygtest PRIVATE
 
 target_link_libraries(touchpygtest PRIVATE 
     GTest::gtest_main
+    touchpy_cuda
     TouchEngine
     Vulkan::Vulkan
-    CUDA::cudart
+    # CUDA::cudart
     spdlog::spdlog
 )
 

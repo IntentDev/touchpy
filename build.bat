@@ -75,9 +75,10 @@ if not exist "%DEST_DIR%\" (
     )
 )
 
-@REM copy all files other than .pyd files
+@REM copy all .dll and .py files
 echo Copying install\modules to: %DEST_DIR%\touchpy\
-xcopy /E /Y /Q install\modules\ %DEST_DIR%\touchpy\ /exclude:install\modules\*.pyd
+xcopy /Y /Q install\modules\*.dll %DEST_DIR%\touchpy\ 
+xcopy /Y /Q install\modules\*.py %DEST_DIR%\touchpy\ 
 
 @REM copy all .pyd files
 echo Copying install\modules\*.pyd to: %DEST_DIR%\pyd_files\

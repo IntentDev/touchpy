@@ -14,7 +14,7 @@ conda create -n py312 python=3.12
 - When building packages the version number must manually be set in `package/pyproject.toml`
 
 ### Build the modules and documentation, package distribution and upload
-- Open the Visual Studio Developer Command Prompt and run:
+- Open the Visual Studio Developer Command Prompt as Admin and run:
 ```bash
 # build compile all configs and copy to install
 build.bat

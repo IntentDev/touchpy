@@ -2,15 +2,17 @@ import touchpy as tp
 import modules.utils as utils
 import math
 
+# tp.init_logging(level=tp.LogLevel.DEBUG)
+
 class MyComp (tp.Comp):
 	def __init__(self):
 		super().__init__()
-		self.set_on_layout_change_callback(self.on_layout_change)
-		self.set_on_frame_callback(self.on_frame)
+		self.set_on_layout_change_callback(self.on_layout_change, {})
+		self.set_on_frame_callback(self.on_frame, {})
 
 		self.frame = 0
 	
-	def on_layout_change(self):
+	def on_layout_change(self, info):
 		print('layout changed:')
 		print('pars:\n', *[f"\t{name}\n" for name in comp.par.names])
 
@@ -20,7 +22,7 @@ class MyComp (tp.Comp):
 			# official build with support should be available soon
 			self.par['Openwindow'].pulse()
 
-	def on_frame(self):
+	def on_frame(self, info):
 		if utils.check_key('q'):
 			self.stop()
 			return
