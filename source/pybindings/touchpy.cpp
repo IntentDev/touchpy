@@ -87,9 +87,9 @@ NB_MODULE(touchpy, m)
 		;
 
 	//nb::set_leak_warnings(false);
-	initLogging(spdlog::level::warn, true, false);
+	initLogging(spdlog::level::debug, true, false);
 
-	m.def("init_logging", &initLogging, "level"_a = spdlog::level::info, "console"_a = true, "file"_a = false, init_loggingDoc);
+	m.def("init_logging", &initLogging, "level"_a = spdlog::level::debug, "console"_a = true, "file"_a = false, init_loggingDoc);
 	m.def("set_log_level", &setLogLevel, "level"_a = spdlog::level::warn, set_log_levelDoc);
 
 	m.def("get_dlpack_capsule_info", &getDLPackCapsuleInfo, "array"_a, get_dlpack_capsule_infoDoc);
