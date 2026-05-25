@@ -56,7 +56,7 @@ void initCompBindings(nb::module_& m)
 {
 	//Comp::setPrintInfoFunc(printInfo);
 
-	nb::enum_<CompFlagBits>(m, "CompFlags", nb::flag_enum())
+	nb::enum_<CompFlagBits>(m, "CompFlags", nb::is_flag())
 		.value("INTERNAL_TIME", CompFlagBits::InternalTime)
 		.value("EXTERNAL_TIME", CompFlagBits::ExternalTime)
 		.value("AUTO_UPDATE", CompFlagBits::AutoUpdate)

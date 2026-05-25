@@ -159,7 +159,7 @@ using arrayShapeHWC1 = nb::shape<-1, -1, 1>;
 void 
 initTopLinkBindings(nb::module_& m)
 {
-	nb::enum_<CudaFlagBits>(m, "CudaFlags", nb::flag_enum())
+	nb::enum_<CudaFlagBits>(m, "CudaFlags", nb::is_flag())
 		.value("NONE", CudaFlagBits::None)
 		.value("RGBA", CudaFlagBits::RGBA)
 		.value("RGB", CudaFlagBits::RGB)
