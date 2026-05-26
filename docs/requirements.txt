@@ -1,4 +1,6 @@
-sphinx==7.3.6 
-sphinx-autoapi==3.1.0b0
-furo==2024.1.29
+sphinx>=7.3
+sphinx-autoapi>=3.1
+furo
 sphinx-copybutton
+numpydoc
+myst_parser

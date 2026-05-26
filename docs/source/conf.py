@@ -4,18 +4,12 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 
-from pathlib import Path
-import sys
-localImportPath = Path.cwd().parents[1] / 'install/modules'
-
-if str(localImportPath) not in sys.path:
-	sys.path.insert(0,str(localImportPath))	
-
+from importlib.metadata import version as get_version
 
 project = 'TouchPy'
 copyright = '2024'
 author = 'IntentDev'
-release = '0.10'
+release = get_version('touchpy')
 
 
 #==== start autoapi variant ========================
@@ -28,7 +22,9 @@ extensions = ['sphinx.ext.autodoc',
           'numpydoc',
           'myst_parser']
 
-autoapi_dirs = ['../../out/install_build/py312']
+import touchpy
+import os
+autoapi_dirs = [os.path.dirname(touchpy.__file__)]
 autoapi_type = "python"
 
 autoapi_options = [ 'members', 'undoc-members', 'private-members', 'show-module-summary', 'special-members', 'imported-members', ]

@@ -1,0 +1,115 @@
+name: Build Wheels
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build_wheels:
+    name: Build wheels (Python ${{ matrix.python }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["cp39", "cp310", "cp311", "cp312", "cp313"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Cache CUDA Toolkit
+        id: cache-cuda
+        uses: actions/cache@v4
+        with:
+          path: C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+          key: cuda-12.6.0-nvcc-cudart
+
+      - name: Install CUDA Toolkit
+        if: steps.cache-cuda.outputs.cache-hit != 'true'
+        shell: powershell
+        run: |
+          $url = "https://developer.download.nvidia.com/compute/cuda/12.6.0/network_installers/cuda_12.6.0_windows_network.exe"
+          Invoke-WebRequest -Uri $url -OutFile cuda_installer.exe
+          Start-Process -FilePath .\cuda_installer.exe -ArgumentList '-s','nvcc_12.6','cudart_12.6' -Wait -NoNewWindow
+
+      - name: Set CUDA environment
+        shell: powershell
+        run: |
+          echo "CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6" >> $env:GITHUB_ENV
+          echo "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin" >> $env:GITHUB_PATH
+
+      - name: Install Vulkan SDK
+        uses: jakoch/install-vulkan-sdk-action@v1.0.5
+        with:
+          vulkan_version: 1.3.290.0
+          install_runtime: false
+          cache: true
+
+      - name: Build wheel
+        uses: pypa/cibuildwheel@v2.22
+        env:
+          CIBW_BUILD: "${{ matrix.python }}-win_amd64"
+          CIBW_ARCHS_WINDOWS: "AMD64"
+          CMAKE_GENERATOR: Ninja
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.python }}
+          path: ./wheelhouse/*.whl
+
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build sdist
+        run: pipx run build --sdist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+  publish:
+    name: Publish to PyPI
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheel-*
+          path: dist/
+          merge-multiple: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  upload_release_assets:
+    name: Upload release assets
+    needs: [build_wheels]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheel-*
+          path: dist/
+          merge-multiple: true
+
+      - name: Upload wheels to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.whl
