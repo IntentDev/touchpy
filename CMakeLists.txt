@@ -70,6 +70,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
+FetchContent_Declare(
+  VulkanMemoryAllocator
+  GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+  GIT_TAG v3.1.0
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND ""
+)
+FetchContent_MakeAvailable(VulkanMemoryAllocator)
+
 # touchpy
 #################################################################################################
 find_package(Python 3.9
@@ -105,6 +114,7 @@ target_include_directories(touchpy PRIVATE
     ${SOURCE_DIR}
     ${CUDAToolkit_INCLUDE_DIRS}
     "${CMAKE_CURRENT_SOURCE_DIR}/external/TouchEngine-Windows/include"
+    "${vulkanmemoryallocator_SOURCE_DIR}/include"
 )
 
 target_link_directories(touchpy PRIVATE
