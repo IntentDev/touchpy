@@ -36,6 +36,8 @@ jobs:
 
       - name: Build and install
         run: pip install . -v
+        env:
+          CMAKE_GENERATOR: Ninja
 
       - name: Verify import
         run: python -c "import touchpy; print(f'touchpy {touchpy.__version__} OK')"
