@@ -22,6 +22,8 @@ jobs:
           cuda: "12.6.0"
           method: network
           sub-packages: '["nvcc", "cudart"]'
+          use-github-cache: false
+          use-local-cache: false
 
       - name: Install Vulkan SDK
         uses: jakoch/install-vulkan-sdk-action@v1.0.5
