@@ -16,13 +16,13 @@ jobs:
           python-version: "3.12"
 
       - name: Install CUDA Toolkit
-        uses: Jimver/cuda-toolkit@v0.2.27
-        with:
-          cuda: "12.6.0"
-          method: network
-          sub-packages: '["nvcc", "cudart"]'
-          use-github-cache: false
-          use-local-cache: false
+        shell: powershell
+        run: |
+          $url = "https://developer.download.nvidia.com/compute/cuda/12.6.0/network_installers/cuda_12.6.0_windows_network.exe"
+          Invoke-WebRequest -Uri $url -OutFile cuda_installer.exe
+          Start-Process -FilePath .\cuda_installer.exe -ArgumentList '-s','nvcc_12.6','cudart_12.6' -Wait -NoNewWindow
+          echo "CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6" >> $env:GITHUB_ENV
+          echo "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin" >> $env:GITHUB_PATH
 
       - name: Install Vulkan SDK
         uses: jakoch/install-vulkan-sdk-action@v1.0.5
