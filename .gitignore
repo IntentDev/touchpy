@@ -31,33 +31,33 @@
 *.out
 *.app
 
+# Build artifacts
 /out
+/build
+/dist
+*.egg-info
+
+# IDE
 /.vs
+/.vscode
+
+# Misc
 *Backup
 *.dmp
 __pycache__
 
+# Docs
 /docs/build
+docs/source/reference/*
 
-/install/docs
-/install/modules
-
+# CMake
 CMakeUserPresets.json
-CMakePresets.json
-vcpkg.json
 
+# TouchDesigner
 *.*.toe
 */models
 *log.txt
 
-# package/docs/
-package/build/
-package/dist/
-package/*egg-info*
-
-# bypass general rules
+# Bypass general rules for vendored SDK
 !external/TouchEngine-Windows/bin/*.dll
 !external/TouchEngine-Windows/lib/*.lib
-/.vscode
-
-docs/source/reference/*
