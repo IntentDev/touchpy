@@ -19,12 +19,24 @@ jobs:
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Cache CUDA Toolkit
+        id: cache-cuda
+        uses: actions/cache@v4
+        with:
+          path: C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6
+          key: cuda-12.6.0-nvcc-cudart
+
       - name: Install CUDA Toolkit
+        if: steps.cache-cuda.outputs.cache-hit != 'true'
         shell: powershell
         run: |
           $url = "https://developer.download.nvidia.com/compute/cuda/12.6.0/network_installers/cuda_12.6.0_windows_network.exe"
           Invoke-WebRequest -Uri $url -OutFile cuda_installer.exe
           Start-Process -FilePath .\cuda_installer.exe -ArgumentList '-s','nvcc_12.6','cudart_12.6' -Wait -NoNewWindow
+
+      - name: Set CUDA environment
+        shell: powershell
+        run: |
           echo "CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6" >> $env:GITHUB_ENV
           echo "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin" >> $env:GITHUB_PATH
 
