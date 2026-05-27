@@ -58,7 +58,3 @@ CMakeUserPresets.json
 */models
 logs/
 *log.txt
-
-# Bypass general rules for vendored SDK
-!external/TouchEngine-Windows/bin/*.dll
-!external/TouchEngine-Windows/lib/*.lib

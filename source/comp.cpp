@@ -224,14 +224,12 @@ bool Comp::load()
 	spdlog::info("Loading tox: {}", filePath_);
 
 	auto timeMode = TETimeInternal;
-	auto uiMode = TEUIWindows;
 	if (compFlags_ & CompFlagBits::ExternalTime)
 	{
 		timeMode = TETimeExternal;
-		uiMode = TEUINone;
 	}
 
-	result = TEInstanceConfigure(instance_, filePath_.c_str(), timeMode, uiMode);
+	result = TEInstanceConfigure(instance_, filePath_.c_str(), timeMode);
 	if (result != TEResultSuccess)
 	{
 		spdlog::error("Failed to configure TEInstance: {}", TEResultGetDescription(result));
