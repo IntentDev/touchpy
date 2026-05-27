@@ -50,7 +50,7 @@ jobs:
           cache: true
 
       - name: Build wheel
-        uses: pypa/cibuildwheel@v2.22
+        uses: pypa/cibuildwheel@v3.4.1
         env:
           CIBW_BUILD: "${{ matrix.python }}-win_amd64"
           CIBW_ARCHS_WINDOWS: "AMD64"
