@@ -1,3 +1,6 @@
+[![PyPI version](https://badge.fury.io/py/touchpy.svg)](https://badge.fury.io/py/touchpy)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/touchpy)](https://pypi.org/project/touchpy/)
+
 # TouchPy
 
 TouchPy is a high-performance Python toolset for working with TouchDesigner components headlessly via the TouchEngine SDK. It provides GPU-accelerated data exchange (CUDA/Vulkan) for TOPs, CHOPs, DATs, and parameters.
