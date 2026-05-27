@@ -7,7 +7,7 @@ TouchPy is a high-performance Python toolset for working with TouchDesigner comp
 - Windows 10/11 (x64)
 - [TouchDesigner](https://derivative.ca/download) installed (runtime dependency)
 - NVIDIA GPU with CUDA support
-- Python 3.9 - 3.13
+- Python 3.9 - 3.14 (3.12 recommended for development)
 
 ## Installation
 
