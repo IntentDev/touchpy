@@ -55,24 +55,30 @@ Full API documentation is available at [intentdev.github.io/touchpy](https://int
 ### Setup
 
 ```bash
-uv venv --python 3.12 # torch doesn't fill in the metatdata name for 3.13/3.14
+uv venv --python 3.12
 uv sync --extra examples
 ```
 
-This creates a local `.venv`, builds TouchPy from source, and installs CUDA-enabled PyTorch + numpy for running examples.
+This creates a `.venv` with Python 3.12, builds TouchPy from source (via scikit-build-core), and installs CUDA-enabled PyTorch + numpy for running examples.
+
+> **Note:** Python 3.12 is recommended. PyTorch wheels for 3.13+ may have packaging issues.
+
+### Rebuilding after C++ changes
+
+```bash
+uv sync --extra examples --reinstall-package touchpy
+```
+
+Or equivalently:
+
+```bash
+uv pip install -ve .
+```
 
 ### Build a wheel
 
 ```bash
 uv build
-```
-
-### Local CMake build (for debugging / IDE integration)
-
-```bash
-# From a Visual Studio Developer Command Prompt
-cmake --preset x64-release
-cmake --build out/build/x64-release
 ```
 
 ### Verify
