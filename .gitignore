@@ -42,7 +42,6 @@
 /.vscode
 
 # Misc
-*Backup
 *.dmp
 __pycache__
 
@@ -54,8 +53,10 @@ docs/source/reference/*
 CMakeUserPresets.json
 
 # TouchDesigner
+*Backup/
 *.*.toe
 */models
+logs/
 *log.txt
 
 # Bypass general rules for vendored SDK
