@@ -55,8 +55,16 @@ Full API documentation is available at [intentdev.github.io/touchpy](https://int
 ### Setup
 
 ```bash
+git clone --recurse-submodules https://github.com/IntentDev/touchpy.git
+cd touchpy
 uv venv --python 3.12
 uv sync --extra examples
+```
+
+If you already cloned without `--recurse-submodules`:
+
+```bash
+git submodule update --init
 ```
 
 This creates a `.venv` with Python 3.12, builds TouchPy from source (via scikit-build-core), and installs CUDA-enabled PyTorch + numpy for running examples.
