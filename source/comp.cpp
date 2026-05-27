@@ -213,21 +213,25 @@ bool Comp::load()
 		throw std::runtime_error("Failed to open tox file");
 	}
 
-	int64_t numerator = static_cast<int64_t>(time_.rate * 1000);
-
-	TEResult result = TEInstanceSetFrameRate(instance_, numerator, 1000);
+	TEResult result = TEInstanceSetFloatFrameRate(instance_, static_cast<float>(time_.rate));
 	if (result != TEResultSuccess)
 	{
 		spdlog::error("Failed to set frame rate: {}", TEResultGetDescription(result));
 		throw std::runtime_error("Failed to set frame rate");
 	}
+	time_.scale = static_cast<int32_t>(time_.rate) * 100;
 
 	spdlog::info("Loading tox: {}", filePath_);
 
 	auto timeMode = TETimeInternal;
-	if (compFlags_ & CompFlagBits::ExternalTime) timeMode = TETimeExternal;
+	auto uiMode = TEUIWindows;
+	if (compFlags_ & CompFlagBits::ExternalTime)
+	{
+		timeMode = TETimeExternal;
+		uiMode = TEUINone;
+	}
 
-	result = TEInstanceConfigure(instance_, filePath_.c_str(), timeMode, TEUIWindows);
+	result = TEInstanceConfigure(instance_, filePath_.c_str(), timeMode, uiMode);
 	if (result != TEResultSuccess)
 	{
 		spdlog::error("Failed to configure TEInstance: {}", TEResultGetDescription(result));
@@ -400,8 +404,8 @@ Comp::onEventInstanceDidUnload(TEResult result, Comp* comp)
 	spdlog::default_logger()->flush();
 }
 
-void 
-Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale, 
+void
+Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t start_time_scale,
 	int64_t end_time_value, int32_t end_time_scale, Comp* comp)
 {
 	//if (result == TEResultSuccess && start_time_value >= 0)
@@ -417,7 +421,7 @@ Comp::onEventFrameDidFinish(TEResult result, int64_t start_time_value, int32_t s
 
 			else
 			{
-				// need go through all possible results and handle them accordingly... 
+				// need go through all possible results and handle them accordingly...
 				auto severity = TEResultGetSeverity(result);
 
 				if (severity == TESeverityWarning)
@@ -994,7 +998,7 @@ Comp::asyncUpdate()
 	}
 }
 
-bool 
+bool
 Comp::frameDidFinish()
 {
 	auto state = getState();
@@ -1005,12 +1009,24 @@ Comp::frameDidFinish()
 		applyLayoutChange();
 		return false;
 	}
-	return !state.inFrame;
+
+	if (!state.inFrame)
+	{
+		if (compFlags_ & CompFlagBits::ExternalTime) applyValueChanges();
+		return true;
+	}
+	return false;
 }
 
 bool
 Comp::startNextFrame()
 {
+	if (compFlags_ & CompFlagBits::ExternalTime)
+	{
+		double nextTime = time_.seconds + (100.0 / time_.scale);
+		return startNextFrame(nextTime);
+	}
+
 	setInFrame(true);
 	TEResult result = TEInstanceStartFrameAtTime(instance_, 0, 0, false);
 	if (result != TEResultSuccess)
@@ -1054,7 +1070,7 @@ Comp::startNextFrame(int64_t timeValue, int32_t timeScale)
 	time_.scale = timeScale;
 	time_.frame = seconds / time_.rate;
 
-	TEResult result = TEInstanceStartFrameAtTime(instance_, timeValue, timeScale, false);
+	TEResult result = TEInstanceStartFrameAtTime(instance_, timeValue, timeScale, discontinuity);
 	if (result != TEResultSuccess)
 	{
 		spdlog::error("Frame did not start successfully: {}", TEResultGetDescription(result));
