@@ -1,5 +1,6 @@
 sphinx>=7.3
 sphinx-autoapi>=3.1
+astroid<4  # sphinx-autoapi 3.5 calls AstroidBuilder() without the manager arg astroid 4 requires
 furo
 sphinx-copybutton
 numpydoc
