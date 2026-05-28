@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["cp39", "cp310", "cp311", "cp312", "cp313"]
+        python: ["cp39", "cp310", "cp311", "cp312", "cp313", "cp314"]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,7 +50,7 @@ jobs:
           cache: true
 
       - name: Build wheel
-        uses: pypa/cibuildwheel@v2.22
+        uses: pypa/cibuildwheel@v3.4.1
         env:
           CIBW_BUILD: "${{ matrix.python }}-win_amd64"
           CIBW_ARCHS_WINDOWS: "AMD64"
