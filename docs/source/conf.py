@@ -26,6 +26,7 @@ import touchpy
 import os
 autoapi_dirs = [os.path.dirname(touchpy.__file__)]
 autoapi_type = "python"
+autoapi_file_patterns = ["*.pyi", "*.py"]
 
 autoapi_options = [ 'members', 'undoc-members', 'private-members', 'show-module-summary', 'special-members', 'imported-members', ]
 
