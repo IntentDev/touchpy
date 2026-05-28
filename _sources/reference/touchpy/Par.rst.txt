@@ -1,0 +1,47 @@
+touchpy.Par
+===========
+
+.. py:class:: touchpy.Par(arg0: TouchObject<TEInstance_>, arg1: TouchObject<TELinkInfo>, /)
+
+   
+   A parameter in a TouchDesigner component
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   ..
+       !! processed by numpydoc !!
+   
+   
+
+   .. rubric:: Attributes
+
+   .. py:property:: val
+      :type: bool | str | int | Int2 | Int3 | Int4 | float | Float2 | Float3 | Float4 | Color
+
+
+
+   
+   
+   .. rubric:: Methods
+   
+   .. py:method:: get() -> bool | str | int | Int2 | Int3 | Int4 | float | Float2 | Float3 | Float4 | Color
+
+
+   .. py:method:: set(arg: bool | str | int | Int2 | Int3 | Int4 | float | Float2 | Float3 | Float4 | Color, /) -> None
+
+
+
+

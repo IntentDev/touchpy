@@ -6,3 +6,167 @@ API Reference
 .. py:module:: touchpy
 
 
+TouchPy Classes
+---------------
+
+.. toctree::
+   :hidden:
+
+   /reference/touchpy/CUDADataType
+   /reference/touchpy/ChopChannels
+   /reference/touchpy/Color
+   /reference/touchpy/ColorPar
+   /reference/touchpy/Comp
+   /reference/touchpy/CompFlags
+   /reference/touchpy/CudaFlags
+   /reference/touchpy/CudaMemory
+   /reference/touchpy/CudaMemoryDesc
+   /reference/touchpy/DatTable
+   /reference/touchpy/InChop
+   /reference/touchpy/InChops
+   /reference/touchpy/InDat
+   /reference/touchpy/InDats
+   /reference/touchpy/InTop
+   /reference/touchpy/InTops
+   /reference/touchpy/LogLevel
+   /reference/touchpy/OutChop
+   /reference/touchpy/OutChops
+   /reference/touchpy/OutDat
+   /reference/touchpy/OutDats
+   /reference/touchpy/OutTop
+   /reference/touchpy/OutTops
+   /reference/touchpy/Par
+   /reference/touchpy/ParCollection
+   /reference/touchpy/PulsePar
+   /reference/touchpy/Time
+
+.. autoapisummary::
+
+   touchpy.CUDADataType
+   touchpy.ChopChannels
+   touchpy.Color
+   touchpy.ColorPar
+   touchpy.Comp
+   touchpy.CompFlags
+   touchpy.CudaFlags
+   touchpy.CudaMemory
+   touchpy.CudaMemoryDesc
+   touchpy.DatTable
+   touchpy.InChop
+   touchpy.InChops
+   touchpy.InDat
+   touchpy.InDats
+   touchpy.InTop
+   touchpy.InTops
+   touchpy.LogLevel
+   touchpy.OutChop
+   touchpy.OutChops
+   touchpy.OutDat
+   touchpy.OutDats
+   touchpy.OutTop
+   touchpy.OutTops
+   touchpy.Par
+   touchpy.ParCollection
+   touchpy.PulsePar
+   touchpy.Time
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   touchpy.get_dlpack_capsule_info
+   touchpy.init_logging
+   touchpy.set_log_level
+
+
+Package Contents
+----------------
+
+.. py:function:: get_dlpack_capsule_info(array: numpy.typing.NDArray) -> dict
+
+   
+   Get information about a DLPack capsule.
+
+   :param array: The array to get information about.
+   :type array: :py:class:`ndarray`
+
+   :returns: A dictionary containing information about the array.
+   :rtype: dict
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   ..
+       !! processed by numpydoc !!
+
+.. py:function:: init_logging(level: LogLevel = LogLevel.DEBUG, console: bool = True, file: bool = False) -> None
+
+   
+   Initialize the logging system.
+
+   :param level: The logging level to use.
+   :type level: :py:class:`LogLevel`
+   :param console: Whether to log to the console.
+   :type console: :py:class:`bool`
+   :param file: Whether to log to a file.
+   :type file: :py:class:`bool`
+
+   :returns: None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   ..
+       !! processed by numpydoc !!
+
+.. py:function:: set_log_level(level: LogLevel = LogLevel.WARN) -> None
+
+   
+   Set the logging level.
+
+   :param level: The logging level to use.
+   :type level: :py:class:`LogLevel`
+
+   :returns: None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   ..
+       !! processed by numpydoc !!
+
